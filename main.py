@@ -11,9 +11,29 @@ im_data = ds[var].isel(x=0)
 im = plt.imshow(im_data)
 cbar = plt.colorbar(im)
 
-clim = max(abs(im_data.max()), abs(im_data.min()))
-plt.clim(-clim, clim)
-plt.set_cmap("RdBu_r")
+
+def set_clim():
+    data_min = im_data.min()
+    data_max = im_data.max()
+
+    if data_min >= 0:
+        cmin = 0
+        cmax = data_max
+        cmap = "inferno"
+    elif data_max <= 0:
+        cmin = data_min
+        cmax = 0
+        cmap = "inferno_r"
+    else:
+        cmax = max(abs(im_data.max()), abs(im_data.min()))
+        cmin = -cmax
+        cmap = "RdBu_r"
+
+    plt.clim(cmin, cmax)
+    plt.set_cmap(cmap)
+
+
+set_clim()
 
 plt.title(var)
 plt.xlabel("y index, maybe")
