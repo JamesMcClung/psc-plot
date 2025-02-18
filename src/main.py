@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+
 from lib import plt_util, xr_util
 
 
@@ -7,7 +8,7 @@ step = 1000
 ds = xr_util.load_ds(bp_name, step)
 
 var = "rho_e"
-im_data = ds[var].isel(x=0)
+im_data = xr_util.get_im_data(ds, var)
 
 fig, ax = plt.subplots()
 
