@@ -3,10 +3,16 @@ import xarray
 import matplotlib.pyplot as plt
 from matplotlib.image import AxesImage
 
+
+def load_ds(bp_name: str, step: int) -> xarray.Dataset:
+    ds = xarray.load_dataset(f"/Users/james/Code/cc/PSC/psc-runs/psc_shock/{bp_name}.{step:09}.bp")
+    ds = pscpy.decode_psc(ds, ["e", "i"])
+    return ds
+
+
 bp_name = "pfd_moments"
 step = 1000
-ds = xarray.load_dataset(f"/Users/james/Code/cc/PSC/psc-runs/psc_shock/{bp_name}.{step:09}.bp")
-ds = pscpy.decode_psc(ds, ["e", "i"])
+ds = load_ds(bp_name, step)
 
 var = "rho_e"
 im_data = ds[var].isel(x=0)
