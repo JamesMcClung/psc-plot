@@ -1,9 +1,13 @@
+import pathlib
+
 import pscpy
 import xarray
 
+ROOT_DIR = pathlib.Path("/Users/james/Code/cc/PSC/psc-runs/psc_shock")
+
 
 def load_ds(bp_name: str, step: int) -> xarray.Dataset:
-    ds = xarray.load_dataset(f"/Users/james/Code/cc/PSC/psc-runs/psc_shock/{bp_name}.{step:09}.bp")
+    ds = xarray.load_dataset(ROOT_DIR / f"{bp_name}.{step:09}.bp")
     ds = pscpy.decode_psc(ds, ["e", "i"])
     return ds
 
