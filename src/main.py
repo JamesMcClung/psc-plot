@@ -4,7 +4,8 @@ from lib import plt_util, xr_util
 
 
 bp_name = "pfd_moments"
-step = 1000
+steps = xr_util.get_available_steps(bp_name)
+step = steps[0]
 ds = xr_util.load_ds(bp_name, step)
 
 var = "rho_e"
