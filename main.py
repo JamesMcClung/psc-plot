@@ -3,7 +3,9 @@ import xarray
 import matplotlib.pyplot as plt
 from matplotlib.image import AxesImage
 
-ds = xarray.load_dataset("/Users/james/Code/cc/PSC/psc-runs/psc_shock/pfd_moments.000000000.bp")
+bp_name = "pfd_moments"
+step = 1000
+ds = xarray.load_dataset(f"/Users/james/Code/cc/PSC/psc-runs/psc_shock/{bp_name}.{step:09}.bp")
 ds = pscpy.decode_psc(ds, ["e", "i"])
 
 var = "rho_e"
