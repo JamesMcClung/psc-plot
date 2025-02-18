@@ -17,8 +17,10 @@ ds = load_ds(bp_name, step)
 var = "rho_e"
 im_data = ds[var].isel(x=0)
 
-im = plt.imshow(im_data)
-cbar = plt.colorbar(im)
+fig, ax = plt.subplots()
+
+im = ax.imshow(im_data)
+cbar = fig.colorbar(im)
 
 
 def update_cbar(im: AxesImage):
@@ -45,8 +47,8 @@ def update_cbar(im: AxesImage):
 
 update_cbar(im)
 
-plt.title(f"{var} (t={ds.time:.2f})")
-plt.xlabel("y index")
-plt.ylabel("z index")
+ax.set_title(f"{var} (t={ds.time:.2f})")
+ax.set_xlabel("y index")
+ax.set_ylabel("z index")
 
 plt.show()
