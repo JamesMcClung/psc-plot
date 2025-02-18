@@ -35,8 +35,8 @@ def set_clim():
 
 set_clim()
 
-plt.title(var)
-plt.xlabel("y index, maybe")
-plt.ylabel("z index, maybe")
+plt.title(f"{var} (t={ds.time:.2f})")
+plt.xlabel("y index")
+plt.ylabel("z index")
 
 plt.show()
