@@ -11,6 +11,10 @@ im_data = ds[var].isel(x=0)
 im = plt.imshow(im_data)
 cbar = plt.colorbar(im)
 
+clim = max(abs(im_data.max()), abs(im_data.min()))
+plt.clim(-clim, clim)
+plt.set_cmap("RdBu_r")
+
 plt.title(var)
 plt.xlabel("y index, maybe")
 plt.ylabel("z index, maybe")
