@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib.image import AxesImage
+from matplotlib.axes import Axes
 
 
 def update_cbar(im: AxesImage):
@@ -22,3 +23,7 @@ def update_cbar(im: AxesImage):
 
     im.set_clim(cmin, cmax)
     im.set_cmap(plt.get_cmap(cmap))
+
+
+def update_title(ax: Axes, var: str, time: float):
+    ax.set_title(f"{var} (t={time:.2f})")

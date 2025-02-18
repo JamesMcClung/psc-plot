@@ -17,7 +17,7 @@ cbar = fig.colorbar(im)
 
 plt_util.update_cbar(im)
 
-ax.set_title(f"{var} (t={ds.time:.2f})")
+plt_util.update_title(ax, var, ds.time)
 ax.set_xlabel("y index")
 ax.set_ylabel("z index")
 
