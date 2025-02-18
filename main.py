@@ -1,6 +1,7 @@
 import pscpy
 import xarray
 import matplotlib.pyplot as plt
+from matplotlib.image import AxesImage
 
 ds = xarray.load_dataset("/Users/james/Code/cc/PSC/psc-runs/psc_shock/pfd_moments.000000000.bp")
 ds = pscpy.decode_psc(ds, ["e", "i"])
@@ -12,7 +13,8 @@ im = plt.imshow(im_data)
 cbar = plt.colorbar(im)
 
 
-def set_clim():
+def update_cbar(im: AxesImage):
+    im_data = im.get_array()
     data_min = im_data.min()
     data_max = im_data.max()
 
@@ -29,11 +31,11 @@ def set_clim():
         cmin = -cmax
         cmap = "RdBu_r"
 
-    plt.clim(cmin, cmax)
-    plt.set_cmap(cmap)
+    im.set_clim(cmin, cmax)
+    im.set_cmap(plt.get_cmap(cmap))
 
 
-set_clim()
+update_cbar(im)
 
 plt.title(f"{var} (t={ds.time:.2f})")
 plt.xlabel("y index")
