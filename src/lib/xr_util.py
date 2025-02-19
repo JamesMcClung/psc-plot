@@ -5,7 +5,7 @@ from . import file_util
 
 
 def load_ds(bp_name: str, step: int) -> xarray.Dataset:
-    ds = xarray.load_dataset(file_util.ROOT_DIR / f"{bp_name}.{step:09}.bp")
+    ds = xarray.load_dataset(file_util.get_data_path(bp_name, step, "bp"))
     ds = pscpy.decode_psc(ds, ["e", "i"])
     return ds
 

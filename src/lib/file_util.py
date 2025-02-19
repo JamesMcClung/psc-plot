@@ -9,3 +9,7 @@ def get_available_steps(prefix: str, suffix: str) -> list[int]:
     steps = [int(file.name.split(".")[1]) for file in files]
     steps.sort()
     return steps
+
+
+def get_data_path(prefix: str, step: int, suffix: str) -> pathlib.Path:
+    return ROOT_DIR / f"{prefix}.{step:09}.{suffix}"
