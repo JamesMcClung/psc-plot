@@ -1,20 +1,15 @@
-import pathlib
-
 import pscpy
 import xarray
 
-ROOT_DIR = pathlib.Path("/Users/james/Code/cc/PSC/psc-runs/psc_shock")
+from . import file_util
 
 
 def get_available_steps(bp_name: str) -> list[int]:
-    files = ROOT_DIR.glob(f"{bp_name}.*.bp")
-    steps = [int(file.name.split(".")[1]) for file in files]
-    steps.sort()
-    return steps
+    return file_util.get_available_steps(bp_name, "bp")
 
 
 def load_ds(bp_name: str, step: int) -> xarray.Dataset:
-    ds = xarray.load_dataset(ROOT_DIR / f"{bp_name}.{step:09}.bp")
+    ds = xarray.load_dataset(file_util.ROOT_DIR / f"{bp_name}.{step:09}.bp")
     ds = pscpy.decode_psc(ds, ["e", "i"])
     return ds
 
