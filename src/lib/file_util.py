@@ -9,7 +9,3 @@ def get_available_steps(before_step: str, after_step: str) -> list[int]:
     steps = [int(file.name.removeprefix(before_step).removesuffix(after_step)) for file in files]
     steps.sort()
     return steps
-
-
-def get_data_path(prefix: str, step: int, suffix: str) -> pathlib.Path:
-    return ROOT_DIR / f"{prefix}.{step:09}.{suffix}"

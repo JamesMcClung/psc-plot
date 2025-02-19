@@ -9,7 +9,8 @@ def get_available_steps_bp(bp_name: str) -> list[int]:
 
 
 def load_ds(bp_name: str, step: int) -> xarray.Dataset:
-    ds = xarray.load_dataset(file_util.get_data_path(bp_name, step, "bp"))
+    data_path = file_util.ROOT_DIR / f"{bp_name}.{step:09}.bp"
+    ds = xarray.load_dataset(data_path)
     ds = pscpy.decode_psc(ds, ["e", "i"])
     return ds
 
