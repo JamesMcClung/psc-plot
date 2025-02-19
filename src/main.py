@@ -1,9 +1,9 @@
-from lib import xr_util
+from lib import file_util
 from lib.animation import BpAnimation
 
 
 bp_name = "pfd_moments"
-steps = xr_util.get_available_steps(bp_name)
+steps = file_util.get_available_steps(bp_name, "bp")
 var = "rho_e"
 
 anim = BpAnimation(steps, bp_name, var)
