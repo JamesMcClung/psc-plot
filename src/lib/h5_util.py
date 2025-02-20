@@ -9,5 +9,5 @@ def get_available_steps_h5(h5_name: str) -> list[int]:
 
 def load_df(h5_name: str, step: int) -> pandas.DataFrame:
     data_path = file_util.ROOT_DIR / f"{h5_name}.{step:06}_p000000.h5"
-    df = pandas.read_hdf(data_path)
+    df = pandas.read_hdf(data_path, key="particles/p0/1d")
     return df
