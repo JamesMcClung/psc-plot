@@ -1,10 +1,9 @@
-from lib import xr_util
-from lib.animation import BpAnimation
+from lib import h5_util
+from lib.animation import H5Animation
 
 
-bp_name = "pfd_moments"
-steps = xr_util.get_available_steps_bp(bp_name)
-var = "rho_e"
+h5_name = "prt"
+steps = h5_util.get_available_steps_h5(h5_name)
 
-anim = BpAnimation(steps, bp_name, var)
+anim = H5Animation(steps, h5_name)
 anim.show()
