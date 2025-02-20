@@ -1,6 +1,7 @@
 import numpy as np
 
 from .. import h5_util
+from .. import plt_util
 from .animation_base import Animation
 
 __all__ = ["H5Animation"]
@@ -28,6 +29,7 @@ class H5Animation(Animation):
         self.mesh = self.ax.pcolormesh(self.x_edges, self.y_edges, binned_data, cmap="inferno")
 
         self.fig.colorbar(self.mesh)
+        plt_util.update_cbar(self.mesh)
 
         self.ax.set_xlabel(self.vars[0])
         self.ax.set_ylabel(self.vars[1])
@@ -46,5 +48,6 @@ class H5Animation(Animation):
         binned_data = binned_data.T
 
         self.mesh.set_array(binned_data)
+        plt_util.update_cbar(self.mesh)
 
         return [self.mesh]
