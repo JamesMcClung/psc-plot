@@ -7,17 +7,19 @@ __all__ = ["H5Animation"]
 
 
 class H5Animation(Animation):
-    def __init__(self, steps: list[int], h5_name: str):
+    def __init__(self, steps: list[int], h5_name: str, vars: tuple[str, str], nbins: tuple[int, int]):
         self.h5_name = h5_name
+        self.vars = vars
+        self.nbins = nbins
         super().__init__(steps)
 
     def _init_fig(self):
         df = h5_util.load_df(self.h5_name, self.steps[0])
 
         binned_data, self.x_edges, self.y_edges = np.histogram2d(
-            df["y"],
-            df["z"],
-            bins=[16, 16],
+            df[self.vars[0]],
+            df[self.vars[1]],
+            bins=self.nbins,
             weights=df["w"],
             density=True,
         )
@@ -27,16 +29,16 @@ class H5Animation(Animation):
 
         self.fig.colorbar(self.mesh)
 
-        self.ax.set_xlabel("y")
-        self.ax.set_ylabel("z")
+        self.ax.set_xlabel(self.vars[0])
+        self.ax.set_ylabel(self.vars[1])
         self.ax.set_title("reduced f")
 
     def _update_fig(self, step: int):
         df = h5_util.load_df(self.h5_name, step)
 
         binned_data, _, _ = np.histogram2d(
-            df["y"],
-            df["z"],
+            df[self.vars[0]],
+            df[self.vars[1]],
             bins=[self.x_edges, self.y_edges],
             weights=df["w"],
             density=True,
