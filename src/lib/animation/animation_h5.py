@@ -14,7 +14,7 @@ class H5Animation(Animation):
     def _init_fig(self):
         df = h5_util.load_df(self.h5_name, self.steps[0])
 
-        binned_data, self.y_edges, self.z_edges = np.histogram2d(
+        binned_data, self.x_edges, self.y_edges = np.histogram2d(
             df["y"],
             df["z"],
             bins=[16, 16],
@@ -23,7 +23,7 @@ class H5Animation(Animation):
         )
         binned_data = binned_data.T
 
-        self.mesh = self.ax.pcolormesh(self.y_edges, self.z_edges, binned_data, cmap="inferno")
+        self.mesh = self.ax.pcolormesh(self.x_edges, self.y_edges, binned_data, cmap="inferno")
 
         self.fig.colorbar(self.mesh)
 
@@ -37,7 +37,7 @@ class H5Animation(Animation):
         binned_data, _, _ = np.histogram2d(
             df["y"],
             df["z"],
-            bins=[self.y_edges, self.z_edges],
+            bins=[self.x_edges, self.y_edges],
             weights=df["w"],
             density=True,
         )
