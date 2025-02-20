@@ -1,12 +1,12 @@
 import matplotlib.pyplot as plt
-from matplotlib.image import AxesImage
 from matplotlib.axes import Axes
+from matplotlib.colorizer import _ScalarMappable
 
 
-def update_cbar(im: AxesImage):
-    im_data = im.get_array()
-    data_min = im_data.min()
-    data_max = im_data.max()
+def update_cbar(mappable: _ScalarMappable):
+    data = mappable.get_array()
+    data_min = data.min()
+    data_max = data.max()
 
     if data_min >= 0:
         cmin = 0
@@ -17,12 +17,12 @@ def update_cbar(im: AxesImage):
         cmax = 0
         cmap = "inferno_r"
     else:
-        cmax = max(abs(im_data.max()), abs(im_data.min()))
+        cmax = max(abs(data.max()), abs(data.min()))
         cmin = -cmax
         cmap = "RdBu_r"
 
-    im.set_clim(cmin, cmax)
-    im.set_cmap(plt.get_cmap(cmap))
+    mappable.set_clim(cmin, cmax)
+    mappable.set_cmap(plt.get_cmap(cmap))
 
 
 def update_title(ax: Axes, var: str, time: float):
