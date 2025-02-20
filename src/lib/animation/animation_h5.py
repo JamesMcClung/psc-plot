@@ -17,8 +17,9 @@ class H5Animation(Animation):
         binned_data, y_edges, z_edges = np.histogram2d(
             df["y"],
             df["z"],
-            bins=[60, 80],
+            bins=[16, 16],
             weights=df["w"],
+            density=True,
         )
         binned_data = binned_data.T
 
@@ -41,6 +42,7 @@ class H5Animation(Animation):
             df["z"],
             bins=bins,
             weights=df["w"],
+            density=True,
         )
         binned_data = binned_data.T
 
