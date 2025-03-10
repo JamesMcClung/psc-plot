@@ -1,7 +1,9 @@
 import pathlib
 import typing
 
-type Prefix = typing.Literal["pfd", "pfd_moments", "prt"]
+type BpPrefix = typing.Literal["pfd", "pfd_moments"]
+type H5Prefix = typing.Literal["prt"]
+type Prefix = BpPrefix | H5Prefix
 type Suffix = typing.Literal["bp", "h5"]
 
 ROOT_DIR = pathlib.Path("/Users/james/Code/cc/PSC/psc-runs/psc_shock")
