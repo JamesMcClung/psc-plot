@@ -1,9 +1,21 @@
-from lib import h5_util
-from lib.animation import H5Animation
+import numpy as np
 
+from lib import h5_util, xr_util
+from lib.animation import H5Animation, BpAnimation
 
-h5_name = "prt"
-steps = h5_util.get_available_steps_h5(h5_name)
+if True:
+    bp_name = "pfd_moments"
+    bp_var = "rho_e"
+    steps = xr_util.get_available_steps_bp(bp_name)
 
-anim = H5Animation(steps, h5_name, ("y", "z"), (16, 16))
-anim.show()
+    anim = BpAnimation(steps, bp_name, bp_var)
+    anim.show()
+else:
+    h5_name = "prt"
+    steps = h5_util.get_available_steps_h5(h5_name)
+
+    x_edges = np.linspace(0, 500, 1000, endpoint=True)
+    y_edges = np.linspace(0, 20, 40, endpoint=True)
+
+    anim = H5Animation(steps, h5_name, ("y", "z"), (x_edges, y_edges))
+    anim.show()
