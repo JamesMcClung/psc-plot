@@ -8,21 +8,30 @@ from lib.animation import H5Animation, BpAnimation
 
 class TypedArgs(argparse.Namespace):
     prefix: file_util.Prefix
-    variable: str
     _handler: typing.Callable[[typing.Self], None]
 
     def handle(self):
         self._handler(self)
 
 
-def handle_bp(args: TypedArgs):
+class BpArgs(TypedArgs):
+    variable: str
+
+
+class H5Args(TypedArgs):
+    pass
+
+
+def handle_bp(args: BpArgs):
     steps = bp_util.get_available_steps_bp(args.prefix)
 
     anim = BpAnimation(steps, args.prefix, args.variable)
     anim.show()
 
+    assert not isinstance(args, BpArgs)  # FIXME this typing is a hack
 
-def handle_h5(args: TypedArgs):
+
+def handle_h5(args: H5Args):
     steps = h5_util.get_available_steps_h5(args.prefix)
 
     x_edges = np.linspace(0, 500, 1000, endpoint=True)
@@ -30,6 +39,8 @@ def handle_h5(args: TypedArgs):
 
     anim = H5Animation(steps, args.prefix, ("y", "z"), (x_edges, y_edges))
     anim.show()
+
+    assert not isinstance(args, H5Args)  # FIXME this typing is a hack
 
 
 parser_bp = argparse.ArgumentParser(add_help=False)
