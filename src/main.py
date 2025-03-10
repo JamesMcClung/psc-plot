@@ -19,13 +19,23 @@ class TypedArgs(argparse.Namespace):
     def to_subclass(self) -> typing.Self:
         return self._subclass(**self.__dict__)
 
+    @property
+    def save_name(self) -> str:
+        return NotImplementedError()
+
 
 class BpArgs(TypedArgs):
     variable: str
 
+    @property
+    def save_name(self) -> str:
+        return f"{self.prefix}-{self.variable}.mp4"
+
 
 class H5Args(TypedArgs):
-    pass
+    @property
+    def save_name(self) -> str:
+        return f"{self.prefix}.mp4"
 
 
 def handle_bp(args: argparse.Namespace) -> Animation:
@@ -70,4 +80,4 @@ fig = args.handle()
 if args.show:
     fig.show()
 if args.save:
-    fig.save(f"{args.prefix}-TODO.mp4")  # FIXME
+    fig.save(args.save_name)
