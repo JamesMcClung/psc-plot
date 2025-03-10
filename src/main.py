@@ -8,6 +8,8 @@ from lib.animation import H5Animation, BpAnimation, Animation
 
 class TypedArgs(argparse.Namespace):
     prefix: file_util.Prefix
+    show: bool
+    save: bool
     _handler: typing.Callable[[typing.Self], Animation]
 
     def handle(self) -> Animation:
@@ -49,6 +51,8 @@ parser_h5 = argparse.ArgumentParser(add_help=False)
 parser_h5.set_defaults(_handler=handle_h5)
 
 parser = argparse.ArgumentParser("psc-plot")
+parser.add_argument("-s", "--save", action="store_true")
+parser.add_argument("-q", "--quiet", action="store_false", dest="show")
 subparsers = parser.add_subparsers(title="prefix", dest="prefix")
 
 subparser_pfd = subparsers.add_parser("pfd", parents=[parser_bp])
@@ -60,4 +64,8 @@ subparser_prt = subparsers.add_parser("prt", parents=[parser_h5])
 args = parser.parse_args(namespace=TypedArgs())
 
 fig = args.handle()
-fig.show()
+
+if args.show:
+    fig.show()
+if args.save:
+    fig.save(f"{args.prefix}-TODO.mp4")  # FIXME
