@@ -1,7 +1,22 @@
+import argparse
 import numpy as np
 
-from lib import bp_util, h5_util
+from lib import bp_util, h5_util, file_util
 from lib.animation import H5Animation, BpAnimation
+
+
+class TypedArgs(argparse.Namespace):
+    prefix: file_util.Prefix
+    variable: str
+
+
+parser = argparse.ArgumentParser("psc-plot")
+parser.add_argument("prefix", choices=file_util.PREFIX_TO_SUFFIX.keys())
+parser.add_argument("-v", "--variable")
+
+args = parser.parse_args(namespace=TypedArgs())
+
+print(args)
 
 if True:
     bp_name = "pfd_moments"
