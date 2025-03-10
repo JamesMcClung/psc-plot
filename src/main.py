@@ -3,15 +3,15 @@ import typing
 import numpy as np
 
 from lib import bp_util, h5_util, file_util
-from lib.animation import H5Animation, BpAnimation
+from lib.animation import H5Animation, BpAnimation, Animation
 
 
 class TypedArgs(argparse.Namespace):
     prefix: file_util.Prefix
-    _handler: typing.Callable[[typing.Self], None]
+    _handler: typing.Callable[[typing.Self], Animation]
 
-    def handle(self):
-        self._handler(self)
+    def handle(self) -> Animation:
+        return self._handler(self)
 
 
 class BpArgs(TypedArgs):
@@ -22,25 +22,25 @@ class H5Args(TypedArgs):
     pass
 
 
-def handle_bp(args: BpArgs):
+def handle_bp(args: BpArgs) -> Animation:
     steps = bp_util.get_available_steps_bp(args.prefix)
 
     anim = BpAnimation(steps, args.prefix, args.variable)
-    anim.show()
 
     assert not isinstance(args, BpArgs)  # FIXME this typing is a hack
+    return anim
 
 
-def handle_h5(args: H5Args):
+def handle_h5(args: H5Args) -> Animation:
     steps = h5_util.get_available_steps_h5(args.prefix)
 
     x_edges = np.linspace(0, 500, 1000, endpoint=True)
     y_edges = np.linspace(0, 20, 40, endpoint=True)
 
     anim = H5Animation(steps, args.prefix, ("y", "z"), (x_edges, y_edges))
-    anim.show()
 
     assert not isinstance(args, H5Args)  # FIXME this typing is a hack
+    return anim
 
 
 parser_bp = argparse.ArgumentParser(add_help=False)
@@ -60,4 +60,6 @@ subparser_pfd_moments = subparsers.add_parser("pfd_moments", parents=[parser_bp]
 subparser_prt = subparsers.add_parser("prt", parents=[parser_h5])
 
 args = parser.parse_args(namespace=TypedArgs())
-args.handle()
+
+fig = args.handle()
+fig.show()
