@@ -1,6 +1,6 @@
 import numpy as np
 
-from .. import h5_util
+from .. import h5_util, file_util
 from .. import plt_util
 from .animation_base import Animation
 
@@ -8,14 +8,14 @@ __all__ = ["H5Animation"]
 
 
 class H5Animation(Animation):
-    def __init__(self, steps: list[int], h5_name: str, vars: tuple[str, str], nbins: tuple[int, int]):
-        self.h5_name = h5_name
-        self.vars = vars
+    def __init__(self, steps: list[int], prefix: file_util.H5Prefix, vars: tuple[str, str], nbins: tuple[int, int]):
+        self.prefix = prefix
+        self.vars = vars  # TODO rename this to axes
         self.nbins = nbins
         super().__init__(steps)
 
     def _init_fig(self):
-        df = h5_util.load_df(self.h5_name, self.steps[0])
+        df = h5_util.load_df(self.prefix, self.steps[0])
 
         binned_data, self.x_edges, self.y_edges = np.histogram2d(
             df[self.vars[0]],
@@ -36,7 +36,7 @@ class H5Animation(Animation):
         self.ax.set_title("reduced f")
 
     def _update_fig(self, step: int):
-        df = h5_util.load_df(self.h5_name, step)
+        df = h5_util.load_df(self.prefix, step)
 
         binned_data, _, _ = np.histogram2d(
             df[self.vars[0]],
