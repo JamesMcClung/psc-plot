@@ -1,12 +1,12 @@
 import numpy as np
 
-from lib import h5_util, xr_util
+from lib import bp_util, h5_util
 from lib.animation import H5Animation, BpAnimation
 
 if True:
     bp_name = "pfd_moments"
     bp_var = "rho_e"
-    steps = xr_util.get_available_steps_bp(bp_name)
+    steps = bp_util.get_available_steps_bp(bp_name)
 
     anim = BpAnimation(steps, bp_name, bp_var)
     anim.show()
