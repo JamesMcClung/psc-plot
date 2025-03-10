@@ -44,7 +44,7 @@ def handle_h5(args: argparse.Namespace) -> Animation:
 
 
 parser_bp = argparse.ArgumentParser(add_help=False)
-parser_bp.add_argument("-v", "--variable")
+parser_bp.add_argument("variable", type=str)
 parser_bp.set_defaults(_handler=handle_bp)
 
 parser_h5 = argparse.ArgumentParser(add_help=False)
