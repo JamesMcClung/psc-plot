@@ -11,10 +11,6 @@ class TypedArgs(argparse.Namespace):
     variable: str
     _handler: typing.Callable[[typing.Self], None]
 
-    @property
-    def suffix(self) -> file_util.Suffix:
-        return file_util.PREFIX_TO_SUFFIX[self.prefix]
-
     def handle(self):
         self._handler(self)
 
@@ -54,5 +50,3 @@ subparser_prt = subparsers.add_parser("prt", parents=[parser_h5])
 
 args = parser.parse_args(namespace=TypedArgs())
 args.handle()
-
-print(args)
