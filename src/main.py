@@ -38,14 +38,14 @@ class H5Args(TypedArgs):
         return f"{self.prefix}.mp4"
 
 
-def handle_bp(args: argparse.Namespace) -> Animation:
+def handle_bp(args: BpArgs) -> Animation:
     steps = bp_util.get_available_steps_bp(args.prefix)
 
     anim = BpAnimation(steps, args.prefix, args.variable)
     return anim
 
 
-def handle_h5(args: argparse.Namespace) -> Animation:
+def handle_h5(args: H5Args) -> Animation:
     steps = h5_util.get_available_steps_h5(args.prefix)
 
     x_edges = np.linspace(0, 500, 1000, endpoint=True)
