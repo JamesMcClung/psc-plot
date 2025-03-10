@@ -11,9 +11,13 @@ class TypedArgs(argparse.Namespace):
     show: bool
     save: bool
     _handler: typing.Callable[[typing.Self], Animation]
+    _subclass: type[typing.Self]
 
     def handle(self) -> Animation:
         return self._handler(self)
+
+    def to_subclass(self) -> typing.Self:
+        return self._subclass(**self.__dict__)
 
 
 class BpArgs(TypedArgs):
@@ -25,7 +29,6 @@ class H5Args(TypedArgs):
 
 
 def handle_bp(args: argparse.Namespace) -> Animation:
-    args = BpArgs(**args.__dict__)
     steps = bp_util.get_available_steps_bp(args.prefix)
 
     anim = BpAnimation(steps, args.prefix, args.variable)
@@ -33,7 +36,6 @@ def handle_bp(args: argparse.Namespace) -> Animation:
 
 
 def handle_h5(args: argparse.Namespace) -> Animation:
-    args = H5Args(**args.__dict__)
     steps = h5_util.get_available_steps_h5(args.prefix)
 
     x_edges = np.linspace(0, 500, 1000, endpoint=True)
@@ -45,10 +47,10 @@ def handle_h5(args: argparse.Namespace) -> Animation:
 
 parser_bp = argparse.ArgumentParser(add_help=False)
 parser_bp.add_argument("variable", type=str)
-parser_bp.set_defaults(_handler=handle_bp)
+parser_bp.set_defaults(_handler=handle_bp, _subclass=BpArgs)
 
 parser_h5 = argparse.ArgumentParser(add_help=False)
-parser_h5.set_defaults(_handler=handle_h5)
+parser_h5.set_defaults(_handler=handle_h5, _subclass=H5Args)
 
 parser = argparse.ArgumentParser("psc-plot")
 parser.add_argument("-s", "--save", action="store_true")
@@ -61,7 +63,7 @@ subparser_pfd_moments = subparsers.add_parser("pfd_moments", parents=[parser_bp]
 
 subparser_prt = subparsers.add_parser("prt", parents=[parser_h5])
 
-args = parser.parse_args(namespace=TypedArgs())
+args = parser.parse_args(namespace=TypedArgs()).to_subclass()
 
 fig = args.handle()
 
