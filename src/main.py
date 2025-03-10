@@ -22,24 +22,22 @@ class H5Args(TypedArgs):
     pass
 
 
-def handle_bp(args: BpArgs) -> Animation:
+def handle_bp(args: argparse.Namespace) -> Animation:
+    args = BpArgs(**args.__dict__)
     steps = bp_util.get_available_steps_bp(args.prefix)
 
     anim = BpAnimation(steps, args.prefix, args.variable)
-
-    assert not isinstance(args, BpArgs)  # FIXME this typing is a hack
     return anim
 
 
-def handle_h5(args: H5Args) -> Animation:
+def handle_h5(args: argparse.Namespace) -> Animation:
+    args = H5Args(**args.__dict__)
     steps = h5_util.get_available_steps_h5(args.prefix)
 
     x_edges = np.linspace(0, 500, 1000, endpoint=True)
     y_edges = np.linspace(0, 20, 40, endpoint=True)
 
     anim = H5Animation(steps, args.prefix, ("y", "z"), (x_edges, y_edges))
-
-    assert not isinstance(args, H5Args)  # FIXME this typing is a hack
     return anim
 
 
