@@ -23,20 +23,17 @@ args = parser.parse_args(namespace=TypedArgs())
 print(args)
 
 if args.suffix == "bp":
-    bp_name = "pfd_moments"
-    bp_var = "rho_e"
-    steps = bp_util.get_available_steps_bp(bp_name)
+    steps = bp_util.get_available_steps_bp(args.prefix)
 
-    anim = BpAnimation(steps, bp_name, bp_var)
+    anim = BpAnimation(steps, args.prefix, args.variable)
     anim.show()
 elif args.suffix == "h5":
-    h5_name = "prt"
-    steps = h5_util.get_available_steps_h5(h5_name)
+    steps = h5_util.get_available_steps_h5(args.prefix)
 
     x_edges = np.linspace(0, 500, 1000, endpoint=True)
     y_edges = np.linspace(0, 20, 40, endpoint=True)
 
-    anim = H5Animation(steps, h5_name, ("y", "z"), (x_edges, y_edges))
+    anim = H5Animation(steps, args.prefix, ("y", "z"), (x_edges, y_edges))
     anim.show()
 else:
     raise Exception(f"Unrecognized suffix: {args.suffix}")
