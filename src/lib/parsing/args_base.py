@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import abc
 import argparse
-import typing
 
 from .. import file_util
 from ..animation import Animation
@@ -24,7 +23,7 @@ class TypedArgs(argparse.Namespace, abc.ABC):
 
 
 class UntypedArgs(argparse.Namespace):
-    _typed_args: type[typing.Self]
+    _typed_args: type[TypedArgs]
 
     def to_typed(self) -> TypedArgs:
         return self._typed_args(**self.__dict__)
