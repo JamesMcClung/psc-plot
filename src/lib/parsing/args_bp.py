@@ -27,3 +27,4 @@ def add_subparsers_bp(subparsers: argparse._SubParsersAction):
 
     subparsers.add_parser("pfd", parents=[parent])
     subparsers.add_parser("pfd_moments", parents=[parent])
+    subparsers.add_parser("gauss", parents=[parent])
