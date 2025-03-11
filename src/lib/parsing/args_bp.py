@@ -14,16 +14,15 @@ class BpArgs(args_base.Args):
     def save_name(self) -> str:
         return f"{self.prefix}-{self.variable}.mp4"
 
+    def get_animation(self) -> Animation:
+        steps = bp_util.get_available_steps_bp(self.prefix)
 
-def _get_animation_bp(args: BpArgs) -> Animation:
-    steps = bp_util.get_available_steps_bp(args.prefix)
-
-    anim = BpAnimation(steps, args.prefix, args.variable)
-    return anim
+        anim = BpAnimation(steps, self.prefix, self.variable)
+        return anim
 
 
 def add_subparsers_bp(subparsers: argparse._SubParsersAction):
-    parent = args_base.get_subparser_parent(_get_animation_bp, BpArgs)
+    parent = args_base.get_subparser_parent(BpArgs)
     parent.add_argument("variable", type=str)
 
     subparsers.add_parser("pfd", parents=[parent])

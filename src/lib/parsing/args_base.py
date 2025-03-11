@@ -12,10 +12,9 @@ class Args(argparse.Namespace, abc.ABC):
     prefix: file_util.Prefix
     show: bool
     save: bool
-    _get_animation: typing.Callable[[typing.Self], Animation]
 
-    def get_animation(self) -> Animation:
-        return self._get_animation(self)
+    @abc.abstractmethod
+    def get_animation(self) -> Animation: ...
 
     @property
     @abc.abstractmethod
@@ -27,6 +26,9 @@ class UnspecifiedArgs(Args):
 
     def to_subclass(self) -> Args:
         return self._subclass(**self.__dict__)
+
+    def get_animation(self) -> Animation:
+        return NotImplementedError("Call to_subclass first to obtain a concrete version of Args")
 
     @property
     def save_name(self) -> str:
@@ -43,10 +45,7 @@ def add_subparsers(parser: argparse.ArgumentParser) -> argparse._SubParsersActio
     return subparsers
 
 
-def get_subparser_parent[TypedArgsSubclass: Args](
-    get_animation: typing.Callable[[TypedArgsSubclass], Animation],
-    subclass: type[TypedArgsSubclass],
-) -> argparse.ArgumentParser:
+def get_subparser_parent[ArgsSubclass: Args](subclass: type[ArgsSubclass]) -> argparse.ArgumentParser:
     parent = argparse.ArgumentParser(add_help=False)
-    parent.set_defaults(_get_animation=get_animation, _subclass=subclass)
+    parent.set_defaults(_subclass=subclass)
     return parent
