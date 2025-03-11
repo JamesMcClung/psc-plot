@@ -21,7 +21,7 @@ class TypedArgs(argparse.Namespace):
 
     @property
     def save_name(self) -> str:
-        return NotImplementedError()
+        return NotImplementedError("This is only implemented for subclasses")
 
 
 class BpArgs(TypedArgs):
