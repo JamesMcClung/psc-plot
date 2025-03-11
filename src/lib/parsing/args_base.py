@@ -11,11 +11,11 @@ class TypedArgs(argparse.Namespace):
     prefix: file_util.Prefix
     show: bool
     save: bool
-    _handler: typing.Callable[[typing.Self], Animation]
+    _get_animation: typing.Callable[[typing.Self], Animation]
     _subclass: type[typing.Self]
 
-    def handle(self) -> Animation:
-        return self._handler(self._to_subclass())
+    def get_animation(self) -> Animation:
+        return self._get_animation(self._to_subclass())
 
     def _to_subclass(self) -> typing.Self:
         return self._subclass(**self.__dict__)
@@ -37,9 +37,9 @@ def add_subparsers(parser: argparse.ArgumentParser) -> argparse._SubParsersActio
 
 
 def get_subparser_parent[TypedArgsSubclass: TypedArgs](
-    handler: typing.Callable[[TypedArgsSubclass], Animation],
+    get_animation: typing.Callable[[TypedArgsSubclass], Animation],
     subclass: type[TypedArgsSubclass],
 ) -> argparse.ArgumentParser:
     parent = argparse.ArgumentParser(add_help=False)
-    parent.set_defaults(_handler=handler, _subclass=subclass)
+    parent.set_defaults(_get_animation=get_animation, _subclass=subclass)
     return parent

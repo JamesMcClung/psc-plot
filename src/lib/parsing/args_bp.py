@@ -15,7 +15,7 @@ class BpArgs(args_base.TypedArgs):
         return f"{self.prefix}-{self.variable}.mp4"
 
 
-def _handle_bp(args: BpArgs) -> Animation:
+def _get_animation_bp(args: BpArgs) -> Animation:
     steps = bp_util.get_available_steps_bp(args.prefix)
 
     anim = BpAnimation(steps, args.prefix, args.variable)
@@ -23,7 +23,7 @@ def _handle_bp(args: BpArgs) -> Animation:
 
 
 def add_subparsers_bp(subparsers: argparse._SubParsersAction):
-    parent = args_base.get_subparser_parent(_handle_bp, BpArgs)
+    parent = args_base.get_subparser_parent(_get_animation_bp, BpArgs)
     parent.add_argument("variable", type=str)
 
     subparsers.add_parser("pfd", parents=[parent])

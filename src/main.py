@@ -2,9 +2,9 @@ from lib import parsing
 
 args = parsing.get_parsed_args()
 
-fig = args.handle()
+anim = args.get_animation()
 
 if args.show:
-    fig.show()
+    anim.show()
 if args.save:
-    fig.save(args.save_name)
+    anim.save(args.save_name)
