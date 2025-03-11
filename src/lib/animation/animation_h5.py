@@ -8,6 +8,7 @@ from .animation_base import Animation
 __all__ = ["H5Animation"]
 
 type PrtVariable = typing.Literal["x", "y", "z", "px", "py", "pz", "q", "m", "w", "id", "tag"]
+PRT_VARIABLES: list[PrtVariable] = list(PrtVariable.__value__.__args__)
 
 
 class H5Animation(Animation):
