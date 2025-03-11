@@ -32,7 +32,6 @@ def add_arguments(parser: argparse.ArgumentParser):
 
 def add_subparsers(parser: argparse.ArgumentParser) -> argparse._SubParsersAction:
     subparsers = parser.add_subparsers(title="prefix", dest="prefix")
-    print(subparsers.__class__)
     return subparsers
 
 
