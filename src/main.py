@@ -14,9 +14,9 @@ class TypedArgs(argparse.Namespace):
     _subclass: type[typing.Self]
 
     def handle(self) -> Animation:
-        return self._handler(self)
+        return self._handler(self._to_subclass())
 
-    def to_subclass(self) -> typing.Self:
+    def _to_subclass(self) -> typing.Self:
         return self._subclass(**self.__dict__)
 
     @property
@@ -73,7 +73,7 @@ subparser_pfd_moments = subparsers.add_parser("pfd_moments", parents=[parser_bp]
 
 subparser_prt = subparsers.add_parser("prt", parents=[parser_h5])
 
-args = parser.parse_args(namespace=TypedArgs()).to_subclass()
+args = parser.parse_args(namespace=TypedArgs())
 
 fig = args.handle()
 
