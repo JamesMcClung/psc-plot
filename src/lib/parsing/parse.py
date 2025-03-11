@@ -18,5 +18,5 @@ def _get_parser() -> argparse.ArgumentParser:
 
 def get_parsed_args() -> args_base.Args:
     parser = _get_parser()
-    args = parser.parse_args(namespace=args_base.Args())
+    args = parser.parse_args(namespace=args_base.UnspecifiedArgs()).to_subclass()
     return args
