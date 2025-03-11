@@ -1,3 +1,5 @@
+import typing
+
 import numpy as np
 
 from .. import file_util, h5_util, plt_util
@@ -5,9 +7,11 @@ from .animation_base import Animation
 
 __all__ = ["H5Animation"]
 
+type PrtVariable = typing.Literal["x", "y", "z", "px", "py", "pz", "q", "m", "w", "id", "tag"]
+
 
 class H5Animation(Animation):
-    def __init__(self, steps: list[int], prefix: file_util.H5Prefix, axis_variables: tuple[str, str], nbins: tuple[int, int]):
+    def __init__(self, steps: list[int], prefix: file_util.H5Prefix, axis_variables: tuple[PrtVariable, PrtVariable], nbins: tuple[int, int]):
         self.prefix = prefix
         self.axis_variables = axis_variables
         self.nbins = nbins
