@@ -7,7 +7,7 @@ from . import args_base
 __all__ = ["add_subparsers_bp", "BpArgs"]
 
 
-class BpArgs(args_base.TypedArgs):
+class BpArgs(args_base.Args):
     variable: str
 
     @property

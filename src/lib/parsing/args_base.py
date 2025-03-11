@@ -4,10 +4,10 @@ import typing
 from .. import file_util
 from ..animation import Animation
 
-__all__ = ["add_arguments", "add_subparsers", "get_subparser_parent", "TypedArgs"]
+__all__ = ["add_arguments", "add_subparsers", "get_subparser_parent", "Args"]
 
 
-class TypedArgs(argparse.Namespace):
+class Args(argparse.Namespace):
     prefix: file_util.Prefix
     show: bool
     save: bool
@@ -35,7 +35,7 @@ def add_subparsers(parser: argparse.ArgumentParser) -> argparse._SubParsersActio
     return subparsers
 
 
-def get_subparser_parent[TypedArgsSubclass: TypedArgs](
+def get_subparser_parent[TypedArgsSubclass: Args](
     get_animation: typing.Callable[[TypedArgsSubclass], Animation],
     subclass: type[TypedArgsSubclass],
 ) -> argparse.ArgumentParser:

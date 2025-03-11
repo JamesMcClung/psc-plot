@@ -9,7 +9,7 @@ from . import args_base
 __all__ = ["add_subparsers_h5", "H5Args"]
 
 
-class H5Args(args_base.TypedArgs):
+class H5Args(args_base.Args):
     @property
     def save_name(self) -> str:
         return f"{self.prefix}.mp4"

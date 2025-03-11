@@ -16,7 +16,7 @@ def _get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def get_parsed_args() -> args_base.TypedArgs:
+def get_parsed_args() -> args_base.Args:
     parser = _get_parser()
-    args = parser.parse_args(namespace=args_base.TypedArgs())
+    args = parser.parse_args(namespace=args_base.Args())
     return args
