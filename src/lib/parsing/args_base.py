@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 import argparse
 import typing
@@ -21,18 +23,11 @@ class Args(argparse.Namespace, abc.ABC):
     def save_name(self) -> str: ...
 
 
-class UnspecifiedArgs(Args):
+class UnspecifiedArgs(argparse.Namespace):
     _subclass: type[typing.Self]
 
     def to_subclass(self) -> Args:
         return self._subclass(**self.__dict__)
-
-    def get_animation(self) -> Animation:
-        return NotImplementedError("Call to_subclass first to obtain a concrete version of Args")
-
-    @property
-    def save_name(self) -> str:
-        return NotImplementedError("Call to_subclass first to obtain a concrete version of Args")
 
 
 def add_arguments(parser: argparse.ArgumentParser):
