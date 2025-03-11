@@ -1,16 +1,15 @@
 import numpy as np
 
-from .. import h5_util, file_util
-from .. import plt_util
+from .. import file_util, h5_util, plt_util
 from .animation_base import Animation
 
 __all__ = ["H5Animation"]
 
 
 class H5Animation(Animation):
-    def __init__(self, steps: list[int], prefix: file_util.H5Prefix, vars: tuple[str, str], nbins: tuple[int, int]):
+    def __init__(self, steps: list[int], prefix: file_util.H5Prefix, axis_variables: tuple[str, str], nbins: tuple[int, int]):
         self.prefix = prefix
-        self.vars = vars  # TODO rename this to axes
+        self.axis_variables = axis_variables
         self.nbins = nbins
         super().__init__(steps)
 
@@ -18,8 +17,8 @@ class H5Animation(Animation):
         df = h5_util.load_df(self.prefix, self.steps[0])
 
         binned_data, self.x_edges, self.y_edges = np.histogram2d(
-            df[self.vars[0]],
-            df[self.vars[1]],
+            df[self.axis_variables[0]],
+            df[self.axis_variables[1]],
             bins=self.nbins,
             weights=df["w"],
             density=True,
@@ -31,16 +30,16 @@ class H5Animation(Animation):
         self.fig.colorbar(self.mesh)
         plt_util.update_cbar(self.mesh)
 
-        self.ax.set_xlabel(self.vars[0])
-        self.ax.set_ylabel(self.vars[1])
+        self.ax.set_xlabel(self.axis_variables[0])
+        self.ax.set_ylabel(self.axis_variables[1])
         self.ax.set_title("reduced f")
 
     def _update_fig(self, step: int):
         df = h5_util.load_df(self.prefix, step)
 
         binned_data, _, _ = np.histogram2d(
-            df[self.vars[0]],
-            df[self.vars[1]],
+            df[self.axis_variables[0]],
+            df[self.axis_variables[1]],
             bins=[self.x_edges, self.y_edges],
             weights=df["w"],
             density=True,
