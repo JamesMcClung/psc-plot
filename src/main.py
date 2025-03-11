@@ -48,6 +48,7 @@ def handle_bp(args: BpArgs) -> Animation:
 def handle_h5(args: H5Args) -> Animation:
     steps = h5_util.get_available_steps_h5(args.prefix)
 
+    # FIXME don't hardcode this
     x_edges = np.linspace(0, 500, 1000, endpoint=True)
     y_edges = np.linspace(0, 20, 40, endpoint=True)
 
