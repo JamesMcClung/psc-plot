@@ -1,5 +1,4 @@
-from .. import plt_util
-from .. import bp_util, file_util
+from .. import bp_util, file_util, plt_util
 from .animation_base import Animation
 
 __all__ = ["BpAnimation"]
@@ -7,11 +6,11 @@ __all__ = ["BpAnimation"]
 
 class BpAnimation(Animation):
     def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str):
-        self.prefix = prefix
-        self.variable = variable
         super().__init__(steps)
 
-    def _init_fig(self):
+        self.prefix = prefix
+        self.variable = variable
+
         ds = bp_util.load_ds(self.prefix, self.steps[0])
         im_data = bp_util.get_im_data(ds, self.variable)
 

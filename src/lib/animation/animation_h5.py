@@ -12,19 +12,24 @@ PRT_VARIABLES: list[PrtVariable] = list(PrtVariable.__value__.__args__)
 
 
 class H5Animation(Animation):
-    def __init__(self, steps: list[int], prefix: file_util.H5Prefix, axis_variables: tuple[PrtVariable, PrtVariable], nbins: tuple[int, int]):
-        self.prefix = prefix
-        self.axis_variables = axis_variables
-        self.nbins = nbins
+    def __init__(
+        self,
+        steps: list[int],
+        prefix: file_util.H5Prefix,
+        axis_variables: tuple[PrtVariable, PrtVariable],
+        nbins: tuple[int, int],
+    ):
         super().__init__(steps)
 
-    def _init_fig(self):
+        self.prefix = prefix
+        self.axis_variables = axis_variables
+
         df = h5_util.load_df(self.prefix, self.steps[0])
 
         binned_data, self.x_edges, self.y_edges = np.histogram2d(
             df[self.axis_variables[0]],
             df[self.axis_variables[1]],
-            bins=self.nbins,
+            bins=nbins,
             weights=df["w"],
             density=True,
         )
