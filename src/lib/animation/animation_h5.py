@@ -2,7 +2,6 @@ import typing
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
 
 from .. import file_util, h5_util, plt_util
 from .animation_base import Animation
@@ -32,9 +31,7 @@ class H5Animation(Animation):
         self.axis_variables = axis_variables
         self._nicell = nicell
 
-        df = h5_util.load_df(self.prefix, self.steps[0])
-
-        binned_data, self.x_edges, self.y_edges = self._get_binned_data(df, bins)
+        binned_data, self.x_edges, self.y_edges = self._get_binned_data(self.steps[0], bins)
 
         self.mesh = self.ax.pcolormesh(self.x_edges, self.y_edges, binned_data, cmap="inferno")
 
@@ -46,9 +43,7 @@ class H5Animation(Animation):
         self.ax.set_title("reduced f")
 
     def _update_fig(self, step: int):
-        df = h5_util.load_df(self.prefix, step)
-
-        binned_data, _, _ = self._get_binned_data(df)
+        binned_data, _, _ = self._get_binned_data(step)
 
         self.mesh.set_array(binned_data)
         plt_util.update_cbar(self.mesh)
@@ -57,9 +52,11 @@ class H5Animation(Animation):
 
     def _get_binned_data(
         self,
-        df: pd.DataFrame,
+        step: int,
         bins: tuple[NBins | BinEdges, NBins | BinEdges] | None = None,
     ) -> tuple[npt.NDArray[np.float64], BinEdges, BinEdges]:
+        df = h5_util.load_df(self.prefix, step)
+
         binned_data, x_edges, y_edges = np.histogram2d(
             df[self.axis_variables[0]],
             df[self.axis_variables[1]],
