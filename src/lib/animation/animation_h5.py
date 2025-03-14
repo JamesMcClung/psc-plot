@@ -24,11 +24,13 @@ class H5Animation(Animation):
         *,
         axis_variables: tuple[PrtVariable, PrtVariable],
         bins: tuple[NBins | BinEdges, NBins | BinEdges] | None,
+        nicell: int,
     ):
         super().__init__(steps)
 
         self.prefix = prefix
         self.axis_variables = axis_variables
+        self._nicell = nicell
 
         df = h5_util.load_df(self.prefix, self.steps[0])
 
@@ -62,8 +64,7 @@ class H5Animation(Animation):
             df[self.axis_variables[0]],
             df[self.axis_variables[1]],
             bins=bins or (self.x_edges, self.y_edges),
-            weights=df["w"],
-            density=True,
+            weights=df["w"] / self._nicell,
         )
         binned_data = binned_data.T
 
