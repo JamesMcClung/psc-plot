@@ -5,7 +5,7 @@ import numpy as np
 from .. import file_util, h5_util, plt_util
 from .animation_base import Animation
 
-__all__ = ["H5Animation"]
+__all__ = ["H5Animation", "PrtVariable", "PRT_VARIABLES"]
 
 type PrtVariable = typing.Literal["x", "y", "z", "px", "py", "pz", "q", "m", "w", "id", "tag"]
 PRT_VARIABLES: list[PrtVariable] = list(PrtVariable.__value__.__args__)
