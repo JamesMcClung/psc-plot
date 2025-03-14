@@ -7,7 +7,6 @@ __all__ = ["get_parsed_args"]
 
 def _get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="psc-plot")
-    args_base.add_arguments(parser)
     subparsers = args_base.add_subparsers(parser)
 
     args_bp.add_subparsers_bp(subparsers)
