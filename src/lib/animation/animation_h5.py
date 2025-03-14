@@ -1,14 +1,18 @@
 import typing
 
 import numpy as np
+import numpy.typing as npt
 
 from .. import file_util, h5_util, plt_util
 from .animation_base import Animation
 
-__all__ = ["H5Animation", "PrtVariable", "PRT_VARIABLES"]
+__all__ = ["H5Animation", "PrtVariable", "PRT_VARIABLES", "NBins", "BinEdges"]
 
 type PrtVariable = typing.Literal["x", "y", "z", "px", "py", "pz", "q", "m", "w", "id", "tag"]
 PRT_VARIABLES: list[PrtVariable] = list(PrtVariable.__value__.__args__)
+
+type NBins = int
+type BinEdges = npt.NDArray[np.float64]
 
 
 class H5Animation(Animation):
@@ -16,8 +20,9 @@ class H5Animation(Animation):
         self,
         steps: list[int],
         prefix: file_util.H5Prefix,
+        *,
         axis_variables: tuple[PrtVariable, PrtVariable],
-        nbins: tuple[int, int],
+        bins: tuple[NBins | BinEdges, NBins | BinEdges] | None,
     ):
         super().__init__(steps)
 
@@ -29,7 +34,7 @@ class H5Animation(Animation):
         binned_data, self.x_edges, self.y_edges = np.histogram2d(
             df[self.axis_variables[0]],
             df[self.axis_variables[1]],
-            bins=nbins,
+            bins=bins,
             weights=df["w"],
             density=True,
         )
