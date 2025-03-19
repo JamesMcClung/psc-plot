@@ -38,6 +38,7 @@ class H5Animation(Animation):
         self.fig.colorbar(self.mesh)
         plt_util.update_cbar(self.mesh)
 
+        self.ax.set_aspect(1 / self.ax.get_data_ratio())
         self.ax.set_xlabel(self.axis_variables[0])
         self.ax.set_ylabel(self.axis_variables[1])
         self.ax.set_title("reduced f")

@@ -20,6 +20,7 @@ class BpAnimation(Animation):
         plt_util.update_cbar(self.im)
 
         plt_util.update_title(self.ax, self.variable, ds.time)
+        self.ax.set_aspect(1 / self.ax.get_data_ratio())
         self.ax.set_xlabel("y index")
         self.ax.set_ylabel("z index")
 
