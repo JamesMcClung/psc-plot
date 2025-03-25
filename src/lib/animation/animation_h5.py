@@ -2,7 +2,7 @@ import numpy as np
 import numpy.typing as npt
 
 from .. import file_util, h5_util, plt_util
-from ..h5_util import PrtVariable
+from ..h5_util import PrtVariable, Species
 from .animation_base import Animation
 
 __all__ = ["H5Animation", "NBins", "BinEdges"]
@@ -17,18 +17,20 @@ class H5Animation(Animation):
         self,
         steps: list[int],
         prefix: file_util.H5Prefix,
+        species: Species | None,
         *,
         axis_variables: tuple[PrtVariable, PrtVariable],
-        bins: tuple[NBins | BinEdges, NBins | BinEdges] | None,
         nicell: int,
+        bins: tuple[NBins | BinEdges, NBins | BinEdges] | None = None,
     ):
         super().__init__(steps)
 
         self.prefix = prefix
+        self.species: Species | None = species
         self.axis_variables = axis_variables
         self._nicell = nicell
 
-        binned_data, self.x_edges, self.y_edges = self._get_binned_data(self.steps[0], bins)
+        binned_data, self.x_edges, self.y_edges = self._get_binned_data(self.steps[0], bins or self._guess_bins())
 
         self.mesh = self.ax.pcolormesh(self.x_edges, self.y_edges, binned_data, cmap="inferno")
 
@@ -48,12 +50,25 @@ class H5Animation(Animation):
 
         return [self.mesh]
 
+    def _guess_bins(self) -> tuple[BinEdges, BinEdges]:
+        df_final = h5_util.load_df(self.prefix, self.steps[-1])
+        xmin = df_final[self.axis_variables[0]].min()
+        xmax = df_final[self.axis_variables[0]].max()
+        ymin = df_final[self.axis_variables[1]].min()
+        ymax = df_final[self.axis_variables[1]].max()
+        return (np.linspace(xmin, xmax, 100, endpoint=True), np.linspace(ymin, ymax, 100, endpoint=True))
+
     def _get_binned_data(
         self,
         step: int,
         bins: tuple[NBins | BinEdges, NBins | BinEdges] | None = None,
     ) -> tuple[npt.NDArray[np.float64], BinEdges, BinEdges]:
         df = h5_util.load_df(self.prefix, step)
+
+        if self.species == "electron":
+            df = df[df["q"] < 0]
+        elif self.species == "ion":
+            df = df[df["q"] > 0]
 
         binned_data, x_edges, y_edges = np.histogram2d(
             df[self.axis_variables[0]],
@@ -63,4 +78,6 @@ class H5Animation(Animation):
         )
         binned_data = binned_data.T
 
+        # FIXME the binned data cmap is not normalized correctly
+        # it should satisfy $\int binned_data dV' = N_particles (in psc units)$
         return binned_data, x_edges, y_edges
