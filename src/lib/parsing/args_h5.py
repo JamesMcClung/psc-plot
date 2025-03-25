@@ -5,6 +5,7 @@ import numpy as np
 from .. import h5_util
 from ..animation import Animation
 from ..animation.animation_h5 import *
+from ..h5_util import PRT_VARIABLES, PrtVariable
 from . import args_base
 
 __all__ = ["add_subparsers_h5", "ArgsH5"]

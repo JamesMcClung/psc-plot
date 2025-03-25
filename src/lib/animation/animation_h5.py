@@ -1,15 +1,12 @@
-import typing
-
 import numpy as np
 import numpy.typing as npt
 
 from .. import file_util, h5_util, plt_util
+from ..h5_util import PrtVariable
 from .animation_base import Animation
 
-__all__ = ["H5Animation", "PrtVariable", "PRT_VARIABLES", "NBins", "BinEdges"]
+__all__ = ["H5Animation", "NBins", "BinEdges"]
 
-type PrtVariable = typing.Literal["x", "y", "z", "px", "py", "pz", "q", "m", "w", "id", "tag"]
-PRT_VARIABLES: list[PrtVariable] = list(PrtVariable.__value__.__args__)
 
 type NBins = int
 type BinEdges = npt.NDArray[np.float64]
