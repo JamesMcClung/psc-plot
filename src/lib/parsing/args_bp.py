@@ -4,10 +4,10 @@ from .. import bp_util
 from ..animation import Animation, BpAnimation
 from . import args_base
 
-__all__ = ["add_subparsers_bp", "BpArgs"]
+__all__ = ["add_subparsers_bp", "ArgsBp"]
 
 
-class BpArgs(args_base.TypedArgs):
+class ArgsBp(args_base.ArgsTyped):
     variable: str
 
     @property
@@ -22,7 +22,7 @@ class BpArgs(args_base.TypedArgs):
 
 
 def add_subparsers_bp(subparsers: argparse._SubParsersAction):
-    parent = args_base.get_subparser_parent(BpArgs)
+    parent = args_base.get_subparser_parent(ArgsBp)
     parent.add_argument("variable", type=str)
 
     subparsers.add_parser("pfd", parents=[parent])

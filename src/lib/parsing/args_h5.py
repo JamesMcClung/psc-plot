@@ -7,10 +7,10 @@ from ..animation import Animation
 from ..animation.animation_h5 import *
 from . import args_base
 
-__all__ = ["add_subparsers_h5", "H5Args"]
+__all__ = ["add_subparsers_h5", "ArgsH5"]
 
 
-class H5Args(args_base.TypedArgs):
+class ArgsH5(args_base.ArgsTyped):
     axis_variables: tuple[PrtVariable, PrtVariable]
 
     @property
@@ -35,7 +35,7 @@ class H5Args(args_base.TypedArgs):
 
 
 def add_subparsers_h5(subparsers: argparse._SubParsersAction):
-    parent = args_base.get_subparser_parent(H5Args)
+    parent = args_base.get_subparser_parent(ArgsH5)
     parent.add_argument("-a", "--axis-variables", type=str, choices=PRT_VARIABLES, nargs=2, default=("y", "z"))
 
     subparsers.add_parser("prt", parents=[parent])

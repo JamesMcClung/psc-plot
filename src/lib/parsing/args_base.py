@@ -6,10 +6,10 @@ import argparse
 from .. import file_util
 from ..animation import Animation
 
-__all__ = ["add_common_arguments", "add_subparsers", "get_subparser_parent", "TypedArgs", "UntypedArgs"]
+__all__ = ["add_common_arguments", "add_subparsers", "get_subparser_parent", "ArgsTyped", "ArgsUntyped"]
 
 
-class TypedArgs(argparse.Namespace, abc.ABC):
+class ArgsTyped(argparse.Namespace, abc.ABC):
     prefix: file_util.Prefix
     show: bool
     save: bool
@@ -22,10 +22,10 @@ class TypedArgs(argparse.Namespace, abc.ABC):
     def save_name(self) -> str: ...
 
 
-class UntypedArgs(argparse.Namespace):
-    _typed_args: type[TypedArgs]
+class ArgsUntyped(argparse.Namespace):
+    _typed_args: type[ArgsTyped]
 
-    def to_typed(self) -> TypedArgs:
+    def to_typed(self) -> ArgsTyped:
         return self._typed_args(**self.__dict__)
 
 
@@ -39,7 +39,7 @@ def add_subparsers(parser: argparse.ArgumentParser) -> argparse._SubParsersActio
     return subparsers
 
 
-def get_subparser_parent(typed_args: type[TypedArgs]) -> argparse.ArgumentParser:
+def get_subparser_parent(typed_args: type[ArgsTyped]) -> argparse.ArgumentParser:
     parent = argparse.ArgumentParser(add_help=False)
     parent.set_defaults(_typed_args=typed_args)
     add_common_arguments(parent)
