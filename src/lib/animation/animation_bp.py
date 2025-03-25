@@ -49,6 +49,7 @@ class BpAnimation1d(Animation):
         data = self._load_data(self.steps[0])
 
         [self.line] = self.ax.plot(data)
+        self._update_ybounds(data)
 
         plt_util.update_title(self.ax, self.variable, data.time)
         self.ax.set_xlabel(f"{self.dim} index")
@@ -58,9 +59,10 @@ class BpAnimation1d(Animation):
         data = self._load_data(step)
 
         self.line.set_ydata(data)
+        self._update_ybounds(data)
 
         plt_util.update_title(self.ax, self.variable, data.time)
-        return [self.line, self.ax.title]
+        return [self.line, self.ax.yaxis, self.ax.title]
 
     def _load_data(self, step: int) -> xr.DataArray:
         ds = bp_util.load_ds(self.prefix, step)
@@ -73,3 +75,10 @@ class BpAnimation1d(Animation):
         da = da.assign_attrs(time=ds.time)
 
         return da
+
+    def _update_ybounds(self, data: xr.DataArray):
+        ymin, ymax = np.min(data), np.max(data)
+        if ymin == ymax:
+            ymin -= 0.1
+            ymax += 0.1
+        self.ax.set_ybound(ymin, ymax)
