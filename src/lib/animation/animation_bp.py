@@ -2,10 +2,17 @@ import numpy as np
 import xarray as xr
 
 from .. import bp_util, file_util, plt_util
-from ..bp_util import BpDim
+from ..bp_util import DEFAULT_SPACE_UNIT_LATEX, DEFAULT_TIME_UNIT_LATEX, BpDim
 from .animation_base import Animation
 
 __all__ = ["BpAnimation2d", "BpAnimation1d"]
+
+
+def get_extent(da: xr.DataArray, dim: BpDim) -> tuple[float, float]:
+    dim_idx = ["x", "y", "z"].index(dim)
+    lower = da.corner[dim_idx]
+    upper = lower + da.length[dim_idx]
+    return (lower, upper)
 
 
 class BpAnimation2d(Animation):
@@ -18,22 +25,23 @@ class BpAnimation2d(Animation):
 
         data = self._load_data(self.steps[0])
 
-        self.im = self.ax.imshow(data)
+        left_right_bottom_top = (*get_extent(data, self.dims[0]), *get_extent(data, self.dims[1]))
+        self.im = self.ax.imshow(data, origin="lower", extent=left_right_bottom_top)
 
         self.fig.colorbar(self.im)
         plt_util.update_cbar(self.im)
 
-        plt_util.update_title(self.ax, self.variable, data.time)
+        plt_util.update_title(self.ax, self.variable, data.time, DEFAULT_TIME_UNIT_LATEX)
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
-        self.ax.set_xlabel(f"{self.dims[0]} index")
-        self.ax.set_ylabel(f"{self.dims[1]} index")
+        self.ax.set_xlabel(f"${self.dims[0]}$ [{DEFAULT_SPACE_UNIT_LATEX}]")
+        self.ax.set_ylabel(f"${self.dims[1]}$ [{DEFAULT_SPACE_UNIT_LATEX}]")
 
     def _update_fig(self, step: int):
         data = self._load_data(step)
 
         self.im.set_array(data)
 
-        plt_util.update_title(self.ax, self.variable, data.time)
+        plt_util.update_title(self.ax, self.variable, data.time, DEFAULT_TIME_UNIT_LATEX)
         plt_util.update_cbar(self.im)
         return [self.im, self.ax.title]
 
@@ -48,7 +56,7 @@ class BpAnimation2d(Animation):
         # reverse order because imshow expects (y, x) order
         da = da.transpose(*reversed(self.dims), transpose_coords=True)
 
-        da = da.assign_attrs(time=ds.time)
+        da = da.assign_attrs(**ds.attrs)
 
         return da
 
@@ -62,12 +70,13 @@ class BpAnimation1d(Animation):
         self.dim = dim
 
         data = self._load_data(self.steps[0])
+        xdata = np.linspace(*get_extent(data, dim), len(data), endpoint=False)
 
-        [self.line] = self.ax.plot(data)
+        [self.line] = self.ax.plot(xdata, data)
         self._update_ybounds(data)
 
-        plt_util.update_title(self.ax, self.variable, data.time)
-        self.ax.set_xlabel(f"{self.dim} index")
+        plt_util.update_title(self.ax, self.variable, data.time, DEFAULT_TIME_UNIT_LATEX)
+        self.ax.set_xlabel(f"{self.dim} [{DEFAULT_SPACE_UNIT_LATEX}]")
         self.ax.set_ylabel(f"{self.variable}")
 
     def _update_fig(self, step: int):
@@ -76,7 +85,7 @@ class BpAnimation1d(Animation):
         self.line.set_ydata(data)
         self._update_ybounds(data)
 
-        plt_util.update_title(self.ax, self.variable, data.time)
+        plt_util.update_title(self.ax, self.variable, data.time, DEFAULT_TIME_UNIT_LATEX)
         return [self.line, self.ax.yaxis, self.ax.title]
 
     def _load_data(self, step: int) -> xr.DataArray:
@@ -87,7 +96,7 @@ class BpAnimation1d(Animation):
             if dim != self.dim:
                 da = da.reduce(np.mean, dim)
 
-        da = da.assign_attrs(time=ds.time)
+        da = da.assign_attrs(**ds.attrs)
 
         return da
 
