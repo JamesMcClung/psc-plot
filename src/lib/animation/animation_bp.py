@@ -15,27 +15,36 @@ class BpAnimation2d(Animation):
         self.prefix = prefix
         self.variable = variable
 
-        ds = bp_util.load_ds(self.prefix, self.steps[0])
-        im_data = bp_util.get_im_data(ds, self.variable)
+        data = self._load_data(self.steps[0])
 
-        self.im = self.ax.imshow(im_data)
+        self.im = self.ax.imshow(data)
 
         self.fig.colorbar(self.im)
         plt_util.update_cbar(self.im)
 
-        plt_util.update_title(self.ax, self.variable, ds.time)
+        plt_util.update_title(self.ax, self.variable, data.time)
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
         self.ax.set_xlabel("y index")
         self.ax.set_ylabel("z index")
 
     def _update_fig(self, step: int):
-        ds = bp_util.load_ds(self.prefix, step)
-        im_data = bp_util.get_im_data(ds, self.variable)
+        data = self._load_data(step)
 
-        self.im.set_array(im_data)
-        plt_util.update_title(self.ax, self.variable, ds.time)
+        self.im.set_array(data)
+
+        plt_util.update_title(self.ax, self.variable, data.time)
         plt_util.update_cbar(self.im)
         return [self.im, self.ax.title]
+
+    def _load_data(self, step: int) -> xr.DataArray:
+        ds = bp_util.load_ds(self.prefix, step)
+        da = ds[self.variable]
+
+        da = da.isel(x=0)
+
+        da = da.assign_attrs(time=ds.time)
+
+        return da
 
 
 class BpAnimation1d(Animation):

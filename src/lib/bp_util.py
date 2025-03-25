@@ -19,7 +19,3 @@ def load_ds(prefix: file_util.BpPrefix, step: int) -> xarray.Dataset:
     # FIXME don't hardcode species names
     ds = pscpy.decode_psc(ds, ["e", "i"])
     return ds
-
-
-def get_im_data(ds: xarray.Dataset, variable: str) -> xarray.DataArray:
-    return ds[variable].isel(x=0)
