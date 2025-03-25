@@ -10,7 +10,7 @@ __all__ = ["add_subparsers_bp", "ArgsBp"]
 
 class ArgsBp(args_base.ArgsTyped):
     variable: str
-    versus: BpDim | None
+    versus_1d: BpDim | None
 
     @property
     def save_name(self) -> str:
@@ -25,8 +25,8 @@ class ArgsBp(args_base.ArgsTyped):
 
 def add_subparsers_bp(subparsers: argparse._SubParsersAction):
     parent = args_base.get_subparser_parent(ArgsBp)
-    parent.add_argument("variable", type=str)
-    parent.add_argument("--versus", type=str, choices=BP_DIMS)
+    parent.add_argument("variable", type=str, help="the variable to plot")
+    parent.add_argument("--versus-1d", type=str, choices=BP_DIMS, help="plot the variable against this axis as a line plot, averaging over other dimensions")
 
     subparsers.add_parser("pfd", parents=[parent])
     subparsers.add_parser("pfd_moments", parents=[parent])
