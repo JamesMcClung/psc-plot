@@ -52,7 +52,7 @@ class H5Animation(Animation):
         return [self.mesh]
 
     def _guess_bins(self) -> tuple[BinEdges, BinEdges]:
-        df_final = h5_util.load_df(self.prefix, self.steps[-1])
+        df_final = self._load_df(self.steps[-1])
         xmin = df_final[self.axis_variables[0]].min()
         xmax = df_final[self.axis_variables[0]].max()
         ymin = df_final[self.axis_variables[1]].min()
