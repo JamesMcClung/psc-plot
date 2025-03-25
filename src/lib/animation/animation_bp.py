@@ -18,7 +18,7 @@ class BpAnimation2d(Animation):
 
         data = self._load_data(self.steps[0])
 
-        self.im = self.ax.imshow(data)
+        self.im = self.ax.imshow(data, origin="lower")
 
         self.fig.colorbar(self.im)
         plt_util.update_cbar(self.im)
