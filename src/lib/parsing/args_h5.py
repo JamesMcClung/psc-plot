@@ -37,6 +37,14 @@ class ArgsH5(args_base.ArgsTyped):
 
 def add_subparsers_h5(subparsers: argparse._SubParsersAction):
     parent = args_base.get_subparser_parent(ArgsH5)
-    parent.add_argument("-a", "--axis-variables", type=str, choices=PRT_VARIABLES, nargs=2, default=("y", "z"))
+    parent.add_argument(
+        "-a",
+        "--axis-variables",
+        type=str,
+        choices=PRT_VARIABLES,
+        nargs=2,
+        default=("y", "z"),
+        help="variables to use as the x and y axes",
+    )
 
     subparsers.add_parser("prt", parents=[parent])
