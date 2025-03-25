@@ -48,7 +48,7 @@ class BpAnimation2d(Animation):
         # reverse order because imshow expects (y, x) order
         da = da.transpose(*reversed(self.dims), transpose_coords=True)
 
-        da = da.assign_attrs(time=ds.time)
+        da = da.assign_attrs(**ds.attrs)
 
         return da
 
@@ -87,7 +87,7 @@ class BpAnimation1d(Animation):
             if dim != self.dim:
                 da = da.reduce(np.mean, dim)
 
-        da = da.assign_attrs(time=ds.time)
+        da = da.assign_attrs(**ds.attrs)
 
         return da
 
