@@ -9,11 +9,12 @@ __all__ = ["BpAnimation2d", "BpAnimation1d"]
 
 
 class BpAnimation2d(Animation):
-    def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str):
+    def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str, dims: tuple[BpDim, BpDim]):
         super().__init__(steps)
 
         self.prefix = prefix
         self.variable = variable
+        self.dims = dims
 
         data = self._load_data(self.steps[0])
 
@@ -24,8 +25,8 @@ class BpAnimation2d(Animation):
 
         plt_util.update_title(self.ax, self.variable, data.time)
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
-        self.ax.set_xlabel("y index")
-        self.ax.set_ylabel("z index")
+        self.ax.set_xlabel(f"{self.dims[0]} index")
+        self.ax.set_ylabel(f"{self.dims[1]} index")
 
     def _update_fig(self, step: int):
         data = self._load_data(step)
@@ -40,7 +41,12 @@ class BpAnimation2d(Animation):
         ds = bp_util.load_ds(self.prefix, step)
         da = ds[self.variable]
 
-        da = da.isel(x=0)
+        for dim in da.dims:
+            if dim not in self.dims:
+                da = da.reduce(np.mean, dim)
+
+        # reverse order because imshow expects (y, x) order
+        da = da.transpose(*reversed(self.dims), transpose_coords=True)
 
         da = da.assign_attrs(time=ds.time)
 
