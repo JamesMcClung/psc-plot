@@ -5,7 +5,7 @@ import numpy as np
 from .. import h5_util
 from ..animation import Animation
 from ..animation.animation_h5 import *
-from ..h5_util import PRT_VARIABLES, PrtVariable
+from ..h5_util import PRT_VARIABLES, SPECIES, PrtVariable, Species
 from . import args_base
 
 __all__ = ["add_subparsers_h5", "ArgsH5"]
@@ -13,6 +13,7 @@ __all__ = ["add_subparsers_h5", "ArgsH5"]
 
 class ArgsH5(args_base.ArgsTyped):
     axis_variables: tuple[PrtVariable, PrtVariable]
+    species: Species | None
 
     @property
     def save_name(self) -> str:
@@ -45,6 +46,11 @@ def add_subparsers_h5(subparsers: argparse._SubParsersAction):
         nargs=2,
         default=("y", "z"),
         help="variables to use as the x and y axes",
+    )
+    parent.add_argument(
+        "--species",
+        choices=SPECIES,
+        help="include only particles of this species",
     )
 
     subparsers.add_parser("prt", parents=[parent])
