@@ -23,16 +23,12 @@ class ArgsH5(args_base.ArgsTyped):
     def get_animation(self) -> Animation:
         steps = h5_util.get_available_steps_h5(self.prefix)
 
-        # FIXME don't hardcode this; it needs to work for non-spatial dimensions, too
-        x_edges = np.linspace(0, 500, 1000, endpoint=True)
-        y_edges = np.linspace(0, 20, 40, endpoint=True)
-
         anim = H5Animation(
             steps,
             self.prefix,
             self.species,
             axis_variables=self.axis_variables,
-            bins=(x_edges, y_edges),
+            bins=None,  # guess
             nicell=100,  # FIXME don't hardcode this
         )
         return anim
