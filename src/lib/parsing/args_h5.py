@@ -18,7 +18,7 @@ class ArgsH5(args_base.ArgsTyped):
     @property
     def save_name(self) -> str:
         maybe_species = f"-{self.species}" if self.species else ""
-        return f"{self.prefix}{maybe_species}.mp4"
+        return f"{self.prefix}{maybe_species}-{self.axis_variables[0]}-{self.axis_variables[1]}.mp4"
 
     def get_animation(self) -> Animation:
         steps = h5_util.get_available_steps_h5(self.prefix)
