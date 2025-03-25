@@ -2,7 +2,7 @@ import numpy as np
 import numpy.typing as npt
 
 from .. import file_util, h5_util, plt_util
-from ..h5_util import PrtVariable
+from ..h5_util import PrtVariable, Species
 from .animation_base import Animation
 
 __all__ = ["H5Animation", "NBins", "BinEdges"]
@@ -17,6 +17,7 @@ class H5Animation(Animation):
         self,
         steps: list[int],
         prefix: file_util.H5Prefix,
+        species: Species | None,
         *,
         axis_variables: tuple[PrtVariable, PrtVariable],
         bins: tuple[NBins | BinEdges, NBins | BinEdges] | None,
@@ -25,6 +26,7 @@ class H5Animation(Animation):
         super().__init__(steps)
 
         self.prefix = prefix
+        self.species: Species | None = species
         self.axis_variables = axis_variables
         self._nicell = nicell
 
@@ -54,6 +56,11 @@ class H5Animation(Animation):
         bins: tuple[NBins | BinEdges, NBins | BinEdges] | None = None,
     ) -> tuple[npt.NDArray[np.float64], BinEdges, BinEdges]:
         df = h5_util.load_df(self.prefix, step)
+
+        if self.species == "electron":
+            df = df[df["q"] < 0]
+        elif self.species == "ion":
+            df = df[df["q"] > 0]
 
         binned_data, x_edges, y_edges = np.histogram2d(
             df[self.axis_variables[0]],

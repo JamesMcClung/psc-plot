@@ -29,6 +29,7 @@ class ArgsH5(args_base.ArgsTyped):
         anim = H5Animation(
             steps,
             self.prefix,
+            self.species,
             axis_variables=self.axis_variables,
             bins=(x_edges, y_edges),
             nicell=100,  # FIXME don't hardcode this
