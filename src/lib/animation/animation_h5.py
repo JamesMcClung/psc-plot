@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 
 from .. import file_util, h5_util, plt_util
 from ..h5_util import PrtVariable, Species
@@ -58,17 +59,22 @@ class H5Animation(Animation):
         ymax = df_final[self.axis_variables[1]].max()
         return (np.linspace(xmin, xmax, 100, endpoint=True), np.linspace(ymin, ymax, 100, endpoint=True))
 
-    def _get_binned_data(
-        self,
-        step: int,
-        bins: tuple[NBins | BinEdges, NBins | BinEdges] | None = None,
-    ) -> tuple[npt.NDArray[np.float64], BinEdges, BinEdges]:
+    def _load_df(self, step: int) -> pd.DataFrame:
         df = h5_util.load_df(self.prefix, step)
 
         if self.species == "electron":
             df = df[df["q"] < 0]
         elif self.species == "ion":
             df = df[df["q"] > 0]
+
+        return df
+
+    def _get_binned_data(
+        self,
+        step: int,
+        bins: tuple[NBins | BinEdges, NBins | BinEdges] | None = None,
+    ) -> tuple[npt.NDArray[np.float64], BinEdges, BinEdges]:
+        df = self._load_df(step)
 
         binned_data, x_edges, y_edges = np.histogram2d(
             df[self.axis_variables[0]],
