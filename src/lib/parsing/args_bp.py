@@ -14,7 +14,8 @@ class ArgsBp(args_base.ArgsTyped):
 
     @property
     def save_name(self) -> str:
-        return f"{self.prefix}-{self.variable}.mp4"
+        maybe_versus = f"-vs_{self.versus_1d}" if self.versus_1d else ""
+        return f"{self.prefix}-{self.variable}{maybe_versus}.mp4"
 
     def get_animation(self) -> Animation:
         steps = bp_util.get_available_steps_bp(self.prefix)
