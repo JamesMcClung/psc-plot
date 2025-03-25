@@ -35,7 +35,7 @@ def add_common_arguments(parser: argparse.ArgumentParser):
 
 
 def add_subparsers(parser: argparse.ArgumentParser) -> argparse._SubParsersAction:
-    subparsers = parser.add_subparsers(title="prefix", dest="prefix")
+    subparsers = parser.add_subparsers(title="prefix", dest="prefix", required=True)
     return subparsers
 
 
