@@ -20,8 +20,8 @@ class H5Animation(Animation):
         species: Species | None,
         *,
         axis_variables: tuple[PrtVariable, PrtVariable],
-        bins: tuple[NBins | BinEdges, NBins | BinEdges] | None,
         nicell: int,
+        bins: tuple[NBins | BinEdges, NBins | BinEdges] | None = None,
     ):
         super().__init__(steps)
 
@@ -30,7 +30,7 @@ class H5Animation(Animation):
         self.axis_variables = axis_variables
         self._nicell = nicell
 
-        binned_data, self.x_edges, self.y_edges = self._get_binned_data(self.steps[0], bins)
+        binned_data, self.x_edges, self.y_edges = self._get_binned_data(self.steps[0], bins or self._guess_bins())
 
         self.mesh = self.ax.pcolormesh(self.x_edges, self.y_edges, binned_data, cmap="inferno")
 
@@ -49,6 +49,14 @@ class H5Animation(Animation):
         plt_util.update_cbar(self.mesh)
 
         return [self.mesh]
+
+    def _guess_bins(self) -> tuple[BinEdges, BinEdges]:
+        df_final = h5_util.load_df(self.prefix, self.steps[-1])
+        xmin = df_final[self.axis_variables[0]].min()
+        xmax = df_final[self.axis_variables[0]].max()
+        ymin = df_final[self.axis_variables[1]].min()
+        ymax = df_final[self.axis_variables[1]].max()
+        return (np.linspace(xmin, xmax, 100, endpoint=True), np.linspace(ymin, ymax, 100, endpoint=True))
 
     def _get_binned_data(
         self,
@@ -70,4 +78,6 @@ class H5Animation(Animation):
         )
         binned_data = binned_data.T
 
+        # FIXME the binned data cmap is not normalized correctly
+        # it should satisfy $\int binned_data dV' = N_particles (in psc units)$
         return binned_data, x_edges, y_edges
