@@ -1,10 +1,10 @@
 from .. import bp_util, file_util, plt_util
 from .animation_base import Animation
 
-__all__ = ["BpAnimation"]
+__all__ = ["BpAnimation2d"]
 
 
-class BpAnimation(Animation):
+class BpAnimation2d(Animation):
     def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str):
         super().__init__(steps)
 

@@ -1,7 +1,7 @@
 import argparse
 
 from .. import bp_util
-from ..animation import Animation, BpAnimation
+from ..animation import Animation, BpAnimation2d
 from ..bp_util import BP_DIMS, BpDim
 from . import args_base
 
@@ -20,7 +20,7 @@ class ArgsBp(args_base.ArgsTyped):
     def get_animation(self) -> Animation:
         steps = bp_util.get_available_steps_bp(self.prefix)
 
-        anim = BpAnimation(steps, self.prefix, self.variable)
+        anim = BpAnimation2d(steps, self.prefix, self.variable)
         return anim
 
 
