@@ -1,7 +1,11 @@
+import numpy as np
+import xarray as xr
+
 from .. import bp_util, file_util, plt_util
+from ..bp_util import BpDim
 from .animation_base import Animation
 
-__all__ = ["BpAnimation2d"]
+__all__ = ["BpAnimation2d", "BpAnimation1d"]
 
 
 class BpAnimation2d(Animation):
@@ -32,3 +36,40 @@ class BpAnimation2d(Animation):
         plt_util.update_title(self.ax, self.variable, ds.time)
         plt_util.update_cbar(self.im)
         return [self.im, self.ax.title]
+
+
+class BpAnimation1d(Animation):
+    def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str, dim: BpDim):
+        super().__init__(steps)
+
+        self.prefix = prefix
+        self.variable = variable
+        self.dim = dim
+
+        data = self._load_data(self.steps[0])
+
+        [self.line] = self.ax.plot(data)
+
+        plt_util.update_title(self.ax, self.variable, data.time)
+        self.ax.set_xlabel(f"{self.dim} index")
+        self.ax.set_ylabel(f"{self.variable}")
+
+    def _update_fig(self, step: int):
+        data = self._load_data(step)
+
+        self.line.set_ydata(data)
+
+        plt_util.update_title(self.ax, self.variable, data.time)
+        return [self.line, self.ax.title]
+
+    def _load_data(self, step: int) -> xr.DataArray:
+        ds = bp_util.load_ds(self.prefix, step)
+        da = ds[self.variable]
+
+        for dim in da.dims:
+            if dim != self.dim:
+                da = da.reduce(np.mean, dim)
+
+        da = da.assign_attrs(time=ds.time)
+
+        return da
