@@ -1,8 +1,11 @@
+import typing
+
 import numpy as np
 import xarray as xr
 
 from .. import bp_util, file_util, plt_util
 from ..bp_util import DEFAULT_SPACE_UNIT_LATEX, DEFAULT_TIME_UNIT_LATEX, BpDim
+from ..plugins_bp import PluginBp
 from .animation_base import Animation
 
 __all__ = ["BpAnimation2d", "BpAnimation1d"]
@@ -15,7 +18,17 @@ def get_extent(da: xr.DataArray, dim: BpDim) -> tuple[float, float]:
     return (lower, upper)
 
 
-class BpAnimation2d(Animation):
+class BpAnimation(Animation):
+    def __init__(self, steps: list[int]):
+        super().__init__(steps)
+
+        self.plugins: list[PluginBp] = []
+
+    def add_plugin(self, plugin: PluginBp) -> typing.Self:
+        self.plugins.append(plugin)
+
+
+class BpAnimation2d(BpAnimation):
     def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str, dims: tuple[BpDim, BpDim]):
         super().__init__(steps)
 
@@ -61,7 +74,7 @@ class BpAnimation2d(Animation):
         return da
 
 
-class BpAnimation1d(Animation):
+class BpAnimation1d(BpAnimation):
     def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str, dim: BpDim):
         super().__init__(steps)
 
