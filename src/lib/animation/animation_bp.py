@@ -1,8 +1,11 @@
+import typing
+
 import numpy as np
 import xarray as xr
 
 from .. import bp_util, file_util, plt_util
 from ..bp_util import DEFAULT_SPACE_UNIT_LATEX, DEFAULT_TIME_UNIT_LATEX, BpDim
+from ..plugins_bp import PluginBp
 from .animation_base import Animation
 
 __all__ = ["BpAnimation2d", "BpAnimation1d"]
@@ -15,13 +18,57 @@ def get_extent(da: xr.DataArray, dim: BpDim) -> tuple[float, float]:
     return (lower, upper)
 
 
-class BpAnimation2d(Animation):
-    def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str, dims: tuple[BpDim, BpDim]):
+class BpAnimation(Animation):
+    def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str):
         super().__init__(steps)
 
         self.prefix = prefix
         self.variable = variable
+
+        self.plugins: list[PluginBp] = []
+
+    def add_plugin(self, plugin: PluginBp) -> typing.Self:
+        self.plugins.append(plugin)
+
+    def _load_data(self, step: int) -> xr.DataArray:
+        ds = bp_util.load_ds(self.prefix, step)
+        da = ds[self.variable]
+
+        for plugin in self.plugins:
+            da = plugin.apply(da)
+
+        da = da.assign_attrs(**ds.attrs)
+
+        return da
+
+
+class RetainDims(PluginBp):
+    def __init__(self, dims: list[BpDim]):
         self.dims = dims
+
+    def apply(self, da: xr.DataArray) -> xr.DataArray:
+        for dim in da.dims:
+            if dim not in self.dims:
+                da = da.reduce(np.mean, dim)
+        return da
+
+
+class ReorderDims(PluginBp):
+    def __init__(self, ordered_dims: list[BpDim]):
+        self.ordered_dims = ordered_dims
+
+    def apply(self, da: xr.DataArray) -> xr.DataArray:
+        return da.transpose(*self.ordered_dims, transpose_coords=True)
+
+
+class BpAnimation2d(BpAnimation):
+    def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str, dims: tuple[BpDim, BpDim]):
+        super().__init__(steps, prefix, variable)
+
+        self.dims = dims
+
+        self.add_plugin(RetainDims(dims))
+        self.add_plugin(ReorderDims(list(reversed(dims))))
 
         data = self._load_data(self.steps[0])
 
@@ -45,29 +92,14 @@ class BpAnimation2d(Animation):
         plt_util.update_cbar(self.im)
         return [self.im, self.ax.title]
 
-    def _load_data(self, step: int) -> xr.DataArray:
-        ds = bp_util.load_ds(self.prefix, step)
-        da = ds[self.variable]
 
-        for dim in da.dims:
-            if dim not in self.dims:
-                da = da.reduce(np.mean, dim)
-
-        # reverse order because imshow expects (y, x) order
-        da = da.transpose(*reversed(self.dims), transpose_coords=True)
-
-        da = da.assign_attrs(**ds.attrs)
-
-        return da
-
-
-class BpAnimation1d(Animation):
+class BpAnimation1d(BpAnimation):
     def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str, dim: BpDim):
-        super().__init__(steps)
+        super().__init__(steps, prefix, variable)
 
-        self.prefix = prefix
-        self.variable = variable
         self.dim = dim
+
+        self.add_plugin(RetainDims([dim]))
 
         data = self._load_data(self.steps[0])
         xdata = np.linspace(*get_extent(data, dim), len(data), endpoint=False)
@@ -87,18 +119,6 @@ class BpAnimation1d(Animation):
 
         plt_util.update_title(self.ax, self.variable, data.time, DEFAULT_TIME_UNIT_LATEX)
         return [self.line, self.ax.yaxis, self.ax.title]
-
-    def _load_data(self, step: int) -> xr.DataArray:
-        ds = bp_util.load_ds(self.prefix, step)
-        da = ds[self.variable]
-
-        for dim in da.dims:
-            if dim != self.dim:
-                da = da.reduce(np.mean, dim)
-
-        da = da.assign_attrs(**ds.attrs)
-
-        return da
 
     def _update_ybounds(self, data: xr.DataArray):
         ymin, ymax = np.min(data), np.max(data)
