@@ -28,6 +28,25 @@ class BpAnimation(Animation):
         self.plugins.append(plugin)
 
 
+class RetainDims(PluginBp):
+    def __init__(self, dims: list[BpDim]):
+        self.dims = dims
+
+    def apply(self, da: xr.DataArray) -> xr.DataArray:
+        for dim in da.dims:
+            if dim not in self.dims:
+                da = da.reduce(np.mean, dim)
+        return da
+
+
+class ReorderDims(PluginBp):
+    def __init__(self, ordered_dims: list[BpDim]):
+        self.ordered_dims = ordered_dims
+
+    def apply(self, da: xr.DataArray) -> xr.DataArray:
+        return da.transpose(*self.ordered_dims, transpose_coords=True)
+
+
 class BpAnimation2d(BpAnimation):
     def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str, dims: tuple[BpDim, BpDim]):
         super().__init__(steps)
@@ -35,6 +54,9 @@ class BpAnimation2d(BpAnimation):
         self.prefix = prefix
         self.variable = variable
         self.dims = dims
+
+        self.add_plugin(RetainDims(dims))
+        self.add_plugin(ReorderDims(list(reversed(dims))))
 
         data = self._load_data(self.steps[0])
 
@@ -62,12 +84,8 @@ class BpAnimation2d(BpAnimation):
         ds = bp_util.load_ds(self.prefix, step)
         da = ds[self.variable]
 
-        for dim in da.dims:
-            if dim not in self.dims:
-                da = da.reduce(np.mean, dim)
-
-        # reverse order because imshow expects (y, x) order
-        da = da.transpose(*reversed(self.dims), transpose_coords=True)
+        for plugin in self.plugins:
+            da = plugin.apply(da)
 
         da = da.assign_attrs(**ds.attrs)
 
@@ -81,6 +99,8 @@ class BpAnimation1d(BpAnimation):
         self.prefix = prefix
         self.variable = variable
         self.dim = dim
+
+        self.add_plugin(RetainDims([dim]))
 
         data = self._load_data(self.steps[0])
         xdata = np.linspace(*get_extent(data, dim), len(data), endpoint=False)
@@ -105,9 +125,8 @@ class BpAnimation1d(BpAnimation):
         ds = bp_util.load_ds(self.prefix, step)
         da = ds[self.variable]
 
-        for dim in da.dims:
-            if dim != self.dim:
-                da = da.reduce(np.mean, dim)
+        for plugin in self.plugins:
+            da = plugin.apply(da)
 
         da = da.assign_attrs(**ds.attrs)
 
