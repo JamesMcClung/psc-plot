@@ -8,32 +8,30 @@ from . import args_base
 __all__ = ["add_subparsers_bp", "ArgsBp"]
 
 
-class RollArg:
-    def __init__(self, as_str: str):
-        split_str = as_str.split("=")
+def parse_roll(arg: str) -> plugins_bp.Roll:
+    split_str = arg.split("=")
 
-        if len(split_str) != 2:
-            raise argparse.ArgumentTypeError(f"Expected value of form 'dim_name=window_size'; got '{as_str}'")
+    if len(split_str) != 2:
+        raise argparse.ArgumentTypeError(f"Expected value of form 'dim_name=window_size'; got '{arg}'")
 
-        [self.dim_name, window_size] = split_str
+    [dim_name, window_size] = split_str
 
-        if self.dim_name not in BP_DIMS:
-            raise argparse.ArgumentTypeError(f"Expected dim_name to be one of {BP_DIMS}; got '{self.dim_name}'")
+    if dim_name not in BP_DIMS:
+        raise argparse.ArgumentTypeError(f"Expected dim_name to be one of {BP_DIMS}; got '{dim_name}'")
 
-        try:
-            self.window_size = int(window_size)
-        except:
-            raise argparse.ArgumentTypeError(f"Expected window_size to be an integer; got '{window_size}'")
+    try:
+        window_size = int(window_size)
+    except:
+        raise argparse.ArgumentTypeError(f"Expected window_size to be an integer; got '{window_size}'")
 
-    def to_plugin(self) -> plugins_bp.Roll:
-        return plugins_bp.Roll(self.dim_name, self.window_size)
+    return plugins_bp.Roll(dim_name, window_size)
 
 
 class ArgsBp(args_base.ArgsTyped):
     variable: str
     versus_1d: BpDim | None
     versus_2d: tuple[BpDim, BpDim] | None
-    rolls: list[RollArg]
+    rolls: list[plugins_bp.Roll]
 
     @property
     def save_name(self) -> str:
@@ -52,7 +50,7 @@ class ArgsBp(args_base.ArgsTyped):
             anim = BpAnimation2d(steps, self.prefix, self.variable, self.versus_2d)
 
         for roll in self.rolls:
-            anim.add_plugin(roll.to_plugin())
+            anim.add_plugin(roll)
 
         return anim
 
@@ -63,7 +61,7 @@ def add_subparsers_bp(subparsers: argparse._SubParsersAction):
 
     parent.add_argument(
         "--roll",
-        type=RollArg,
+        type=parse_roll,
         dest="rolls",
         action="append",
         metavar="dim_name=window_size",
