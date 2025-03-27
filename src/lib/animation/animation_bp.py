@@ -19,8 +19,11 @@ def get_extent(da: xr.DataArray, dim: BpDim) -> tuple[float, float]:
 
 
 class BpAnimation(Animation):
-    def __init__(self, steps: list[int]):
+    def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str):
         super().__init__(steps)
+
+        self.prefix = prefix
+        self.variable = variable
 
         self.plugins: list[PluginBp] = []
 
@@ -49,10 +52,8 @@ class ReorderDims(PluginBp):
 
 class BpAnimation2d(BpAnimation):
     def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str, dims: tuple[BpDim, BpDim]):
-        super().__init__(steps)
+        super().__init__(steps, prefix, variable)
 
-        self.prefix = prefix
-        self.variable = variable
         self.dims = dims
 
         self.add_plugin(RetainDims(dims))
@@ -94,10 +95,8 @@ class BpAnimation2d(BpAnimation):
 
 class BpAnimation1d(BpAnimation):
     def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str, dim: BpDim):
-        super().__init__(steps)
+        super().__init__(steps, prefix, variable)
 
-        self.prefix = prefix
-        self.variable = variable
         self.dim = dim
 
         self.add_plugin(RetainDims([dim]))
