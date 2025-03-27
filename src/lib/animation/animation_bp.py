@@ -30,6 +30,17 @@ class BpAnimation(Animation):
     def add_plugin(self, plugin: PluginBp) -> typing.Self:
         self.plugins.append(plugin)
 
+    def _load_data(self, step: int) -> xr.DataArray:
+        ds = bp_util.load_ds(self.prefix, step)
+        da = ds[self.variable]
+
+        for plugin in self.plugins:
+            da = plugin.apply(da)
+
+        da = da.assign_attrs(**ds.attrs)
+
+        return da
+
 
 class RetainDims(PluginBp):
     def __init__(self, dims: list[BpDim]):
@@ -81,17 +92,6 @@ class BpAnimation2d(BpAnimation):
         plt_util.update_cbar(self.im)
         return [self.im, self.ax.title]
 
-    def _load_data(self, step: int) -> xr.DataArray:
-        ds = bp_util.load_ds(self.prefix, step)
-        da = ds[self.variable]
-
-        for plugin in self.plugins:
-            da = plugin.apply(da)
-
-        da = da.assign_attrs(**ds.attrs)
-
-        return da
-
 
 class BpAnimation1d(BpAnimation):
     def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str, dim: BpDim):
@@ -119,17 +119,6 @@ class BpAnimation1d(BpAnimation):
 
         plt_util.update_title(self.ax, self.variable, data.time, DEFAULT_TIME_UNIT_LATEX)
         return [self.line, self.ax.yaxis, self.ax.title]
-
-    def _load_data(self, step: int) -> xr.DataArray:
-        ds = bp_util.load_ds(self.prefix, step)
-        da = ds[self.variable]
-
-        for plugin in self.plugins:
-            da = plugin.apply(da)
-
-        da = da.assign_attrs(**ds.attrs)
-
-        return da
 
     def _update_ybounds(self, data: xr.DataArray):
         ymin, ymax = np.min(data), np.max(data)
