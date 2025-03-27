@@ -8,10 +8,29 @@ from . import args_base
 __all__ = ["add_subparsers_bp", "ArgsBp"]
 
 
+class RollArg:
+    def __init__(self, as_str: str):
+        split_str = as_str.split("=")
+
+        if len(split_str) != 2:
+            raise argparse.ArgumentTypeError(f"Expected value of form 'dim_name=window_size'; got '{as_str}'")
+
+        [self.dim_name, window_size] = split_str
+
+        if self.dim_name not in BP_DIMS:
+            raise argparse.ArgumentTypeError(f"Expected dim_name to be one of {BP_DIMS}; got '{self.dim_name}'")
+
+        try:
+            self.window_size = int(window_size)
+        except:
+            raise argparse.ArgumentTypeError(f"Expected window_size to be an integer; got '{window_size}'")
+
+
 class ArgsBp(args_base.ArgsTyped):
     variable: str
     versus_1d: BpDim | None
     versus_2d: tuple[BpDim, BpDim] | None
+    roll: list[RollArg]
 
     @property
     def save_name(self) -> str:
@@ -34,6 +53,14 @@ class ArgsBp(args_base.ArgsTyped):
 def add_subparsers_bp(subparsers: argparse._SubParsersAction):
     parent = args_base.get_subparser_parent(ArgsBp)
     parent.add_argument("variable", type=str, help="the variable to plot")
+
+    parent.add_argument(
+        "--roll",
+        type=RollArg,
+        action="append",
+        metavar="dim_name=window_size",
+        help="plot the rolling average against this dimension with this window size",
+    )
 
     versus_group = parent.add_mutually_exclusive_group()
     versus_group.add_argument(
