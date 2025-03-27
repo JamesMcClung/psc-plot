@@ -1,6 +1,6 @@
 import argparse
 
-from .. import bp_util
+from .. import bp_util, plugins_bp
 from ..animation import Animation, BpAnimation1d, BpAnimation2d
 from ..bp_util import BP_DIMS, BpDim
 from . import args_base
@@ -25,12 +25,15 @@ class RollArg:
         except:
             raise argparse.ArgumentTypeError(f"Expected window_size to be an integer; got '{window_size}'")
 
+    def to_plugin(self) -> plugins_bp.Roll:
+        return plugins_bp.Roll(self.dim_name, self.window_size)
+
 
 class ArgsBp(args_base.ArgsTyped):
     variable: str
     versus_1d: BpDim | None
     versus_2d: tuple[BpDim, BpDim] | None
-    roll: list[RollArg]
+    rolls: list[RollArg]
 
     @property
     def save_name(self) -> str:
@@ -47,6 +50,10 @@ class ArgsBp(args_base.ArgsTyped):
             anim = BpAnimation1d(steps, self.prefix, self.variable, self.versus_1d)
         else:
             anim = BpAnimation2d(steps, self.prefix, self.variable, self.versus_2d)
+
+        for roll in self.rolls:
+            anim.add_plugin(roll.to_plugin())
+
         return anim
 
 
@@ -57,6 +64,7 @@ def add_subparsers_bp(subparsers: argparse._SubParsersAction):
     parent.add_argument(
         "--roll",
         type=RollArg,
+        dest="rolls",
         action="append",
         metavar="dim_name=window_size",
         help="plot the rolling average against this dimension with this window size",
