@@ -67,6 +67,7 @@ def add_subparsers_bp(subparsers: argparse._SubParsersAction):
         metavar="dim_name=window_size",
         help="plot the rolling average against this dimension with this window size",
     )
+    parent.set_defaults(plugins=[])
 
     versus_group = parent.add_mutually_exclusive_group()
     versus_group.add_argument(
