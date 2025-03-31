@@ -3,6 +3,7 @@ import argparse
 from .. import bp_util, plugins_bp
 from ..animation import Animation, BpAnimation1d, BpAnimation2d
 from ..bp_util import BP_DIMS, BpDim
+from ..file_util import BP_PREFIXES
 from . import args_base
 
 __all__ = ["add_subparsers_bp", "ArgsBp"]
@@ -85,6 +86,6 @@ def add_subparsers_bp(subparsers: argparse._SubParsersAction):
         help="plot the variable against these dimensions as a heat map, averaging over the third dimension",
     )
 
-    subparsers.add_parser("pfd", parents=[parent])
-    subparsers.add_parser("pfd_moments", parents=[parent])
-    subparsers.add_parser("gauss", parents=[parent])
+    # may have to unroll this loop later when e.g. different prefixes have different derived variables
+    for bp_prefix in BP_PREFIXES:
+        subparsers.add_parser(bp_prefix, parents=[parent])
