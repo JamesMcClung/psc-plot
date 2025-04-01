@@ -20,3 +20,6 @@ class DerivedVariableBp:
 
     def assign_to(self, ds: xr.Dataset):
         ds[self.name] = self.derive(*(ds[base_var_name] for base_var_name in self.base_var_names))
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(({', '.join(self.base_var_names)}) -> {self.name}: {self.derive!r})"
