@@ -11,5 +11,7 @@ class Plugin[Data](abc.ABC):
     def apply(self, da: Data) -> Data: ...
 
 
-type PluginBp = Plugin[xr.DataArray]
-type PluginH5 = Plugin[pd.DataFrame]
+class PluginBp(Plugin[xr.DataArray]): ...
+
+
+class PluginH5(Plugin[pd.DataFrame]): ...

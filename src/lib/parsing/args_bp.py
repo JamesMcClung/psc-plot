@@ -1,15 +1,16 @@
 import argparse
 
-from .. import bp_util, plugins
+from .. import bp_util
 from ..animation import Animation, BpAnimation1d, BpAnimation2d
 from ..bp_util import BP_DIMS, BpDim
 from ..file_util import BP_PREFIXES
+from ..plugins import PluginBp, plugins_bp
 from . import args_base
 
 __all__ = ["add_subparsers_bp", "ArgsBp"]
 
 
-def parse_roll(arg: str) -> plugins.Roll:
+def parse_roll(arg: str) -> plugins_bp.Roll:
     split_str = arg.split("=")
 
     if len(split_str) != 2:
@@ -25,14 +26,14 @@ def parse_roll(arg: str) -> plugins.Roll:
     except:
         raise argparse.ArgumentTypeError(f"Expected window_size to be an integer; got '{window_size}'")
 
-    return plugins.Roll(dim_name, window_size)
+    return plugins_bp.Roll(dim_name, window_size)
 
 
 class ArgsBp(args_base.ArgsTyped):
     variable: str
     versus_1d: BpDim | None
     versus_2d: tuple[BpDim, BpDim] | None
-    plugins: list[plugins.PluginBp]
+    plugins: list[PluginBp]
 
     @property
     def save_name(self) -> str:
