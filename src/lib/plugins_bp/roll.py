@@ -1,6 +1,6 @@
 import xarray as xr
 
-from .plugin_bp_base import PluginBp
+from .plugin_base import PluginBp
 
 
 class Roll(PluginBp):
