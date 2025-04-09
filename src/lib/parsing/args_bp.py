@@ -10,25 +10,6 @@ from . import args_base
 __all__ = ["add_subparsers_bp", "ArgsBp"]
 
 
-def parse_roll(arg: str) -> plugins_bp.Roll:
-    split_str = arg.split("=")
-
-    if len(split_str) != 2:
-        raise argparse.ArgumentTypeError(f"Expected value of form 'dim_name=window_size'; got '{arg}'")
-
-    [dim_name, window_size] = split_str
-
-    if dim_name not in BP_DIMS:
-        raise argparse.ArgumentTypeError(f"Expected dim_name to be one of {BP_DIMS}; got '{dim_name}'")
-
-    try:
-        window_size = int(window_size)
-    except:
-        raise argparse.ArgumentTypeError(f"Expected window_size to be an integer; got '{window_size}'")
-
-    return plugins_bp.Roll(dim_name, window_size)
-
-
 class ArgsBp(args_base.ArgsTyped):
     variable: str
     versus_1d: BpDim | None
@@ -63,7 +44,7 @@ def add_subparsers_bp(subparsers: argparse._SubParsersAction):
 
     parent.add_argument(
         "--roll",
-        type=parse_roll,
+        type=plugins_bp.Roll.parse,
         dest="plugins",
         action="append",
         metavar="dim_name=window_size",
