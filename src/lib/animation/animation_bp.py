@@ -6,7 +6,7 @@ import xarray as xr
 from .. import bp_util, file_util, plt_util
 from ..bp_util import DEFAULT_SPACE_UNIT_LATEX, DEFAULT_TIME_UNIT_LATEX, BpDim
 from ..derived_variables_bp import DERIVED_VARIABLE_BP_REGISTRY, DerivedVariableBp
-from ..plugins_bp import PluginBp
+from ..plugins import PluginBp
 from .animation_base import Animation
 
 __all__ = ["BpAnimation2d", "BpAnimation1d"]
