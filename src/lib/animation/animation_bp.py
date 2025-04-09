@@ -5,6 +5,7 @@ import xarray as xr
 
 from .. import bp_util, file_util, plt_util
 from ..bp_util import DEFAULT_SPACE_UNIT_LATEX, DEFAULT_TIME_UNIT_LATEX, BpDim
+from ..derived_variables_bp import DERIVED_VARIABLE_BP_REGISTRY, DerivedVariableBp
 from ..plugins_bp import PluginBp
 from .animation_base import Animation
 
@@ -16,6 +17,19 @@ def get_extent(da: xr.DataArray, dim: BpDim) -> tuple[float, float]:
     lower = da.corner[dim_idx]
     upper = lower + da.length[dim_idx]
     return (lower, upper)
+
+
+def derive_variable(ds: xr.Dataset, var_name: str, ds_prefix: file_util.BpPrefix):
+    if var_name in ds.variables:
+        return
+    elif var_name in DERIVED_VARIABLE_BP_REGISTRY[ds_prefix]:
+        derived_var = DERIVED_VARIABLE_BP_REGISTRY[ds_prefix][var_name]
+        for base_var_name in derived_var.base_var_names:
+            derive_variable(ds, base_var_name, ds_prefix)
+        derived_var.assign_to(ds)
+    else:
+        message = f"No variable named '{var_name}'.\nThe following variables are defined: {list(ds.variables)}\n The following variables can be derived: {list(DERIVED_VARIABLE_BP_REGISTRY[ds_prefix])}"
+        raise ValueError(message)
 
 
 class BpAnimation(Animation):
@@ -32,6 +46,7 @@ class BpAnimation(Animation):
 
     def _load_data(self, step: int) -> xr.DataArray:
         ds = bp_util.load_ds(self.prefix, step)
+        derive_variable(ds, self.variable, self.prefix)
         da = ds[self.variable]
 
         for plugin in self.plugins:
