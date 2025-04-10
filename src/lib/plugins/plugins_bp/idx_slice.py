@@ -1,9 +1,9 @@
 import argparse
-import typing
 
 import xarray as xr
 
 from ...bp_util import BP_DIMS
+from .. import parse_util
 from ..plugin_base import PluginBp
 from ..registry import plugin_parser
 
@@ -18,16 +18,19 @@ class IdxSlice(PluginBp):
         return da.isel({self.dim_name: slice(self.lower_inclusive, self.upper_exclusive)})
 
 
+IDX_SLICE_FORMAT = "dim_name=lower:upper"
+
+
 @plugin_parser(
     "--idx-slice",
-    metavar="dim_name=lower:upper",
+    metavar=IDX_SLICE_FORMAT,
     help="restrict data along given the dimension to a slice, specified by lower (inclusive) and upper (exclusive) indices (both optional)",
 )
 def parse_idx_slice(arg: str) -> IdxSlice:
     split_arg = arg.split("=")
 
     if len(split_arg) != 2:
-        _fail_format(arg)
+        parse_util.fail_format(arg, IDX_SLICE_FORMAT)
 
     [dim_name, slice_arg] = split_arg
 
@@ -36,27 +39,13 @@ def parse_idx_slice(arg: str) -> IdxSlice:
 
     split_slice_arg = slice_arg.split(":")
     if len(split_slice_arg) != 2:
-        _fail_format(arg)
+        parse_util.fail_format(arg, IDX_SLICE_FORMAT)
 
     [lower_arg, upper_arg] = split_slice_arg
-    lower = _parse_bound(lower_arg, "lower")
-    upper = _parse_bound(upper_arg, "upper")
+    lower = parse_util.parse_optional_number(lower_arg, "lower", int)
+    upper = parse_util.parse_optional_number(upper_arg, "upper", int)
 
     if upper is not None and lower is not None and upper <= lower:
         raise argparse.ArgumentTypeError(f"Expected lower < upper; got lower={lower}, upper={upper}")
 
     return IdxSlice(dim_name, lower, upper)
-
-
-def _fail_format(arg: str):
-    raise argparse.ArgumentTypeError(f"Expected value of form 'dim_name=lower:upper'; got '{arg}'")
-
-
-def _parse_bound(bound_arg: str, which_bound: typing.Literal["upper", "lower"]) -> int | None:
-    if bound_arg == "":
-        return None
-
-    try:
-        return int(bound_arg)
-    except:
-        raise argparse.ArgumentTypeError(f"Expected {which_bound} to be an integer or absent; got '{bound_arg}'")

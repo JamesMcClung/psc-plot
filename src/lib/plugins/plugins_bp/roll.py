@@ -3,6 +3,7 @@ import argparse
 import xarray as xr
 
 from ...bp_util import BP_DIMS
+from .. import parse_util
 from ..plugin_base import PluginBp
 from ..registry import plugin_parser
 
@@ -16,25 +17,25 @@ class Roll(PluginBp):
         return da.rolling({self.dim_name: self.window_size}).mean()
 
 
+ROLL_FORMAT = "dim_name=window_size"
+
+
 @plugin_parser(
     "--roll",
-    metavar="dim_name=window_size",
+    metavar=ROLL_FORMAT,
     help="plot the rolling average against this dimension with this window size",
 )
 def parse(arg: str) -> Roll:
     split_str = arg.split("=")
 
     if len(split_str) != 2:
-        raise argparse.ArgumentTypeError(f"Expected value of form 'dim_name=window_size'; got '{arg}'")
+        parse_util.fail_format(arg, ROLL_FORMAT)
 
-    [dim_name, window_size] = split_str
+    [dim_name, window_size_arg] = split_str
 
     if dim_name not in BP_DIMS:
         raise argparse.ArgumentTypeError(f"Expected dim_name to be one of {BP_DIMS}; got '{dim_name}'")
 
-    try:
-        window_size = int(window_size)
-    except:
-        raise argparse.ArgumentTypeError(f"Expected window_size to be an integer; got '{window_size}'")
+    window_size = parse_util.parse_number(window_size_arg, "window_size", int)
 
     return Roll(dim_name, window_size)
