@@ -42,10 +42,10 @@ def add_subparsers_bp(subparsers: argparse._SubParsersAction):
     parent = args_base.get_subparser_parent(ArgsBp)
     parent.add_argument("variable", type=str, help="the variable to plot")
 
-    for plugin, kwargs in PLUGINS_BP.items():
+    for kwargs in PLUGINS_BP:
         parent.add_argument(
             *kwargs.name_or_flags,
-            type=plugin.parse,
+            type=kwargs.type,
             dest="plugins",
             action="append",
             metavar=kwargs.metavar,
