@@ -17,5 +17,9 @@ PREFIX_TO_SUFFIX: dict[Prefix, Suffix] = {bp_prefix: "bp" for bp_prefix in BP_PR
 def get_available_steps(before_step: str, after_step: str) -> list[int]:
     files = ROOT_DIR.glob(f"{before_step}*{after_step}")
     steps = [int(file.name.removeprefix(before_step).removesuffix(after_step)) for file in files]
+
+    if not steps:
+        raise ValueError(f"No steps found matching {ROOT_DIR}/{before_step}*{after_step}")
+
     steps.sort()
     return steps
