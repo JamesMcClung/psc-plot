@@ -11,6 +11,11 @@ def check_value[T](val: T, val_name: str, valid_options: list[T]):
         raise argparse.ArgumentTypeError(f"Expected {val_name} to be one of {valid_options}; got '{val}'")
 
 
+def check_order[T](lower: T | None, upper: T | None, lower_name: str, upper_name: str):
+    if upper is not None and lower is not None and upper <= lower:
+        raise argparse.ArgumentTypeError(f"Expected {lower_name}<{upper_name}; got {lower_name}={lower}, {upper_name}={upper}")
+
+
 def parse_number[T](num_arg: str, num_name: str, num_parser: typing.Callable[[str], T]) -> T:
     try:
         return num_parser(num_arg)

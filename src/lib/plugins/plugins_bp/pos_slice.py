@@ -1,5 +1,3 @@
-import argparse
-
 import xarray as xr
 
 from ...bp_util import BP_DIMS
@@ -44,7 +42,6 @@ def parse_pos_slice(arg: str) -> PosSlice:
     lower = parse_util.parse_optional_number(lower_arg, "lower", float)
     upper = parse_util.parse_optional_number(upper_arg, "upper", float)
 
-    if upper is not None and lower is not None and upper <= lower:
-        raise argparse.ArgumentTypeError(f"Expected lower < upper; got lower={lower}, upper={upper}")
+    parse_util.check_order(lower, upper, "lower", "upper")
 
     return PosSlice(dim_name, lower, upper)
