@@ -4,6 +4,7 @@ import pandas as pd
 
 from .. import file_util, h5_util, plt_util
 from ..h5_util import PrtVariable, Species
+from ..plugins import PLUGINS_H5, PluginH5
 from .animation_base import Animation
 
 __all__ = ["H5Animation", "NBins", "BinEdges"]
@@ -27,10 +28,14 @@ class H5Animation(Animation):
         super().__init__(steps)
 
         self.prefix = prefix
+        self.plugins: list[PluginH5] = []
         self.species: Species | None = species
         self.axis_variables = axis_variables
         self._nicell = nicell
         self._bins = bins
+
+    def add_plugin(self, plugin: PluginH5):
+        self.plugins.append(plugin)
 
     def _init_fig(self):
         binned_data, self.x_edges, self.y_edges = self._get_binned_data(self.steps[0], self._bins or self._guess_bins())
@@ -59,7 +64,7 @@ class H5Animation(Animation):
         xmax = df_final[self.axis_variables[0]].max()
         ymin = df_final[self.axis_variables[1]].min()
         ymax = df_final[self.axis_variables[1]].max()
-        return (np.linspace(xmin, xmax, 100, endpoint=True), np.linspace(ymin, ymax, 100, endpoint=True))
+        return (np.linspace(xmin, xmax, 32, endpoint=True), np.linspace(ymin, ymax, 32, endpoint=True))
 
     def _load_df(self, step: int) -> pd.DataFrame:
         df = h5_util.load_df(self.prefix, step)
@@ -68,6 +73,9 @@ class H5Animation(Animation):
             df = df[df["q"] < 0]
         elif self.species == "ion":
             df = df[df["q"] > 0]
+
+        for plugin in self.plugins:
+            df = plugin.apply(df)
 
         return df
 
