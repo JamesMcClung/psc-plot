@@ -1,1 +1,1 @@
-from . import slice
+from . import slice, species_filter

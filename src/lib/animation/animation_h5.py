@@ -3,8 +3,8 @@ import numpy.typing as npt
 import pandas as pd
 
 from .. import file_util, h5_util, plt_util
-from ..h5_util import PrtVariable, Species
-from ..plugins import PLUGINS_H5, PluginH5
+from ..h5_util import PrtVariable
+from ..plugins import PluginH5
 from .animation_base import Animation
 
 __all__ = ["H5Animation", "NBins", "BinEdges"]
@@ -19,7 +19,6 @@ class H5Animation(Animation):
         self,
         steps: list[int],
         prefix: file_util.H5Prefix,
-        species: Species | None,
         *,
         axis_variables: tuple[PrtVariable, PrtVariable],
         nicell: int,
@@ -29,7 +28,6 @@ class H5Animation(Animation):
 
         self.prefix = prefix
         self.plugins: list[PluginH5] = []
-        self.species: Species | None = species
         self.axis_variables = axis_variables
         self._nicell = nicell
         self._bins = bins
@@ -68,11 +66,6 @@ class H5Animation(Animation):
 
     def _load_df(self, step: int) -> pd.DataFrame:
         df = h5_util.load_df(self.prefix, step)
-
-        if self.species == "electron":
-            df = df[df["q"] < 0]
-        elif self.species == "ion":
-            df = df[df["q"] > 0]
 
         for plugin in self.plugins:
             df = plugin.apply(df)
