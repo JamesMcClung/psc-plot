@@ -1,1 +1,1 @@
-from . import idx_slice, roll
+from . import idx_slice, pos_slice, roll
