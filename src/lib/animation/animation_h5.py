@@ -62,7 +62,7 @@ class H5Animation(Animation):
         xmax = df_final[self.axis_variables[0]].max()
         ymin = df_final[self.axis_variables[1]].min()
         ymax = df_final[self.axis_variables[1]].max()
-        return (np.linspace(xmin, xmax, 32, endpoint=True), np.linspace(ymin, ymax, 32, endpoint=True))
+        return (np.linspace(xmin, xmax, 100, endpoint=True), np.linspace(ymin, ymax, 100, endpoint=True))
 
     def _load_df(self, step: int) -> pd.DataFrame:
         df = h5_util.load_df(self.prefix, step)
