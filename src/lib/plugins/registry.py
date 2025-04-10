@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import inspect
 import typing
 from dataclasses import dataclass
 
 from .plugin_base import Plugin, PluginBp, PluginH5
 
-__all__ = ["PLUGINS_BP", "PLUGINS_H5", "plugin"]
+__all__ = ["PLUGINS_BP", "PLUGINS_H5", "plugin_parser"]
 
 PLUGINS_BP: list[ArgparseKwargs[PluginBp]] = []
 PLUGINS_H5: list[ArgparseKwargs[PluginH5]] = []
@@ -21,18 +22,14 @@ class ArgparseKwargs[PluginType]:
     type: typing.Callable[[str], PluginType]
 
 
-def plugin(
+def plugin_parser(
     *name_or_flags: str,
     metavar: str | tuple[str] | None,
     help: str | None,
 ):
-    def plugin_inner(plugin_type: type[Plugin]):
-        parse_func = getattr(plugin_type, "parse", None)
-        if parse_func is None:
-            message = f"Class `{plugin_type.__name__}` must define a `parse` class method with signature `str -> Self`"
-            raise Exception(message)
-
+    def plugin_parser_inner[PluginType](parse_func: typing.Callable[[str], PluginType]):
         kwargs = ArgparseKwargs(name_or_flags, metavar, help, parse_func)
+        plugin_type = inspect.signature(parse_func).return_annotation
 
         if issubclass(plugin_type, PluginBp):
             PLUGINS_BP.append(kwargs)
@@ -40,6 +37,6 @@ def plugin(
         if issubclass(plugin_type, PluginH5):
             PLUGINS_H5.append(kwargs)
 
-        return plugin_type
+        return parse_func
 
-    return plugin_inner
+    return plugin_parser_inner
