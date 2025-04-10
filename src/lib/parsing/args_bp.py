@@ -4,7 +4,7 @@ from .. import bp_util
 from ..animation import Animation, BpAnimation1d, BpAnimation2d
 from ..bp_util import BP_DIMS, BpDim
 from ..file_util import BP_PREFIXES
-from ..plugins import PLUGINS_BP, PluginBp, plugins_bp
+from ..plugins import PLUGINS_BP, PluginBp
 from . import args_base
 
 __all__ = ["add_subparsers_bp", "ArgsBp"]
