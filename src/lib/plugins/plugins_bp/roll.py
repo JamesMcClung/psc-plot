@@ -1,6 +1,5 @@
-from __future__ import annotations
-
 import argparse
+import typing
 
 import xarray as xr
 
@@ -16,8 +15,8 @@ class Roll(PluginBp):
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         return da.rolling({self.dim_name: self.window_size}).mean()
 
-    @staticmethod
-    def parse(arg: str) -> Roll:
+    @classmethod
+    def parse(cls, arg: str) -> typing.Self:
         split_str = arg.split("=")
 
         if len(split_str) != 2:
@@ -33,4 +32,4 @@ class Roll(PluginBp):
         except:
             raise argparse.ArgumentTypeError(f"Expected window_size to be an integer; got '{window_size}'")
 
-        return Roll(dim_name, window_size)
+        return cls(dim_name, window_size)
