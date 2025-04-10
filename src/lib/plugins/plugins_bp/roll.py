@@ -5,8 +5,14 @@ import xarray as xr
 
 from ...bp_util import BP_DIMS
 from ..plugin_base import PluginBp
+from ..registry import plugin
 
 
+@plugin(
+    "--roll",
+    metavar="dim_name=window_size",
+    help="plot the rolling average against this dimension with this window size",
+)
 class Roll(PluginBp):
     def __init__(self, dim_name: str, roll_window: int):
         self.dim_name = dim_name

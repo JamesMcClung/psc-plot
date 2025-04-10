@@ -4,7 +4,7 @@ from .. import bp_util
 from ..animation import Animation, BpAnimation1d, BpAnimation2d
 from ..bp_util import BP_DIMS, BpDim
 from ..file_util import BP_PREFIXES
-from ..plugins import PluginBp, plugins_bp
+from ..plugins import PLUGINS_BP, PluginBp, plugins_bp
 from . import args_base
 
 __all__ = ["add_subparsers_bp", "ArgsBp"]
@@ -42,14 +42,15 @@ def add_subparsers_bp(subparsers: argparse._SubParsersAction):
     parent = args_base.get_subparser_parent(ArgsBp)
     parent.add_argument("variable", type=str, help="the variable to plot")
 
-    parent.add_argument(
-        "--roll",
-        type=plugins_bp.Roll.parse,
-        dest="plugins",
-        action="append",
-        metavar="dim_name=window_size",
-        help="plot the rolling average against this dimension with this window size",
-    )
+    for plugin, kwargs in PLUGINS_BP.items():
+        parent.add_argument(
+            *kwargs.name_or_flags,
+            type=plugin.parse,
+            dest="plugins",
+            action="append",
+            metavar=kwargs.metavar,
+            help=kwargs.help,
+        )
     parent.set_defaults(plugins=[])
 
     versus_group = parent.add_mutually_exclusive_group()
