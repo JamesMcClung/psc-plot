@@ -21,7 +21,7 @@ ROLL_FORMAT = "dim_name=window_size"
 @plugin_parser(
     "--roll",
     metavar=ROLL_FORMAT,
-    help="plot the rolling average against this dimension with this window size",
+    help="plot the rolling average against the given dimension with the given window size",
 )
 def parse(arg: str) -> Roll:
     split_str = arg.split("=")

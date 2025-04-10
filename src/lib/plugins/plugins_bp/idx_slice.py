@@ -22,7 +22,7 @@ IDX_SLICE_FORMAT = "dim_name=lower:upper"
 @plugin_parser(
     "--idx-slice",
     metavar=IDX_SLICE_FORMAT,
-    help="restrict data along given the dimension to a slice, specified by lower (inclusive) and upper (exclusive) indices (both optional)",
+    help="restrict data along the given dimension to a slice, specified by lower (inclusive) and upper (exclusive) indices (both optional)",
 )
 def parse_idx_slice(arg: str) -> IdxSlice:
     split_arg = arg.split("=")

@@ -22,7 +22,7 @@ _POS_SLICE_FORMAT = "dim_name=lower:upper"
 @plugin_parser(
     "--pos-slice",
     metavar=_POS_SLICE_FORMAT,
-    help="restrict data along given the dimension to a slice, specified by lower (inclusive) and upper (exclusive) positions (both optional)",
+    help="restrict data along the given dimension to a slice, specified by lower (inclusive) and upper (exclusive) positions (both optional)",
 )
 def parse_pos_slice(arg: str) -> PosSlice:
     split_arg = arg.split("=")
