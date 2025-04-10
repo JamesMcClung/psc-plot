@@ -1,11 +1,9 @@
-import typing
-
 import numpy as np
 import xarray as xr
 
 from .. import bp_util, file_util, plt_util
 from ..bp_util import DEFAULT_SPACE_UNIT_LATEX, DEFAULT_TIME_UNIT_LATEX, BpDim
-from ..derived_variables_bp import DERIVED_VARIABLE_BP_REGISTRY, DerivedVariableBp
+from ..derived_variables_bp import DERIVED_VARIABLE_BP_REGISTRY
 from ..plugins import PluginBp
 from .animation_base import Animation
 
@@ -40,7 +38,7 @@ class BpAnimation(Animation):
 
         self.plugins: list[PluginBp] = []
 
-    def add_plugin(self, plugin: PluginBp) -> typing.Self:
+    def add_plugin(self, plugin: PluginBp):
         self.plugins.append(plugin)
 
     def _load_data(self, step: int) -> xr.DataArray:
