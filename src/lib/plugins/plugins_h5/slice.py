@@ -16,7 +16,7 @@ class Slice(PluginH5):
         if self.lower_inclusive is not None:
             df = df[df[self.var_name] >= self.lower_inclusive]
         if self.upper_exclusive is not None:
-            df = df[df[self.var_name] < self.lower_inclusive]
+            df = df[df[self.var_name] < self.upper_exclusive]
         return df
 
 
