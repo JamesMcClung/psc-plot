@@ -1,22 +1,19 @@
-import typing
-
 import numpy as np
 import xarray as xr
 
 from .. import bp_util, file_util, plt_util
 from ..bp_util import DEFAULT_SPACE_UNIT_LATEX, DEFAULT_TIME_UNIT_LATEX, BpDim
-from ..derived_variables_bp import DERIVED_VARIABLE_BP_REGISTRY, DerivedVariableBp
-from ..plugins_bp import PluginBp
+from ..derived_variables_bp import DERIVED_VARIABLE_BP_REGISTRY
+from ..plugins import PluginBp
 from .animation_base import Animation
 
 __all__ = ["BpAnimation2d", "BpAnimation1d"]
 
 
 def get_extent(da: xr.DataArray, dim: BpDim) -> tuple[float, float]:
-    dim_idx = ["x", "y", "z"].index(dim)
-    lower = da.corner[dim_idx]
-    upper = lower + da.length[dim_idx]
-    return (lower, upper)
+    lower = da[dim][0]
+    upper = da[dim][-1] + (da[dim][1] - da[dim][0])
+    return (float(lower), float(upper))
 
 
 def derive_variable(ds: xr.Dataset, var_name: str, ds_prefix: file_util.BpPrefix):
@@ -41,7 +38,7 @@ class BpAnimation(Animation):
 
         self.plugins: list[PluginBp] = []
 
-    def add_plugin(self, plugin: PluginBp) -> typing.Self:
+    def add_plugin(self, plugin: PluginBp):
         self.plugins.append(plugin)
 
     def _load_data(self, step: int) -> xr.DataArray:
@@ -85,6 +82,7 @@ class BpAnimation2d(BpAnimation):
         self.add_plugin(RetainDims(dims))
         self.add_plugin(ReorderDims(list(reversed(dims))))
 
+    def _init_fig(self):
         data = self._load_data(self.steps[0])
 
         left_right_bottom_top = (*get_extent(data, self.dims[0]), *get_extent(data, self.dims[1]))
@@ -116,8 +114,9 @@ class BpAnimation1d(BpAnimation):
 
         self.add_plugin(RetainDims([dim]))
 
+    def _init_fig(self):
         data = self._load_data(self.steps[0])
-        xdata = np.linspace(*get_extent(data, dim), len(data), endpoint=False)
+        xdata = np.linspace(*get_extent(data, self.dim), len(data), endpoint=False)
 
         [self.line] = self.ax.plot(xdata, data)
         self._update_ybounds(data)
