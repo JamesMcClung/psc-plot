@@ -30,8 +30,10 @@ class H5Animation(Animation):
         self.species: Species | None = species
         self.axis_variables = axis_variables
         self._nicell = nicell
+        self._bins = bins
 
-        binned_data, self.x_edges, self.y_edges = self._get_binned_data(self.steps[0], bins or self._guess_bins())
+    def _init_fig(self):
+        binned_data, self.x_edges, self.y_edges = self._get_binned_data(self.steps[0], self._bins or self._guess_bins())
 
         self.mesh = self.ax.pcolormesh(self.x_edges, self.y_edges, binned_data, cmap="inferno")
 
