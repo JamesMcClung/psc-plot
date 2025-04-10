@@ -6,6 +6,11 @@ def fail_format(arg: str, format: str):
     raise argparse.ArgumentTypeError(f"Expected value of form '{format}'; got '{arg}'")
 
 
+def check_value[T](val: T, val_name: str, valid_options: list[T]):
+    if val not in valid_options:
+        raise argparse.ArgumentTypeError(f"Expected {val_name} to be one of {valid_options}; got '{val}'")
+
+
 def parse_number[T](num_arg: str, num_name: str, num_parser: typing.Callable[[str], T]) -> T:
     try:
         return num_parser(num_arg)

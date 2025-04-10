@@ -1,5 +1,3 @@
-import argparse
-
 import xarray as xr
 
 from ...bp_util import BP_DIMS
@@ -33,8 +31,7 @@ def parse(arg: str) -> Roll:
 
     [dim_name, window_size_arg] = split_str
 
-    if dim_name not in BP_DIMS:
-        raise argparse.ArgumentTypeError(f"Expected dim_name to be one of {BP_DIMS}; got '{dim_name}'")
+    parse_util.check_value(dim_name, "dim_name", BP_DIMS)
 
     window_size = parse_util.parse_number(window_size_arg, "window_size", int)
 

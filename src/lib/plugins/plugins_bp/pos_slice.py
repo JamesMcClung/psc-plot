@@ -34,8 +34,7 @@ def parse_pos_slice(arg: str) -> PosSlice:
 
     [dim_name, slice_arg] = split_arg
 
-    if dim_name not in BP_DIMS:
-        raise argparse.ArgumentTypeError(f"Expected dim_name to be one of {BP_DIMS}; got '{dim_name}'")
+    parse_util.check_value(dim_name, "dim_name", BP_DIMS)
 
     split_slice_arg = slice_arg.split(":")
     if len(split_slice_arg) != 2:
