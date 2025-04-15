@@ -58,8 +58,8 @@ class BpAnimation(Animation):
         upper = -np.inf
         for step in self.steps:
             data = self._load_data(step)
-            lower = min(lower, np.min(data.data))
-            upper = max(upper, np.max(data.data))
+            lower = min(lower, np.nanmin(data.data))
+            upper = max(upper, np.nanmax(data.data))
 
         return (lower, upper)
 
