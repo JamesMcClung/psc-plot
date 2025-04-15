@@ -3,10 +3,10 @@ from matplotlib.axes import Axes
 from matplotlib.colorizer import _ScalarMappable
 
 
-def update_cbar(mappable: _ScalarMappable):
+def update_cbar(mappable: _ScalarMappable, *, data_min_override: float | None = None, data_max_override: float | None = None):
     data = mappable.get_array()
-    data_min = data.min()
-    data_max = data.max()
+    data_min = data.min() if data_min_override is None else data_min_override
+    data_max = data.max() if data_max_override is None else data_max_override
 
     if data_min >= 0:
         cmin = 0
@@ -17,7 +17,7 @@ def update_cbar(mappable: _ScalarMappable):
         cmax = 0
         cmap = "inferno_r"
     else:
-        cmax = max(abs(data.max()), abs(data.min()))
+        cmax = max(abs(data_min), abs(data_max))
         cmin = -cmax
         cmap = "RdBu_r"
 
