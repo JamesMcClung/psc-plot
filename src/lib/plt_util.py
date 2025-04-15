@@ -3,22 +3,28 @@ from matplotlib.axes import Axes
 from matplotlib.colorizer import _ScalarMappable
 
 
-def update_cbar(mappable: _ScalarMappable):
-    data = mappable.get_array()
-    data_min = data.min()
-    data_max = data.max()
+def symmetrize_bounds(lower: float, upper: float) -> tuple[float, float]:
+    if lower >= 0:
+        return (0, upper)
+    elif upper <= 0:
+        return (lower, 0)
+    else:
+        max_abs = max(abs(lower), abs(upper))
+        return (-max_abs, max_abs)
 
-    if data_min >= 0:
-        cmin = 0
-        cmax = data_max
+
+def update_cbar(mappable: _ScalarMappable, *, data_min_override: float | None = None, data_max_override: float | None = None):
+    data = mappable.get_array()
+    data_min = data.min() if data_min_override is None else data_min_override
+    data_max = data.max() if data_max_override is None else data_max_override
+
+    cmin, cmax = symmetrize_bounds(data_min, data_max)
+
+    if cmin == 0:
         cmap = "inferno"
-    elif data_max <= 0:
-        cmin = data_min
-        cmax = 0
+    elif cmax == 0:
         cmap = "inferno_r"
     else:
-        cmax = max(abs(data.max()), abs(data.min()))
-        cmin = -cmax
         cmap = "RdBu_r"
 
     mappable.set_clim(cmin, cmax)
