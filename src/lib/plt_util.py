@@ -4,13 +4,13 @@ from matplotlib.colorizer import _ScalarMappable
 
 
 def symmetrize_bounds(lower: float, upper: float) -> tuple[float, float]:
-    if lower >= 0:
-        return (0, upper)
-    elif upper <= 0:
-        return (lower, 0)
-    else:
+    if lower < 0 < upper:
         max_abs = max(abs(lower), abs(upper))
         return (-max_abs, max_abs)
+    elif lower == upper:
+        return (0.95 * lower, 1.05 * upper)
+    else:
+        return (lower, upper)
 
 
 def update_cbar(mappable: _ScalarMappable, *, data_min_override: float | None = None, data_max_override: float | None = None):
@@ -20,9 +20,9 @@ def update_cbar(mappable: _ScalarMappable, *, data_min_override: float | None = 
 
     cmin, cmax = symmetrize_bounds(data_min, data_max)
 
-    if cmin == 0:
+    if cmin >= 0:
         cmap = "inferno"
-    elif cmax == 0:
+    elif cmax <= 0:
         cmap = "inferno_r"
     else:
         cmap = "RdBu_r"
