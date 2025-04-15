@@ -1,3 +1,4 @@
+import os
 import pathlib
 import typing
 
@@ -10,7 +11,18 @@ H5_PREFIXES: list[H5Prefix] = list(H5Prefix.__value__.__args__)
 type Prefix = BpPrefix | H5Prefix
 type Suffix = typing.Literal["bp", "h5"]
 
-ROOT_DIR = pathlib.Path("/Users/james/Code/cc/PSC/psc-runs/psc_shock")
+
+def _load_root_data_path() -> pathlib.Path:
+    maybe_path_str = os.environ.get(ROOT_DATA_PATH_ENV_VAR_NAME)
+    if maybe_path_str:
+        return pathlib.Path(maybe_path_str)
+
+    message = f"Path to data not specified. Set the {ROOT_DATA_PATH_ENV_VAR_NAME} environment variable to specify."
+    raise RuntimeError(message)
+
+
+ROOT_DATA_PATH_ENV_VAR_NAME = "PSC_PLOT_ROOT_DATA_PATH"
+ROOT_DIR = _load_root_data_path()
 PREFIX_TO_SUFFIX: dict[Prefix, Suffix] = {bp_prefix: "bp" for bp_prefix in BP_PREFIXES} | {h5_prefix: "h5" for h5_prefix in H5_PREFIXES}
 
 
