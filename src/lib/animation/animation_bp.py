@@ -144,8 +144,5 @@ class BpAnimation1d(BpAnimation):
         return [self.line, self.ax.yaxis, self.ax.title]
 
     def _update_ybounds(self):
-        ymin, ymax = self._get_var_bounds()
-        if ymin == ymax:
-            ymin -= 0.1
-            ymax += 0.1
+        ymin, ymax = plt_util.symmetrize_bounds(*self._get_var_bounds())
         self.ax.set_ybound(ymin, ymax)
