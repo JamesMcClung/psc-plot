@@ -53,6 +53,16 @@ class BpAnimation(Animation):
 
         return da
 
+    def _get_var_bounds(self) -> tuple[float, float]:
+        lower = np.inf
+        upper = -np.inf
+        for step in self.steps:
+            data = self._load_data(step)
+            lower = min(lower, np.min(data.data))
+            upper = max(upper, np.max(data.data))
+
+        return (lower, upper)
+
 
 class RetainDims(PluginBp):
     def __init__(self, dims: list[BpDim]):
