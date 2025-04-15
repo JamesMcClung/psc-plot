@@ -99,7 +99,8 @@ class BpAnimation2d(BpAnimation):
         self.im = self.ax.imshow(data, origin="lower", extent=left_right_bottom_top)
 
         self.fig.colorbar(self.im)
-        plt_util.update_cbar(self.im)
+        data_lower, data_upper = self._get_var_bounds()
+        plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
         plt_util.update_title(self.ax, self.variable, data.time, DEFAULT_TIME_UNIT_LATEX)
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
@@ -112,7 +113,6 @@ class BpAnimation2d(BpAnimation):
         self.im.set_array(data)
 
         plt_util.update_title(self.ax, self.variable, data.time, DEFAULT_TIME_UNIT_LATEX)
-        plt_util.update_cbar(self.im)
         return [self.im, self.ax.title]
 
 
@@ -129,9 +129,9 @@ class BpAnimation1d(BpAnimation):
         xdata = np.linspace(*get_extent(data, self.dim), len(data), endpoint=False)
 
         [self.line] = self.ax.plot(xdata, data)
-        self._update_ybounds(data)
 
         plt_util.update_title(self.ax, self.variable, data.time, DEFAULT_TIME_UNIT_LATEX)
+        self._update_ybounds()
         self.ax.set_xlabel(f"{self.dim} [{DEFAULT_SPACE_UNIT_LATEX}]")
         self.ax.set_ylabel(f"{self.variable}")
 
@@ -139,13 +139,12 @@ class BpAnimation1d(BpAnimation):
         data = self._load_data(step)
 
         self.line.set_ydata(data)
-        self._update_ybounds(data)
 
         plt_util.update_title(self.ax, self.variable, data.time, DEFAULT_TIME_UNIT_LATEX)
         return [self.line, self.ax.yaxis, self.ax.title]
 
-    def _update_ybounds(self, data: xr.DataArray):
-        ymin, ymax = np.min(data), np.max(data)
+    def _update_ybounds(self):
+        ymin, ymax = self._get_var_bounds()
         if ymin == ymax:
             ymin -= 0.1
             ymax += 0.1
