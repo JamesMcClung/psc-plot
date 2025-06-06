@@ -14,6 +14,9 @@ class Roll(PluginBp):
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         return da.rolling({self.dim_name: self.window_size}).mean()
 
+    def get_name_fragment(self) -> str:
+        return f"roll_{self.dim_name}={self.window_size}"
+
 
 ROLL_FORMAT = "dim_name=window_size"
 

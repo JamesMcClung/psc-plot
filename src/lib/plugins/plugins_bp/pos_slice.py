@@ -15,6 +15,11 @@ class PosSlice(PluginBp):
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         return da.sel({self.dim_name: slice(self.lower_inclusive, self.upper_exclusive)})
 
+    def get_name_fragment(self) -> str:
+        lower = f"{self.lower_inclusive:.1f}" if self.lower_inclusive is not None else ""
+        upper = f"{self.upper_exclusive:.1f}" if self.upper_exclusive is not None else ""
+        return f"slice_{self.dim_name}={lower}:{upper}"
+
 
 _POS_SLICE_FORMAT = "dim_name=lower:upper"
 
