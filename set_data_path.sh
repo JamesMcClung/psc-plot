@@ -1,0 +1,1 @@
+export PSC_PLOT_ROOT_DATA_PATH="$1"
