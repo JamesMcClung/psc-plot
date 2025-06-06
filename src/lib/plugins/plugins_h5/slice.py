@@ -19,6 +19,11 @@ class Slice(PluginH5):
             df = df[df[self.var_name] < self.upper_exclusive]
         return df
 
+    def get_name_fragment(self) -> str:
+        lower = f"{self.lower_inclusive:.1f}" if self.lower_inclusive is not None else ""
+        upper = f"{self.upper_exclusive:.1f}" if self.upper_exclusive is not None else ""
+        return f"slice_{self.var_name}={lower}:{upper}"
+
 
 _SLICE_FORMAT = "var_name=lower:upper"
 

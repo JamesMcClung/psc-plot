@@ -10,6 +10,9 @@ class Plugin[Data](abc.ABC):
     @abc.abstractmethod
     def apply(self, da: Data) -> Data: ...
 
+    def get_name_fragment(self) -> str:
+        return ""
+
 
 class PluginBp(Plugin[xr.DataArray]): ...
 
