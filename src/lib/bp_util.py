@@ -22,9 +22,4 @@ def load_ds(prefix: file_util.BpPrefix, step: int) -> xarray.Dataset:
     ds = xarray.load_dataset(data_path)
     # FIXME don't hardcode species names
     ds = pscpy.decode_psc(ds, ["e", "i"])
-
-    # FIXME this won't be necessary once pscpy PR 24 goes through
-    ds = ds.assign_coords(x=("x", np.linspace(ds.corner[0], ds.corner[0] + ds.length[0], num=len(ds["x"]), endpoint=False)))
-    ds = ds.assign_coords(y=("y", np.linspace(ds.corner[1], ds.corner[1] + ds.length[1], num=len(ds["y"]), endpoint=False)))
-    ds = ds.assign_coords(z=("z", np.linspace(ds.corner[2], ds.corner[2] + ds.length[2], num=len(ds["z"]), endpoint=False)))
     return ds
