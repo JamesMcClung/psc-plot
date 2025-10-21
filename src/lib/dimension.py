@@ -9,6 +9,9 @@ class Dimension:
     name: str  # latex-formated, sans '$'
     unit: str  # latex-formated, sans '$'
 
+    def to_axis_label(self) -> str:
+        return f"${self.name}\\ [{self.unit}]$"
+
 
 DIMENSIONS = {
     "x": Dimension("x", ELECTRON_SKIN_DEPTH),
