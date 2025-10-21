@@ -1,6 +1,6 @@
 import xarray as xr
 
-from ...bp_util import BP_DIMS
+from ...dimension import DIMENSIONS
 from .. import parse_util
 from ..plugin_base import PluginBp
 from ..registry import plugin_parser
@@ -34,7 +34,7 @@ def parse(arg: str) -> Roll:
 
     [dim_name, window_size_arg] = split_str
 
-    parse_util.check_value(dim_name, "dim_name", BP_DIMS)
+    parse_util.check_value(dim_name, "dim_name", DIMENSIONS)
 
     window_size = parse_util.parse_number(window_size_arg, "window_size", int)
 

@@ -1,6 +1,6 @@
 import xarray as xr
 
-from ...bp_util import BP_DIMS
+from ...dimension import DIMENSIONS
 from .. import parse_util
 from ..plugin_base import PluginBp
 from ..registry import plugin_parser
@@ -37,7 +37,7 @@ def parse_idx_slice(arg: str) -> IdxSlice:
 
     [dim_name, slice_arg] = split_arg
 
-    parse_util.check_value(dim_name, "dim_name", BP_DIMS)
+    parse_util.check_value(dim_name, "dim_name", DIMENSIONS)
 
     split_slice_arg = slice_arg.split(":")
     if len(split_slice_arg) != 2:

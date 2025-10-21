@@ -2,15 +2,15 @@ import numpy as np
 import xarray as xr
 
 from .. import bp_util, file_util, plt_util
-from ..bp_util import DEFAULT_SPACE_UNIT_LATEX, DEFAULT_TIME_UNIT_LATEX, BpDim
 from ..derived_variables_bp import DERIVED_VARIABLE_BP_REGISTRY
+from ..dimension import DIMENSIONS
 from ..plugins import PluginBp
 from .animation_base import Animation
 
 __all__ = ["BpAnimation2d", "BpAnimation1d"]
 
 
-def get_extent(da: xr.DataArray, dim: BpDim) -> tuple[float, float]:
+def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
     lower = da[dim][0]
     upper = da[dim][-1] + (da[dim][1] - da[dim][0])
     return (float(lower), float(upper))
@@ -65,7 +65,7 @@ class BpAnimation(Animation):
 
 
 class RetainDims(PluginBp):
-    def __init__(self, dims: list[BpDim]):
+    def __init__(self, dims: list[str]):
         self.dims = dims
 
     def apply(self, da: xr.DataArray) -> xr.DataArray:
@@ -76,7 +76,7 @@ class RetainDims(PluginBp):
 
 
 class ReorderDims(PluginBp):
-    def __init__(self, ordered_dims: list[BpDim]):
+    def __init__(self, ordered_dims: list[str]):
         self.ordered_dims = ordered_dims
 
     def apply(self, da: xr.DataArray) -> xr.DataArray:
@@ -84,7 +84,7 @@ class ReorderDims(PluginBp):
 
 
 class BpAnimation2d(BpAnimation):
-    def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str, dims: tuple[BpDim, BpDim]):
+    def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str, dims: tuple[str, str]):
         super().__init__(steps, prefix, variable)
 
         self.dims = dims
@@ -102,22 +102,22 @@ class BpAnimation2d(BpAnimation):
         data_lower, data_upper = self._get_var_bounds()
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
-        plt_util.update_title(self.ax, self.variable, data.time, DEFAULT_TIME_UNIT_LATEX)
+        plt_util.update_title(self.ax, self.variable, DIMENSIONS["t"].get_coordinate_label(data.time))
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
-        self.ax.set_xlabel(f"${self.dims[0]}$ [{DEFAULT_SPACE_UNIT_LATEX}]")
-        self.ax.set_ylabel(f"${self.dims[1]}$ [{DEFAULT_SPACE_UNIT_LATEX}]")
+        self.ax.set_xlabel(DIMENSIONS[self.dims[0]].to_axis_label())
+        self.ax.set_ylabel(DIMENSIONS[self.dims[1]].to_axis_label())
 
     def _update_fig(self, step: int):
         data = self._load_data(step)
 
         self.im.set_array(data)
 
-        plt_util.update_title(self.ax, self.variable, data.time, DEFAULT_TIME_UNIT_LATEX)
+        plt_util.update_title(self.ax, self.variable, DIMENSIONS["t"].get_coordinate_label(data.time))
         return [self.im, self.ax.title]
 
 
 class BpAnimation1d(BpAnimation):
-    def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str, dim: BpDim):
+    def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str, dim: str):
         super().__init__(steps, prefix, variable)
 
         self.dim = dim
@@ -130,9 +130,9 @@ class BpAnimation1d(BpAnimation):
 
         [self.line] = self.ax.plot(xdata, data)
 
-        plt_util.update_title(self.ax, self.variable, data.time, DEFAULT_TIME_UNIT_LATEX)
+        plt_util.update_title(self.ax, self.variable, DIMENSIONS["t"].get_coordinate_label(data.time))
         self._update_ybounds()
-        self.ax.set_xlabel(f"{self.dim} [{DEFAULT_SPACE_UNIT_LATEX}]")
+        self.ax.set_xlabel(DIMENSIONS[self.dim].to_axis_label())
         self.ax.set_ylabel(f"{self.variable}")
 
     def _update_fig(self, step: int):
@@ -140,7 +140,7 @@ class BpAnimation1d(BpAnimation):
 
         self.line.set_ydata(data)
 
-        plt_util.update_title(self.ax, self.variable, data.time, DEFAULT_TIME_UNIT_LATEX)
+        plt_util.update_title(self.ax, self.variable, DIMENSIONS["t"].get_coordinate_label(data.time))
         return [self.line, self.ax.yaxis, self.ax.title]
 
     def _update_ybounds(self):

@@ -2,7 +2,7 @@ import argparse
 
 from .. import bp_util
 from ..animation import Animation, BpAnimation1d, BpAnimation2d
-from ..bp_util import BP_DIMS, BpDim
+from ..dimension import DIMENSIONS
 from ..file_util import BP_PREFIXES
 from ..plugins import PLUGINS_BP, PluginBp
 from . import args_base
@@ -12,8 +12,8 @@ __all__ = ["add_subparsers_bp", "ArgsBp"]
 
 class ArgsBp(args_base.ArgsTyped):
     variable: str
-    versus_1d: BpDim | None
-    versus_2d: tuple[BpDim, BpDim] | None
+    versus_1d: str | None
+    versus_2d: tuple[str, str] | None
     plugins: list[PluginBp]
 
     @property
@@ -55,14 +55,14 @@ def add_subparsers_bp(subparsers: argparse._SubParsersAction):
     versus_group.add_argument(
         "--versus-1d",
         type=str,
-        choices=BP_DIMS,
+        choices=DIMENSIONS.keys(),
         help="plot the variable against this dimension as a line plot, averaging over other dimensions",
     )
     versus_group.add_argument(
         "--versus-2d",
         nargs=2,
         type=str,
-        choices=BP_DIMS,
+        choices=DIMENSIONS.keys(),
         default=("y", "z"),
         help="plot the variable against these dimensions as a heat map, averaging over the third dimension",
     )
