@@ -12,6 +12,9 @@ class Dimension:
     def to_axis_label(self) -> str:
         return f"${self.name}\\ [{self.unit}]$"
 
+    def get_coordinate_label(self, coord_val: float) -> str:
+        return f"${self.name} = {coord_val:.3f}\\ {self.unit}$"
+
 
 DIMENSIONS = {
     "x": Dimension("x", ELECTRON_SKIN_DEPTH),
