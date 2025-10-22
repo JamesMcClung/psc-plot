@@ -5,6 +5,8 @@ from dataclasses import dataclass
 INVERSE_ELECTRON_PLASMA_FREQUENCY = "\\omega_\\text{pe}^{-1}"
 ELECTRON_SKIN_DEPTH = "d_\\text{e}"
 
+FOURIER_NAME_PREFIX = "k_"
+
 
 @dataclass(frozen=True)
 class Dimension:
@@ -20,7 +22,7 @@ class Dimension:
     def to_fourier(self) -> Dimension:
         # TODO make t <-> omega
         # TODO handle kx -> x
-        return Dimension(f"k_{self.name}", f"{self.unit}^{{-1}}")
+        return Dimension(FOURIER_NAME_PREFIX + self.name, f"{self.unit}^{{-1}}")
 
 
 DIMENSIONS: dict[str, Dimension] = {}
