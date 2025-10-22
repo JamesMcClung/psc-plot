@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 INVERSE_ELECTRON_PLASMA_FREQUENCY = "\\omega_\\text{pe}^{-1}"
@@ -32,3 +34,6 @@ register_dimension(Dimension("x", ELECTRON_SKIN_DEPTH))
 register_dimension(Dimension("y", ELECTRON_SKIN_DEPTH))
 register_dimension(Dimension("z", ELECTRON_SKIN_DEPTH))
 register_dimension(Dimension("t", INVERSE_ELECTRON_PLASMA_FREQUENCY))
+
+for dim in ["x", "y", "z"]:
+    register_dimension(DIMENSIONS[dim].to_fourier())
