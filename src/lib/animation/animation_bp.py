@@ -151,8 +151,8 @@ class BpAnimation1d(BpAnimation):
         steps: list[int],
         prefix: file_util.BpPrefix,
         variable: str,
-        dim: str,
         plugins: list[PluginBp],
+        dim: str,
     ):
         super().__init__(
             steps,
