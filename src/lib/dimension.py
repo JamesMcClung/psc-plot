@@ -16,9 +16,14 @@ class Dimension:
         return f"${self.name} = {coord_val:.3f}\\ {self.unit}$"
 
 
-DIMENSIONS = {
-    "x": Dimension("x", ELECTRON_SKIN_DEPTH),
-    "y": Dimension("y", ELECTRON_SKIN_DEPTH),
-    "z": Dimension("z", ELECTRON_SKIN_DEPTH),
-    "t": Dimension("t", INVERSE_ELECTRON_PLASMA_FREQUENCY),
-}
+DIMENSIONS: dict[str, Dimension] = {}
+
+
+def register_dimension(dim: Dimension):
+    DIMENSIONS[dim.name] = dim
+
+
+register_dimension(Dimension("x", ELECTRON_SKIN_DEPTH))
+register_dimension(Dimension("y", ELECTRON_SKIN_DEPTH))
+register_dimension(Dimension("z", ELECTRON_SKIN_DEPTH))
+register_dimension(Dimension("t", INVERSE_ELECTRON_PLASMA_FREQUENCY))
