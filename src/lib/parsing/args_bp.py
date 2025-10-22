@@ -1,4 +1,5 @@
 import argparse
+import typing
 
 from .. import bp_util
 from ..animation import Animation, BpAnimation
@@ -10,10 +11,14 @@ from . import args_base
 
 __all__ = ["add_subparsers_bp", "ArgsBp"]
 
+type Scale = typing.Literal["linear", "log", "loglog"]
+SCALES: list[Scale] = list(Scale.__value__.__args__)
+
 
 class ArgsBp(args_base.ArgsTyped):
     variable: str
     versus: list[str]
+    scale: Scale
     plugins: list[PluginBp]
 
     @property
@@ -38,6 +43,13 @@ class ArgsBp(args_base.ArgsTyped):
 
         anim = BpAnimation.get_animation(steps, self.prefix, self.variable, self.plugins, self.versus)
 
+        if self.scale == "linear":
+            anim.set_scale("linear", "linear")
+        elif self.scale == "log":
+            anim.set_scale("linear", "log")
+        elif self.scale == "loglog":
+            anim.set_scale("log", "log")
+
         return anim
 
 
@@ -56,6 +68,13 @@ def add_subparsers_bp(subparsers: argparse._SubParsersAction):
         choices=DIMENSIONS.keys(),
         default=["y", "z"],
         help="plot against these dimensions, averaging over others",
+    )
+
+    parent.add_argument(
+        "--scale",
+        choices=SCALES,
+        default="linear",
+        help="use this scale",
     )
 
     # may have to unroll this loop later when e.g. different prefixes have different derived variables
