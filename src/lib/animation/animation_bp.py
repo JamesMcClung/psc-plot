@@ -9,7 +9,7 @@ from ..dimension import DIMENSIONS
 from ..plugins import PluginBp
 from .animation_base import Animation
 
-__all__ = ["BpAnimation", "BpAnimation2d", "BpAnimation1d"]
+__all__ = ["BpAnimation"]
 
 
 def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
