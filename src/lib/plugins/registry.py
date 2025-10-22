@@ -2,24 +2,39 @@ from __future__ import annotations
 
 import inspect
 import typing
-from dataclasses import dataclass
+from argparse import ArgumentParser
+from dataclasses import KW_ONLY, dataclass
 
 from .plugin_base import PluginBp, PluginH5
 
 __all__ = ["PLUGINS_BP", "PLUGINS_H5", "plugin_parser"]
 
-PLUGINS_BP: list[ArgparseKwargs[PluginBp]] = []
-PLUGINS_H5: list[ArgparseKwargs[PluginH5]] = []
+PLUGINS_BP: list[ArgparsePluginAdder[PluginBp]] = []
+PLUGINS_H5: list[ArgparsePluginAdder[PluginH5]] = []
 
 
 @dataclass
-class ArgparseKwargs[PluginType]:
-    """Args and kwargs of `argparse.add_argument`"""
+class ArgparsePluginAdder[PluginType]:
+    """Adds a plugin argument to an `argparse.ArgumentParser`"""
 
     name_or_flags: tuple[str]
-    metavar: str | tuple[str]
     help: str
-    type: typing.Callable[[str], PluginType]
+    _: KW_ONLY  # fields below this sentinel are keyword-only
+    const: PluginType | None = None
+    type: typing.Callable[[str], PluginType] | None = None
+    metavar: str | tuple[str] | None = None
+
+    def __post_init__(self):
+        # exactly 1 must be not None
+        assert [self.type, self.const].count(None) == 1
+
+    def add_to(self, parser: ArgumentParser):
+        parser.set_defaults(plugins=[])
+
+        if self.type is not None:
+            parser.add_argument(*self.name_or_flags, dest="plugins", help=self.help, action="append", type=self.type, metavar=self.metavar)
+        elif self.const is not None:
+            parser.add_argument(*self.name_or_flags, dest="plugins", help=self.help, action="append_const", const=self.const)
 
 
 def plugin_parser(
@@ -28,7 +43,7 @@ def plugin_parser(
     help: str | None,
 ):
     def plugin_parser_inner[PluginType](parse_func: typing.Callable[[str], PluginType]):
-        kwargs = ArgparseKwargs(name_or_flags, metavar, help, parse_func)
+        kwargs = ArgparsePluginAdder(name_or_flags, help, type=parse_func, metavar=metavar)
         plugin_type = inspect.signature(parse_func).return_annotation
 
         if issubclass(plugin_type, PluginBp):
