@@ -55,3 +55,17 @@ def plugin_parser(
         return parse_func
 
     return plugin_parser_inner
+
+
+def register_const_plugin[PluginType](
+    *name_or_flags: str,
+    help: str | None,
+    const: PluginType,
+):
+    kwargs = ArgparsePluginAdder(name_or_flags, help, const=const)
+
+    if isinstance(const, PluginBp):
+        PLUGINS_BP.append(kwargs)
+
+    if isinstance(const, PluginH5):
+        PLUGINS_H5.append(kwargs)
