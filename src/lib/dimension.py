@@ -8,6 +8,14 @@ ELECTRON_SKIN_DEPTH = "d_\\text{e}"
 FOURIER_NAME_PREFIX = "k_"
 
 
+def _toggle_unit_fourier(unit: str) -> str:
+    inverse_suffix = "^{-1}"
+    if unit.endswith(inverse_suffix):
+        return unit.removesuffix(inverse_suffix)
+    else:
+        return unit + inverse_suffix
+
+
 @dataclass(frozen=True)
 class Dimension:
     name: str  # latex-formated, sans '$'
@@ -19,10 +27,13 @@ class Dimension:
     def get_coordinate_label(self, coord_val: float) -> str:
         return f"${self.name} = {coord_val:.3f}\\ {self.unit}$"
 
-    def to_fourier(self) -> Dimension:
+    def toggle_fourier(self) -> Dimension:
         # TODO make t <-> omega
-        # TODO handle kx -> x
-        return Dimension(FOURIER_NAME_PREFIX + self.name, f"{self.unit}^{{-1}}")
+        toggled_unit = _toggle_unit_fourier(self.unit)
+        if self.is_fourier():
+            return Dimension(self.name.removeprefix(FOURIER_NAME_PREFIX), toggled_unit)
+        else:
+            return Dimension(FOURIER_NAME_PREFIX + self.name, toggled_unit)
 
     def is_fourier(self) -> bool:
         return self.name.startswith(FOURIER_NAME_PREFIX)
@@ -41,4 +52,4 @@ register_dimension(Dimension("z", ELECTRON_SKIN_DEPTH))
 register_dimension(Dimension("t", INVERSE_ELECTRON_PLASMA_FREQUENCY))
 
 for dim in ["x", "y", "z"]:
-    register_dimension(DIMENSIONS[dim].to_fourier())
+    register_dimension(DIMENSIONS[dim].toggle_fourier())
