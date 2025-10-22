@@ -1,6 +1,7 @@
 import xarray as xr
+import xrft
 
-from ...dimension import DIMENSIONS
+from ...dimension import DIMENSIONS, FOURIER_NAME_PREFIX
 from .. import parse_util
 from ..plugin_base import PluginBp
 from ..registry import plugin_parser
@@ -13,9 +14,7 @@ class Fourier(PluginBp):
         self.force_periodic = force_periodic
 
     def apply(self, da: xr.DataArray) -> xr.DataArray:
-        # TODO implement
-        new_dim = DIMENSIONS[self.dim_name].to_fourier()
-        da = da.rename({self.dim_name: new_dim.name})
+        da = xrft.fft(da, dim=self.dim_name, true_phase=False, prefix=FOURIER_NAME_PREFIX)
         return da
 
     def get_name_fragment(self) -> str:
