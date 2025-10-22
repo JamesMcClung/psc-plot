@@ -5,6 +5,7 @@ from ..animation import Animation, BpAnimation
 from ..dimension import DIMENSIONS
 from ..file_util import BP_PREFIXES
 from ..plugins import PLUGINS_BP, PluginBp
+from ..plugins.plugins_bp.fourier import Fourier
 from . import args_base
 
 __all__ = ["add_subparsers_bp", "ArgsBp"]
@@ -23,6 +24,17 @@ class ArgsBp(args_base.ArgsTyped):
 
     def get_animation(self) -> Animation:
         steps = bp_util.get_available_steps_bp(self.prefix)
+
+        for dim_name in self.versus:
+            dim = DIMENSIONS[dim_name]
+            if dim.is_fourier():
+                # implicitly add a Fourier plugin if not already present
+                for plugin in self.plugins:
+                    if isinstance(plugin, Fourier) and plugin.dim_name == dim.name:
+                        break
+                else:
+                    # TODO make versus its own plugin (or plugin package?)
+                    self.plugins.insert(0, Fourier(dim.toggle_fourier().name))
 
         anim = BpAnimation.get_animation(steps, self.prefix, self.variable, self.plugins, self.versus)
 
