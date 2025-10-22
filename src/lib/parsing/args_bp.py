@@ -49,6 +49,7 @@ def add_subparsers_bp(subparsers: argparse._SubParsersAction):
 
     parent.add_argument(
         "--versus",
+        "-v",
         nargs="+",
         type=str,
         choices=DIMENSIONS.keys(),
