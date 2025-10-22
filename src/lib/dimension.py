@@ -15,6 +15,11 @@ class Dimension:
     def get_coordinate_label(self, coord_val: float) -> str:
         return f"${self.name} = {coord_val:.3f}\\ {self.unit}$"
 
+    def to_fourier(self) -> Dimension:
+        # TODO make t <-> omega
+        # TODO handle kx -> x
+        return Dimension(f"k_{self.name}", f"{self.unit}^{{-1}}")
+
 
 DIMENSIONS: dict[str, Dimension] = {}
 
