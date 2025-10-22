@@ -24,10 +24,7 @@ class ArgsBp(args_base.ArgsTyped):
     def get_animation(self) -> Animation:
         steps = bp_util.get_available_steps_bp(self.prefix)
 
-        anim = BpAnimation.get_animation(steps, self.prefix, self.variable, self.versus)
-
-        for plugin in self.plugins:
-            anim.add_plugin(plugin)
+        anim = BpAnimation.get_animation(steps, self.prefix, self.variable, self.plugins, self.versus)
 
         return anim
 
