@@ -24,6 +24,9 @@ class Dimension:
         # TODO handle kx -> x
         return Dimension(FOURIER_NAME_PREFIX + self.name, f"{self.unit}^{{-1}}")
 
+    def is_fourier(self) -> bool:
+        return self.name.startswith(FOURIER_NAME_PREFIX)
+
 
 DIMENSIONS: dict[str, Dimension] = {}
 
