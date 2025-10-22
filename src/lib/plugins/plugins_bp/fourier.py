@@ -14,6 +14,8 @@ class Fourier(PluginBp):
 
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         # TODO implement
+        new_dim = DIMENSIONS[self.dim_name].to_fourier()
+        da = da.rename({self.dim_name: new_dim.name})
         return da
 
     def get_name_fragment(self) -> str:
