@@ -1,7 +1,8 @@
+import numpy as np
 import xarray as xr
 import xrft
 
-from ...dimension import DIMENSIONS, FOURIER_NAME_PREFIX
+from ...dimension import DIMENSIONS
 from .. import parse_util
 from ..plugin_base import PluginBp
 from ..registry import plugin_parser
@@ -12,7 +13,15 @@ class Fourier(PluginBp):
         self.dim_name = dim_name
 
     def apply(self, da: xr.DataArray) -> xr.DataArray:
-        da = xrft.fft(da, dim=self.dim_name, true_phase=False, prefix=FOURIER_NAME_PREFIX)
+        temp_prefix = "temp_"
+        da = xrft.fft(da, dim=self.dim_name, true_phase=False, prefix=temp_prefix)
+
+        # multiply coords by 2pi to go from frequency -> angular frequency
+        fourier_dim = DIMENSIONS[self.dim_name].toggle_fourier()
+        da = da.rename({temp_prefix + self.dim_name: fourier_dim.name})
+        da = da.assign_coords({fourier_dim.name: 2 * np.pi * da.coords[fourier_dim.name]})
+        print(da.coords)
+
         return da
 
     def get_name_fragment(self) -> str:
