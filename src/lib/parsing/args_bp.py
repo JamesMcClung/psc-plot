@@ -5,6 +5,7 @@ from ..animation import Animation, BpAnimation
 from ..dimension import DIMENSIONS
 from ..file_util import BP_PREFIXES
 from ..plugins import PLUGINS_BP, PluginBp
+from ..plugins.plugins_bp.fourier import Fourier
 from . import args_base
 
 __all__ = ["add_subparsers_bp", "ArgsBp"]
@@ -24,10 +25,18 @@ class ArgsBp(args_base.ArgsTyped):
     def get_animation(self) -> Animation:
         steps = bp_util.get_available_steps_bp(self.prefix)
 
-        anim = BpAnimation.get_animation(steps, self.prefix, self.variable, self.versus)
+        for dim_name in self.versus:
+            dim = DIMENSIONS[dim_name]
+            if dim.is_fourier():
+                # implicitly add a Fourier plugin if not already present
+                for plugin in self.plugins:
+                    if isinstance(plugin, Fourier) and plugin.dim_name == dim.name:
+                        break
+                else:
+                    # TODO make versus its own plugin (or plugin package?)
+                    self.plugins.insert(0, Fourier(dim.toggle_fourier().name))
 
-        for plugin in self.plugins:
-            anim.add_plugin(plugin)
+        anim = BpAnimation.get_animation(steps, self.prefix, self.variable, self.plugins, self.versus)
 
         return anim
 
@@ -36,16 +45,8 @@ def add_subparsers_bp(subparsers: argparse._SubParsersAction):
     parent = args_base.get_subparser_parent(ArgsBp)
     parent.add_argument("variable", type=str, help="the variable to plot")
 
-    for kwargs in PLUGINS_BP:
-        parent.add_argument(
-            *kwargs.name_or_flags,
-            type=kwargs.type,
-            dest="plugins",
-            action="append",
-            metavar=kwargs.metavar,
-            help=kwargs.help,
-        )
-    parent.set_defaults(plugins=[])
+    for plugin_adder in PLUGINS_BP:
+        plugin_adder.add_to(parent)
 
     parent.add_argument(
         "--versus",

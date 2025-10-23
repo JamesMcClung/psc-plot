@@ -32,16 +32,19 @@ def derive_variable(ds: xr.Dataset, var_name: str, ds_prefix: file_util.BpPrefix
 
 
 class BpAnimation(Animation):
-    def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str):
+    def __init__(
+        self,
+        steps: list[int],
+        prefix: file_util.BpPrefix,
+        variable: str,
+        plugins: list[PluginBp],
+    ):
         super().__init__(steps)
 
         self.prefix = prefix
         self.variable = variable
 
-        self.plugins: list[PluginBp] = []
-
-    def add_plugin(self, plugin: PluginBp):
-        self.plugins.append(plugin)
+        self.plugins = plugins
 
     def _load_data(self, step: int) -> xr.DataArray:
         ds = bp_util.load_ds(self.prefix, step)
@@ -66,11 +69,17 @@ class BpAnimation(Animation):
         return (lower, upper)
 
     @staticmethod
-    def get_animation(steps: list[int], prefix: file_util.BpPrefix, variable: str, dims: list[str]) -> BpAnimation:
+    def get_animation(
+        steps: list[int],
+        prefix: file_util.BpPrefix,
+        variable: str,
+        plugins: list[PluginBp],
+        dims: list[str],
+    ) -> BpAnimation:
         if len(dims) == 1:
-            return BpAnimation1d(steps, prefix, variable, dims[0])
+            return BpAnimation1d(steps, prefix, variable, plugins, dims[0])
         if len(dims) == 2:
-            return BpAnimation2d(steps, prefix, variable, tuple(dims))
+            return BpAnimation2d(steps, prefix, variable, plugins, tuple(dims))
         else:
             raise NotImplementedError("don't have 3D animations yet")
 
@@ -95,13 +104,22 @@ class ReorderDims(PluginBp):
 
 
 class BpAnimation2d(BpAnimation):
-    def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str, dims: tuple[str, str]):
-        super().__init__(steps, prefix, variable)
+    def __init__(
+        self,
+        steps: list[int],
+        prefix: file_util.BpPrefix,
+        variable: str,
+        plugins: list[PluginBp],
+        dims: tuple[str, str],
+    ):
+        super().__init__(
+            steps,
+            prefix,
+            variable,
+            plugins + [RetainDims(dims), ReorderDims(list(reversed(dims)))],
+        )
 
         self.dims = dims
-
-        self.add_plugin(RetainDims(dims))
-        self.add_plugin(ReorderDims(list(reversed(dims))))
 
     def _init_fig(self):
         data = self._load_data(self.steps[0])
@@ -128,12 +146,22 @@ class BpAnimation2d(BpAnimation):
 
 
 class BpAnimation1d(BpAnimation):
-    def __init__(self, steps: list[int], prefix: file_util.BpPrefix, variable: str, dim: str):
-        super().__init__(steps, prefix, variable)
+    def __init__(
+        self,
+        steps: list[int],
+        prefix: file_util.BpPrefix,
+        variable: str,
+        plugins: list[PluginBp],
+        dim: str,
+    ):
+        super().__init__(
+            steps,
+            prefix,
+            variable,
+            plugins + [RetainDims([dim])],
+        )
 
         self.dim = dim
-
-        self.add_plugin(RetainDims([dim]))
 
     def _init_fig(self):
         data = self._load_data(self.steps[0])

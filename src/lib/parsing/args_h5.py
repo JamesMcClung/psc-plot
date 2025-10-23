@@ -50,15 +50,7 @@ def add_subparsers_h5(subparsers: argparse._SubParsersAction):
         help="variables to use as the x and y axes",
     )
 
-    for kwargs in PLUGINS_H5:
-        parent.add_argument(
-            *kwargs.name_or_flags,
-            type=kwargs.type,
-            dest="plugins",
-            action="append",
-            metavar=kwargs.metavar,
-            help=kwargs.help,
-        )
-    parent.set_defaults(plugins=[])
+    for plugin_adder in PLUGINS_H5:
+        plugin_adder.add_to(parent)
 
     subparsers.add_parser("prt", parents=[parent])
