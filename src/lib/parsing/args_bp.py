@@ -34,8 +34,9 @@ class ArgsBp(args_base.ArgsTyped):
             dim = DIMENSIONS[dim_name]
             if dim.is_fourier():
                 # implicitly add a Fourier plugin if not already present
+                unfourier_dim = dim.toggle_fourier()
                 for plugin in self.plugins:
-                    if isinstance(plugin, Fourier) and plugin.dim_name == dim.name:
+                    if isinstance(plugin, Fourier) and plugin.dim_name == unfourier_dim.name:
                         break
                 else:
                     # TODO make versus its own plugin (or plugin package?)
