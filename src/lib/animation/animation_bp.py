@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import typing
+from abc import abstractmethod
+
 import numpy as np
 import xarray as xr
+from matplotlib.colors import LogNorm, Normalize
 
 from .. import bp_util, file_util, plt_util
 from ..derived_variables_bp import DERIVED_VARIABLE_BP_REGISTRY
@@ -31,6 +35,9 @@ def derive_variable(ds: xr.Dataset, var_name: str, ds_prefix: file_util.BpPrefix
         raise ValueError(message)
 
 
+type Scale = typing.Literal["linear", "log"]
+
+
 class BpAnimation(Animation):
     def __init__(
         self,
@@ -45,6 +52,13 @@ class BpAnimation(Animation):
         self.variable = variable
 
         self.plugins = plugins
+
+        self.indep_scale: Scale = "linear"
+        self.dep_scale: Scale = "linear"
+
+    def set_scale(self, indep_scale: Scale, dep_scale: Scale):
+        self.indep_scale = indep_scale
+        self.dep_scale = dep_scale
 
     def _load_data(self, step: int) -> xr.DataArray:
         ds = bp_util.load_ds(self.prefix, step)
@@ -124,8 +138,12 @@ class BpAnimation2d(BpAnimation):
     def _init_fig(self):
         data = self._load_data(self.steps[0])
 
-        left_right_bottom_top = (*get_extent(data, self.dims[0]), *get_extent(data, self.dims[1]))
-        self.im = self.ax.imshow(data, origin="lower", extent=left_right_bottom_top)
+        self.im = self.ax.imshow(
+            data,
+            origin="lower",
+            extent=(*get_extent(data, self.dims[0]), *get_extent(data, self.dims[1])),
+            norm={"linear": Normalize(), "log": LogNorm()}[self.dep_scale],
+        )
 
         self.fig.colorbar(self.im)
         data_lower, data_upper = self._get_var_bounds()
@@ -135,6 +153,9 @@ class BpAnimation2d(BpAnimation):
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
         self.ax.set_xlabel(DIMENSIONS[self.dims[0]].to_axis_label())
         self.ax.set_ylabel(DIMENSIONS[self.dims[1]].to_axis_label())
+
+        self.ax.set_xscale(self.indep_scale)
+        self.ax.set_yscale(self.indep_scale)
 
     def _update_fig(self, step: int):
         data = self._load_data(step)
@@ -173,6 +194,9 @@ class BpAnimation1d(BpAnimation):
         self._update_ybounds()
         self.ax.set_xlabel(DIMENSIONS[self.dim].to_axis_label())
         self.ax.set_ylabel(f"{self.variable}")
+
+        self.ax.set_xscale(self.indep_scale)
+        self.ax.set_yscale(self.dep_scale)
 
     def _update_fig(self, step: int):
         data = self._load_data(step)
