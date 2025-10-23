@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 import xarray as xr
 
@@ -7,7 +9,7 @@ from ..dimension import DIMENSIONS
 from ..plugins import PluginBp
 from .animation_base import Animation
 
-__all__ = ["BpAnimation2d", "BpAnimation1d"]
+__all__ = ["BpAnimation"]
 
 
 def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
@@ -62,6 +64,15 @@ class BpAnimation(Animation):
             upper = max(upper, np.nanmax(data.data))
 
         return (lower, upper)
+
+    @staticmethod
+    def get_animation(steps: list[int], prefix: file_util.BpPrefix, variable: str, dims: list[str]) -> BpAnimation:
+        if len(dims) == 1:
+            return BpAnimation1d(steps, prefix, variable, dims[0])
+        if len(dims) == 2:
+            return BpAnimation2d(steps, prefix, variable, tuple(dims))
+        else:
+            raise NotImplementedError("don't have 3D animations yet")
 
 
 class RetainDims(PluginBp):
