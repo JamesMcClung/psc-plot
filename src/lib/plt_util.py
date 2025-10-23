@@ -31,6 +31,5 @@ def update_cbar(mappable: _ScalarMappable, *, data_min_override: float | None = 
     mappable.set_cmap(plt.get_cmap(cmap))
 
 
-def update_title(ax: Axes, var: str, time: float, time_unit: str | None = None):
-    maybe_unit = " " + time_unit if time_unit else ""
-    ax.set_title(f"{var} ($t={time:.2f}${maybe_unit})")
+def update_title(ax: Axes, var: str, time_label: str):
+    ax.set_title(f"{var} ({time_label})")
