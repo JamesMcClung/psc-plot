@@ -20,7 +20,6 @@ class Fourier(PluginBp):
         fourier_dim = DIMENSIONS[self.dim_name].toggle_fourier()
         da = da.rename({temp_prefix + self.dim_name: fourier_dim.name})
         da = da.assign_coords({fourier_dim.name: 2 * np.pi * da.coords[fourier_dim.name]})
-        print(da.coords)
 
         return da
 
