@@ -32,7 +32,7 @@ class ArgparsePluginAdder[PluginType]:
         parser.set_defaults(plugins=[])
 
         if self.type is not None:
-            parser.add_argument(*self.name_or_flags, dest="plugins", help=self.help, action="append", type=self.type, metavar=self.metavar)
+            parser.add_argument(*self.name_or_flags, dest="plugins", help=self.help, action="extend", type=self.type, metavar=self.metavar, nargs="+")
         elif self.const is not None:
             parser.add_argument(*self.name_or_flags, dest="plugins", help=self.help, action="append_const", const=self.const)
 
