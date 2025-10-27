@@ -11,6 +11,9 @@ class Real(PluginBp):
     def get_name_fragment(self) -> str:
         return f"real"
 
+    def get_modified_title_stem(self, title_stem: str) -> str:
+        return f"Re[{title_stem}]"
+
 
 register_const_plugin(
     "--real",

@@ -11,6 +11,9 @@ class Imaginary(PluginBp):
     def get_name_fragment(self) -> str:
         return f"imag"
 
+    def get_modified_title_stem(self, title_stem: str) -> str:
+        return f"Im[{title_stem}]"
+
 
 register_const_plugin(
     "--imag",

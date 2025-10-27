@@ -15,6 +15,9 @@ class Pow(PluginBp):
     def get_name_fragment(self) -> str:
         return f"pow_{self.exponent}"
 
+    def get_modified_title_stem(self, title_stem: str) -> str:
+        return f"({title_stem})^{self.exponent}"
+
 
 POW_FORMAT = "exponent"
 
