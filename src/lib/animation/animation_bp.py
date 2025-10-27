@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import functools
 import typing
-from abc import abstractmethod
 
 import numpy as np
 import xarray as xr
