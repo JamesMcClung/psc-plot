@@ -31,5 +31,5 @@ def update_cbar(mappable: _ScalarMappable, *, data_min_override: float | None = 
     mappable.set_cmap(plt.get_cmap(cmap))
 
 
-def update_title(ax: Axes, var: str, time_label: str):
-    ax.set_title(f"{var} ({time_label})")
+def update_title(ax: Axes, title_stem: str, time_label: str):
+    ax.set_title(f"{title_stem} ({time_label})")
