@@ -26,7 +26,7 @@ class Fourier(PluginBp):
     def get_name_fragment(self) -> str:
         return f"fourier_{self.dim_name}"
 
-    def get_modified_title_stem(self, title_stem: str) -> str:
+    def get_modified_dep_var_name(self, title_stem: str) -> str:
         return f"\\mathcal{{F}}_{{{self.dim_name}}}[{title_stem}]"
 
 
