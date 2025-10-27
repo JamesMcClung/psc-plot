@@ -163,6 +163,8 @@ class BpAnimation2d(BpAnimation):
         self.ax.set_xscale(self.indep_scale)
         self.ax.set_yscale(self.indep_scale)
 
+        self.fig.tight_layout()
+
     def _update_fig(self, step: int):
         data = self._load_data(step)
 
@@ -203,6 +205,8 @@ class BpAnimation1d(BpAnimation):
 
         self.ax.set_xscale(self.indep_scale)
         self.ax.set_yscale(self.dep_scale)
+
+        self.fig.tight_layout()
 
     def _update_fig(self, step: int):
         data = self._load_data(step)
