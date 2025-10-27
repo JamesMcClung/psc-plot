@@ -199,7 +199,7 @@ class BpAnimation1d(BpAnimation):
         plt_util.update_title(self.ax, self.title_stem, DIMENSIONS["t"].get_coordinate_label(data.time))
         self._update_ybounds()
         self.ax.set_xlabel(DIMENSIONS[self.dim].to_axis_label())
-        self.ax.set_ylabel(f"{self.variable}")
+        self.ax.set_ylabel(f"${self.title_stem}$")
 
         self.ax.set_xscale(self.indep_scale)
         self.ax.set_yscale(self.dep_scale)
