@@ -60,7 +60,7 @@ class BpAnimation(Animation):
         self.indep_scale: Scale = "linear"
         self.dep_scale: Scale = "linear"
 
-        self.title_stem = functools.reduce(lambda stem, plugin: plugin.get_modified_title_stem(stem), self.plugins, self.variable)
+        self.title_stem = functools.reduce(lambda stem, plugin: plugin.get_modified_title_stem(stem), self.plugins, f"\\text{{{ self.variable}}}")
 
     def set_scale(self, indep_scale: Scale, dep_scale: Scale):
         self.indep_scale = indep_scale

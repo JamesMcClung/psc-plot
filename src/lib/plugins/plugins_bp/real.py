@@ -12,7 +12,7 @@ class Real(PluginBp):
         return f"real"
 
     def get_modified_title_stem(self, title_stem: str) -> str:
-        return f"Re[{title_stem}]"
+        return f"\\text{{Re}}[{title_stem}]"
 
 
 register_const_plugin(

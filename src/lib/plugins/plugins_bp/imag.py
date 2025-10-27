@@ -12,7 +12,7 @@ class Imaginary(PluginBp):
         return f"imag"
 
     def get_modified_title_stem(self, title_stem: str) -> str:
-        return f"Im[{title_stem}]"
+        return f"\\text{{Im}}[{title_stem}]"
 
 
 register_const_plugin(

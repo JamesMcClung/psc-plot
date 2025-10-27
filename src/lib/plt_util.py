@@ -32,4 +32,4 @@ def update_cbar(mappable: _ScalarMappable, *, data_min_override: float | None = 
 
 
 def update_title(ax: Axes, title_stem: str, time_label: str):
-    ax.set_title(f"{title_stem} ({time_label})")
+    ax.set_title(f"${title_stem}$ ({time_label})")
