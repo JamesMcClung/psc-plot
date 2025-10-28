@@ -144,6 +144,10 @@ class BpAnimation2d(BpAnimation):
     def _init_fig(self):
         data = self._load_data(self.steps[0])
 
+        # must set scale (log, linear) before making image
+        self.ax.set_xscale(self.indep_scale)
+        self.ax.set_yscale(self.indep_scale)
+
         self.im = self.ax.imshow(
             data,
             origin="lower",
@@ -156,12 +160,10 @@ class BpAnimation2d(BpAnimation):
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
         plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
+
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
         self.ax.set_xlabel(DIMENSIONS[self.dims[0]].to_axis_label())
         self.ax.set_ylabel(DIMENSIONS[self.dims[1]].to_axis_label())
-
-        self.ax.set_xscale(self.indep_scale)
-        self.ax.set_yscale(self.indep_scale)
 
         self.fig.tight_layout()
 
