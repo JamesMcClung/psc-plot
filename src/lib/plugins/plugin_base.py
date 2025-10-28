@@ -14,7 +14,9 @@ class Plugin[Data](abc.ABC):
         return ""
 
 
-class PluginBp(Plugin[xr.DataArray]): ...
+class PluginBp(Plugin[xr.DataArray]):
+    def get_modified_dep_var_name(self, dep_var_name: str) -> str:
+        return dep_var_name
 
 
 class PluginH5(Plugin[pd.DataFrame]): ...

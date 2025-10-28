@@ -11,6 +11,9 @@ class Magnitude(PluginBp):
     def get_name_fragment(self) -> str:
         return f"mag"
 
+    def get_modified_dep_var_name(self, title_stem: str) -> str:
+        return f"|{title_stem}|"
+
 
 register_const_plugin(
     "--mag",

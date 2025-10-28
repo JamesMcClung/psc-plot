@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import functools
 import typing
-from abc import abstractmethod
 
 import numpy as np
 import xarray as xr
@@ -39,6 +39,10 @@ type Scale = typing.Literal["linear", "log"]
 
 
 class BpAnimation(Animation):
+
+    dep_var_name: str
+    """The latex-formatted name (including applied formulae) of the dependent variable"""
+
     def __init__(
         self,
         steps: list[int],
@@ -55,6 +59,8 @@ class BpAnimation(Animation):
 
         self.indep_scale: Scale = "linear"
         self.dep_scale: Scale = "linear"
+
+        self.dep_var_name = functools.reduce(lambda stem, plugin: plugin.get_modified_dep_var_name(stem), self.plugins, f"\\text{{{self.variable}}}")
 
     def set_scale(self, indep_scale: Scale, dep_scale: Scale):
         self.indep_scale = indep_scale
@@ -138,6 +144,10 @@ class BpAnimation2d(BpAnimation):
     def _init_fig(self):
         data = self._load_data(self.steps[0])
 
+        # must set scale (log, linear) before making image
+        self.ax.set_xscale(self.indep_scale)
+        self.ax.set_yscale(self.indep_scale)
+
         self.im = self.ax.imshow(
             data,
             origin="lower",
@@ -149,20 +159,20 @@ class BpAnimation2d(BpAnimation):
         data_lower, data_upper = self._get_var_bounds()
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
-        plt_util.update_title(self.ax, self.variable, DIMENSIONS["t"].get_coordinate_label(data.time))
+        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
+
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
         self.ax.set_xlabel(DIMENSIONS[self.dims[0]].to_axis_label())
         self.ax.set_ylabel(DIMENSIONS[self.dims[1]].to_axis_label())
 
-        self.ax.set_xscale(self.indep_scale)
-        self.ax.set_yscale(self.indep_scale)
+        self.fig.tight_layout()
 
     def _update_fig(self, step: int):
         data = self._load_data(step)
 
         self.im.set_array(data)
 
-        plt_util.update_title(self.ax, self.variable, DIMENSIONS["t"].get_coordinate_label(data.time))
+        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
         return [self.im, self.ax.title]
 
 
@@ -190,20 +200,22 @@ class BpAnimation1d(BpAnimation):
 
         [self.line] = self.ax.plot(xdata, data)
 
-        plt_util.update_title(self.ax, self.variable, DIMENSIONS["t"].get_coordinate_label(data.time))
+        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
         self._update_ybounds()
         self.ax.set_xlabel(DIMENSIONS[self.dim].to_axis_label())
-        self.ax.set_ylabel(f"{self.variable}")
+        self.ax.set_ylabel(f"${self.dep_var_name}$")
 
         self.ax.set_xscale(self.indep_scale)
         self.ax.set_yscale(self.dep_scale)
+
+        self.fig.tight_layout()
 
     def _update_fig(self, step: int):
         data = self._load_data(step)
 
         self.line.set_ydata(data)
 
-        plt_util.update_title(self.ax, self.variable, DIMENSIONS["t"].get_coordinate_label(data.time))
+        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
         return [self.line, self.ax.yaxis, self.ax.title]
 
     def _update_ybounds(self):
