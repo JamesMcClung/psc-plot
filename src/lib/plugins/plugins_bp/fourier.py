@@ -13,6 +13,7 @@ class Fourier(PluginBp):
         self.dim_name = dim_name
 
     def apply(self, da: xr.DataArray) -> xr.DataArray:
+        # TODO properly handle inverse FT (i.e., actually use ifft)
         temp_prefix = "temp_"
         da = xrft.fft(da, dim=self.dim_name, true_phase=False, prefix=temp_prefix)
 
