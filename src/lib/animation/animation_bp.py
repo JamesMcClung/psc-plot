@@ -149,7 +149,7 @@ class BpAnimation2d(BpAnimation):
         self.ax.set_yscale(self.indep_scale)
 
         self.im = self.ax.imshow(
-            data,
+            data.T,
             origin="lower",
             extent=(*get_extent(data, self.dims[0]), *get_extent(data, self.dims[1])),
             norm={"linear": Normalize(), "log": LogNorm()}[self.dep_scale],
@@ -170,7 +170,7 @@ class BpAnimation2d(BpAnimation):
     def _update_fig(self, step: int):
         data = self._load_data(step)
 
-        self.im.set_array(data)
+        self.im.set_array(data.T)
 
         plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
         return [self.im, self.ax.title]
