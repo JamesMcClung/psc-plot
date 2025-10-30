@@ -17,10 +17,6 @@ class ArgsTyped(argparse.Namespace, abc.ABC):
     @abc.abstractmethod
     def get_animation(self) -> Animation: ...
 
-    @property
-    @abc.abstractmethod
-    def save_name(self) -> str: ...
-
 
 class ArgsUntyped(argparse.Namespace):
     _typed_args: type[ArgsTyped]

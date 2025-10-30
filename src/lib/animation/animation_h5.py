@@ -90,3 +90,7 @@ class H5Animation(Animation):
         # FIXME the binned data cmap is not normalized correctly
         # it should satisfy $\int binned_data dV' = N_particles (in psc units)$
         return binned_data, x_edges, y_edges
+
+    def _get_default_save_path(self) -> str:
+        plugin_name_fragments = [p.get_name_fragment() for p in self.plugins]
+        return "-".join([self.prefix] + list(self.axis_variables) + plugin_name_fragments) + ".mp4"
