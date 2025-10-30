@@ -7,4 +7,4 @@ anim = args.get_animation()
 if args.show:
     anim.show()
 if args.save:
-    anim.save(args.save_name)
+    anim.save()
