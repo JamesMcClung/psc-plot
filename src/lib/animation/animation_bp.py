@@ -105,6 +105,10 @@ class BpAnimation(Animation):
         else:
             raise NotImplementedError("don't have 3D animations yet")
 
+    def _get_default_save_path(self) -> str:
+        plugin_name_fragments = "".join(filter(lambda nf: nf != "", ("-" + p.get_name_fragment() for p in self.plugins)))
+        return f"{self.prefix}-{self.variable}-{plugin_name_fragments}.mp4"
+
 
 class BpAnimation2d(BpAnimation):
     def __init__(
