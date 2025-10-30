@@ -39,10 +39,6 @@ type Scale = typing.Literal["linear", "log"]
 
 
 class BpAnimation(Animation):
-
-    dep_var_name: str
-    """The latex-formatted name (including applied formulae) of the dependent variable"""
-
     def __init__(
         self,
         steps: list[int],
@@ -60,7 +56,13 @@ class BpAnimation(Animation):
         self.indep_scale: Scale = "linear"
         self.dep_scale: Scale = "linear"
 
-        self.dep_var_name = functools.reduce(lambda stem, plugin: plugin.get_modified_dep_var_name(stem), self.plugins, f"\\text{{{self.variable}}}")
+    @functools.cached_property
+    def dep_var_name(self) -> str:
+        """The latex-formatted name (including applied formulae) of the dependent variable"""
+        # This is cached in order to defer its evaluation until after _load_data has been called,
+        # and each plugin has thus seen the data and determined what (if any) internal plugins it needs
+        # (as of the time of this comment, only Versus does this)
+        return functools.reduce(lambda stem, plugin: plugin.get_modified_dep_var_name(stem), self.plugins, f"\\text{{{self.variable}}}")
 
     def set_scale(self, indep_scale: Scale, dep_scale: Scale):
         self.indep_scale = indep_scale
@@ -103,24 +105,9 @@ class BpAnimation(Animation):
         else:
             raise NotImplementedError("don't have 3D animations yet")
 
-
-class RetainDims(PluginBp):
-    def __init__(self, dims: list[str]):
-        self.dims = dims
-
-    def apply(self, da: xr.DataArray) -> xr.DataArray:
-        for dim in da.dims:
-            if dim not in self.dims:
-                da = da.reduce(np.mean, dim)
-        return da
-
-
-class ReorderDims(PluginBp):
-    def __init__(self, ordered_dims: list[str]):
-        self.ordered_dims = ordered_dims
-
-    def apply(self, da: xr.DataArray) -> xr.DataArray:
-        return da.transpose(*self.ordered_dims, transpose_coords=True)
+    def _get_default_save_path(self) -> str:
+        plugin_name_fragments = [p.get_name_fragment() for p in self.plugins]
+        return "-".join([self.prefix, self.variable] + plugin_name_fragments) + ".mp4"
 
 
 class BpAnimation2d(BpAnimation):
@@ -132,12 +119,7 @@ class BpAnimation2d(BpAnimation):
         plugins: list[PluginBp],
         dims: tuple[str, str],
     ):
-        super().__init__(
-            steps,
-            prefix,
-            variable,
-            plugins + [RetainDims(dims), ReorderDims(list(reversed(dims)))],
-        )
+        super().__init__(steps, prefix, variable, plugins)
 
         self.dims = dims
 
@@ -149,7 +131,7 @@ class BpAnimation2d(BpAnimation):
         self.ax.set_yscale(self.indep_scale)
 
         self.im = self.ax.imshow(
-            data,
+            data.T,
             origin="lower",
             extent=(*get_extent(data, self.dims[0]), *get_extent(data, self.dims[1])),
             norm={"linear": Normalize(), "log": LogNorm()}[self.dep_scale],
@@ -170,7 +152,7 @@ class BpAnimation2d(BpAnimation):
     def _update_fig(self, step: int):
         data = self._load_data(step)
 
-        self.im.set_array(data)
+        self.im.set_array(data.T)
 
         plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
         return [self.im, self.ax.title]
@@ -185,12 +167,7 @@ class BpAnimation1d(BpAnimation):
         plugins: list[PluginBp],
         dim: str,
     ):
-        super().__init__(
-            steps,
-            prefix,
-            variable,
-            plugins + [RetainDims([dim])],
-        )
+        super().__init__(steps, prefix, variable, plugins)
 
         self.dim = dim
 

@@ -7,6 +7,7 @@ from ..dimension import DIMENSIONS
 from ..file_util import BP_PREFIXES
 from ..plugins import PLUGINS_BP, PluginBp
 from ..plugins.plugins_bp.fourier import Fourier
+from ..plugins.plugins_bp.versus import Versus
 from . import args_base
 
 __all__ = ["add_subparsers_bp", "ArgsBp"]
@@ -17,32 +18,21 @@ SCALES: list[Scale] = list(Scale.__value__.__args__)
 
 class ArgsBp(args_base.ArgsTyped):
     variable: str
-    versus: list[str]
     scale: Scale
     plugins: list[PluginBp]
-
-    @property
-    def save_name(self) -> str:
-        versus = ",".join(self.versus)
-        plugin_name_fragments = "".join(filter(lambda nf: nf != "", ("-" + p.get_name_fragment() for p in self.plugins)))
-        return f"{self.prefix}-{self.variable}-vs_{versus}{plugin_name_fragments}.mp4"
 
     def get_animation(self) -> Animation:
         steps = bp_util.get_available_steps_bp(self.prefix)
 
-        for dim_name in self.versus:
-            dim = DIMENSIONS[dim_name]
-            if dim.is_fourier():
-                # implicitly add a Fourier plugin if not already present
-                unfourier_dim = dim.toggle_fourier()
-                for plugin in self.plugins:
-                    if isinstance(plugin, Fourier) and plugin.dim_name == unfourier_dim.name:
-                        break
-                else:
-                    # TODO make versus its own plugin (or plugin package?)
-                    self.plugins.insert(0, Fourier(dim.toggle_fourier().name))
+        versus_dims = ["y", "z"]
+        for plugin in self.plugins:
+            if isinstance(plugin, Versus):
+                versus_dims = plugin.dim_names
+                break
+        else:
+            self.plugins.append(Versus(versus_dims))
 
-        anim = BpAnimation.get_animation(steps, self.prefix, self.variable, self.plugins, self.versus)
+        anim = BpAnimation.get_animation(steps, self.prefix, self.variable, self.plugins, versus_dims)
 
         if self.scale == "linear":
             anim.set_scale("linear", "linear")
@@ -60,16 +50,6 @@ def add_subparsers_bp(subparsers: argparse._SubParsersAction):
 
     for plugin_adder in PLUGINS_BP:
         plugin_adder.add_to(parent)
-
-    parent.add_argument(
-        "--versus",
-        "-v",
-        nargs="+",
-        type=str,
-        choices=DIMENSIONS.keys(),
-        default=["y", "z"],
-        help="plot against these dimensions, averaging over others",
-    )
 
     parent.add_argument(
         "--scale",

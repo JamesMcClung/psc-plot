@@ -21,14 +21,18 @@ class Animation(ABC):
     @abstractmethod
     def _update_fig(self): ...
 
+    @abstractmethod
+    def _get_default_save_path(self) -> str: ...
+
     def show(self):
         if not self._initialized:
             self._init_fig()
             self._initialized = True
         plt.show()
 
-    def save(self, path: Path):
+    def save(self, path_override: Path | None = None):
         if not self._initialized:
             self._init_fig()
             self._initialized = True
+        path = path_override or self._get_default_save_path()
         self.anim.save(path)

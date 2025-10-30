@@ -14,12 +14,20 @@ class Fourier(PluginBp):
 
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         temp_prefix = "temp_"
-        da = xrft.fft(da, dim=self.dim_name, true_phase=False, prefix=temp_prefix)
 
-        # multiply coords by 2pi to go from frequency -> angular frequency
-        fourier_dim = DIMENSIONS[self.dim_name].toggle_fourier()
-        da = da.rename({temp_prefix + self.dim_name: fourier_dim.name})
-        da = da.assign_coords({fourier_dim.name: 2 * np.pi * da.coords[fourier_dim.name]})
+        dim = DIMENSIONS[self.dim_name]
+        f_dim = dim.toggle_fourier()
+
+        # multiply/or divide coords by 2pi to go from frequency <-> angular frequency
+
+        if dim.is_fourier():
+            da = da.assign_coords({dim.name: da.coords[dim.name] / (2 * np.pi)})
+            da = xrft.ifft(da, dim=dim.name, prefix=temp_prefix, lag=0.0)
+            da = da.rename({temp_prefix + dim.name: f_dim.name})
+        else:
+            da = xrft.fft(da, dim=dim.name, prefix=temp_prefix)
+            da = da.rename({temp_prefix + dim.name: f_dim.name})
+            da = da.assign_coords({f_dim.name: da.coords[f_dim.name] * (2 * np.pi)})
 
         return da
 
