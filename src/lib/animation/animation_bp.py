@@ -39,10 +39,6 @@ type Scale = typing.Literal["linear", "log"]
 
 
 class BpAnimation(Animation):
-
-    dep_var_name: str
-    """The latex-formatted name (including applied formulae) of the dependent variable"""
-
     def __init__(
         self,
         steps: list[int],
@@ -60,7 +56,13 @@ class BpAnimation(Animation):
         self.indep_scale: Scale = "linear"
         self.dep_scale: Scale = "linear"
 
-        self.dep_var_name = functools.reduce(lambda stem, plugin: plugin.get_modified_dep_var_name(stem), self.plugins, f"\\text{{{self.variable}}}")
+    @functools.cached_property
+    def dep_var_name(self) -> str:
+        """The latex-formatted name (including applied formulae) of the dependent variable"""
+        # This is cached in order to defer its evaluation until after _load_data has been called,
+        # and each plugin has thus seen the data and determined what (if any) internal plugins it needs
+        # (as of the time of this comment, only Versus does this)
+        return functools.reduce(lambda stem, plugin: plugin.get_modified_dep_var_name(stem), self.plugins, f"\\text{{{self.variable}}}")
 
     def set_scale(self, indep_scale: Scale, dep_scale: Scale):
         self.indep_scale = indep_scale
