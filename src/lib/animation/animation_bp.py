@@ -104,25 +104,6 @@ class BpAnimation(Animation):
             raise NotImplementedError("don't have 3D animations yet")
 
 
-class RetainDims(PluginBp):
-    def __init__(self, dims: list[str]):
-        self.dims = dims
-
-    def apply(self, da: xr.DataArray) -> xr.DataArray:
-        for dim in da.dims:
-            if dim not in self.dims:
-                da = da.reduce(np.mean, dim)
-        return da
-
-
-class ReorderDims(PluginBp):
-    def __init__(self, ordered_dims: list[str]):
-        self.ordered_dims = ordered_dims
-
-    def apply(self, da: xr.DataArray) -> xr.DataArray:
-        return da.transpose(*self.ordered_dims, transpose_coords=True)
-
-
 class BpAnimation2d(BpAnimation):
     def __init__(
         self,
@@ -132,12 +113,7 @@ class BpAnimation2d(BpAnimation):
         plugins: list[PluginBp],
         dims: tuple[str, str],
     ):
-        super().__init__(
-            steps,
-            prefix,
-            variable,
-            plugins + [RetainDims(dims), ReorderDims(list(reversed(dims)))],
-        )
+        super().__init__(steps, prefix, variable, plugins)
 
         self.dims = dims
 
@@ -185,12 +161,7 @@ class BpAnimation1d(BpAnimation):
         plugins: list[PluginBp],
         dim: str,
     ):
-        super().__init__(
-            steps,
-            prefix,
-            variable,
-            plugins + [RetainDims([dim])],
-        )
+        super().__init__(steps, prefix, variable, plugins)
 
         self.dim = dim
 
