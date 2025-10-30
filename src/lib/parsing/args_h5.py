@@ -15,11 +15,6 @@ class ArgsH5(args_base.ArgsTyped):
     axis_variables: tuple[PrtVariable, PrtVariable]
     plugins: list[PluginH5]
 
-    @property
-    def save_name(self) -> str:
-        plugin_name_fragments = "".join(filter(lambda nf: nf != "", ("-" + p.get_name_fragment() for p in self.plugins)))
-        return f"{self.prefix}-{self.axis_variables[0]}-{self.axis_variables[1]}{plugin_name_fragments}.mp4"
-
     def get_animation(self) -> Animation:
         steps = h5_util.get_available_steps_h5(self.prefix)
 

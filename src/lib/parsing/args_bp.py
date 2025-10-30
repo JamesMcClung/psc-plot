@@ -21,11 +21,6 @@ class ArgsBp(args_base.ArgsTyped):
     scale: Scale
     plugins: list[PluginBp]
 
-    @property
-    def save_name(self) -> str:
-        plugin_name_fragments = "".join(filter(lambda nf: nf != "", ("-" + p.get_name_fragment() for p in self.plugins)))
-        return f"{self.prefix}-{self.variable}-{plugin_name_fragments}.mp4"
-
     def get_animation(self) -> Animation:
         steps = bp_util.get_available_steps_bp(self.prefix)
 
