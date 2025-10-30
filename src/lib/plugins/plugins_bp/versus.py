@@ -58,12 +58,9 @@ class Versus(PluginBp):
         return dep_var_name
 
     def get_name_fragment(self) -> str:
-        assert self.cached_inner_plugins is not None, "can't generate name fragment—don't know what inner plugins are required yet"
-
-        inner_plugin_fragments = [p.get_name_fragment() for p in self.cached_inner_plugins]
+        # don't include inner plugins because they can be inferred
         dims = ",".join(self.dim_names)
-        this_fragment = f"vs_{dims}"
-        return "-".join(inner_plugin_fragments + [this_fragment])
+        return f"vs_{dims}"
 
 
 _VERSUS_FORMAT = "dim_name"
