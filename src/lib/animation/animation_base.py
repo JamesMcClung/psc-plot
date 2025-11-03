@@ -1,3 +1,4 @@
+import typing
 from abc import ABC, abstractmethod
 from pathlib import Path
 
@@ -6,9 +7,9 @@ from matplotlib.animation import FuncAnimation
 
 
 class Animation(ABC):
-    def __init__(self, steps: list[int]):
+    def __init__(self, steps: list[int], *, subplot_kw: dict[str, typing.Any] = {}):
         self.steps = steps
-        self.fig, self.ax = plt.subplots()
+        self.fig, self.ax = plt.subplots(subplot_kw=subplot_kw)
         self._initialized = False
 
         # FIXME get blitting to work with the title
