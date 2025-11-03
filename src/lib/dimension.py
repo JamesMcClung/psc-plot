@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 INVERSE_ELECTRON_PLASMA_FREQUENCY = "\\omega_\\text{pe}^{-1}"
 ELECTRON_SKIN_DEPTH = "d_\\text{e}"
+RADIAN = "\\text{rad}"
 
 FOURIER_NAME_PREFIX = "k_"
 
