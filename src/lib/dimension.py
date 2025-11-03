@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -43,8 +44,9 @@ class Dimension:
     def is_fourier(self) -> bool:
         return self.name.startswith(FOURIER_NAME_PREFIX)
 
-    def register(self):
+    def register(self) -> typing.Self:
         DIMENSIONS[self.name] = self
+        return self
 
 
 class Transform2D(ABC):
