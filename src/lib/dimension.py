@@ -61,8 +61,8 @@ class CartesianToPolar(Transform2D):
 
         self.dim_x = dim_x
         self.dim_y = dim_y
-        self.dim_r = Dimension("r", dim_x.unit)
-        self.dim_theta = Dimension("\\theta", RADIAN)
+        self.dim_r = Dimension("r", dim_x.unit).register()
+        self.dim_theta = Dimension("\\theta", RADIAN).register()
 
     def apply[T: float | npt.NDArray[np.float64]](self, x: T, y: T) -> tuple[T, T]:
         r = (x**2 + y**2) ** 0.5
