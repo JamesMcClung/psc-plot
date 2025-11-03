@@ -45,8 +45,10 @@ class BpAnimation(Animation):
         prefix: file_util.BpPrefix,
         variable: str,
         plugins: list[PluginBp],
+        *,
+        subplot_kw: dict[str, typing.Any] = {},
     ):
-        super().__init__(steps)
+        super().__init__(steps, subplot_kw=subplot_kw)
 
         self.prefix = prefix
         self.variable = variable
