@@ -43,6 +43,9 @@ class Dimension:
     def is_fourier(self) -> bool:
         return self.name.startswith(FOURIER_NAME_PREFIX)
 
+    def register(self):
+        DIMENSIONS[self.name] = self
+
 
 class Transform2D(ABC):
     @abstractmethod
@@ -73,14 +76,10 @@ class CartesianToPolar(Transform2D):
 DIMENSIONS: dict[str, Dimension] = {}
 
 
-def register_dimension(dim: Dimension):
-    DIMENSIONS[dim.name] = dim
-
-
-register_dimension(Dimension("x", ELECTRON_SKIN_DEPTH))
-register_dimension(Dimension("y", ELECTRON_SKIN_DEPTH))
-register_dimension(Dimension("z", ELECTRON_SKIN_DEPTH))
-register_dimension(Dimension("t", INVERSE_ELECTRON_PLASMA_FREQUENCY))
+Dimension("x", ELECTRON_SKIN_DEPTH).register()
+Dimension("y", ELECTRON_SKIN_DEPTH).register()
+Dimension("z", ELECTRON_SKIN_DEPTH).register()
+Dimension("t", INVERSE_ELECTRON_PLASMA_FREQUENCY).register()
 
 for dim in ["x", "y", "z"]:
-    register_dimension(DIMENSIONS[dim].toggle_fourier())
+    DIMENSIONS[dim].toggle_fourier().register()
