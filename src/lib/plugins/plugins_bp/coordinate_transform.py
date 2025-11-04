@@ -45,7 +45,7 @@ class PolarTransform(PluginBp):
         new_dims = list(da.dims)
         new_dims.remove(name_x)
         new_dims.remove(name_y)
-        new_dims = [name_r, name_theta] + new_dims
+        new_dims = new_dims + [name_r, name_theta]
 
         new_coords = dict(da.coords)
         del new_coords[name_x]
@@ -53,17 +53,15 @@ class PolarTransform(PluginBp):
         new_coords[name_r] = rs
         new_coords[name_theta] = thetas
 
-        shape = [len(new_coords[dim_name]) for dim_name in new_dims]
-
         start = time.time()
 
-        transformed = np.ndarray(shape)
-        for ir, r in enumerate(rs):
-            for itheta, theta in enumerate(thetas):
-                x, y = self.transform.inverse(r, theta)
-                transformed[ir, itheta, :] = da.interp({name_x: x, name_y: y}, assume_sorted=True)
+        rs, thetas = np.meshgrid(rs, thetas, indexing="ij")
+        xs, ys = self.transform.inverse(rs, thetas)
+        xs = xr.Variable([name_r, name_theta], xs)
+        ys = xr.Variable([name_r, name_theta], ys)
 
-        transformed_da = xr.DataArray(transformed, new_coords, new_dims, attrs=da.attrs)
+        da = da.interp({name_x: xs, name_y: ys}, assume_sorted=True)
+        transformed_da = xr.DataArray(da.data, new_coords, new_dims, attrs=da.attrs)
 
         stop = time.time()
         print(f"time = {stop - start}")
