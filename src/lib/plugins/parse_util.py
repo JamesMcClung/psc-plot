@@ -16,6 +16,11 @@ def check_order[T](lower: T | None, upper: T | None, lower_name: str, upper_name
         raise argparse.ArgumentTypeError(f"Expected {lower_name}<{upper_name}; got {lower_name}={lower}, {upper_name}={upper}")
 
 
+def check_len(args: list, expected_len: int):
+    if len(args) != expected_len:
+        raise argparse.ArgumentTypeError(f"Expected {expected_len} args; got {args} ({args})")
+
+
 def parse_number[T](num_arg: str, num_name: str, num_parser: typing.Callable[[str], T]) -> T:
     try:
         return num_parser(num_arg)
