@@ -28,7 +28,7 @@ def _toggle_unit_fourier(unit: Latex) -> Latex:
 class Dimension:
     name: Latex
     unit: Latex
-    geometry: typing.Literal["cartesian", "temporal", "polar:r", "polar:theta"]
+    geometry: typing.Literal["cartesian", "temporal", "polar:r", "polar:theta", "spherical:r", "spherical:theta", "spherical:phi"]
 
     def to_axis_label(self) -> str:
         return f"${self.name.latex}\\ [{self.unit.latex}]$"
@@ -57,6 +57,11 @@ class Transform2D(ABC):
     def apply[T: float | npt.NDArray[np.float64]](self, c1: T, c2: T) -> tuple[T, T]: ...
 
 
+class Transform3D(ABC):
+    @abstractmethod
+    def apply[T: float | npt.NDArray[np.float64]](self, c1: T, c2: T, c3: T) -> tuple[T, T, T]: ...
+
+
 def check_unit_compatability(dim_1: Dimension, dim_2: Dimension, dest_geometry: str):
     if dim_1.unit != dim_2.unit:
         raise ValueError(f"Dimensions {dim_1.name} and {dim_2.name} have incompatible units for transforming to {dest_geometry} coordinates ({dim_1.unit} and {dim_2.unit})")
@@ -81,6 +86,33 @@ class CartesianToPolar(Transform2D):
         x = r * np.cos(theta)
         y = r * np.sin(theta)
         return (x, y)
+
+
+class CartesianToSpherical(Transform3D):
+    def __init__(self, dim_x: Dimension, dim_y: Dimension, dim_z: Dimension):
+        check_unit_compatability(dim_x, dim_y, "spherical")
+        check_unit_compatability(dim_x, dim_z, "spherical")
+
+        self.dim_x = dim_x
+        self.dim_y = dim_y
+        self.dim_z = dim_z
+        r_name = "k" if dim_x.is_fourier() else "r"
+        self.dim_r = Dimension(Latex(r_name), dim_x.unit, "spherical:r").register()
+        self.dim_theta = Dimension(Latex("\\theta"), RADIAN, "spherical:theta").register()
+        self.dim_phi = Dimension(Latex("\\phi"), RADIAN, "spherical:phi").register()
+
+    def apply[T: float | npt.NDArray[np.float64]](self, x: T, y: T, z: T) -> tuple[T, T, T]:
+        rho2 = x**2 + y**2
+        r = (rho2 + z**2) ** 0.5
+        theta = np.arctan2(z, rho2**0.5)
+        phi = np.arctan2(y, x)
+        return (r, theta, phi)
+
+    def inverse[T: float | npt.NDArray[np.float64]](self, r: T, theta: T, phi: T) -> tuple[T, T, T]:
+        x = r * np.cos(theta) * np.cos(phi)
+        y = r * np.cos(theta) * np.sin(phi)
+        z = r * np.sin(theta)
+        return (x, y, z)
 
 
 DIMENSIONS: dict[str, Dimension] = {}
