@@ -75,12 +75,11 @@ _POLAR_FORMAT = ("dim_1", "dim_2")
     nargs=2,
 )
 def parse_transform(args: list[str]) -> PolarTransform:
-    parse_util.check_len(args, 2)
+    # nargs=2 guarantees len(args) == 2 by this point
+    parse_util.check_value(args[0], "dim_1", DIMENSIONS)
+    parse_util.check_value(args[1], "dim_2", DIMENSIONS)
 
-    dims = []
-    for arg in args:
-        parse_util.check_value(arg, "dim_name", DIMENSIONS)
-        dims.append(DIMENSIONS[arg])
+    dims = [DIMENSIONS[dim_name] for dim_name in args]
 
     try:
         transform = CartesianToPolar(*dims)
