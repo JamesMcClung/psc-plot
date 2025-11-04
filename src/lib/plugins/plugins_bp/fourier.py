@@ -52,12 +52,13 @@ FOURIER_FORMAT = "dim_name"
     "--fourier",
     "-f",
     metavar=FOURIER_FORMAT,
-    help="perform a Fourier transform along the given dimension",
+    help="perform a Fourier transform along the given dimensions",
+    nargs="+",
 )
-def parse_fourier(arg: str) -> Fourier:
-    dim_name = arg
+def parse_fourier(args: list[str]) -> Fourier:
+    for dim_name in args:
+        parse_util.check_value(dim_name, "dim_name", DIMENSIONS)
 
-    parse_util.check_value(dim_name, "dim_name", DIMENSIONS)
-    dim = DIMENSIONS[dim_name]
+    dims = [DIMENSIONS[dim_name] for dim_name in args]
 
-    return Fourier([dim])
+    return Fourier(dims)
