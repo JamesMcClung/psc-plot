@@ -191,7 +191,7 @@ class BpAnimation2dPolar(BpAnimation):
         data = self._load_data(self.steps[0])
 
         # must set scale (log, linear) before making image
-        if self.dep_scale == "log":
+        if self.indep_scale == "log":
             self.ax.set_rscale("symlog")
 
         vertices_theta = np.concat((data.coords[self.dims[1]].data, [2 * np.pi]))
