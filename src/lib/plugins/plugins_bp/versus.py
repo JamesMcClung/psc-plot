@@ -68,6 +68,7 @@ _VERSUS_FORMAT = "dim_name"
 
 @plugin_parser(
     "--versus",
+    "-v",
     metavar=_VERSUS_FORMAT,
     help="specifies the independent axes to plot against (automatically performs necessary Fourier and coordinate transforms, and reduces other dimensions via arithmetic mean)",
     nargs="+",
