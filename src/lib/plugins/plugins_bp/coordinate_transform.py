@@ -42,31 +42,20 @@ class PolarTransform(PluginBp):
         rs = np.linspace(0.0, max_r, nr, endpoint=False)
         thetas = np.linspace(0.0, max_theta, ntheta, endpoint=False)
 
-        new_dims = list(da.dims)
-        new_dims.remove(name_x)
-        new_dims.remove(name_y)
-        new_dims = new_dims + [name_r, name_theta]
-
-        new_coords = dict(da.coords)
-        del new_coords[name_x]
-        del new_coords[name_y]
-        new_coords[name_r] = rs
-        new_coords[name_theta] = thetas
-
         start = time.time()
 
-        rs, thetas = np.meshgrid(rs, thetas, indexing="ij")
-        xs, ys = self.transform.inverse(rs, thetas)
-        xs = xr.Variable([name_r, name_theta], xs)
-        ys = xr.Variable([name_r, name_theta], ys)
+        xgrid, ygrid = self.transform.inverse(*np.meshgrid(rs, thetas, indexing="ij"))
+        xgrid = xr.Variable([name_r, name_theta], xgrid)
+        ygrid = xr.Variable([name_r, name_theta], ygrid)
 
-        da = da.interp({name_x: xs, name_y: ys}, assume_sorted=True)
-        transformed_da = xr.DataArray(da.data, new_coords, new_dims, attrs=da.attrs)
+        da = da.interp({name_x: xgrid, name_y: ygrid}, assume_sorted=True)
+        da = da.drop_vars([name_x, name_y])
+        da = da.assign_coords({name_r: rs, name_theta: thetas})
 
         stop = time.time()
         print(f"time = {stop - start}")
 
-        return transformed_da
+        return da
 
     def get_name_fragment(self) -> str:
         return f"polar_{self.transform.dim_x.name.plain},{self.transform.dim_y.name.plain}"
