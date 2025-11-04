@@ -9,7 +9,7 @@ from ..plugin_base import PluginBp
 from ..registry import plugin_parser
 
 
-class PolarTransform(PluginBp):
+class TransformPolar(PluginBp):
     def __init__(self, transform: CartesianToPolar):
         self.transform = transform
 
@@ -64,7 +64,7 @@ _POLAR_FORMAT = ("dim_1", "dim_2")
     help="perform a coordinate transform from cartesian (dim_1, dim_2) to polar (r, theta)",
     nargs=2,
 )
-def parse_transform(args: list[str]) -> PolarTransform:
+def parse_transform_polar(args: list[str]) -> TransformPolar:
     # nargs=2 guarantees len(args) == 2 by this point
     parse_util.check_value(args[0], "dim_1", DIMENSIONS)
     parse_util.check_value(args[1], "dim_2", DIMENSIONS)
@@ -73,6 +73,6 @@ def parse_transform(args: list[str]) -> PolarTransform:
 
     try:
         transform = CartesianToPolar(*dims)
-        return PolarTransform(transform)
+        return TransformPolar(transform)
     except ValueError as e:
         raise argparse.ArgumentError(None, *e.args)
