@@ -62,7 +62,8 @@ class CartesianToPolar(Transform2D):
 
         self.dim_x = dim_x
         self.dim_y = dim_y
-        self.dim_r = Dimension("r", dim_x.unit, "polar:r").register()
+        r_name = "k" if dim_x.is_fourier() else "r"
+        self.dim_r = Dimension(r_name, dim_x.unit, "polar:r").register()
         self.dim_theta = Dimension("\\theta", RADIAN, "polar:theta").register()
 
     def apply[T: float | npt.NDArray[np.float64]](self, x: T, y: T) -> tuple[T, T]:
