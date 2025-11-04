@@ -14,7 +14,7 @@ class ReduceFunc(typing.Protocol):
 
 
 REDUCE_FUNCS: dict[str, ReduceFunc] = {
-    "mean": lambda da, dim_name: da.reduce(np.mean, dim_name),
+    "mean": lambda da, dim_name: da.reduce(np.nanmean, dim_name),
     "integrate": lambda da, dim_name: da.integrate(dim_name),
 }
 
