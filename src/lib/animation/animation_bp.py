@@ -113,6 +113,7 @@ class BpAnimation(Animation):
 
     def _get_default_save_path(self) -> str:
         plugin_name_fragments = [p.get_name_fragment() for p in self.plugins]
+        plugin_name_fragments = [frag for frag in plugin_name_fragments if frag]
         return "-".join([self.prefix, self.variable] + plugin_name_fragments) + ".mp4"
 
 
