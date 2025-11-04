@@ -1,5 +1,4 @@
 import argparse
-import time
 
 import numpy as np
 import xarray as xr
@@ -42,8 +41,6 @@ class PolarTransform(PluginBp):
         rs = np.linspace(0.0, max_r, nr, endpoint=False)
         thetas = np.linspace(0.0, max_theta, ntheta, endpoint=False)
 
-        start = time.time()
-
         xgrid, ygrid = self.transform.inverse(*np.meshgrid(rs, thetas, indexing="ij"))
         xgrid = xr.Variable([name_r, name_theta], xgrid)
         ygrid = xr.Variable([name_r, name_theta], ygrid)
@@ -51,9 +48,6 @@ class PolarTransform(PluginBp):
         da = da.interp({name_x: xgrid, name_y: ygrid}, assume_sorted=True)
         da = da.drop_vars([name_x, name_y])
         da = da.assign_coords({name_r: rs, name_theta: thetas})
-
-        stop = time.time()
-        print(f"time = {stop - start}")
 
         return da
 
