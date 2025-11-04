@@ -6,6 +6,7 @@ import typing
 import numpy as np
 import xarray as xr
 from matplotlib.colors import LogNorm, Normalize
+from matplotlib.projections.polar import PolarAxes
 
 from .. import bp_util, file_util, plt_util
 from ..derived_variables_bp import DERIVED_VARIABLE_BP_REGISTRY
@@ -45,8 +46,10 @@ class BpAnimation(Animation):
         prefix: file_util.BpPrefix,
         variable: str,
         plugins: list[PluginBp],
+        *,
+        subplot_kw: dict[str, typing.Any] = {},
     ):
-        super().__init__(steps)
+        super().__init__(steps, subplot_kw=subplot_kw)
 
         self.prefix = prefix
         self.variable = variable
@@ -101,7 +104,10 @@ class BpAnimation(Animation):
         if len(dims) == 1:
             return BpAnimation1d(steps, prefix, variable, plugins, dims[0])
         if len(dims) == 2:
-            return BpAnimation2d(steps, prefix, variable, plugins, tuple(dims))
+            if DIMENSIONS[dims[0]].geometry == "polar:r" and DIMENSIONS[dims[1]].geometry == "polar:theta":
+                return BpAnimation2dPolar(steps, prefix, variable, plugins, tuple(dims))
+            else:
+                return BpAnimation2d(steps, prefix, variable, plugins, tuple(dims))
         else:
             raise NotImplementedError("don't have 3D animations yet")
 
@@ -153,6 +159,69 @@ class BpAnimation2d(BpAnimation):
         data = self._load_data(step)
 
         self.im.set_array(data.T)
+
+        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
+        return [self.im, self.ax.title]
+
+
+class BpAnimation2dPolar(BpAnimation):
+    ax: PolarAxes
+
+    def __init__(
+        self,
+        steps: list[int],
+        prefix: file_util.BpPrefix,
+        variable: str,
+        plugins: list[PluginBp],
+        dims: tuple[str, str],
+    ):
+        super().__init__(steps, prefix, variable, plugins, subplot_kw={"projection": "polar"})
+
+        self.dims = dims
+
+    def _load_data(self, step: int) -> xr.DataArray:
+        data = super()._load_data(step)
+        if self.dep_scale == "log":
+            new_data_inner = data.data
+            new_data_inner[new_data_inner < 1e-20] = np.nan
+            data[:] = new_data_inner
+        return data
+
+    def _init_fig(self):
+        data = self._load_data(self.steps[0])
+
+        # must set scale (log, linear) before making image
+        if self.dep_scale == "log":
+            self.ax.set_rscale("symlog")
+
+        vertices_theta = np.concat((data.coords[self.dims[1]].data, [2 * np.pi]))
+        vertices_theta -= vertices_theta[1] / 2
+        vertices_r = list(data.coords[self.dims[0]].data)
+        vertices_r += [vertices_r[-1] + vertices_r[1]]
+
+        self.im = self.ax.pcolormesh(
+            *np.meshgrid(vertices_theta, vertices_r),
+            data,
+            shading="flat",
+            norm={"linear": Normalize(), "log": LogNorm()}[self.dep_scale],
+        )
+
+        self.fig.colorbar(self.im)
+        data_lower, data_upper = self._get_var_bounds()
+        plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
+
+        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
+
+        # FIXME make the labels work
+        # self.ax.set_xlabel(DIMENSIONS[self.dims[1]].to_axis_label())
+        # self.ax.set_ylabel(DIMENSIONS[self.dims[0]].to_axis_label())
+
+        self.fig.tight_layout()
+
+    def _update_fig(self, step: int):
+        data = self._load_data(step)
+
+        self.im.set_array(data)
 
         plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
         return [self.im, self.ax.title]
