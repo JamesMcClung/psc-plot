@@ -58,7 +58,7 @@ class Transform2D(ABC):
 class CartesianToPolar(Transform2D):
     def __init__(self, dim_x: Dimension, dim_y: Dimension):
         if dim_x.unit != dim_y.unit:
-            raise ValueError("Incompatible units for coordinate transform")
+            raise ValueError(f"Incompatible units for coordinate transform: {dim_x.unit} and {dim_y.unit}")
 
         self.dim_x = dim_x
         self.dim_y = dim_y
