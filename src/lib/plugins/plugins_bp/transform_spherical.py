@@ -51,35 +51,16 @@ class TransformSpherical(PluginBp):
         thetas = np.linspace(0.0, max_theta, ntheta, endpoint=False)
         phis = np.linspace(0.0, max_phi, nphi, endpoint=False)
 
-        new_dims = list(da.dims)
-        new_dims.remove(name_x)
-        new_dims.remove(name_y)
-        new_dims.remove(name_z)
-        new_dims = [name_r, name_theta, name_phi] + new_dims
+        xgrid, ygrid, zgrid = self.transform.inverse(*np.meshgrid(rs, thetas, phis, indexing="ij"))
+        xgrid = xr.Variable([name_r, name_theta, name_phi], xgrid)
+        ygrid = xr.Variable([name_r, name_theta, name_phi], ygrid)
+        zgrid = xr.Variable([name_r, name_theta, name_phi], zgrid)
 
-        new_coords = dict(da.coords)
-        del new_coords[name_x]
-        del new_coords[name_y]
-        del new_coords[name_z]
-        new_coords[name_r] = rs
-        new_coords[name_theta] = thetas
-        new_coords[name_phi] = phis
+        da = da.interp({name_x: xgrid, name_y: ygrid, name_z: zgrid}, assume_sorted=True)
+        da = da.drop_vars([name_x, name_y, name_z])
+        da = da.assign_coords({name_r: rs, name_theta: thetas, name_phi: phis})
 
-        shape = [len(new_coords[dim_name]) for dim_name in new_dims]
-
-        transformed = np.ndarray(shape)
-        for ir, r in enumerate(rs):
-            for itheta, theta in enumerate(thetas):
-                for iphi, phi in enumerate(phis):
-                    x, y, z = self.transform.inverse(r, theta, phi)
-                    indexer = [ir, itheta, iphi]
-                    if len(da.shape) > 3:
-                        indexer.append(slice(None))
-                    transformed[*indexer] = da.interp({name_x: x, name_y: y, name_z: z}, assume_sorted=True)
-
-        transformed_da = xr.DataArray(transformed, new_coords, new_dims, attrs=da.attrs)
-
-        return transformed_da
+        return da
 
     def get_name_fragment(self) -> str:
         return f"spherical_{self.transform.dim_x.name.plain},{self.transform.dim_y.name.plain},{self.transform.dim_z.name.plain}"
