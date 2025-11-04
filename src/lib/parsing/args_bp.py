@@ -3,10 +3,8 @@ import typing
 
 from .. import bp_util
 from ..animation import Animation, BpAnimation
-from ..dimension import DIMENSIONS
 from ..file_util import BP_PREFIXES
 from ..plugins import PLUGINS_BP, PluginBp
-from ..plugins.plugins_bp.fourier import Fourier
 from ..plugins.plugins_bp.versus import Versus
 from . import args_base
 
