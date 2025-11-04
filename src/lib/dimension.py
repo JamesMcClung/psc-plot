@@ -26,6 +26,7 @@ def _toggle_unit_fourier(unit: str) -> str:
 class Dimension:
     name: str  # latex-formated, sans '$'
     unit: str  # latex-formated, sans '$'
+    geometry: typing.Literal["cartesian", "temporal", "polar:r", "polar:theta"]
 
     def to_axis_label(self) -> str:
         return f"${self.name}\\ [{self.unit}]$"
@@ -37,9 +38,9 @@ class Dimension:
         # TODO make t <-> omega
         toggled_unit = _toggle_unit_fourier(self.unit)
         if self.is_fourier():
-            return Dimension(self.name.removeprefix(FOURIER_NAME_PREFIX), toggled_unit)
+            return Dimension(self.name.removeprefix(FOURIER_NAME_PREFIX), toggled_unit, self.geometry)
         else:
-            return Dimension(FOURIER_NAME_PREFIX + self.name, toggled_unit)
+            return Dimension(FOURIER_NAME_PREFIX + self.name, toggled_unit, self.geometry)
 
     def is_fourier(self) -> bool:
         return self.name.startswith(FOURIER_NAME_PREFIX)
@@ -61,8 +62,8 @@ class CartesianToPolar(Transform2D):
 
         self.dim_x = dim_x
         self.dim_y = dim_y
-        self.dim_r = Dimension("r", dim_x.unit).register()
-        self.dim_theta = Dimension("\\theta", RADIAN).register()
+        self.dim_r = Dimension("r", dim_x.unit, "polar:r").register()
+        self.dim_theta = Dimension("\\theta", RADIAN, "polar:theta").register()
 
     def apply[T: float | npt.NDArray[np.float64]](self, x: T, y: T) -> tuple[T, T]:
         r = (x**2 + y**2) ** 0.5
@@ -78,10 +79,10 @@ class CartesianToPolar(Transform2D):
 DIMENSIONS: dict[str, Dimension] = {}
 
 
-Dimension("x", ELECTRON_SKIN_DEPTH).register()
-Dimension("y", ELECTRON_SKIN_DEPTH).register()
-Dimension("z", ELECTRON_SKIN_DEPTH).register()
-Dimension("t", INVERSE_ELECTRON_PLASMA_FREQUENCY).register()
+Dimension("x", ELECTRON_SKIN_DEPTH, "cartesian").register()
+Dimension("y", ELECTRON_SKIN_DEPTH, "cartesian").register()
+Dimension("z", ELECTRON_SKIN_DEPTH, "cartesian").register()
+Dimension("t", INVERSE_ELECTRON_PLASMA_FREQUENCY, "temporal").register()
 
 for dim in ["x", "y", "z"]:
     DIMENSIONS[dim].toggle_fourier().register()
