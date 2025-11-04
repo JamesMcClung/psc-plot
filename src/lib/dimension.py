@@ -7,46 +7,48 @@ from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
 
-INVERSE_ELECTRON_PLASMA_FREQUENCY = "\\omega_\\text{pe}^{-1}"
-ELECTRON_SKIN_DEPTH = "d_\\text{e}"
-RADIAN = "\\text{rad}"
+from .latex import Latex
+
+INVERSE_ELECTRON_PLASMA_FREQUENCY = Latex("\\omega_\\text{pe}^{-1}")
+ELECTRON_SKIN_DEPTH = Latex("d_\\text{e}")
+RADIAN = Latex("\\text{rad}")
 
 FOURIER_NAME_PREFIX = "k_"
 
 
-def _toggle_unit_fourier(unit: str) -> str:
+def _toggle_unit_fourier(unit: Latex) -> Latex:
     inverse_suffix = "^{-1}"
-    if unit.endswith(inverse_suffix):
-        return unit.removesuffix(inverse_suffix)
+    if unit.ends_with(inverse_suffix):
+        return unit.remove_suffix(inverse_suffix)
     else:
-        return unit + inverse_suffix
+        return unit.append(inverse_suffix)
 
 
 @dataclass(frozen=True)
 class Dimension:
-    name: str  # latex-formated, sans '$'
-    unit: str  # latex-formated, sans '$'
+    name: Latex
+    unit: Latex
     geometry: typing.Literal["cartesian", "temporal", "polar:r", "polar:theta"]
 
     def to_axis_label(self) -> str:
-        return f"${self.name}\\ [{self.unit}]$"
+        return f"${self.name.latex}\\ [{self.unit.latex}]$"
 
     def get_coordinate_label(self, coord_val: float) -> str:
-        return f"${self.name} = {coord_val:.3f}\\ {self.unit}$"
+        return f"${self.name.latex} = {coord_val:.3f}\\ {self.unit.latex}$"
 
     def toggle_fourier(self) -> Dimension:
         # TODO make t <-> omega
         toggled_unit = _toggle_unit_fourier(self.unit)
         if self.is_fourier():
-            return Dimension(self.name.removeprefix(FOURIER_NAME_PREFIX), toggled_unit, self.geometry)
+            return Dimension(self.name.remove_prefix(FOURIER_NAME_PREFIX), toggled_unit, self.geometry)
         else:
-            return Dimension(FOURIER_NAME_PREFIX + self.name, toggled_unit, self.geometry)
+            return Dimension(self.name.prepend(FOURIER_NAME_PREFIX), toggled_unit, self.geometry)
 
     def is_fourier(self) -> bool:
-        return self.name.startswith(FOURIER_NAME_PREFIX)
+        return self.name.starts_with(FOURIER_NAME_PREFIX)
 
     def register(self) -> typing.Self:
-        DIMENSIONS[self.name] = self
+        DIMENSIONS[self.name.plain] = self
         return self
 
 
@@ -63,8 +65,8 @@ class CartesianToPolar(Transform2D):
         self.dim_x = dim_x
         self.dim_y = dim_y
         r_name = "k" if dim_x.is_fourier() else "r"
-        self.dim_r = Dimension(r_name, dim_x.unit, "polar:r").register()
-        self.dim_theta = Dimension("\\theta", RADIAN, "polar:theta").register()
+        self.dim_r = Dimension(Latex(r_name), dim_x.unit, "polar:r").register()
+        self.dim_theta = Dimension(Latex("\\theta"), RADIAN, "polar:theta").register()
 
     def apply[T: float | npt.NDArray[np.float64]](self, x: T, y: T) -> tuple[T, T]:
         r = (x**2 + y**2) ** 0.5
@@ -80,10 +82,10 @@ class CartesianToPolar(Transform2D):
 DIMENSIONS: dict[str, Dimension] = {}
 
 
-Dimension("x", ELECTRON_SKIN_DEPTH, "cartesian").register()
-Dimension("y", ELECTRON_SKIN_DEPTH, "cartesian").register()
-Dimension("z", ELECTRON_SKIN_DEPTH, "cartesian").register()
-Dimension("t", INVERSE_ELECTRON_PLASMA_FREQUENCY, "temporal").register()
+Dimension(Latex("x"), ELECTRON_SKIN_DEPTH, "cartesian").register()
+Dimension(Latex("y"), ELECTRON_SKIN_DEPTH, "cartesian").register()
+Dimension(Latex("z"), ELECTRON_SKIN_DEPTH, "cartesian").register()
+Dimension(Latex("t"), INVERSE_ELECTRON_PLASMA_FREQUENCY, "temporal").register()
 
 for dim in ["x", "y", "z"]:
     DIMENSIONS[dim].toggle_fourier().register()
