@@ -1,4 +1,5 @@
 import argparse
+import time
 
 import numpy as np
 import xarray as xr
@@ -54,6 +55,8 @@ class PolarTransform(PluginBp):
 
         shape = [len(new_coords[dim_name]) for dim_name in new_dims]
 
+        start = time.time()
+
         transformed = np.ndarray(shape)
         for ir, r in enumerate(rs):
             for itheta, theta in enumerate(thetas):
@@ -61,6 +64,9 @@ class PolarTransform(PluginBp):
                 transformed[ir, itheta, :] = da.interp({name_x: x, name_y: y}, assume_sorted=True)
 
         transformed_da = xr.DataArray(transformed, new_coords, new_dims, attrs=da.attrs)
+
+        stop = time.time()
+        print(f"time = {stop - start}")
 
         return transformed_da
 
