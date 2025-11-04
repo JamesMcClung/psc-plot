@@ -104,14 +104,14 @@ class CartesianToSpherical(Transform3D):
     def apply[T: float | npt.NDArray[np.float64]](self, x: T, y: T, z: T) -> tuple[T, T, T]:
         rho2 = x**2 + y**2
         r = (rho2 + z**2) ** 0.5
-        theta = np.arctan2(z, rho2**0.5)
+        theta = np.arctan2(rho2**0.5, z)
         phi = np.arctan2(y, x)
         return (r, theta, phi)
 
     def inverse[T: float | npt.NDArray[np.float64]](self, r: T, theta: T, phi: T) -> tuple[T, T, T]:
-        x = r * np.cos(theta) * np.cos(phi)
-        y = r * np.cos(theta) * np.sin(phi)
-        z = r * np.sin(theta)
+        x = r * np.sin(theta) * np.cos(phi)
+        y = r * np.sin(theta) * np.sin(phi)
+        z = r * np.cos(theta)
         return (x, y, z)
 
 
