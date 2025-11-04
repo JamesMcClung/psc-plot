@@ -57,10 +57,14 @@ class Transform2D(ABC):
     def apply[T: float | npt.NDArray[np.float64]](self, c1: T, c2: T) -> tuple[T, T]: ...
 
 
+def check_unit_compatability(dim_1: Dimension, dim_2: Dimension, dest_geometry: str):
+    if dim_1.unit != dim_2.unit:
+        raise ValueError(f"Dimensions {dim_1.name} and {dim_2.name} have incompatible units for transforming to {dest_geometry} coordinates ({dim_1.unit} and {dim_2.unit})")
+
+
 class CartesianToPolar(Transform2D):
     def __init__(self, dim_x: Dimension, dim_y: Dimension):
-        if dim_x.unit != dim_y.unit:
-            raise ValueError(f"Dimensions {dim_x.name} and {dim_y.name} have incompatible units for transforming to polar coordinates ({dim_x.unit} and {dim_y.unit})")
+        check_unit_compatability(dim_x, dim_y, "polar")
 
         self.dim_x = dim_x
         self.dim_y = dim_y
