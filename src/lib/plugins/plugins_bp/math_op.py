@@ -33,6 +33,9 @@ class MathOp(PluginBp):
 op_params = [
     ("pow", "exponent", "raise to the given power", "^", lambda da, rhs: da**rhs),
     ("div", "divisor", "divide by the given value", "/", lambda da, rhs: da / rhs),
+    ("mul", "multiplier", "multiply by the given value", "*", lambda da, rhs: da * rhs),
+    ("add", "summand", "add the given value", "+", lambda da, rhs: da + rhs),
+    ("sub", "subtrahend", "subtract the given value", "-", lambda da, rhs: da - rhs),
 ]
 
 for name_abbrev, metavar, help, symbol, func in op_params:
