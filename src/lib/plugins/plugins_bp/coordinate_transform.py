@@ -64,6 +64,9 @@ class PolarTransform(PluginBp):
 
         return transformed_da
 
+    def get_name_fragment(self) -> str:
+        return f"polar_{self.transform.dim_x.name.plain},{self.transform.dim_y.name.plain}"
+
 
 _POLAR_FORMAT = ("dim_1", "dim_2")
 
