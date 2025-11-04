@@ -21,13 +21,13 @@ class Fourier(PluginBp):
         # multiply/or divide coords by 2pi to go from frequency <-> angular frequency
 
         if dim.is_fourier():
-            da = da.assign_coords({dim.name: da.coords[dim.name] / (2 * np.pi)})
-            da = xrft.ifft(da, dim=dim.name, prefix=temp_prefix, lag=0.0)
-            da = da.rename({temp_prefix + dim.name: f_dim.name})
+            da = da.assign_coords({dim.name.plain: da.coords[dim.name.plain] / (2 * np.pi)})
+            da = xrft.ifft(da, dim=dim.name.plain, prefix=temp_prefix, lag=0.0)
+            da = da.rename({temp_prefix + dim.name.plain: f_dim.name.plain})
         else:
-            da = xrft.fft(da, dim=dim.name, prefix=temp_prefix)
-            da = da.rename({temp_prefix + dim.name: f_dim.name})
-            da = da.assign_coords({f_dim.name: da.coords[f_dim.name] * (2 * np.pi)})
+            da = xrft.fft(da, dim=dim.name.plain, prefix=temp_prefix)
+            da = da.rename({temp_prefix + dim.name.plain: f_dim.name.plain})
+            da = da.assign_coords({f_dim.name.plain: da.coords[f_dim.name.plain] * (2 * np.pi)})
 
         return da
 

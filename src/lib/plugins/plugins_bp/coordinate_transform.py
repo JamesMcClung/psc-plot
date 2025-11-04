@@ -14,10 +14,10 @@ class PolarTransform(PluginBp):
         self.transform = transform
 
     def apply(self, da: xr.DataArray) -> xr.DataArray:
-        name_x = self.transform.dim_x.name
-        name_y = self.transform.dim_y.name
-        name_r = self.transform.dim_r.name
-        name_theta = self.transform.dim_theta.name
+        name_x = self.transform.dim_x.name.plain
+        name_y = self.transform.dim_y.name.plain
+        name_r = self.transform.dim_r.name.plain
+        name_theta = self.transform.dim_theta.name.plain
 
         coords_x: xr.DataArray = da.coords[name_x]
         coords_y: xr.DataArray = da.coords[name_y]
