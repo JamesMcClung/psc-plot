@@ -9,7 +9,7 @@ from matplotlib.colors import LogNorm, Normalize
 from matplotlib.projections.polar import PolarAxes
 
 from .. import bp_util, file_util, plt_util
-from ..adaptors import PluginBp
+from ..adaptors import FieldAdaptor
 from ..derived_variables_bp import DERIVED_VARIABLE_BP_REGISTRY
 from ..dimension import DIMENSIONS
 from .animation_base import Animation
@@ -45,7 +45,7 @@ class BpAnimation(Animation):
         steps: list[int],
         prefix: file_util.BpPrefix,
         variable: str,
-        plugins: list[PluginBp],
+        plugins: list[FieldAdaptor],
         *,
         subplot_kw: dict[str, typing.Any] = {},
     ):
@@ -98,7 +98,7 @@ class BpAnimation(Animation):
         steps: list[int],
         prefix: file_util.BpPrefix,
         variable: str,
-        plugins: list[PluginBp],
+        plugins: list[FieldAdaptor],
         dims: list[str],
     ) -> BpAnimation:
         if len(dims) == 1:
@@ -123,7 +123,7 @@ class BpAnimation2d(BpAnimation):
         steps: list[int],
         prefix: file_util.BpPrefix,
         variable: str,
-        plugins: list[PluginBp],
+        plugins: list[FieldAdaptor],
         dims: tuple[str, str],
     ):
         super().__init__(steps, prefix, variable, plugins)
@@ -173,7 +173,7 @@ class BpAnimation2dPolar(BpAnimation):
         steps: list[int],
         prefix: file_util.BpPrefix,
         variable: str,
-        plugins: list[PluginBp],
+        plugins: list[FieldAdaptor],
         dims: tuple[str, str],
     ):
         super().__init__(steps, prefix, variable, plugins, subplot_kw={"projection": "polar"})
@@ -234,7 +234,7 @@ class BpAnimation1d(BpAnimation):
         steps: list[int],
         prefix: file_util.BpPrefix,
         variable: str,
-        plugins: list[PluginBp],
+        plugins: list[FieldAdaptor],
         dim: str,
     ):
         super().__init__(steps, prefix, variable, plugins)

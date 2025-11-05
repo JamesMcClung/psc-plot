@@ -2,16 +2,16 @@ import xarray as xr
 
 from ...dimension import DIMENSIONS
 from .. import parse_util
-from ..adaptor_base import PluginBp
+from ..adaptor_base import FieldAdaptor
 from ..registry import plugin_parser
 from .fourier import Fourier
 from .reduce import Reduce
 
 
-class Versus(PluginBp):
+class Versus(FieldAdaptor):
     def __init__(self, dim_names: list[str]):
         self.dim_names = dim_names
-        self.cached_inner_plugins: list[PluginBp] | None = None
+        self.cached_inner_plugins: list[FieldAdaptor] | None = None
 
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         if self.cached_inner_plugins is None:

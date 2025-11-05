@@ -3,11 +3,11 @@ from typing import Callable
 import xarray as xr
 
 from .. import parse_util
-from ..adaptor_base import PluginBp
+from ..adaptor_base import FieldAdaptor
 from ..registry import plugin_parser
 
 
-class MathOp(PluginBp):
+class MathOp(FieldAdaptor):
     def __init__(
         self,
         rhs: float,

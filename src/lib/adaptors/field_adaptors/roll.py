@@ -2,11 +2,11 @@ import xarray as xr
 
 from ...dimension import DIMENSIONS
 from .. import parse_util
-from ..adaptor_base import PluginBp
+from ..adaptor_base import FieldAdaptor
 from ..registry import plugin_parser
 
 
-class Roll(PluginBp):
+class Roll(FieldAdaptor):
     def __init__(self, dim_name: str, roll_window: int):
         self.dim_name = dim_name
         self.window_size = roll_window

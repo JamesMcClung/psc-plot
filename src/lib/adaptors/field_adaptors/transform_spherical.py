@@ -5,11 +5,11 @@ import xarray as xr
 
 from ...dimension import DIMENSIONS, CartesianToSpherical
 from .. import parse_util
-from ..adaptor_base import PluginBp
+from ..adaptor_base import FieldAdaptor
 from ..registry import plugin_parser
 
 
-class TransformSpherical(PluginBp):
+class TransformSpherical(FieldAdaptor):
     def __init__(self, transform: CartesianToSpherical):
         self.transform = transform
 

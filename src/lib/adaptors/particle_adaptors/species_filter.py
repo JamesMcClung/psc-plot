@@ -2,11 +2,11 @@ import pandas as pd
 
 from ...h5_util import SPECIES, Species
 from .. import parse_util
-from ..adaptor_base import PluginH5
+from ..adaptor_base import ParticleAdaptor
 from ..registry import plugin_parser
 
 
-class SpeciesFilter(PluginH5):
+class SpeciesFilter(ParticleAdaptor):
     def __init__(self, species: Species):
         self.species = species
 

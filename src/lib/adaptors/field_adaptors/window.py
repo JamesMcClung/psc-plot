@@ -6,11 +6,11 @@ from scipy.signal import windows
 
 from ...dimension import DIMENSIONS
 from .. import parse_util
-from ..adaptor_base import PluginBp
+from ..adaptor_base import FieldAdaptor
 from ..registry import plugin_parser
 
 
-class Window(PluginBp):
+class Window(FieldAdaptor):
     def __init__(self, dim_name: str):
         self.dim_name = dim_name
 

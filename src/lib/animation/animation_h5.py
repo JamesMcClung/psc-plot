@@ -3,7 +3,7 @@ import numpy.typing as npt
 import pandas as pd
 
 from .. import file_util, h5_util, plt_util
-from ..adaptors import PluginH5
+from ..adaptors import ParticleAdaptor
 from ..h5_util import PrtVariable
 from .animation_base import Animation
 
@@ -27,12 +27,12 @@ class H5Animation(Animation):
         super().__init__(steps)
 
         self.prefix = prefix
-        self.plugins: list[PluginH5] = []
+        self.plugins: list[ParticleAdaptor] = []
         self.axis_variables = axis_variables
         self._nicell = nicell
         self._bins = bins
 
-    def add_plugin(self, plugin: PluginH5):
+    def add_plugin(self, plugin: ParticleAdaptor):
         self.plugins.append(plugin)
 
     def _init_fig(self):

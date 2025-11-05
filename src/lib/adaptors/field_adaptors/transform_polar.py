@@ -5,11 +5,11 @@ import xarray as xr
 
 from ...dimension import DIMENSIONS, CartesianToPolar
 from .. import parse_util
-from ..adaptor_base import PluginBp
+from ..adaptor_base import FieldAdaptor
 from ..registry import plugin_parser
 
 
-class TransformPolar(PluginBp):
+class TransformPolar(FieldAdaptor):
     def __init__(self, transform: CartesianToPolar):
         self.transform = transform
 

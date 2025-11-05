@@ -2,11 +2,11 @@ import pandas as pd
 
 from ...h5_util import PRT_VARIABLES
 from .. import parse_util
-from ..adaptor_base import PluginH5
+from ..adaptor_base import ParticleAdaptor
 from ..registry import plugin_parser
 
 
-class Slice(PluginH5):
+class Slice(ParticleAdaptor):
     def __init__(self, var_name: str, lower_inclusive: float | None, upper_exclusive: float | None):
         self.var_name = var_name
         self.lower_inclusive = lower_inclusive

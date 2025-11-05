@@ -3,10 +3,10 @@ import abc
 import pandas as pd
 import xarray as xr
 
-__all__ = ["PluginBp", "PluginH5"]
+__all__ = ["FieldAdaptor", "ParticleAdaptor"]
 
 
-class Plugin[Data](abc.ABC):
+class Adaptor[Data](abc.ABC):
     @abc.abstractmethod
     def apply(self, da: Data) -> Data: ...
 
@@ -14,9 +14,9 @@ class Plugin[Data](abc.ABC):
         return ""
 
 
-class PluginBp(Plugin[xr.DataArray]):
+class FieldAdaptor(Adaptor[xr.DataArray]):
     def get_modified_dep_var_name(self, dep_var_name: str) -> str:
         return dep_var_name
 
 
-class PluginH5(Plugin[pd.DataFrame]): ...
+class ParticleAdaptor(Adaptor[pd.DataFrame]): ...

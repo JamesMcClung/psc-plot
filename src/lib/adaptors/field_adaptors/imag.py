@@ -1,10 +1,10 @@
 import xarray as xr
 
-from ..adaptor_base import PluginBp
+from ..adaptor_base import FieldAdaptor
 from ..registry import register_const_plugin
 
 
-class Imaginary(PluginBp):
+class Imaginary(FieldAdaptor):
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         return da.imag
 

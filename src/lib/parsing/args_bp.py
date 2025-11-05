@@ -2,7 +2,7 @@ import argparse
 import typing
 
 from .. import bp_util
-from ..adaptors import PLUGINS_BP, PluginBp
+from ..adaptors import PLUGINS_BP, FieldAdaptor
 from ..adaptors.field_adaptors.versus import Versus
 from ..animation import Animation, BpAnimation
 from ..file_util import BP_PREFIXES
@@ -17,7 +17,7 @@ SCALES: list[Scale] = list(Scale.__value__.__args__)
 class ArgsBp(args_base.ArgsTyped):
     variable: str
     scale: Scale
-    plugins: list[PluginBp]
+    plugins: list[FieldAdaptor]
 
     def get_animation(self) -> Animation:
         steps = bp_util.get_available_steps_bp(self.prefix)

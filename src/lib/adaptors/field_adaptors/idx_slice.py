@@ -2,11 +2,11 @@ import xarray as xr
 
 from ...dimension import DIMENSIONS
 from .. import parse_util
-from ..adaptor_base import PluginBp
+from ..adaptor_base import FieldAdaptor
 from ..registry import plugin_parser
 
 
-class IdxSlice(PluginBp):
+class IdxSlice(FieldAdaptor):
     def __init__(self, dim_name: str, lower_inclusive: int | None, upper_exclusive: int | None):
         self.dim_name = dim_name
         self.lower_inclusive = lower_inclusive

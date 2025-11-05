@@ -6,12 +6,12 @@ from argparse import Action, ArgumentParser
 from dataclasses import KW_ONLY, dataclass
 from typing import Any
 
-from .adaptor_base import PluginBp, PluginH5
+from .adaptor_base import FieldAdaptor, ParticleAdaptor
 
 __all__ = ["PLUGINS_BP", "PLUGINS_H5", "plugin_parser"]
 
-PLUGINS_BP: list[ArgparsePluginAdder[PluginBp]] = []
-PLUGINS_H5: list[ArgparsePluginAdder[PluginH5]] = []
+PLUGINS_BP: list[ArgparsePluginAdder[FieldAdaptor]] = []
+PLUGINS_H5: list[ArgparsePluginAdder[ParticleAdaptor]] = []
 
 
 def get_combine_args_action(combiner: typing.Callable[[list[Any]], Any]) -> Action:
@@ -86,10 +86,10 @@ def plugin_parser(
         kwargs = ArgparsePluginAdder(name_or_flags, help, type=parse_func, metavar=metavar, nargs=nargs)
         plugin_type = inspect.signature(parse_func).return_annotation
 
-        if issubclass(plugin_type, PluginBp):
+        if issubclass(plugin_type, FieldAdaptor):
             PLUGINS_BP.append(kwargs)
 
-        if issubclass(plugin_type, PluginH5):
+        if issubclass(plugin_type, ParticleAdaptor):
             PLUGINS_H5.append(kwargs)
 
         return parse_func
@@ -104,8 +104,8 @@ def register_const_plugin[PluginType](
 ):
     kwargs = ArgparsePluginAdder(name_or_flags, help, const=const)
 
-    if isinstance(const, PluginBp):
+    if isinstance(const, FieldAdaptor):
         PLUGINS_BP.append(kwargs)
 
-    if isinstance(const, PluginH5):
+    if isinstance(const, ParticleAdaptor):
         PLUGINS_H5.append(kwargs)

@@ -1,7 +1,7 @@
 import argparse
 
 from .. import h5_util
-from ..adaptors import PLUGINS_H5, PluginH5
+from ..adaptors import PLUGINS_H5, ParticleAdaptor
 from ..adaptors.particle_adaptors.species_filter import SpeciesFilter
 from ..animation import Animation
 from ..animation.animation_h5 import *
@@ -13,7 +13,7 @@ __all__ = ["add_subparsers_h5", "ArgsH5"]
 
 class ArgsH5(args_base.ArgsTyped):
     axis_variables: tuple[PrtVariable, PrtVariable]
-    plugins: list[PluginH5]
+    plugins: list[ParticleAdaptor]
 
     def get_animation(self) -> Animation:
         steps = h5_util.get_available_steps_h5(self.prefix)
