@@ -1,6 +1,6 @@
 import argparse
 
-from . import args_base, args_bp, args_h5
+from . import args_base, field_args, particle_args
 
 __all__ = ["get_parsed_args"]
 
@@ -9,8 +9,8 @@ def _get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="psc-plot")
     subparsers = args_base.add_subparsers(parser)
 
-    args_bp.add_subparsers_bp(subparsers)
-    args_h5.add_subparsers_h5(subparsers)
+    field_args.add_field_subparsers(subparsers)
+    particle_args.add_particle_subparsers(subparsers)
 
     return parser
 

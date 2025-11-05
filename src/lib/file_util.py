@@ -2,13 +2,13 @@ import os
 import pathlib
 import typing
 
-type BpPrefix = typing.Literal["pfd", "pfd_moments", "gauss", "continuity"]
-BP_PREFIXES: list[BpPrefix] = list(BpPrefix.__value__.__args__)
+type FieldPrefix = typing.Literal["pfd", "pfd_moments", "gauss", "continuity"]
+FIELD_PREFIXES: list[FieldPrefix] = list(FieldPrefix.__value__.__args__)
 
-type H5Prefix = typing.Literal["prt"]
-H5_PREFIXES: list[H5Prefix] = list(H5Prefix.__value__.__args__)
+type ParticlePrefix = typing.Literal["prt"]
+PARTICLE_PREFIXES: list[ParticlePrefix] = list(ParticlePrefix.__value__.__args__)
 
-type Prefix = BpPrefix | H5Prefix
+type Prefix = FieldPrefix | ParticlePrefix
 type Suffix = typing.Literal["bp", "h5"]
 
 
@@ -23,7 +23,7 @@ def _load_root_data_path() -> pathlib.Path:
 
 ROOT_DATA_PATH_ENV_VAR_NAME = "PSC_PLOT_ROOT_DATA_PATH"
 ROOT_DIR = _load_root_data_path()
-PREFIX_TO_SUFFIX: dict[Prefix, Suffix] = {bp_prefix: "bp" for bp_prefix in BP_PREFIXES} | {h5_prefix: "h5" for h5_prefix in H5_PREFIXES}
+PREFIX_TO_SUFFIX: dict[Prefix, Suffix] = {field_prefix: "bp" for field_prefix in FIELD_PREFIXES} | {particle_prefix: "h5" for particle_prefix in PARTICLE_PREFIXES}
 
 
 def get_available_steps(before_step: str, after_step: str) -> list[int]:
