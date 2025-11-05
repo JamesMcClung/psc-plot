@@ -10,7 +10,7 @@ from matplotlib.projections.polar import PolarAxes
 
 from .. import field_util, file_util, plt_util
 from ..adaptors import FieldPipeline
-from ..derived_field_variables import DERIVED_VARIABLE_BP_REGISTRY
+from ..derived_field_variables import DERIVED_FIELD_VARIABLES
 from ..dimension import DIMENSIONS
 from .animation_base import Animation
 
@@ -26,13 +26,13 @@ def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
 def derive_variable(ds: xr.Dataset, var_name: str, ds_prefix: file_util.FieldPrefix):
     if var_name in ds.variables:
         return
-    elif var_name in DERIVED_VARIABLE_BP_REGISTRY[ds_prefix]:
-        derived_var = DERIVED_VARIABLE_BP_REGISTRY[ds_prefix][var_name]
+    elif var_name in DERIVED_FIELD_VARIABLES[ds_prefix]:
+        derived_var = DERIVED_FIELD_VARIABLES[ds_prefix][var_name]
         for base_var_name in derived_var.base_var_names:
             derive_variable(ds, base_var_name, ds_prefix)
         derived_var.assign_to(ds)
     else:
-        message = f"No variable named '{var_name}'.\nThe following variables are defined: {list(ds.variables)}\n The following variables can be derived: {list(DERIVED_VARIABLE_BP_REGISTRY[ds_prefix])}"
+        message = f"No variable named '{var_name}'.\nThe following variables are defined: {list(ds.variables)}\n The following variables can be derived: {list(DERIVED_FIELD_VARIABLES[ds_prefix])}"
         raise ValueError(message)
 
 
