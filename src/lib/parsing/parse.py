@@ -1,6 +1,6 @@
 import argparse
 
-from . import args_base, args_h5, field_args
+from . import args_base, field_args, particle_args
 
 __all__ = ["get_parsed_args"]
 
@@ -10,7 +10,7 @@ def _get_parser() -> argparse.ArgumentParser:
     subparsers = args_base.add_subparsers(parser)
 
     field_args.add_subparsers_bp(subparsers)
-    args_h5.add_subparsers_h5(subparsers)
+    particle_args.add_subparsers_h5(subparsers)
 
     return parser
 
