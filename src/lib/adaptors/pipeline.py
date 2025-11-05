@@ -1,6 +1,7 @@
+import pandas as pd
 import xarray as xr
 
-from .adaptor_base import Adaptor, FieldAdaptor
+from .adaptor_base import Adaptor, FieldAdaptor, ParticleAdaptor
 
 
 class Pipeline[Data, AdaptorType: Adaptor[Data]]:
@@ -23,3 +24,6 @@ class FieldPipeline(Pipeline[xr.DataArray, FieldAdaptor]):
         for adaptor in self.adaptors:
             dep_var_name = adaptor.get_modified_dep_var_name(dep_var_name)
         return dep_var_name
+
+
+class ParticlePipeline(Pipeline[pd.DataFrame, ParticleAdaptor]): ...
