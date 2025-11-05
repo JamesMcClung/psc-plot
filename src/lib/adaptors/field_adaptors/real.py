@@ -1,7 +1,7 @@
 import xarray as xr
 
 from ..adaptor_base import FieldAdaptor
-from ..registry import register_const_plugin
+from ..registry import register_const_adaptor
 
 
 class Real(FieldAdaptor):
@@ -15,7 +15,7 @@ class Real(FieldAdaptor):
         return f"\\text{{Re}}[{title_stem}]"
 
 
-register_const_plugin(
+register_const_adaptor(
     "--real",
     help="take the real part",
     const=Real(),

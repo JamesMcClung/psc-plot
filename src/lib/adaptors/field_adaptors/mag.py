@@ -1,7 +1,7 @@
 import xarray as xr
 
 from ..adaptor_base import FieldAdaptor
-from ..registry import register_const_plugin
+from ..registry import register_const_adaptor
 
 
 class Magnitude(FieldAdaptor):
@@ -15,7 +15,7 @@ class Magnitude(FieldAdaptor):
         return f"|{title_stem}|"
 
 
-register_const_plugin(
+register_const_adaptor(
     "--mag",
     help="take the (complex) absolute value",
     const=Magnitude(),

@@ -1,7 +1,7 @@
 import argparse
 
 from .. import particle_util
-from ..adaptors import PARTICLE_PLUGINS, ParticleAdaptor
+from ..adaptors import PARTICLE_ADAPTORS, ParticleAdaptor
 from ..adaptors.particle_adaptors.species_filter import SpeciesFilter
 from ..animation import Animation
 from ..animation.particle_animation import *
@@ -13,7 +13,7 @@ __all__ = ["add_particle_subparsers", "ParticleArgs"]
 
 class ParticleArgs(args_base.ArgsTyped):
     axis_variables: tuple[PrtVariable, PrtVariable]
-    plugins: list[ParticleAdaptor]
+    adaptors: list[ParticleAdaptor]
 
     def get_animation(self) -> Animation:
         steps = particle_util.get_available_particle_steps(self.prefix)
@@ -26,8 +26,8 @@ class ParticleArgs(args_base.ArgsTyped):
             nicell=100,  # FIXME don't hardcode this
         )
 
-        for plugin in self.plugins:
-            anim.add_plugin(plugin)
+        for adaptor in self.adaptors:
+            anim.add_adaptor(adaptor)
 
         return anim
 
@@ -45,7 +45,7 @@ def add_particle_subparsers(subparsers: argparse._SubParsersAction):
         help="variables to use as the x and y axes",
     )
 
-    for plugin_adder in PARTICLE_PLUGINS:
-        plugin_adder.add_to(parent)
+    for adaptor_adder in PARTICLE_ADAPTORS:
+        adaptor_adder.add_to(parent)
 
     subparsers.add_parser("prt", parents=[parent])

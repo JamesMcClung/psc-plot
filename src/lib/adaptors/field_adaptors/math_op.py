@@ -4,7 +4,7 @@ import xarray as xr
 
 from .. import parse_util
 from ..adaptor_base import FieldAdaptor
-from ..registry import plugin_parser
+from ..registry import adaptor_parser
 
 
 class MathOp(FieldAdaptor):
@@ -40,7 +40,7 @@ op_params = [
 
 for name_abbrev, metavar, help, symbol, func in op_params:
 
-    @plugin_parser(
+    @adaptor_parser(
         f"--{name_abbrev}",
         metavar=metavar,
         help=help,

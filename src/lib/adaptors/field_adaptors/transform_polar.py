@@ -6,7 +6,7 @@ import xarray as xr
 from ...dimension import DIMENSIONS, CartesianToPolar
 from .. import parse_util
 from ..adaptor_base import FieldAdaptor
-from ..registry import plugin_parser
+from ..registry import adaptor_parser
 
 
 class TransformPolar(FieldAdaptor):
@@ -58,7 +58,7 @@ class TransformPolar(FieldAdaptor):
 _POLAR_FORMAT = ("dim_1", "dim_2")
 
 
-@plugin_parser(
+@adaptor_parser(
     "--transform-polar",
     metavar=_POLAR_FORMAT,
     help="perform a coordinate transform from cartesian (dim_1, dim_2) to polar (r, theta)",

@@ -2,7 +2,7 @@ import argparse
 import typing
 
 from .. import field_util
-from ..adaptors import FIELD_PLUGINS, FieldAdaptor
+from ..adaptors import FIELD_ADAPTORS, FieldAdaptor
 from ..adaptors.field_adaptors.versus import Versus
 from ..animation import Animation, FieldAnimation
 from ..file_util import FIELD_PREFIXES
@@ -17,20 +17,20 @@ SCALES: list[Scale] = list(Scale.__value__.__args__)
 class FieldArgs(args_base.ArgsTyped):
     variable: str
     scale: Scale
-    plugins: list[FieldAdaptor]
+    adaptors: list[FieldAdaptor]
 
     def get_animation(self) -> Animation:
         steps = field_util.get_available_field_steps(self.prefix)
 
         versus_dims = ["y", "z"]
-        for plugin in self.plugins:
-            if isinstance(plugin, Versus):
-                versus_dims = plugin.dim_names
+        for adaptor in self.adaptors:
+            if isinstance(adaptor, Versus):
+                versus_dims = adaptor.dim_names
                 break
         else:
-            self.plugins.append(Versus(versus_dims))
+            self.adaptors.append(Versus(versus_dims))
 
-        anim = FieldAnimation.get_animation(steps, self.prefix, self.variable, self.plugins, versus_dims)
+        anim = FieldAnimation.get_animation(steps, self.prefix, self.variable, self.adaptors, versus_dims)
 
         if self.scale == "linear":
             anim.set_scale("linear", "linear")
@@ -46,8 +46,8 @@ def add_field_subparsers(subparsers: argparse._SubParsersAction):
     parent = args_base.get_subparser_parent(FieldArgs)
     parent.add_argument("variable", type=str, help="the variable to plot")
 
-    for plugin_adder in FIELD_PLUGINS:
-        plugin_adder.add_to(parent)
+    for adaptor_adder in FIELD_ADAPTORS:
+        adaptor_adder.add_to(parent)
 
     parent.add_argument(
         "--scale",

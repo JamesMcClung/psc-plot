@@ -3,7 +3,7 @@ import xarray as xr
 from ...dimension import DIMENSIONS
 from .. import parse_util
 from ..adaptor_base import FieldAdaptor
-from ..registry import plugin_parser
+from ..registry import adaptor_parser
 
 
 class Roll(FieldAdaptor):
@@ -21,7 +21,7 @@ class Roll(FieldAdaptor):
 ROLL_FORMAT = "dim_name=window_size"
 
 
-@plugin_parser(
+@adaptor_parser(
     "--roll",
     metavar=ROLL_FORMAT,
     help="plot the rolling average against the given dimension with the given window size",

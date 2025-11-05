@@ -6,7 +6,7 @@ import xarray as xr
 from ...dimension import DIMENSIONS, CartesianToSpherical
 from .. import parse_util
 from ..adaptor_base import FieldAdaptor
-from ..registry import plugin_parser
+from ..registry import adaptor_parser
 
 
 class TransformSpherical(FieldAdaptor):
@@ -69,7 +69,7 @@ class TransformSpherical(FieldAdaptor):
 _SPHERICAL_FORMAT = ("dim_1", "dim_2", "dim_3")
 
 
-@plugin_parser(
+@adaptor_parser(
     "--transform-spherical",
     metavar=_SPHERICAL_FORMAT,
     help="perform a coordinate transform from cartesian (dim_1, dim_2) to polar (r, theta)",

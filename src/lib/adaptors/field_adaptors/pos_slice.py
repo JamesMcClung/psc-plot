@@ -3,7 +3,7 @@ import xarray as xr
 from ...dimension import DIMENSIONS
 from .. import parse_util
 from ..adaptor_base import FieldAdaptor
-from ..registry import plugin_parser
+from ..registry import adaptor_parser
 
 
 class PosSlice(FieldAdaptor):
@@ -24,7 +24,7 @@ class PosSlice(FieldAdaptor):
 _POS_SLICE_FORMAT = "dim_name=lower:upper"
 
 
-@plugin_parser(
+@adaptor_parser(
     "--pos-slice",
     metavar=_POS_SLICE_FORMAT,
     help="restrict data along the given dimension to a slice, specified by lower (inclusive) and upper (exclusive) positions (both optional)",

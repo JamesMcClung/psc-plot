@@ -3,7 +3,7 @@ import xarray as xr
 from ...dimension import DIMENSIONS
 from .. import parse_util
 from ..adaptor_base import FieldAdaptor
-from ..registry import plugin_parser
+from ..registry import adaptor_parser
 from .fourier import Fourier
 from .reduce import Reduce
 
@@ -11,11 +11,11 @@ from .reduce import Reduce
 class Versus(FieldAdaptor):
     def __init__(self, dim_names: list[str]):
         self.dim_names = dim_names
-        self.cached_inner_plugins: list[FieldAdaptor] | None = None
+        self.cached_inner_adaptors: list[FieldAdaptor] | None = None
 
     def apply(self, da: xr.DataArray) -> xr.DataArray:
-        if self.cached_inner_plugins is None:
-            self.cached_inner_plugins = []
+        if self.cached_inner_adaptors is None:
+            self.cached_inner_adaptors = []
             # 1. apply implicit coordinate transforms, as necessary
             for dim_name in self.dim_names:
                 # 1a. already have the coordinate; do nothing
@@ -27,7 +27,7 @@ class Versus(FieldAdaptor):
                 f_dim = dim.toggle_fourier()
                 if f_dim.name.plain in da.dims:
                     fourier = Fourier(f_dim)
-                    self.cached_inner_plugins.append(fourier)
+                    self.cached_inner_adaptors.append(fourier)
                     da = fourier.apply(da)
                     continue
 
@@ -38,11 +38,11 @@ class Versus(FieldAdaptor):
             for dim_name in da.dims:
                 if dim_name not in self.dim_names:
                     reduce = Reduce(dim_name, "mean")
-                    self.cached_inner_plugins.append(reduce)
+                    self.cached_inner_adaptors.append(reduce)
                     da = reduce.apply(da)
         else:
-            for plugin in self.cached_inner_plugins:
-                da = plugin.apply(da)
+            for adaptor in self.cached_inner_adaptors:
+                da = adaptor.apply(da)
 
         # 3. transpose to correct dimension order
         da = da.transpose(*self.dim_names)
@@ -50,15 +50,15 @@ class Versus(FieldAdaptor):
         return da
 
     def get_modified_dep_var_name(self, dep_var_name):
-        assert self.cached_inner_plugins is not None, "can't modify dep var name—don't know what inner plugins are required yet"
+        assert self.cached_inner_adaptors is not None, "can't modify dep var name—don't know what inner adaptors are required yet"
 
-        for p in self.cached_inner_plugins:
+        for p in self.cached_inner_adaptors:
             dep_var_name = p.get_modified_dep_var_name(dep_var_name)
 
         return dep_var_name
 
     def get_name_fragment(self) -> str:
-        # don't include inner plugins because they can be inferred
+        # don't include inner adaptors because they can be inferred
         dims = ",".join(self.dim_names)
         return f"vs_{dims}"
 
@@ -66,7 +66,7 @@ class Versus(FieldAdaptor):
 _VERSUS_FORMAT = "dim_name"
 
 
-@plugin_parser(
+@adaptor_parser(
     "--versus",
     "-v",
     metavar=_VERSUS_FORMAT,

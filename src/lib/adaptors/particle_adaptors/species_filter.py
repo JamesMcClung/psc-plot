@@ -3,7 +3,7 @@ import pandas as pd
 from ...particle_util import SPECIES, Species
 from .. import parse_util
 from ..adaptor_base import ParticleAdaptor
-from ..registry import plugin_parser
+from ..registry import adaptor_parser
 
 
 class SpeciesFilter(ParticleAdaptor):
@@ -24,7 +24,7 @@ class SpeciesFilter(ParticleAdaptor):
 _SPECIES_FILTER_FORMAT = "species"
 
 
-@plugin_parser(
+@adaptor_parser(
     "--species",
     metavar=_SPECIES_FILTER_FORMAT,
     help="include only particles of this species",

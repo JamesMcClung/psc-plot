@@ -1,7 +1,7 @@
 import xarray as xr
 
 from ..adaptor_base import FieldAdaptor
-from ..registry import register_const_plugin
+from ..registry import register_const_adaptor
 
 
 class Imaginary(FieldAdaptor):
@@ -15,7 +15,7 @@ class Imaginary(FieldAdaptor):
         return f"\\text{{Im}}[{title_stem}]"
 
 
-register_const_plugin(
+register_const_adaptor(
     "--imag",
     help="take the imaginary part",
     const=Imaginary(),

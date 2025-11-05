@@ -5,7 +5,7 @@ import xrft
 from ...dimension import DIMENSIONS, Dimension
 from .. import parse_util
 from ..adaptor_base import FieldAdaptor
-from ..registry import plugin_parser
+from ..registry import adaptor_parser
 
 
 def toggle_fourier(da: xr.DataArray, dim: Dimension) -> xr.DataArray:
@@ -50,7 +50,7 @@ class Fourier(FieldAdaptor):
 FOURIER_FORMAT = "dim_name"
 
 
-@plugin_parser(
+@adaptor_parser(
     "--fourier",
     "-f",
     metavar=FOURIER_FORMAT,

@@ -6,7 +6,7 @@ import xarray as xr
 from ...dimension import DIMENSIONS
 from .. import parse_util
 from ..adaptor_base import FieldAdaptor
-from ..registry import plugin_parser
+from ..registry import adaptor_parser
 
 
 class ReduceFunc(typing.Protocol):
@@ -34,7 +34,7 @@ class Reduce(FieldAdaptor):
 REDUCE_FORMAT = "dim_name=reduce_func"
 
 
-@plugin_parser(
+@adaptor_parser(
     "--reduce",
     metavar=REDUCE_FORMAT,
     help="reduce the given dimension using the given method",

@@ -7,7 +7,7 @@ from scipy.signal import windows
 from ...dimension import DIMENSIONS
 from .. import parse_util
 from ..adaptor_base import FieldAdaptor
-from ..registry import plugin_parser
+from ..registry import adaptor_parser
 
 
 class Window(FieldAdaptor):
@@ -53,7 +53,7 @@ class Kaiser(Window):
 KAISER_FORMAT = "dim_name=beta"
 
 
-@plugin_parser(
+@adaptor_parser(
     "--window-kaiser",
     metavar=KAISER_FORMAT,
     help="apply the Kaiser window of the given beta along the given dimension",

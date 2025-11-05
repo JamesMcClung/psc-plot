@@ -45,7 +45,7 @@ class FieldAnimation(Animation):
         steps: list[int],
         prefix: file_util.FieldPrefix,
         variable: str,
-        plugins: list[FieldAdaptor],
+        adaptors: list[FieldAdaptor],
         *,
         subplot_kw: dict[str, typing.Any] = {},
     ):
@@ -54,7 +54,7 @@ class FieldAnimation(Animation):
         self.prefix = prefix
         self.variable = variable
 
-        self.plugins = plugins
+        self.adaptors = adaptors
 
         self.indep_scale: Scale = "linear"
         self.dep_scale: Scale = "linear"
@@ -63,9 +63,9 @@ class FieldAnimation(Animation):
     def dep_var_name(self) -> str:
         """The latex-formatted name (including applied formulae) of the dependent variable"""
         # This is cached in order to defer its evaluation until after _load_data has been called,
-        # and each plugin has thus seen the data and determined what (if any) internal plugins it needs
+        # and each adaptor has thus seen the data and determined what (if any) internal adaptors it needs
         # (as of the time of this comment, only Versus does this)
-        return functools.reduce(lambda stem, plugin: plugin.get_modified_dep_var_name(stem), self.plugins, f"\\text{{{self.variable}}}")
+        return functools.reduce(lambda stem, adaptor: adaptor.get_modified_dep_var_name(stem), self.adaptors, f"\\text{{{self.variable}}}")
 
     def set_scale(self, indep_scale: Scale, dep_scale: Scale):
         self.indep_scale = indep_scale
@@ -76,8 +76,8 @@ class FieldAnimation(Animation):
         derive_variable(ds, self.variable, self.prefix)
         da = ds[self.variable]
 
-        for plugin in self.plugins:
-            da = plugin.apply(da)
+        for adaptor in self.adaptors:
+            da = adaptor.apply(da)
 
         da = da.assign_attrs(**ds.attrs)
 
@@ -98,23 +98,23 @@ class FieldAnimation(Animation):
         steps: list[int],
         prefix: file_util.FieldPrefix,
         variable: str,
-        plugins: list[FieldAdaptor],
+        adaptors: list[FieldAdaptor],
         dims: list[str],
     ) -> FieldAnimation:
         if len(dims) == 1:
-            return FieldAnimation1d(steps, prefix, variable, plugins, dims[0])
+            return FieldAnimation1d(steps, prefix, variable, adaptors, dims[0])
         if len(dims) == 2:
             if DIMENSIONS[dims[0]].geometry == "polar:r" and DIMENSIONS[dims[1]].geometry == "polar:theta":
-                return FieldAnimation2dPolar(steps, prefix, variable, plugins, tuple(dims))
+                return FieldAnimation2dPolar(steps, prefix, variable, adaptors, tuple(dims))
             else:
-                return FieldAnimation2d(steps, prefix, variable, plugins, tuple(dims))
+                return FieldAnimation2d(steps, prefix, variable, adaptors, tuple(dims))
         else:
             raise NotImplementedError("don't have 3D animations yet")
 
     def _get_default_save_path(self) -> str:
-        plugin_name_fragments = [p.get_name_fragment() for p in self.plugins]
-        plugin_name_fragments = [frag for frag in plugin_name_fragments if frag]
-        return "-".join([self.prefix, self.variable] + plugin_name_fragments) + ".mp4"
+        adaptor_name_fragments = [p.get_name_fragment() for p in self.adaptors]
+        adaptor_name_fragments = [frag for frag in adaptor_name_fragments if frag]
+        return "-".join([self.prefix, self.variable] + adaptor_name_fragments) + ".mp4"
 
 
 class FieldAnimation2d(FieldAnimation):
@@ -123,10 +123,10 @@ class FieldAnimation2d(FieldAnimation):
         steps: list[int],
         prefix: file_util.FieldPrefix,
         variable: str,
-        plugins: list[FieldAdaptor],
+        adaptors: list[FieldAdaptor],
         dims: tuple[str, str],
     ):
-        super().__init__(steps, prefix, variable, plugins)
+        super().__init__(steps, prefix, variable, adaptors)
 
         self.dims = dims
 
@@ -173,10 +173,10 @@ class FieldAnimation2dPolar(FieldAnimation):
         steps: list[int],
         prefix: file_util.FieldPrefix,
         variable: str,
-        plugins: list[FieldAdaptor],
+        adaptors: list[FieldAdaptor],
         dims: tuple[str, str],
     ):
-        super().__init__(steps, prefix, variable, plugins, subplot_kw={"projection": "polar"})
+        super().__init__(steps, prefix, variable, adaptors, subplot_kw={"projection": "polar"})
 
         self.dims = dims
 
@@ -234,10 +234,10 @@ class FieldAnimation1d(FieldAnimation):
         steps: list[int],
         prefix: file_util.FieldPrefix,
         variable: str,
-        plugins: list[FieldAdaptor],
+        adaptors: list[FieldAdaptor],
         dim: str,
     ):
-        super().__init__(steps, prefix, variable, plugins)
+        super().__init__(steps, prefix, variable, adaptors)
 
         self.dim = dim
 

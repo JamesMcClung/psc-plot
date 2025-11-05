@@ -3,7 +3,7 @@ import pandas as pd
 from ...particle_util import PRT_VARIABLES
 from .. import parse_util
 from ..adaptor_base import ParticleAdaptor
-from ..registry import plugin_parser
+from ..registry import adaptor_parser
 
 
 class Slice(ParticleAdaptor):
@@ -28,7 +28,7 @@ class Slice(ParticleAdaptor):
 _SLICE_FORMAT = "var_name=lower:upper"
 
 
-@plugin_parser(
+@adaptor_parser(
     "--slice",
     metavar=_SLICE_FORMAT,
     help="restrict data from the given variable to a slice, specified by lower (inclusive) and upper (exclusive) values (both optional)",
