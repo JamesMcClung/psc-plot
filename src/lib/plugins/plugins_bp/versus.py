@@ -25,7 +25,7 @@ class Versus(PluginBp):
                 # 1b. need to do a Fourier transform
                 dim = DIMENSIONS[dim_name]
                 f_dim = dim.toggle_fourier()
-                if f_dim.name in da.dims:
+                if f_dim.name.plain in da.dims:
                     fourier = Fourier(f_dim)
                     self.cached_inner_plugins.append(fourier)
                     da = fourier.apply(da)
