@@ -3,7 +3,7 @@ import typing
 
 from .. import bp_util
 from ..adaptors import PLUGINS_BP, PluginBp
-from ..adaptors.plugins_bp.versus import Versus
+from ..adaptors.field_adaptors.versus import Versus
 from ..animation import Animation, BpAnimation
 from ..file_util import BP_PREFIXES
 from . import args_base
