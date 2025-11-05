@@ -1,8 +1,7 @@
 import argparse
 
 from .. import particle_util
-from ..adaptors import PARTICLE_ADAPTORS, ParticleAdaptor
-from ..adaptors.particle_adaptors.species_filter import SpeciesFilter
+from ..adaptors import PARTICLE_ADAPTORS, ParticleAdaptor, ParticlePipeline
 from ..animation import Animation
 from ..animation.particle_animation import *
 from ..particle_util import PRT_VARIABLES, PrtVariable
@@ -21,13 +20,11 @@ class ParticleArgs(args_base.ArgsTyped):
         anim = ParticleAnimation(
             steps,
             self.prefix,
+            ParticlePipeline(*self.adaptors),
             axis_variables=self.axis_variables,
             bins=None,  # guess
             nicell=100,  # FIXME don't hardcode this
         )
-
-        for adaptor in self.adaptors:
-            anim.add_adaptor(adaptor)
 
         return anim
 

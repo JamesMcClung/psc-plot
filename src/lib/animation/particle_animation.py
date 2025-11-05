@@ -3,7 +3,7 @@ import numpy.typing as npt
 import pandas as pd
 
 from .. import file_util, particle_util, plt_util
-from ..adaptors import ParticleAdaptor
+from ..adaptors import ParticlePipeline
 from ..particle_util import PrtVariable
 from .animation_base import Animation
 
@@ -19,6 +19,7 @@ class ParticleAnimation(Animation):
         self,
         steps: list[int],
         prefix: file_util.ParticlePrefix,
+        pipeline: ParticlePipeline,
         *,
         axis_variables: tuple[PrtVariable, PrtVariable],
         nicell: int,
@@ -27,13 +28,10 @@ class ParticleAnimation(Animation):
         super().__init__(steps)
 
         self.prefix = prefix
-        self.adaptors: list[ParticleAdaptor] = []
+        self.pipeline = pipeline
         self.axis_variables = axis_variables
         self._nicell = nicell
         self._bins = bins
-
-    def add_adaptor(self, adaptor: ParticleAdaptor):
-        self.adaptors.append(adaptor)
 
     def _init_fig(self):
         binned_data, self.x_edges, self.y_edges = self._get_binned_data(self.steps[0], self._bins or self._guess_bins())
@@ -67,8 +65,7 @@ class ParticleAnimation(Animation):
     def _load_df(self, step: int) -> pd.DataFrame:
         df = particle_util.load_df(self.prefix, step)
 
-        for adaptor in self.adaptors:
-            df = adaptor.apply(df)
+        df = self.pipeline.apply(df)
 
         return df
 
@@ -92,6 +89,5 @@ class ParticleAnimation(Animation):
         return binned_data, x_edges, y_edges
 
     def _get_default_save_path(self) -> str:
-        adaptor_name_fragments = [p.get_name_fragment() for p in self.adaptors]
-        adaptor_name_fragments = [frag for frag in adaptor_name_fragments if frag]
+        adaptor_name_fragments = self.pipeline.get_name_fragments()
         return "-".join([self.prefix] + list(self.axis_variables) + adaptor_name_fragments) + ".mp4"
