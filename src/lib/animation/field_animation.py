@@ -8,9 +8,9 @@ import xarray as xr
 from matplotlib.colors import LogNorm, Normalize
 from matplotlib.projections.polar import PolarAxes
 
-from .. import bp_util, file_util, plt_util
+from .. import field_util, file_util, plt_util
 from ..adaptors import FieldAdaptor
-from ..derived_variables_bp import DERIVED_VARIABLE_BP_REGISTRY
+from ..derived_field_variables import DERIVED_VARIABLE_BP_REGISTRY
 from ..dimension import DIMENSIONS
 from .animation_base import Animation
 
@@ -72,7 +72,7 @@ class BpAnimation(Animation):
         self.dep_scale = dep_scale
 
     def _load_data(self, step: int) -> xr.DataArray:
-        ds = bp_util.load_ds(self.prefix, step)
+        ds = field_util.load_ds(self.prefix, step)
         derive_variable(ds, self.variable, self.prefix)
         da = ds[self.variable]
 

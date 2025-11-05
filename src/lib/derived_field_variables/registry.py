@@ -1,7 +1,7 @@
 import inspect
 
 from ..file_util import BpPrefix
-from .derived_variable_bp import DeriveBp, DerivedVariableBp
+from .derived_field_variable import DeriveBp, DerivedVariableBp
 
 __all__ = ["derived_variable_bp", "DERIVED_VARIABLE_BP_REGISTRY", "register_derived_variable_bp"]
 

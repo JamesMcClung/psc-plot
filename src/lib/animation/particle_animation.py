@@ -2,9 +2,9 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
-from .. import file_util, h5_util, plt_util
+from .. import file_util, particle_util, plt_util
 from ..adaptors import ParticleAdaptor
-from ..h5_util import PrtVariable
+from ..particle_util import PrtVariable
 from .animation_base import Animation
 
 __all__ = ["H5Animation", "NBins", "BinEdges"]
@@ -65,7 +65,7 @@ class H5Animation(Animation):
         return (np.linspace(xmin, xmax, 100, endpoint=True), np.linspace(ymin, ymax, 100, endpoint=True))
 
     def _load_df(self, step: int) -> pd.DataFrame:
-        df = h5_util.load_df(self.prefix, step)
+        df = particle_util.load_df(self.prefix, step)
 
         for plugin in self.plugins:
             df = plugin.apply(df)

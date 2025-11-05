@@ -1,6 +1,6 @@
 import pandas as pd
 
-from ...h5_util import SPECIES, Species
+from ...particle_util import SPECIES, Species
 from .. import parse_util
 from ..adaptor_base import ParticleAdaptor
 from ..registry import plugin_parser

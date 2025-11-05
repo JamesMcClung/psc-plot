@@ -1,7 +1,7 @@
 import argparse
 import typing
 
-from .. import bp_util
+from .. import field_util
 from ..adaptors import PLUGINS_BP, FieldAdaptor
 from ..adaptors.field_adaptors.versus import Versus
 from ..animation import Animation, BpAnimation
@@ -20,7 +20,7 @@ class ArgsBp(args_base.ArgsTyped):
     plugins: list[FieldAdaptor]
 
     def get_animation(self) -> Animation:
-        steps = bp_util.get_available_steps_bp(self.prefix)
+        steps = field_util.get_available_steps_bp(self.prefix)
 
         versus_dims = ["y", "z"]
         for plugin in self.plugins:
