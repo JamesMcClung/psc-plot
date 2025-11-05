@@ -3,8 +3,8 @@ import numpy.typing as npt
 import pandas as pd
 
 from .. import file_util, h5_util, plt_util
+from ..adaptors import PluginH5
 from ..h5_util import PrtVariable
-from ..plugins import PluginH5
 from .animation_base import Animation
 
 __all__ = ["H5Animation", "NBins", "BinEdges"]

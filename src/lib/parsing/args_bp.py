@@ -2,10 +2,10 @@ import argparse
 import typing
 
 from .. import bp_util
+from ..adaptors import PLUGINS_BP, PluginBp
+from ..adaptors.plugins_bp.versus import Versus
 from ..animation import Animation, BpAnimation
 from ..file_util import BP_PREFIXES
-from ..plugins import PLUGINS_BP, PluginBp
-from ..plugins.plugins_bp.versus import Versus
 from . import args_base
 
 __all__ = ["add_subparsers_bp", "ArgsBp"]

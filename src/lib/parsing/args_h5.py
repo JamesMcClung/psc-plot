@@ -1,11 +1,11 @@
 import argparse
 
 from .. import h5_util
+from ..adaptors import PLUGINS_H5, PluginH5
+from ..adaptors.plugins_h5.species_filter import SpeciesFilter
 from ..animation import Animation
 from ..animation.animation_h5 import *
 from ..h5_util import PRT_VARIABLES, PrtVariable
-from ..plugins import PLUGINS_H5, PluginH5
-from ..plugins.plugins_h5.species_filter import SpeciesFilter
 from . import args_base
 
 __all__ = ["add_subparsers_h5", "ArgsH5"]

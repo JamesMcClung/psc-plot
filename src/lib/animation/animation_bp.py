@@ -9,9 +9,9 @@ from matplotlib.colors import LogNorm, Normalize
 from matplotlib.projections.polar import PolarAxes
 
 from .. import bp_util, file_util, plt_util
+from ..adaptors import PluginBp
 from ..derived_variables_bp import DERIVED_VARIABLE_BP_REGISTRY
 from ..dimension import DIMENSIONS
-from ..plugins import PluginBp
 from .animation_base import Animation
 
 __all__ = ["BpAnimation"]

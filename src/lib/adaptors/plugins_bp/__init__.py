@@ -6,4 +6,4 @@ module_paths = [path for path in this_file.parent.glob("*.py") if path != this_f
 modules = [path.stem for path in module_paths]
 
 for module in modules:
-    importlib.import_module(f"lib.plugins.plugins_bp.{module}")
+    importlib.import_module(f"lib.adaptors.plugins_bp.{module}")
