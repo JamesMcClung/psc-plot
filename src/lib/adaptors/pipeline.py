@@ -13,10 +13,10 @@ class Pipeline[Data, AdaptorType: Adaptor[Data]]:
         name_fragments = [frag for frag in name_fragments if frag]
         return name_fragments
 
-    def apply(self, da: Data) -> Data:
+    def apply(self, data: Data) -> Data:
         for adaptor in self.adaptors:
-            da = adaptor.apply(da)
-        return da
+            data = adaptor.apply(data)
+        return data
 
 
 class FieldPipeline(Pipeline[xr.DataArray, FieldAdaptor]):
