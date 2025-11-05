@@ -2,7 +2,7 @@ import argparse
 import typing
 
 from .. import field_util
-from ..adaptors import FIELD_ADAPTORS, FieldAdaptor
+from ..adaptors import FIELD_ADAPTORS, FieldAdaptor, FieldPipeline
 from ..adaptors.field_adaptors.versus import Versus
 from ..animation import Animation, FieldAnimation
 from ..file_util import FIELD_PREFIXES
@@ -30,7 +30,9 @@ class FieldArgs(args_base.ArgsTyped):
         else:
             self.adaptors.append(Versus(versus_dims))
 
-        anim = FieldAnimation.get_animation(steps, self.prefix, self.variable, self.adaptors, versus_dims)
+        pipeline = FieldPipeline(*self.adaptors)
+
+        anim = FieldAnimation.get_animation(steps, self.prefix, self.variable, pipeline, versus_dims)
 
         if self.scale == "linear":
             anim.set_scale("linear", "linear")

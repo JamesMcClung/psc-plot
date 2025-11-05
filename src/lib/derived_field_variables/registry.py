@@ -3,13 +3,13 @@ import inspect
 from ..file_util import FieldPrefix
 from .derived_field_variable import DerivedFieldVariable, DeriveField
 
-__all__ = ["derived_field_variable", "DERIVED_VARIABLE_BP_REGISTRY", "register_derived_field_variable"]
+__all__ = ["derived_field_variable", "DERIVED_FIELD_VARIABLES", "register_derived_field_variable"]
 
-DERIVED_VARIABLE_BP_REGISTRY: dict[FieldPrefix, dict[str, DerivedFieldVariable]] = {}
+DERIVED_FIELD_VARIABLES: dict[FieldPrefix, dict[str, DerivedFieldVariable]] = {}
 
 
 def register_derived_field_variable(prefix: FieldPrefix, var: DerivedFieldVariable):
-    DERIVED_VARIABLE_BP_REGISTRY.setdefault(prefix, {})[var.name] = var
+    DERIVED_FIELD_VARIABLES.setdefault(prefix, {})[var.name] = var
 
 
 def derived_field_variable(prefix: FieldPrefix):

@@ -9,8 +9,8 @@ from matplotlib.colors import LogNorm, Normalize
 from matplotlib.projections.polar import PolarAxes
 
 from .. import field_util, file_util, plt_util
-from ..adaptors import FieldAdaptor
-from ..derived_field_variables import DERIVED_VARIABLE_BP_REGISTRY
+from ..adaptors import FieldPipeline
+from ..derived_field_variables import DERIVED_FIELD_VARIABLES
 from ..dimension import DIMENSIONS
 from .animation_base import Animation
 
@@ -26,13 +26,13 @@ def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
 def derive_variable(ds: xr.Dataset, var_name: str, ds_prefix: file_util.FieldPrefix):
     if var_name in ds.variables:
         return
-    elif var_name in DERIVED_VARIABLE_BP_REGISTRY[ds_prefix]:
-        derived_var = DERIVED_VARIABLE_BP_REGISTRY[ds_prefix][var_name]
+    elif var_name in DERIVED_FIELD_VARIABLES[ds_prefix]:
+        derived_var = DERIVED_FIELD_VARIABLES[ds_prefix][var_name]
         for base_var_name in derived_var.base_var_names:
             derive_variable(ds, base_var_name, ds_prefix)
         derived_var.assign_to(ds)
     else:
-        message = f"No variable named '{var_name}'.\nThe following variables are defined: {list(ds.variables)}\n The following variables can be derived: {list(DERIVED_VARIABLE_BP_REGISTRY[ds_prefix])}"
+        message = f"No variable named '{var_name}'.\nThe following variables are defined: {list(ds.variables)}\n The following variables can be derived: {list(DERIVED_FIELD_VARIABLES[ds_prefix])}"
         raise ValueError(message)
 
 
@@ -45,7 +45,7 @@ class FieldAnimation(Animation):
         steps: list[int],
         prefix: file_util.FieldPrefix,
         variable: str,
-        adaptors: list[FieldAdaptor],
+        pipeline: FieldPipeline,
         *,
         subplot_kw: dict[str, typing.Any] = {},
     ):
@@ -54,7 +54,7 @@ class FieldAnimation(Animation):
         self.prefix = prefix
         self.variable = variable
 
-        self.adaptors = adaptors
+        self.pipeline = pipeline
 
         self.indep_scale: Scale = "linear"
         self.dep_scale: Scale = "linear"
@@ -65,7 +65,7 @@ class FieldAnimation(Animation):
         # This is cached in order to defer its evaluation until after _load_data has been called,
         # and each adaptor has thus seen the data and determined what (if any) internal adaptors it needs
         # (as of the time of this comment, only Versus does this)
-        return functools.reduce(lambda stem, adaptor: adaptor.get_modified_dep_var_name(stem), self.adaptors, f"\\text{{{self.variable}}}")
+        return self.pipeline.get_modified_dep_var_name(f"\\text{{{self.variable}}}")
 
     def set_scale(self, indep_scale: Scale, dep_scale: Scale):
         self.indep_scale = indep_scale
@@ -76,8 +76,7 @@ class FieldAnimation(Animation):
         derive_variable(ds, self.variable, self.prefix)
         da = ds[self.variable]
 
-        for adaptor in self.adaptors:
-            da = adaptor.apply(da)
+        da = self.pipeline.apply(da)
 
         da = da.assign_attrs(**ds.attrs)
 
@@ -98,22 +97,21 @@ class FieldAnimation(Animation):
         steps: list[int],
         prefix: file_util.FieldPrefix,
         variable: str,
-        adaptors: list[FieldAdaptor],
+        pipeline: FieldPipeline,
         dims: list[str],
     ) -> FieldAnimation:
         if len(dims) == 1:
-            return FieldAnimation1d(steps, prefix, variable, adaptors, dims[0])
+            return FieldAnimation1d(steps, prefix, variable, pipeline, dims[0])
         if len(dims) == 2:
             if DIMENSIONS[dims[0]].geometry == "polar:r" and DIMENSIONS[dims[1]].geometry == "polar:theta":
-                return FieldAnimation2dPolar(steps, prefix, variable, adaptors, tuple(dims))
+                return FieldAnimation2dPolar(steps, prefix, variable, pipeline, tuple(dims))
             else:
-                return FieldAnimation2d(steps, prefix, variable, adaptors, tuple(dims))
+                return FieldAnimation2d(steps, prefix, variable, pipeline, tuple(dims))
         else:
             raise NotImplementedError("don't have 3D animations yet")
 
     def _get_default_save_path(self) -> str:
-        adaptor_name_fragments = [p.get_name_fragment() for p in self.adaptors]
-        adaptor_name_fragments = [frag for frag in adaptor_name_fragments if frag]
+        adaptor_name_fragments = self.pipeline.get_name_fragments()
         return "-".join([self.prefix, self.variable] + adaptor_name_fragments) + ".mp4"
 
 
@@ -123,10 +121,10 @@ class FieldAnimation2d(FieldAnimation):
         steps: list[int],
         prefix: file_util.FieldPrefix,
         variable: str,
-        adaptors: list[FieldAdaptor],
+        pipeline: FieldPipeline,
         dims: tuple[str, str],
     ):
-        super().__init__(steps, prefix, variable, adaptors)
+        super().__init__(steps, prefix, variable, pipeline)
 
         self.dims = dims
 
@@ -173,10 +171,10 @@ class FieldAnimation2dPolar(FieldAnimation):
         steps: list[int],
         prefix: file_util.FieldPrefix,
         variable: str,
-        adaptors: list[FieldAdaptor],
+        pipeline: FieldPipeline,
         dims: tuple[str, str],
     ):
-        super().__init__(steps, prefix, variable, adaptors, subplot_kw={"projection": "polar"})
+        super().__init__(steps, prefix, variable, pipeline, subplot_kw={"projection": "polar"})
 
         self.dims = dims
 
@@ -234,10 +232,10 @@ class FieldAnimation1d(FieldAnimation):
         steps: list[int],
         prefix: file_util.FieldPrefix,
         variable: str,
-        adaptors: list[FieldAdaptor],
+        pipeline: FieldPipeline,
         dim: str,
     ):
-        super().__init__(steps, prefix, variable, adaptors)
+        super().__init__(steps, prefix, variable, pipeline)
 
         self.dim = dim
 
