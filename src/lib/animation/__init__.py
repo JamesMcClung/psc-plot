@@ -1,5 +1,5 @@
 from .animation_base import Animation
-from .field_animation import BpAnimation
-from .particle_animation import H5Animation
+from .field_animation import FieldAnimation
+from .particle_animation import ParticleAnimation
 
-__all__ = ["Animation", "BpAnimation", "H5Animation"]
+__all__ = ["Animation", "FieldAnimation", "ParticleAnimation"]

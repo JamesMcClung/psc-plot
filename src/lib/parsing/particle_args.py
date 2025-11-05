@@ -1,24 +1,24 @@
 import argparse
 
 from .. import particle_util
-from ..adaptors import PLUGINS_H5, ParticleAdaptor
+from ..adaptors import PARTICLE_PLUGINS, ParticleAdaptor
 from ..adaptors.particle_adaptors.species_filter import SpeciesFilter
 from ..animation import Animation
 from ..animation.particle_animation import *
 from ..particle_util import PRT_VARIABLES, PrtVariable
 from . import args_base
 
-__all__ = ["add_subparsers_h5", "ArgsH5"]
+__all__ = ["add_particle_subparsers", "ParticleArgs"]
 
 
-class ArgsH5(args_base.ArgsTyped):
+class ParticleArgs(args_base.ArgsTyped):
     axis_variables: tuple[PrtVariable, PrtVariable]
     plugins: list[ParticleAdaptor]
 
     def get_animation(self) -> Animation:
-        steps = particle_util.get_available_steps_h5(self.prefix)
+        steps = particle_util.get_available_particle_steps(self.prefix)
 
-        anim = H5Animation(
+        anim = ParticleAnimation(
             steps,
             self.prefix,
             axis_variables=self.axis_variables,
@@ -32,8 +32,8 @@ class ArgsH5(args_base.ArgsTyped):
         return anim
 
 
-def add_subparsers_h5(subparsers: argparse._SubParsersAction):
-    parent = args_base.get_subparser_parent(ArgsH5)
+def add_particle_subparsers(subparsers: argparse._SubParsersAction):
+    parent = args_base.get_subparser_parent(ParticleArgs)
 
     parent.add_argument(
         "-a",
@@ -45,7 +45,7 @@ def add_subparsers_h5(subparsers: argparse._SubParsersAction):
         help="variables to use as the x and y axes",
     )
 
-    for plugin_adder in PLUGINS_H5:
+    for plugin_adder in PARTICLE_PLUGINS:
         plugin_adder.add_to(parent)
 
     subparsers.add_parser("prt", parents=[parent])

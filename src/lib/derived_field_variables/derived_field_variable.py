@@ -2,19 +2,19 @@ import typing
 
 import xarray as xr
 
-__all__ = ["DeriveBp", "DerivedVariableBp"]
+__all__ = ["DeriveField", "DerivedFieldVariable"]
 
 
-class DeriveBp(typing.Protocol):
+class DeriveField(typing.Protocol):
     def __call__(self, *variables: xr.DataArray) -> xr.DataArray: ...
 
 
-class DerivedVariableBp:
+class DerivedFieldVariable:
     def __init__(
         self,
         name: str,
         base_var_names: list[str],
-        derive: DeriveBp,
+        derive: DeriveField,
     ):
         self.name = name
         self.base_var_names = base_var_names

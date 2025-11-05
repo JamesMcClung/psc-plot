@@ -7,18 +7,18 @@ from ..adaptors import ParticleAdaptor
 from ..particle_util import PrtVariable
 from .animation_base import Animation
 
-__all__ = ["H5Animation", "NBins", "BinEdges"]
+__all__ = ["ParticleAnimation", "NBins", "BinEdges"]
 
 
 type NBins = int
 type BinEdges = npt.NDArray[np.float64]
 
 
-class H5Animation(Animation):
+class ParticleAnimation(Animation):
     def __init__(
         self,
         steps: list[int],
-        prefix: file_util.H5Prefix,
+        prefix: file_util.ParticlePrefix,
         *,
         axis_variables: tuple[PrtVariable, PrtVariable],
         nicell: int,

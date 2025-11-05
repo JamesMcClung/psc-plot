@@ -14,7 +14,7 @@ from ..derived_field_variables import DERIVED_VARIABLE_BP_REGISTRY
 from ..dimension import DIMENSIONS
 from .animation_base import Animation
 
-__all__ = ["BpAnimation"]
+__all__ = ["FieldAnimation"]
 
 
 def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
@@ -23,7 +23,7 @@ def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
     return (float(lower), float(upper))
 
 
-def derive_variable(ds: xr.Dataset, var_name: str, ds_prefix: file_util.BpPrefix):
+def derive_variable(ds: xr.Dataset, var_name: str, ds_prefix: file_util.FieldPrefix):
     if var_name in ds.variables:
         return
     elif var_name in DERIVED_VARIABLE_BP_REGISTRY[ds_prefix]:
@@ -39,11 +39,11 @@ def derive_variable(ds: xr.Dataset, var_name: str, ds_prefix: file_util.BpPrefix
 type Scale = typing.Literal["linear", "log"]
 
 
-class BpAnimation(Animation):
+class FieldAnimation(Animation):
     def __init__(
         self,
         steps: list[int],
-        prefix: file_util.BpPrefix,
+        prefix: file_util.FieldPrefix,
         variable: str,
         plugins: list[FieldAdaptor],
         *,
@@ -96,18 +96,18 @@ class BpAnimation(Animation):
     @staticmethod
     def get_animation(
         steps: list[int],
-        prefix: file_util.BpPrefix,
+        prefix: file_util.FieldPrefix,
         variable: str,
         plugins: list[FieldAdaptor],
         dims: list[str],
-    ) -> BpAnimation:
+    ) -> FieldAnimation:
         if len(dims) == 1:
-            return BpAnimation1d(steps, prefix, variable, plugins, dims[0])
+            return FieldAnimation1d(steps, prefix, variable, plugins, dims[0])
         if len(dims) == 2:
             if DIMENSIONS[dims[0]].geometry == "polar:r" and DIMENSIONS[dims[1]].geometry == "polar:theta":
-                return BpAnimation2dPolar(steps, prefix, variable, plugins, tuple(dims))
+                return FieldAnimation2dPolar(steps, prefix, variable, plugins, tuple(dims))
             else:
-                return BpAnimation2d(steps, prefix, variable, plugins, tuple(dims))
+                return FieldAnimation2d(steps, prefix, variable, plugins, tuple(dims))
         else:
             raise NotImplementedError("don't have 3D animations yet")
 
@@ -117,11 +117,11 @@ class BpAnimation(Animation):
         return "-".join([self.prefix, self.variable] + plugin_name_fragments) + ".mp4"
 
 
-class BpAnimation2d(BpAnimation):
+class FieldAnimation2d(FieldAnimation):
     def __init__(
         self,
         steps: list[int],
-        prefix: file_util.BpPrefix,
+        prefix: file_util.FieldPrefix,
         variable: str,
         plugins: list[FieldAdaptor],
         dims: tuple[str, str],
@@ -165,13 +165,13 @@ class BpAnimation2d(BpAnimation):
         return [self.im, self.ax.title]
 
 
-class BpAnimation2dPolar(BpAnimation):
+class FieldAnimation2dPolar(FieldAnimation):
     ax: PolarAxes
 
     def __init__(
         self,
         steps: list[int],
-        prefix: file_util.BpPrefix,
+        prefix: file_util.FieldPrefix,
         variable: str,
         plugins: list[FieldAdaptor],
         dims: tuple[str, str],
@@ -228,11 +228,11 @@ class BpAnimation2dPolar(BpAnimation):
         return [self.im, self.ax.title]
 
 
-class BpAnimation1d(BpAnimation):
+class FieldAnimation1d(FieldAnimation):
     def __init__(
         self,
         steps: list[int],
-        prefix: file_util.BpPrefix,
+        prefix: file_util.FieldPrefix,
         variable: str,
         plugins: list[FieldAdaptor],
         dim: str,
