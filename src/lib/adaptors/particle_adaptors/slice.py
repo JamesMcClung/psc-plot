@@ -2,7 +2,7 @@ import pandas as pd
 
 from ...h5_util import PRT_VARIABLES
 from .. import parse_util
-from ..plugin_base import PluginH5
+from ..adaptor_base import PluginH5
 from ..registry import plugin_parser
 
 

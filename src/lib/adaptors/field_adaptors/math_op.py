@@ -3,7 +3,7 @@ from typing import Callable
 import xarray as xr
 
 from .. import parse_util
-from ..plugin_base import PluginBp
+from ..adaptor_base import PluginBp
 from ..registry import plugin_parser
 
 

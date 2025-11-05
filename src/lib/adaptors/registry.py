@@ -6,7 +6,7 @@ from argparse import Action, ArgumentParser
 from dataclasses import KW_ONLY, dataclass
 from typing import Any
 
-from .plugin_base import PluginBp, PluginH5
+from .adaptor_base import PluginBp, PluginH5
 
 __all__ = ["PLUGINS_BP", "PLUGINS_H5", "plugin_parser"]
 

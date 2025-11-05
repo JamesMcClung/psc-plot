@@ -6,7 +6,7 @@ from scipy.signal import windows
 
 from ...dimension import DIMENSIONS
 from .. import parse_util
-from ..plugin_base import PluginBp
+from ..adaptor_base import PluginBp
 from ..registry import plugin_parser
 
 

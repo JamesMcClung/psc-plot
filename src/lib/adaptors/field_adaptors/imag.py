@@ -1,6 +1,6 @@
 import xarray as xr
 
-from ..plugin_base import PluginBp
+from ..adaptor_base import PluginBp
 from ..registry import register_const_plugin
 
 
