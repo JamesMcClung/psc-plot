@@ -2,7 +2,7 @@ import argparse
 
 from .. import h5_util
 from ..adaptors import PLUGINS_H5, PluginH5
-from ..adaptors.plugins_h5.species_filter import SpeciesFilter
+from ..adaptors.particle_adaptors.species_filter import SpeciesFilter
 from ..animation import Animation
 from ..animation.animation_h5 import *
 from ..h5_util import PRT_VARIABLES, PrtVariable
