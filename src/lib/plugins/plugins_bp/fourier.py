@@ -27,7 +27,9 @@ def toggle_fourier(da: xr.DataArray, dim: Dimension) -> xr.DataArray:
 
 
 class Fourier(PluginBp):
-    def __init__(self, dims: list[Dimension]):
+    def __init__(self, dims: Dimension | list[Dimension]):
+        if isinstance(dims, Dimension):
+            dims = [dims]
         self.dims = dims
 
     def apply(self, da: xr.DataArray) -> xr.DataArray:
