@@ -40,6 +40,6 @@ class Fit:
         y_fit_log = x_log * slope + intercept
         y_fit = np.exp(y_fit_log)
 
-        label = f"$\\gamma={slope:.3f}$ ($r^2={rvalue**2:.3f}$)"
+        label = f"$\\gamma={-slope:.3f}$ ($r^2={rvalue**2:.3f}$)"
 
         return y_fit, label
