@@ -21,6 +21,7 @@ class FieldArgs(args_base.ArgsTyped):
     scale: Scale
     adaptors: list[FieldAdaptor]
     fits: list[Fit]  # 1d only
+    show_t0: bool  # 1d only
 
     def get_animation(self) -> Animation:
         steps = field_util.get_available_field_steps(self.prefix)
@@ -39,6 +40,7 @@ class FieldArgs(args_base.ArgsTyped):
 
         if isinstance(anim, FieldAnimation1d):
             anim.add_fits(*self.fits)
+            anim.show_t0 = self.show_t0
         elif self.fits:
             # TODO use an argparse exception type
             raise Exception("fits not supported on higher-dimensional data")
@@ -75,6 +77,13 @@ def add_field_subparsers(subparsers: argparse._SubParsersAction):
         type=Fit,
         help="fit the data",  # TODO decide what fit should be able to do
         metavar="fit",  # TODO decide a string format to be parsed
+    )
+
+    parent.add_argument(
+        "--show-t0",
+        action="store_true",
+        default=False,
+        help="(1d only) always show the curve at t=0 for comparison",
     )
 
     # may have to unroll this loop later when e.g. different prefixes have different derived variables
