@@ -39,7 +39,7 @@ class FieldArgs(args_base.ArgsTyped):
         anim = FieldAnimation.get_animation(steps, self.prefix, self.variable, pipeline, versus_dims)
 
         if isinstance(anim, FieldAnimation1d):
-            anim.add_fits(*self.fits)
+            anim.add_fits(self.fits)
             anim.show_t0 = self.show_t0
         elif self.fits:
             # TODO use an argparse exception type
