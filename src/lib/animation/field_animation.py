@@ -8,6 +8,8 @@ import xarray as xr
 from matplotlib.colors import LogNorm, Normalize
 from matplotlib.projections.polar import PolarAxes
 
+from lib.parsing.fit import Fit
+
 from .. import field_util, file_util, plt_util
 from ..adaptors import FieldPipeline
 from ..derived_field_variables import DERIVED_FIELD_VARIABLES
@@ -236,6 +238,7 @@ class FieldAnimation1d(FieldAnimation):
         super().__init__(steps, prefix, variable, pipeline)
 
         self.dim = dim
+        self.fits = []
 
     def _init_fig(self):
         data = self._load_data(self.steps[0])
@@ -264,3 +267,6 @@ class FieldAnimation1d(FieldAnimation):
     def _update_ybounds(self):
         ymin, ymax = plt_util.symmetrize_bounds(*self._get_var_bounds())
         self.ax.set_ybound(ymin, ymax)
+
+    def add_fits(self, fits: list[Fit]):
+        self.fits.extend(fits)
