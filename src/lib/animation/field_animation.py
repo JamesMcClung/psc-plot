@@ -267,6 +267,10 @@ class FieldAnimation1d(FieldAnimation):
 
         self.line.set_ydata(data)
 
+        for fit, line in zip(self.fits, self.fit_lines):
+            # TODO properly add and remove lines from fits
+            fit.update_fit(data, line)
+
         plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
         return [self.line, self.ax.yaxis, self.ax.title]
 
