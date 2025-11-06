@@ -9,7 +9,10 @@ class Fit:
     def __init__(self, arg: str):
         # TODO proper error handling
         # TODO actually parse different options for fits
-        pass
+
+        [min_x, max_x] = arg.split(":")
+        self.min_x = float(min_x)
+        self.max_x = float(max_x)
 
     def plot_fit(self, ax: Axes, da: xr.DataArray) -> Line2D:
         # TODO actually do a fit
