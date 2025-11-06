@@ -242,6 +242,7 @@ class FieldAnimation1d(FieldAnimation):
 
     def _init_fig(self):
         data = self._load_data(self.steps[0])
+        # TODO: use actual coord data
         xdata = np.linspace(*get_extent(data, self.dim), len(data), endpoint=False)
 
         [self.line] = self.ax.plot(xdata, data)
