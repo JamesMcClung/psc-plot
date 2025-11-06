@@ -245,7 +245,8 @@ class FieldAnimation1d(FieldAnimation):
         # TODO: use actual coord data
         xdata = np.linspace(*get_extent(data, self.dim), len(data), endpoint=False)
 
-        [self.line] = self.ax.plot(xdata, data)
+        line_type = "." if self.fits else "-"
+        [self.line] = self.ax.plot(xdata, data, line_type)
 
         plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
         self._update_ybounds()
