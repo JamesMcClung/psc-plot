@@ -255,6 +255,11 @@ class FieldAnimation1d(FieldAnimation):
         self.ax.set_xscale(self.indep_scale)
         self.ax.set_yscale(self.dep_scale)
 
+        self.fit_lines = [fit.plot_fit(self.ax, data) for fit in self.fits]
+
+        if self.fits:
+            self.ax.legend()
+
         self.fig.tight_layout()
 
     def _update_fig(self, step: int):
