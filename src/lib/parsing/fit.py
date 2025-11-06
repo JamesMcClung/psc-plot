@@ -1,3 +1,5 @@
+import numpy as np
+import scipy.stats as stats
 import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.lines import Line2D
@@ -29,4 +31,13 @@ class Fit:
     def _get_fit_data(self, da: xr.DataArray) -> xr.DataArray:
         slicer = PosSlice(da.dims[0], self.min_x, self.max_x)
         da = slicer.apply(da)
-        return da
+
+        x_log = np.log(da.coords[da.dims[0]])
+        y_log = np.log(da)
+
+        [slope, intercept, rvalue, *_] = stats.linregress(x_log, y_log)
+
+        y_fit_log = x_log * slope + intercept
+        y_fit = np.exp(y_fit_log)
+
+        return y_fit
