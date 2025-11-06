@@ -80,6 +80,12 @@ class FieldAnimation(Animation):
 
         da = da.assign_attrs(**ds.attrs)
 
+        # filter out near-zero values
+        if self.dep_scale == "log":
+            new_data_inner = da.data
+            new_data_inner[new_data_inner < 1e-40] = np.nan
+            da[:] = new_data_inner
+
         return da
 
     def _get_var_bounds(self) -> tuple[float, float]:
@@ -177,14 +183,6 @@ class FieldAnimation2dPolar(FieldAnimation):
         super().__init__(steps, prefix, variable, pipeline, subplot_kw={"projection": "polar"})
 
         self.dims = dims
-
-    def _load_data(self, step: int) -> xr.DataArray:
-        data = super()._load_data(step)
-        if self.dep_scale == "log":
-            new_data_inner = data.data
-            new_data_inner[new_data_inner < 1e-20] = np.nan
-            data[:] = new_data_inner
-        return data
 
     def _init_fig(self):
         data = self._load_data(self.steps[0])
