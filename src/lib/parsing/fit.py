@@ -15,3 +15,6 @@ class Fit:
         # TODO actually do a fit
         [fit_line] = ax.plot(da.coords[da.dims[0]], da, "o", label="hi")
         return fit_line
+
+    def update_fit(self, da: xr.DataArray, line: Line2D):
+        line.set_data(da.coords[da.dims[0]], da)
