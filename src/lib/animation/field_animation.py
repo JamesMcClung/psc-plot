@@ -271,6 +271,10 @@ class FieldAnimation1d(FieldAnimation):
             # TODO properly add and remove lines from fits
             fit.update_fit(data, line)
 
+        if self.fits:
+            # updates legend in case fit labels changed (e.g. to show different fit params)
+            self.ax.legend()
+
         plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
         return [self.line, self.ax.yaxis, self.ax.title]
 
