@@ -8,6 +8,8 @@ import xarray as xr
 from matplotlib.colors import LogNorm, Normalize
 from matplotlib.projections.polar import PolarAxes
 
+from lib.parsing.fit import Fit
+
 from .. import field_util, file_util, plt_util
 from ..adaptors import FieldPipeline
 from ..derived_field_variables import DERIVED_FIELD_VARIABLES
@@ -236,12 +238,15 @@ class FieldAnimation1d(FieldAnimation):
         super().__init__(steps, prefix, variable, pipeline)
 
         self.dim = dim
+        self.fits: list[Fit] = []
 
     def _init_fig(self):
         data = self._load_data(self.steps[0])
+        # TODO: use actual coord data
         xdata = np.linspace(*get_extent(data, self.dim), len(data), endpoint=False)
 
-        [self.line] = self.ax.plot(xdata, data)
+        line_type = "." if self.fits else "-"
+        [self.line] = self.ax.plot(xdata, data, line_type)
 
         plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
         self._update_ybounds()
@@ -251,6 +256,11 @@ class FieldAnimation1d(FieldAnimation):
         self.ax.set_xscale(self.indep_scale)
         self.ax.set_yscale(self.dep_scale)
 
+        self.fit_lines = [fit.plot_fit(self.ax, data) for fit in self.fits]
+
+        if self.fits:
+            self.ax.legend()
+
         self.fig.tight_layout()
 
     def _update_fig(self, step: int):
@@ -258,9 +268,20 @@ class FieldAnimation1d(FieldAnimation):
 
         self.line.set_ydata(data)
 
+        for fit, line in zip(self.fits, self.fit_lines):
+            # TODO properly add and remove lines from fits
+            fit.update_fit(data, line)
+
+        if self.fits:
+            # updates legend in case fit labels changed (e.g. to show different fit params)
+            self.ax.legend()
+
         plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
         return [self.line, self.ax.yaxis, self.ax.title]
 
     def _update_ybounds(self):
         ymin, ymax = plt_util.symmetrize_bounds(*self._get_var_bounds())
         self.ax.set_ybound(ymin, ymax)
+
+    def add_fits(self, fits: list[Fit]):
+        self.fits.extend(fits)
