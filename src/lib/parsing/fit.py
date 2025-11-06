@@ -19,16 +19,16 @@ class Fit:
         self.max_x = float(max_x)
 
     def plot_fit(self, ax: Axes, da: xr.DataArray) -> Line2D:
-        # TODO actually do a fit
-        fit_da = self._get_fit_data(da)
-        [fit_line] = ax.plot(fit_da.coords[fit_da.dims[0]], fit_da, "o", label="hi")
+        fit_da, label = self._get_fit_data(da)
+        [fit_line] = ax.plot(fit_da.coords[fit_da.dims[0]], fit_da, "o", label=label)
         return fit_line
 
     def update_fit(self, da: xr.DataArray, line: Line2D):
-        fit_da = self._get_fit_data(da)
+        fit_da, label = self._get_fit_data(da)
         line.set_data(fit_da.coords[fit_da.dims[0]], fit_da)
+        line.set_label(label)
 
-    def _get_fit_data(self, da: xr.DataArray) -> xr.DataArray:
+    def _get_fit_data(self, da: xr.DataArray) -> tuple[xr.DataArray, str]:
         slicer = PosSlice(da.dims[0], self.min_x, self.max_x)
         da = slicer.apply(da)
 
@@ -40,4 +40,6 @@ class Fit:
         y_fit_log = x_log * slope + intercept
         y_fit = np.exp(y_fit_log)
 
-        return y_fit
+        label = f"$\\gamma={slope:.3f}$ ($r^2={rvalue**2:.3f}$)"
+
+        return y_fit, label
