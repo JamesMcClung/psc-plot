@@ -44,6 +44,9 @@ class FieldArgs(args_base.ArgsTyped):
         elif self.fits:
             # TODO use an argparse exception type
             raise Exception("fits not supported on higher-dimensional data")
+        elif self.show_t0:
+            # TODO use an argparse exception type
+            raise Exception("show t=0 not supported on higher-dimensional data")
 
         if self.scale == "linear":
             anim.set_scale("linear", "linear")
