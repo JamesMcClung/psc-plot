@@ -20,7 +20,7 @@ class Fit:
 
     def plot_fit(self, ax: Axes, da: xr.DataArray) -> Line2D:
         fit_da, label = self._get_fit_data(da)
-        [fit_line] = ax.plot(fit_da.coords[fit_da.dims[0]], fit_da, "o", label=label)
+        [fit_line] = ax.plot(fit_da.coords[fit_da.dims[0]], fit_da, "--", label=label)
         return fit_line
 
     def update_fit(self, da: xr.DataArray, line: Line2D):
