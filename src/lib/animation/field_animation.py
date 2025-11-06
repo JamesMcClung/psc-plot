@@ -249,6 +249,9 @@ class FieldAnimation1d(FieldAnimation):
         line_type = "." if self.fits else "-"
         [self.line] = self.ax.plot(xdata, data, line_type)
 
+        if self.show_t0:
+            self.ax.plot(xdata, data, "-", label="$t=0$")
+
         plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
         self._update_ybounds()
         self.ax.set_xlabel(DIMENSIONS[self.dim].to_axis_label())
@@ -259,7 +262,7 @@ class FieldAnimation1d(FieldAnimation):
 
         self.fit_lines = [fit.plot_fit(self.ax, data) for fit in self.fits]
 
-        if self.fits:
+        if self.fits or self.show_t0:
             self.ax.legend()
 
         self.fig.tight_layout()
