@@ -7,6 +7,7 @@ from ..adaptors.field_adaptors.versus import Versus
 from ..animation import Animation, FieldAnimation
 from ..file_util import FIELD_PREFIXES
 from . import args_base
+from .fit import Fit
 
 __all__ = ["add_field_subparsers", "FieldArgs"]
 
@@ -18,6 +19,7 @@ class FieldArgs(args_base.ArgsTyped):
     variable: str
     scale: Scale
     adaptors: list[FieldAdaptor]
+    fits: list[Fit]  # 1d only
 
     def get_animation(self) -> Animation:
         steps = field_util.get_available_field_steps(self.prefix)
@@ -56,6 +58,16 @@ def add_field_subparsers(subparsers: argparse._SubParsersAction):
         choices=SCALES,
         default="linear",
         help="use this scale",
+    )
+
+    parent.add_argument(
+        "--fit",
+        action="append",
+        dest="fits",
+        nargs="+",
+        type=Fit,
+        help="fit the data",  # TODO decide what fit should be able to do
+        metavar="fit",  # TODO decide a string format to be parsed
     )
 
     # may have to unroll this loop later when e.g. different prefixes have different derived variables
