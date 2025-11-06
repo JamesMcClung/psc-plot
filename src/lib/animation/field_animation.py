@@ -238,7 +238,7 @@ class FieldAnimation1d(FieldAnimation):
         super().__init__(steps, prefix, variable, pipeline)
 
         self.dim = dim
-        self.fits = []
+        self.fits: list[Fit] = []
 
     def _init_fig(self):
         data = self._load_data(self.steps[0])
