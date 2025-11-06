@@ -13,8 +13,13 @@ class Fit:
 
     def plot_fit(self, ax: Axes, da: xr.DataArray) -> Line2D:
         # TODO actually do a fit
-        [fit_line] = ax.plot(da.coords[da.dims[0]], da, "o", label="hi")
+        fit_da = self._get_fit_data(da)
+        [fit_line] = ax.plot(fit_da.coords[fit_da.dims[0]], fit_da, "o", label="hi")
         return fit_line
 
     def update_fit(self, da: xr.DataArray, line: Line2D):
-        line.set_data(da.coords[da.dims[0]], da)
+        fit_da = self._get_fit_data(da)
+        line.set_data(fit_da.coords[fit_da.dims[0]], fit_da)
+
+    def _get_fit_data(self, da: xr.DataArray) -> xr.DataArray:
+        return da
