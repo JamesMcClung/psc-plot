@@ -74,7 +74,7 @@ def add_field_subparsers(subparsers: argparse._SubParsersAction):
 
     parent.add_argument(
         "--fit",
-        action="append",
+        action="extend",
         dest="fits",
         nargs="+",
         type=Fit,
