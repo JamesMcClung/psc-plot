@@ -2,6 +2,8 @@ import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.lines import Line2D
 
+from ..adaptors.field_adaptors.pos_slice import PosSlice
+
 # TODO make this a plot plugin (and make plot plugins a thing)
 
 
@@ -25,4 +27,6 @@ class Fit:
         line.set_data(fit_da.coords[fit_da.dims[0]], fit_da)
 
     def _get_fit_data(self, da: xr.DataArray) -> xr.DataArray:
+        slicer = PosSlice(da.dims[0], self.min_x, self.max_x)
+        da = slicer.apply(da)
         return da
