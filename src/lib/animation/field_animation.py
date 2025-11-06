@@ -239,6 +239,7 @@ class FieldAnimation1d(FieldAnimation):
 
         self.dim = dim
         self.fits: list[Fit] = []
+        self.show_t0 = False
 
     def _init_fig(self):
         data = self._load_data(self.steps[0])
