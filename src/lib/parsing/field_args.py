@@ -76,6 +76,7 @@ def add_field_subparsers(subparsers: argparse._SubParsersAction):
         "--fit",
         action="extend",
         dest="fits",
+        default=[],
         nargs="+",
         type=Fit,
         help="fit the data",  # TODO decide what fit should be able to do
