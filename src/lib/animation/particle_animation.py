@@ -17,7 +17,7 @@ type NBins = int
 type BinEdges = npt.NDArray[np.float64]
 
 
-type Scale = typing.Literal["linear", "log"]
+type Scale = typing.Literal["linear", "log", "symlog"]
 SCALES: list[Scale] = list(Scale.__value__.__args__)
 
 
