@@ -12,7 +12,7 @@ from lib.parsing.fit import Fit
 
 from .. import field_util, file_util, plt_util
 from ..adaptors import FieldPipeline
-from ..derived_field_variables import DERIVED_FIELD_VARIABLES
+from ..derived_field_variables import derive_field_variable
 from ..dimension import DIMENSIONS
 from .animation_base import Animation
 
@@ -23,19 +23,6 @@ def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
     lower = da[dim][0]
     upper = da[dim][-1] + (da[dim][1] - da[dim][0])
     return (float(lower), float(upper))
-
-
-def derive_variable(ds: xr.Dataset, var_name: str, ds_prefix: file_util.FieldPrefix):
-    if var_name in ds.variables:
-        return
-    elif var_name in DERIVED_FIELD_VARIABLES[ds_prefix]:
-        derived_var = DERIVED_FIELD_VARIABLES[ds_prefix][var_name]
-        for base_var_name in derived_var.base_var_names:
-            derive_variable(ds, base_var_name, ds_prefix)
-        derived_var.assign_to(ds)
-    else:
-        message = f"No variable named '{var_name}'.\nThe following variables are defined: {list(ds.variables)}\n The following variables can be derived: {list(DERIVED_FIELD_VARIABLES[ds_prefix])}"
-        raise ValueError(message)
 
 
 type Scale = typing.Literal["linear", "log"]
@@ -75,7 +62,7 @@ class FieldAnimation(Animation):
 
     def _load_data(self, step: int) -> xr.DataArray:
         ds = field_util.load_ds(self.prefix, step)
-        derive_variable(ds, self.variable, self.prefix)
+        derive_field_variable(ds, self.variable, self.prefix)
         da = ds[self.variable]
 
         da = self.pipeline.apply(da)
