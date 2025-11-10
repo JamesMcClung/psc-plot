@@ -26,6 +26,7 @@ class ParticleArgs(args_base.ArgsTyped):
             axis_variables=self.axis_variables,
             bins=None,  # guess
             nicell=100,  # FIXME don't hardcode this
+            scales=self.scales,
         )
 
         return anim
