@@ -1,6 +1,11 @@
+import typing
+
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.colorizer import _ScalarMappable
+
+type Scale = typing.Literal["linear", "log", "symlog"]
+SCALES: list[Scale] = list(Scale.__value__.__args__)
 
 
 def symmetrize_bounds(lower: float, upper: float) -> tuple[float, float]:

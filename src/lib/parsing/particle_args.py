@@ -1,6 +1,6 @@
 import argparse
 
-from .. import particle_util
+from .. import particle_util, plt_util
 from ..adaptors import PARTICLE_ADAPTORS, ParticleAdaptor, ParticlePipeline
 from ..animation import Animation
 from ..animation.particle_animation import *
@@ -14,7 +14,7 @@ __all__ = ["add_particle_subparsers", "ParticleArgs"]
 class ParticleArgs(args_base.ArgsTyped):
     axis_variables: tuple[PrtVariable, PrtVariable]
     adaptors: list[ParticleAdaptor]
-    scales: list[Scale]
+    scales: list[plt_util.Scale]
 
     def get_animation(self) -> Animation:
         steps = particle_util.get_available_particle_steps(self.prefix)
@@ -47,7 +47,7 @@ def add_particle_subparsers(subparsers: argparse._SubParsersAction):
 
     parent.add_argument(
         "--scale",
-        choices=SCALES,
+        choices=plt_util.SCALES,
         nargs="+",
         default=[],
         dest="scales",
