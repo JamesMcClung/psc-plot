@@ -243,8 +243,7 @@ class FieldAnimation1d(FieldAnimation):
 
     def _init_fig(self):
         data = self._load_data(self.steps[0])
-        # TODO: use actual coord data
-        xdata = np.linspace(*get_extent(data, self.dim), len(data), endpoint=False)
+        xdata = data.coords[data.dims[0]]
 
         if self.show_t0:
             self.ax.plot(xdata, data, "-", label="$t=0$")
