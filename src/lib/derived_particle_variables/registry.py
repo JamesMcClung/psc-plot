@@ -21,8 +21,8 @@ def pzx(pz: Series, px: Series) -> Series:
 
 
 @derived_particle_variable("prt")
-def anisotropy_y_zx(py: Series, pzx: Series) -> Series:
-    return py / pzx
+def anisotropy_y_zx(py: Series, px: Series, pz: Series) -> Series:
+    return py**2 / (pz**2 + px**2)
 
 
 @derived_particle_variable("prt")
