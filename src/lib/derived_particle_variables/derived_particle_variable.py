@@ -5,7 +5,7 @@ import pandas as pd
 
 from ..file_util import ParticlePrefix
 
-__all__ = ["derived_particle_variable", "derive_particle_variable"]
+__all__ = ["derived_particle_variable", "derive_particle_variable", "DERIVED_PARTICLE_VARIABLES"]
 
 
 class DeriveParticleVariable(typing.Protocol):
