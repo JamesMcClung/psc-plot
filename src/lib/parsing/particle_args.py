@@ -1,5 +1,4 @@
 import argparse
-import typing
 
 from .. import particle_util
 from ..adaptors import PARTICLE_ADAPTORS, ParticleAdaptor, ParticlePipeline
@@ -10,9 +9,6 @@ from ..particle_util import PRT_VARIABLES, PrtVariable
 from . import args_base
 
 __all__ = ["add_particle_subparsers", "ParticleArgs"]
-
-type Scale = typing.Literal["lin", "log"]
-SCALES: list[Scale] = list(Scale.__value__.__args__)
 
 
 class ParticleArgs(args_base.ArgsTyped):

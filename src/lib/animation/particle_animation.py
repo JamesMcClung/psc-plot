@@ -1,3 +1,5 @@
+import typing
+
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
@@ -8,11 +10,15 @@ from ..derived_particle_variables import derive_particle_variable
 from ..particle_util import PrtVariable
 from .animation_base import Animation
 
-__all__ = ["ParticleAnimation", "NBins", "BinEdges"]
+__all__ = ["ParticleAnimation", "NBins", "BinEdges", "Scale", "SCALES"]
 
 
 type NBins = int
 type BinEdges = npt.NDArray[np.float64]
+
+
+type Scale = typing.Literal["lin", "log"]
+SCALES: list[Scale] = list(Scale.__value__.__args__)
 
 
 class ParticleAnimation(Animation):
