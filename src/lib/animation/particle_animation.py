@@ -17,7 +17,7 @@ type NBins = int
 type BinEdges = npt.NDArray[np.float64]
 
 
-type Scale = typing.Literal["lin", "log"]
+type Scale = typing.Literal["linear", "log"]
 SCALES: list[Scale] = list(Scale.__value__.__args__)
 
 
@@ -40,7 +40,7 @@ class ParticleAnimation(Animation):
         self.axis_variables = axis_variables
         self._nicell = nicell
         self._bins = bins
-        self.scales = scales + ["lin"] * (1 + len(axis_variables) - len(scales))  # dep scale, then axis scales
+        self.scales = scales + ["linear"] * (1 + len(axis_variables) - len(scales))  # dep scale, then axis scales
 
         assert len(self.scales) == 1 + len(self.axis_variables)
 
