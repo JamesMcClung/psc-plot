@@ -4,6 +4,7 @@ import pandas as pd
 
 from .. import file_util, particle_util, plt_util
 from ..adaptors import ParticlePipeline
+from ..derived_particle_variables import derive_particle_variable
 from ..particle_util import PrtVariable
 from .animation_base import Animation
 
@@ -64,6 +65,9 @@ class ParticleAnimation(Animation):
 
     def _load_df(self, step: int) -> pd.DataFrame:
         df = particle_util.load_df(self.prefix, step)
+
+        for var in self.axis_variables:
+            derive_particle_variable(df, var, self.prefix)
 
         df = self.pipeline.apply(df)
 
