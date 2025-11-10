@@ -26,35 +26,35 @@ def anisotropy_y_zx(py: Series, pzx: Series) -> Series:
 
 
 @derived_particle_variable("prt")
-def w_x(m: Series, px: Series) -> Series:
+def wx(m: Series, px: Series) -> Series:
     return 0.5 * m * px**2
 
 
 @derived_particle_variable("prt")
-def w_y(m: Series, py: Series) -> Series:
+def wy(m: Series, py: Series) -> Series:
     return 0.5 * m * py**2
 
 
 @derived_particle_variable("prt")
-def w_z(m: Series, pz: Series) -> Series:
+def wz(m: Series, pz: Series) -> Series:
     return 0.5 * m * pz**2
 
 
 @derived_particle_variable("prt")
-def w_xy(m: Series, px: Series, py: Series) -> Series:
+def wxy(m: Series, px: Series, py: Series) -> Series:
     return 0.5 * m * (px**2 + py**2)
 
 
 @derived_particle_variable("prt")
-def w_yz(m: Series, py: Series, pz: Series) -> Series:
+def wyz(m: Series, py: Series, pz: Series) -> Series:
     return 0.5 * m * (py**2 + pz**2)
 
 
 @derived_particle_variable("prt")
-def w_zx(m: Series, pz: Series, px: Series) -> Series:
+def wzx(m: Series, pz: Series, px: Series) -> Series:
     return 0.5 * m * (pz**2 + px**2)
 
 
 @derived_particle_variable("prt")
-def w_xyz(m: Series, px: Series, py: Series, pz: Series) -> Series:
+def wxyz(m: Series, px: Series, py: Series, pz: Series) -> Series:
     return 0.5 * m * (px**2 + py**2 + pz**2)
