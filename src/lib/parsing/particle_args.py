@@ -4,6 +4,7 @@ from .. import particle_util
 from ..adaptors import PARTICLE_ADAPTORS, ParticleAdaptor, ParticlePipeline
 from ..animation import Animation
 from ..animation.particle_animation import *
+from ..derived_particle_variables import DERIVED_PARTICLE_VARIABLES
 from ..particle_util import PRT_VARIABLES, PrtVariable
 from . import args_base
 
@@ -36,7 +37,7 @@ def add_particle_subparsers(subparsers: argparse._SubParsersAction):
         "-a",
         "--axis-variables",
         type=str,
-        choices=PRT_VARIABLES,
+        choices=set(PRT_VARIABLES) | set(DERIVED_PARTICLE_VARIABLES["prt"]),
         nargs=2,
         default=("y", "z"),
         help="variables to use as the x and y axes",
