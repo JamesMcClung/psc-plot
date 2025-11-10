@@ -24,9 +24,6 @@ def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
     return (float(lower), float(upper))
 
 
-type Scale = typing.Literal["linear", "log"]
-
-
 class FieldAnimation(Animation):
     def __init__(
         self,
@@ -44,8 +41,8 @@ class FieldAnimation(Animation):
 
         self.pipeline = pipeline
 
-        self.indep_scale: Scale = "linear"
-        self.dep_scale: Scale = "linear"
+        self.indep_scale: plt_util.Scale = "linear"
+        self.dep_scale: plt_util.Scale = "linear"
 
     @functools.cached_property
     def dep_var_name(self) -> str:
@@ -55,7 +52,7 @@ class FieldAnimation(Animation):
         # (as of the time of this comment, only Versus does this)
         return self.pipeline.get_modified_dep_var_name(f"\\text{{{self.variable}}}")
 
-    def set_scale(self, indep_scale: Scale, dep_scale: Scale):
+    def set_scale(self, indep_scale: plt_util.Scale, dep_scale: plt_util.Scale):
         self.indep_scale = indep_scale
         self.dep_scale = dep_scale
 
