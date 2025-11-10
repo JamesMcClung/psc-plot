@@ -5,7 +5,6 @@ import typing
 
 import numpy as np
 import xarray as xr
-from matplotlib.colors import LogNorm, Normalize
 from matplotlib.projections.polar import PolarAxes
 
 from lib.parsing.fit import Fit
@@ -25,9 +24,6 @@ def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
     return (float(lower), float(upper))
 
 
-type Scale = typing.Literal["linear", "log"]
-
-
 class FieldAnimation(Animation):
     def __init__(
         self,
@@ -45,8 +41,8 @@ class FieldAnimation(Animation):
 
         self.pipeline = pipeline
 
-        self.indep_scale: Scale = "linear"
-        self.dep_scale: Scale = "linear"
+        self.indep_scale: plt_util.Scale = "linear"
+        self.dep_scale: plt_util.Scale = "linear"
 
     @functools.cached_property
     def dep_var_name(self) -> str:
@@ -56,7 +52,7 @@ class FieldAnimation(Animation):
         # (as of the time of this comment, only Versus does this)
         return self.pipeline.get_modified_dep_var_name(f"\\text{{{self.variable}}}")
 
-    def set_scale(self, indep_scale: Scale, dep_scale: Scale):
+    def set_scale(self, indep_scale: plt_util.Scale, dep_scale: plt_util.Scale):
         self.indep_scale = indep_scale
         self.dep_scale = dep_scale
 
@@ -134,7 +130,7 @@ class FieldAnimation2d(FieldAnimation):
             data.T,
             origin="lower",
             extent=(*get_extent(data, self.dims[0]), *get_extent(data, self.dims[1])),
-            norm={"linear": Normalize(), "log": LogNorm()}[self.dep_scale],
+            norm=self.dep_scale,
         )
 
         self.fig.colorbar(self.im)
@@ -189,7 +185,7 @@ class FieldAnimation2dPolar(FieldAnimation):
             *np.meshgrid(vertices_theta, vertices_r),
             data,
             shading="flat",
-            norm={"linear": Normalize(), "log": LogNorm()}[self.dep_scale],
+            norm=self.dep_scale,
         )
 
         self.fig.colorbar(self.im)
