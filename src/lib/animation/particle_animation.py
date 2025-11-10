@@ -31,6 +31,7 @@ class ParticleAnimation(Animation):
         axis_variables: tuple[PrtVariable, PrtVariable],
         nicell: int,
         bins: tuple[NBins | BinEdges, NBins | BinEdges] | None = None,
+        scales: list[Scale],
     ):
         super().__init__(steps)
 
@@ -39,6 +40,9 @@ class ParticleAnimation(Animation):
         self.axis_variables = axis_variables
         self._nicell = nicell
         self._bins = bins
+        self.scales = scales + ["lin"] * (1 + len(axis_variables) - len(scales))  # dep scale, then axis scales
+
+        assert len(self.scales) == 1 + len(self.axis_variables)
 
     def _init_fig(self):
         binned_data, self.x_edges, self.y_edges = self._get_binned_data(self.steps[0], self._bins or self._guess_bins())
