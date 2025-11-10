@@ -5,7 +5,6 @@ import typing
 
 import numpy as np
 import xarray as xr
-from matplotlib.colors import LogNorm, Normalize
 from matplotlib.projections.polar import PolarAxes
 
 from lib.parsing.fit import Fit
@@ -134,7 +133,7 @@ class FieldAnimation2d(FieldAnimation):
             data.T,
             origin="lower",
             extent=(*get_extent(data, self.dims[0]), *get_extent(data, self.dims[1])),
-            norm={"linear": Normalize(), "log": LogNorm()}[self.dep_scale],
+            norm=self.dep_scale,
         )
 
         self.fig.colorbar(self.im)
@@ -189,7 +188,7 @@ class FieldAnimation2dPolar(FieldAnimation):
             *np.meshgrid(vertices_theta, vertices_r),
             data,
             shading="flat",
-            norm={"linear": Normalize(), "log": LogNorm()}[self.dep_scale],
+            norm=self.dep_scale,
         )
 
         self.fig.colorbar(self.im)
