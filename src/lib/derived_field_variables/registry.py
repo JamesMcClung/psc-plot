@@ -2,6 +2,10 @@ import numpy as np
 import pscpy
 from xarray import DataArray, Dataset
 
+from ..adaptors.field_adaptors.fourier import Fourier
+from ..adaptors.field_adaptors.mag import Magnitude
+from ..adaptors.pipeline import FieldPipeline
+from ..dimension import DIMENSIONS
 from .derived_field_variable import derived_field_variable
 
 __all__ = []
@@ -27,6 +31,20 @@ def h2_cc(hx_fc: DataArray, hy_fc: DataArray, hz_fc: DataArray) -> DataArray:
     h = Dataset({"hx_fc": hx_fc, "hy_fc": hy_fc, "hz_fc": hz_fc})
     pscpy.auto_recenter(h, "cc", x="periodic", y="periodic", z="periodic")
     return h["hx_cc"] ** 2 + h["hy_cc"] ** 2 + h["hz_cc"] ** 2
+
+
+@derived_field_variable("pfd")
+def hhat2_cc(hx_fc: DataArray, hy_fc: DataArray, hz_fc: DataArray) -> DataArray:
+    h = Dataset({"hx_fc": hx_fc, "hy_fc": hy_fc, "hz_fc": hz_fc})
+    pscpy.auto_recenter(h, "cc", x="periodic", y="periodic", z="periodic")
+
+    pipeline = FieldPipeline(Fourier([DIMENSIONS["x"], DIMENSIONS["y"], DIMENSIONS["z"]]), Magnitude())
+
+    hx_hat = pipeline.apply(h["hx_cc"])
+    hy_hat = pipeline.apply(h["hy_cc"])
+    hz_hat = pipeline.apply(h["hz_cc"])
+
+    return hx_hat**2 + hy_hat**2 + hz_hat**2
 
 
 @derived_field_variable("pfd")
