@@ -34,8 +34,8 @@ class Window(Adaptor[xr.DataArray]):
     def get_name_fragment_fragment(self) -> str:
         pass
 
-    def get_name_fragment(self) -> str:
-        return f"window_{self.dim_name}={self.get_name_fragment_fragment()}"
+    def get_name_fragments(self) -> list[str]:
+        return [f"window_{self.dim_name}={self.get_name_fragment_fragment()}"]
 
 
 class Kaiser(Window):

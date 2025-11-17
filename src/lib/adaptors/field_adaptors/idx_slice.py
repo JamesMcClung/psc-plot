@@ -15,10 +15,10 @@ class IdxSlice(Adaptor[xr.DataArray]):
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         return da.isel({self.dim_name: slice(self.lower_inclusive, self.upper_exclusive)})
 
-    def get_name_fragment(self) -> str:
+    def get_name_fragments(self) -> list[str]:
         lower = f"{self.lower_inclusive}" if self.lower_inclusive is not None else ""
         upper = f"{self.upper_exclusive}" if self.upper_exclusive is not None else ""
-        return f"slice_{self.dim_name}={lower}:{upper}"
+        return [f"slice_{self.dim_name}={lower}:{upper}"]
 
 
 IDX_SLICE_FORMAT = "dim_name=lower:upper"

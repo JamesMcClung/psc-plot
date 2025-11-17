@@ -27,8 +27,8 @@ class Reduce(Adaptor[xr.DataArray]):
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         return REDUCE_FUNCS[self.func_name](da, self.dim_name)
 
-    def get_name_fragment(self) -> str:
-        return f"reduce_{self.dim_name}={self.func_name}"
+    def get_name_fragments(self) -> list[str]:
+        return ["reduce_{self.dim_name}={self.func_name}"]
 
 
 REDUCE_FORMAT = "dim_name=reduce_func"

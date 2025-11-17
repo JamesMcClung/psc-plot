@@ -6,9 +6,7 @@ class Pipeline[Data]:
         self.adaptors = list(adaptors)
 
     def get_name_fragments(self) -> list[str]:
-        name_fragments = [adaptor.get_name_fragment() for adaptor in self.adaptors]
-        name_fragments = [frag for frag in name_fragments if frag]
-        return name_fragments
+        return [fragment for adaptor in self.adaptors for fragment in adaptor.get_name_fragments()]
 
     def apply(self, data: Data) -> Data:
         for adaptor in self.adaptors:

@@ -59,12 +59,12 @@ class Versus(Adaptor[xr.DataArray]):
 
         return dep_var_name
 
-    def get_name_fragment(self) -> str:
+    def get_name_fragments(self) -> list[str]:
         # don't include inner adaptors because they can be inferred
         dims = ",".join(self.spatial_dims)
         if self.time_dim:
             dims = f"{self.time_dim};{dims}"
-        return f"vs_{dims}"
+        return [f"vs_{dims}"]
 
 
 _TIME_PREFIX = "time="

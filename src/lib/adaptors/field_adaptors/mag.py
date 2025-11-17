@@ -8,8 +8,8 @@ class Magnitude(Adaptor[xr.DataArray]):
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         return (da.real**2 + da.imag**2) ** 0.5
 
-    def get_name_fragment(self) -> str:
-        return f"mag"
+    def get_name_fragments(self) -> list[str]:
+        return ["mag"]
 
     def get_modified_var_name(self, title_stem: str) -> str:
         return f"|{title_stem}|"

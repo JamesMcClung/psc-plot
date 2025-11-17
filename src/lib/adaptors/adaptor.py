@@ -6,8 +6,8 @@ class Adaptor[Data](abc.ABC):
     @abc.abstractmethod
     def apply(self, data: Data) -> Data: ...
 
-    def get_name_fragment(self) -> str:
-        return ""
+    def get_name_fragments(self) -> list[str]:
+        return []
 
     def get_modified_var_name(self, dep_var_name: str) -> str:
         return dep_var_name

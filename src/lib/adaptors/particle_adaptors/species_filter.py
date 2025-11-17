@@ -17,8 +17,8 @@ class SpeciesFilter(Adaptor[pd.DataFrame]):
             df = df[df["q"] > 0]
         return df
 
-    def get_name_fragment(self) -> str:
-        return self.species
+    def get_name_fragments(self) -> list[str]:
+        return [self.species]
 
 
 _SPECIES_FILTER_FORMAT = "species"
