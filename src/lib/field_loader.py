@@ -2,6 +2,7 @@ import xarray as xr
 
 from . import field_util, file_util
 from .derived_field_variables import derive_field_variable
+from .field_source import FieldSource
 
 __all__ = ["load_field_variable"]
 
@@ -14,10 +15,13 @@ def load_field_variable(prefix: file_util.FieldPrefix, step: int, var_name: str)
     return ds[var_name]
 
 
-class FieldLoader:
+class FieldLoader(FieldSource):
     def __init__(self, prefix: file_util.FieldPrefix, var_name: str):
         self.prefix = prefix
         self.var_name = var_name
 
     def get_step(self, step: int) -> xr.DataArray:
         return load_field_variable(self.prefix, step, self.var_name)
+
+    def get(self, steps: list[int]) -> xr.DataArray:
+        return xr.concat((self.get_step(step) for step in steps), "t")
