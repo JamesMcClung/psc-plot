@@ -57,11 +57,7 @@ class FieldAnimation(Animation):
 
     def _load_data(self, step: int) -> xr.DataArray:
         da = field_source.load_field_variable(self.prefix, step, self.variable)
-        attrs = da.attrs  # TODO this is just to preserve time
-
         da = self.pipeline.apply(da)
-
-        da = da.assign_attrs(**attrs)
 
         # filter out near-zero values
         if self.dep_scale == "log":
@@ -135,7 +131,7 @@ class FieldAnimation2d(FieldAnimation):
         data_lower, data_upper = self._get_var_bounds()
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
-        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
+        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.t))
 
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
         self.ax.set_xlabel(DIMENSIONS[self.dims[0]].to_axis_label())
@@ -148,7 +144,7 @@ class FieldAnimation2d(FieldAnimation):
 
         self.im.set_array(data.T)
 
-        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
+        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.t))
         return [self.im, self.ax.title]
 
 
@@ -190,7 +186,7 @@ class FieldAnimation2dPolar(FieldAnimation):
         data_lower, data_upper = self._get_var_bounds()
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
-        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
+        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.t))
 
         # FIXME make the labels work
         # self.ax.set_xlabel(DIMENSIONS[self.dims[1]].to_axis_label())
@@ -203,7 +199,7 @@ class FieldAnimation2dPolar(FieldAnimation):
 
         self.im.set_array(data)
 
-        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
+        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.t))
         return [self.im, self.ax.title]
 
 
@@ -232,7 +228,7 @@ class FieldAnimation1d(FieldAnimation):
         line_type = "." if self.fits else "-"
         [self.line] = self.ax.plot(xdata, data, line_type)
 
-        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
+        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.t))
         self._update_ybounds()
         self.ax.set_xlabel(DIMENSIONS[self.dim].to_axis_label())
         self.ax.set_ylabel(f"${self.dep_var_name}$")
@@ -260,7 +256,7 @@ class FieldAnimation1d(FieldAnimation):
             # updates legend in case fit labels changed (e.g. to show different fit params)
             self.ax.legend()
 
-        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.time))
+        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.t))
         return [self.line, self.ax.yaxis, self.ax.title]
 
     def _update_ybounds(self):
