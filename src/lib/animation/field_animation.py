@@ -34,13 +34,12 @@ class FieldAnimation(Animation):
         self.source = source
         self.time_dim = time_dim
         self.data = source.get_data(steps)
-        self.nframes = len(self.data.coords[time_dim])
+        nframes = len(self.data.coords[time_dim])
+
+        super().__init__(nframes, subplot_kw=subplot_kw)
 
         self.indep_scale: plt_util.Scale = "linear"
         self.dep_scale: plt_util.Scale = "linear"
-
-        # TODO: fix steps vs frames
-        super().__init__(list(range(self.nframes)), subplot_kw=subplot_kw)
 
     def set_scale(self, indep_scale: plt_util.Scale, dep_scale: plt_util.Scale):
         self.indep_scale = indep_scale
