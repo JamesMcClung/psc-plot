@@ -28,11 +28,13 @@ class FieldAnimation(Animation):
         steps: list[int],
         source: FieldSource,
         time_dim: str,
+        spatial_dims: list[str],
         *,
         subplot_kw: dict[str, typing.Any] = {},
     ):
         self.source = source
         self.time_dim = time_dim
+        self.spatial_dims = spatial_dims
         self.data = source.get_data(steps)
         nframes = len(self.data.coords[time_dim])
 
@@ -67,31 +69,22 @@ class FieldAnimation(Animation):
         spatial_dims: list[str],
     ) -> FieldAnimation:
         if len(spatial_dims) == 1:
-            return FieldAnimation1d(steps, source, time_dim, spatial_dims[0])
-        if len(spatial_dims) == 2:
+            animation = FieldAnimation1d
+        elif len(spatial_dims) == 2:
             if DIMENSIONS[spatial_dims[0]].geometry == "polar:r" and DIMENSIONS[spatial_dims[1]].geometry == "polar:theta":
-                return FieldAnimation2dPolar(steps, source, time_dim, tuple(spatial_dims))
+                animation = FieldAnimation2dPolar
             else:
-                return FieldAnimation2d(steps, source, time_dim, tuple(spatial_dims))
+                animation = FieldAnimation2d
         else:
             raise NotImplementedError("don't have 3D animations yet")
+
+        return animation(steps, source, time_dim, spatial_dims)
 
     def _get_default_save_path(self) -> str:
         return "-".join(self.source.get_name_fragments()) + ".mp4"
 
 
 class FieldAnimation2d(FieldAnimation):
-    def __init__(
-        self,
-        steps: list[int],
-        source: FieldSource,
-        time_dim: str,
-        spatial_dims: tuple[str, str],
-    ):
-        super().__init__(steps, source, time_dim)
-
-        self.spatial_dims = spatial_dims
-
     def _init_fig(self):
         data = self._get_data_at_frame(0)
 
@@ -135,11 +128,9 @@ class FieldAnimation2dPolar(FieldAnimation):
         steps: list[int],
         source: FieldSource,
         time_dim: str,
-        spatial_dims: tuple[str, str],
+        spatial_dims: list[str],
     ):
-        super().__init__(steps, source, time_dim, subplot_kw={"projection": "polar"})
-
-        self.spatial_dims = spatial_dims
+        super().__init__(steps, source, time_dim, spatial_dims, subplot_kw={"projection": "polar"})
 
     def _init_fig(self):
         data = self._get_data_at_frame(0)
@@ -187,11 +178,10 @@ class FieldAnimation1d(FieldAnimation):
         steps: list[int],
         source: FieldSource,
         time_dim: str,
-        spatial_dim: str,
+        spatial_dims: list[str],
     ):
-        super().__init__(steps, source, time_dim)
+        super().__init__(steps, source, time_dim, spatial_dims)
 
-        self.dim = spatial_dim
         self.fits: list[Fit] = []
         self.show_t0 = False
 
@@ -212,7 +202,7 @@ class FieldAnimation1d(FieldAnimation):
 
         plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
         self._update_ybounds()
-        self.ax.set_xlabel(DIMENSIONS[self.dim].to_axis_label())
+        self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
         self.ax.set_ylabel(f"${self.source.get_modified_var_name()}$")
 
         self.ax.set_xscale(self.indep_scale)
