@@ -48,18 +48,13 @@ class FieldAnimation(Animation):
         self.dep_scale = dep_scale
 
     def _get_data_at_frame(self, frame: int) -> xr.DataArray:
-        da = self.data.isel({self.time_dim: frame})
-
-        # filter out near-zero values
-        if self.dep_scale == "log":
-            new_data_inner = da.data
-            new_data_inner[new_data_inner < 1e-40] = np.nan
-            da[:] = new_data_inner
-
-        return da
+        return self.data.isel({self.time_dim: frame})
 
     def _get_var_bounds(self) -> tuple[float, float]:
-        return (np.nanmin(self.data), np.nanmax(self.data))
+        if self.dep_scale == "log":
+            return np.exp(np.nanquantile(np.log(self.data), [0.5, 1])) * [0.1, 1.1]
+
+        return np.nanquantile(self.data, [0, 1])
 
     @staticmethod
     def get_animation_type(spatial_dims: list[str]) -> type[FieldAnimation]:
