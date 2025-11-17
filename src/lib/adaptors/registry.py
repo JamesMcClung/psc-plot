@@ -88,7 +88,7 @@ def adaptor_parser(
     def adaptor_parser_inner[AdaptorType](parse_func: typing.Callable[[str | list[str]], AdaptorType]):
         kwargs = ArgparseAdaptorAdder(name_or_flags, help, type=parse_func, metavar=metavar, nargs=nargs)
         AdaptorType: type[Adaptor] = inspect.signature(parse_func).return_annotation
-        data_param_type = AdaptorType.get_data_type()
+        data_param_type = AdaptorType.get_input_data_type()
 
         if data_param_type is xr.DataArray:
             FIELD_ADAPTORS.append(kwargs)
@@ -108,8 +108,8 @@ def register_const_adaptor[Data](
 ):
     kwargs = ArgparseAdaptorAdder(name_or_flags, help, const=const)
 
-    if const.get_data_type() is xr.DataArray:
+    if const.get_input_data_type() is xr.DataArray:
         FIELD_ADAPTORS.append(kwargs)
 
-    if const.get_data_type() is pd.DataFrame:
+    if const.get_input_data_type() is pd.DataFrame:
         PARTICLE_ADAPTORS.append(kwargs)
