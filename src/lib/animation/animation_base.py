@@ -7,20 +7,20 @@ from matplotlib.animation import FuncAnimation
 
 
 class Animation(ABC):
-    def __init__(self, steps: list[int], *, subplot_kw: dict[str, typing.Any] = {}):
-        self.steps = steps
+    def __init__(self, nframes: int, *, subplot_kw: dict[str, typing.Any] = {}):
+        self.nframes = nframes
         self.fig, self.ax = plt.subplots(subplot_kw=subplot_kw)
         self._initialized = False
 
         # FIXME get blitting to work with the title
         # note: blitting doesn't seem to affect saved animations, only ones displayed with plt.show
-        self.anim = FuncAnimation(self.fig, self._update_fig, frames=self.steps, blit=False)
+        self.anim = FuncAnimation(self.fig, self._update_fig, frames=self.nframes, blit=False)
 
     @abstractmethod
     def _init_fig(self): ...
 
     @abstractmethod
-    def _update_fig(self): ...
+    def _update_fig(self, frame: int): ...
 
     @abstractmethod
     def _get_default_save_path(self) -> str: ...

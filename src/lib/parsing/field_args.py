@@ -6,6 +6,8 @@ from ..adaptors import FIELD_ADAPTORS, FieldAdaptor, FieldPipeline
 from ..adaptors.field_adaptors.versus import Versus
 from ..animation import Animation, FieldAnimation
 from ..animation.field_animation import FieldAnimation1d
+from ..field_loader import FieldLoader
+from ..field_source import FieldSourceWithPipeline
 from ..file_util import FIELD_PREFIXES
 from . import args_base
 from .fit import Fit
@@ -26,17 +28,26 @@ class FieldArgs(args_base.ArgsTyped):
     def get_animation(self) -> Animation:
         steps = field_util.get_available_field_steps(self.prefix)
 
-        versus_dims = ["y", "z"]
+        spatial_dims = ["y", "z"]
+        time_dim: str = "t"
         for adaptor in self.adaptors:
             if isinstance(adaptor, Versus):
-                versus_dims = adaptor.dim_names
+                spatial_dims = adaptor.spatial_dims
+                time_dim = adaptor.time_dim
                 break
         else:
-            self.adaptors.append(Versus(versus_dims))
+            self.adaptors.append(Versus(spatial_dims, time_dim))
 
+        loader = FieldLoader(self.prefix, self.variable)
         pipeline = FieldPipeline(*self.adaptors)
+        source = FieldSourceWithPipeline(loader, pipeline)
 
-        anim = FieldAnimation.get_animation(steps, self.prefix, self.variable, pipeline, versus_dims)
+        if time_dim:
+            AnimationType = FieldAnimation.get_animation_type(spatial_dims)
+            anim = AnimationType(steps, source, time_dim, spatial_dims)
+        else:
+            # TODO use an argparse exception type
+            raise Exception("non-animated plots not supported yet")
 
         if isinstance(anim, FieldAnimation1d):
             anim.add_fits(self.fits)

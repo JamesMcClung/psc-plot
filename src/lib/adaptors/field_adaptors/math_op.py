@@ -26,7 +26,7 @@ class MathOp(FieldAdaptor):
     def get_name_fragment(self) -> str:
         return f"{self.name_abbrev}_{self.rhs}"
 
-    def get_modified_dep_var_name(self, title_stem: str) -> str:
+    def get_modified_var_name(self, title_stem: str) -> str:
         return f"({title_stem}){self.symbol}{{{self.rhs}}}"
 
 

@@ -20,9 +20,9 @@ class Pipeline[Data, AdaptorType: Adaptor[Data]]:
 
 
 class FieldPipeline(Pipeline[xr.DataArray, FieldAdaptor]):
-    def get_modified_dep_var_name(self, dep_var_name: str) -> str:
+    def get_modified_var_name(self, dep_var_name: str) -> str:
         for adaptor in self.adaptors:
-            dep_var_name = adaptor.get_modified_dep_var_name(dep_var_name)
+            dep_var_name = adaptor.get_modified_var_name(dep_var_name)
         return dep_var_name
 
 

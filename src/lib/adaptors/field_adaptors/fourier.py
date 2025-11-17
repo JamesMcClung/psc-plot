@@ -42,7 +42,7 @@ class Fourier(FieldAdaptor):
         dim_names = ",".join(dim.name.plain for dim in self.dims)
         return f"fourier_{dim_names}"
 
-    def get_modified_dep_var_name(self, title_stem: str) -> str:
+    def get_modified_var_name(self, title_stem: str) -> str:
         dim_latexs = ",".join(dim.name.latex for dim in self.dims)
         return f"\\mathcal{{F}}_{{{dim_latexs}}}[{title_stem}]"
 
