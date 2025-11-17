@@ -54,7 +54,7 @@ class FieldAnimation(Animation):
         self.dep_scale = dep_scale
 
     def _load_data(self, step: int) -> xr.DataArray:
-        da = self.loader.get_step(step)
+        da = self.loader.get_data_at_step(step)
         da = self.pipeline.apply(da)
 
         # filter out near-zero values
