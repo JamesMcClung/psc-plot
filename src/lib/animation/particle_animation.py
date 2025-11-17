@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+from matplotlib.colors import SymLogNorm
 
 from .. import file_util, particle_util, plt_util
 from ..adaptors import ParticlePipeline
@@ -41,6 +42,9 @@ class ParticleAnimation(Animation):
 
     def _init_fig(self):
         binned_data, self.x_edges, self.y_edges = self._get_binned_data(self.steps[0], self._bins or self._guess_bins())
+
+        if self.scales[0] == "symlog":
+            self.scales[0] = SymLogNorm(linthresh=1e-8)
 
         self.mesh = self.ax.pcolormesh(
             self.x_edges,
