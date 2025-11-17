@@ -34,3 +34,6 @@ class FieldLoader(FieldSource):
 
     def get_modified_var_name(self) -> str:
         return f"\\text{{{self.var_name}}}"
+
+    def get_name_fragments(self) -> list[str]:
+        return [self.prefix, self.var_name]

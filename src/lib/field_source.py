@@ -18,6 +18,9 @@ class FieldSource(ABC):
     @abstractmethod
     def get_modified_var_name(self) -> str: ...
 
+    @abstractmethod
+    def get_name_fragments(self) -> list[str]: ...
+
 
 class FieldSourceWithPipeline(FieldSource):
     def __init__(self, source: FieldSource, pipeline: FieldPipeline):
@@ -37,3 +40,6 @@ class FieldSourceWithPipeline(FieldSource):
 
     def get_modified_var_name(self) -> str:
         return self.pipeline.get_modified_var_name(self.source.get_modified_var_name())
+
+    def get_name_fragments(self) -> list[str]:
+        return self.source.get_name_fragments() + self.pipeline.get_name_fragments()
