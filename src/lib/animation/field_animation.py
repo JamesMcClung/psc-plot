@@ -9,10 +9,10 @@ from matplotlib.projections.polar import PolarAxes
 
 from lib.parsing.fit import Fit
 
-from .. import field_source, file_util, plt_util
+from .. import field_loader, file_util, plt_util
 from ..adaptors import FieldPipeline
 from ..dimension import DIMENSIONS
-from ..field_source import FieldLoader
+from ..field_loader import FieldLoader
 from .animation_base import Animation
 
 __all__ = ["FieldAnimation"]
