@@ -46,7 +46,7 @@ class FieldAnimation(Animation):
         self.indep_scale = indep_scale
         self.dep_scale = dep_scale
 
-    def _load_data(self, frame: int) -> xr.DataArray:
+    def _get_data_at_frame(self, frame: int) -> xr.DataArray:
         da = self.data.isel({self.time_dim: frame})
 
         # filter out near-zero values
@@ -94,7 +94,7 @@ class FieldAnimation2d(FieldAnimation):
         self.spatial_dims = spatial_dims
 
     def _init_fig(self):
-        data = self._load_data(0)
+        data = self._get_data_at_frame(0)
 
         # must set scale (log, linear) before making image
         self.ax.set_xscale(self.indep_scale)
@@ -120,7 +120,7 @@ class FieldAnimation2d(FieldAnimation):
         self.fig.tight_layout()
 
     def _update_fig(self, frame: int):
-        data = self._load_data(frame)
+        data = self._get_data_at_frame(frame)
 
         self.im.set_array(data.T)
 
@@ -143,7 +143,7 @@ class FieldAnimation2dPolar(FieldAnimation):
         self.spatial_dims = spatial_dims
 
     def _init_fig(self):
-        data = self._load_data(0)
+        data = self._get_data_at_frame(0)
 
         # must set scale (log, linear) before making image
         if self.indep_scale == "log":
@@ -174,7 +174,7 @@ class FieldAnimation2dPolar(FieldAnimation):
         self.fig.tight_layout()
 
     def _update_fig(self, frame: int):
-        data = self._load_data(frame)
+        data = self._get_data_at_frame(frame)
 
         self.im.set_array(data)
 
@@ -197,7 +197,7 @@ class FieldAnimation1d(FieldAnimation):
         self.show_t0 = False
 
     def _init_fig(self):
-        data = self._load_data(0)
+        data = self._get_data_at_frame(0)
         xdata = data.coords[data.dims[0]]
 
         if self.show_t0:
@@ -222,7 +222,7 @@ class FieldAnimation1d(FieldAnimation):
         self.fig.tight_layout()
 
     def _update_fig(self, frame: int):
-        data = self._load_data(frame)
+        data = self._get_data_at_frame(frame)
 
         self.line.set_ydata(data)
 
