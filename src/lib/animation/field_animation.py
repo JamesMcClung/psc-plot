@@ -54,7 +54,9 @@ class FieldAnimation(Animation):
         if self.dep_scale == "log":
             return np.exp(np.nanquantile(np.log(self.data), [0.5, 1])) * [0.1, 1.1]
 
-        return np.nanquantile(self.data, [0, 1])
+        bounds = np.nanquantile(self.data, [0, 1])
+        bounds *= 1 + 0.1 * np.array([-float(bounds[0] > 0), float(bounds[1] > 0)])
+        return bounds
 
     @staticmethod
     def get_animation_type(spatial_dims: list[str]) -> type[FieldAnimation]:
@@ -189,7 +191,6 @@ class FieldAnimation1d(FieldAnimation):
         [self.line] = self.ax.plot(xdata, data, line_type)
 
         plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
-        self._update_ybounds()
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
         self.ax.set_ylabel(f"${self.source.get_modified_var_name()}$")
 
@@ -201,6 +202,7 @@ class FieldAnimation1d(FieldAnimation):
         if self.fits or self.show_t0:
             self.ax.legend()
 
+        self._update_ybounds()
         self.fig.tight_layout()
 
     def _update_fig(self, frame: int):
