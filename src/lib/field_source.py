@@ -10,16 +10,20 @@ class FieldSource(ABC):
     def get_data(self, steps: list[int]) -> xr.DataArray: ...
 
     @abstractmethod
-    def get_file_prefix(self) -> str: ...
+    def get_file_prefix(self) -> str:
+        """The prefix of the data files that ultimately source the fields, e.g. 'pfd'"""
 
     @abstractmethod
-    def get_var_name(self) -> str: ...
+    def get_var_name(self) -> str:
+        """The plain-text name of the original, dependent variable"""
 
     @abstractmethod
-    def get_modified_var_name(self) -> str: ...
+    def get_modified_var_name(self) -> str:
+        """The latex-formatted name (including applied formulae) of the dependent variable"""
 
     @abstractmethod
-    def get_name_fragments(self) -> list[str]: ...
+    def get_name_fragments(self) -> list[str]:
+        """An ordered list of name fragments representing how this field is loaded and transformed"""
 
 
 class FieldSourceWithPipeline(FieldSource):
