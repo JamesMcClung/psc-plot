@@ -36,4 +36,4 @@ class FieldSourceWithPipeline(FieldSource):
         return self.source.get_var_name()
 
     def get_modified_var_name(self) -> str:
-        return self.pipeline.get_modified_dep_var_name(self.source.get_modified_var_name())
+        return self.pipeline.get_modified_var_name(self.source.get_modified_var_name())

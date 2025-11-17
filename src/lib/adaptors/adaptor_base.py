@@ -15,7 +15,7 @@ class Adaptor[Data](abc.ABC):
 
 
 class FieldAdaptor(Adaptor[xr.DataArray]):
-    def get_modified_dep_var_name(self, dep_var_name: str) -> str:
+    def get_modified_var_name(self, dep_var_name: str) -> str:
         return dep_var_name
 
 

@@ -11,7 +11,7 @@ class Imaginary(FieldAdaptor):
     def get_name_fragment(self) -> str:
         return f"imag"
 
-    def get_modified_dep_var_name(self, title_stem: str) -> str:
+    def get_modified_var_name(self, title_stem: str) -> str:
         return f"\\text{{Im}}[{title_stem}]"
 
 

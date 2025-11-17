@@ -49,11 +49,11 @@ class Versus(FieldAdaptor):
 
         return da
 
-    def get_modified_dep_var_name(self, dep_var_name):
+    def get_modified_var_name(self, dep_var_name):
         assert self.cached_inner_adaptors is not None, "can't modify dep var name—don't know what inner adaptors are required yet"
 
         for p in self.cached_inner_adaptors:
-            dep_var_name = p.get_modified_dep_var_name(dep_var_name)
+            dep_var_name = p.get_modified_var_name(dep_var_name)
 
         return dep_var_name
 

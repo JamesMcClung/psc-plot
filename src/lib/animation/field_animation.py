@@ -47,7 +47,7 @@ class FieldAnimation(Animation):
         # This is cached in order to defer its evaluation until after _load_data has been called,
         # and each adaptor has thus seen the data and determined what (if any) internal adaptors it needs
         # (as of the time of this comment, only Versus does this)
-        return self.pipeline.get_modified_dep_var_name(f"\\text{{{self.loader.var_name}}}")
+        return self.pipeline.get_modified_var_name(f"\\text{{{self.loader.var_name}}}")
 
     def set_scale(self, indep_scale: plt_util.Scale, dep_scale: plt_util.Scale):
         self.indep_scale = indep_scale

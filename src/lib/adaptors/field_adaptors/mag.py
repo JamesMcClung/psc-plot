@@ -11,7 +11,7 @@ class Magnitude(FieldAdaptor):
     def get_name_fragment(self) -> str:
         return f"mag"
 
-    def get_modified_dep_var_name(self, title_stem: str) -> str:
+    def get_modified_var_name(self, title_stem: str) -> str:
         return f"|{title_stem}|"
 
 
