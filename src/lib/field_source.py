@@ -7,7 +7,7 @@ from .adaptors.pipeline import FieldPipeline
 
 class FieldSource(ABC):
     @abstractmethod
-    def get(self, steps: list[int]) -> xr.DataArray: ...
+    def get_data(self, steps: list[int]) -> xr.DataArray: ...
 
 
 class FieldSourceWithPipeline(FieldSource):
@@ -15,7 +15,7 @@ class FieldSourceWithPipeline(FieldSource):
         self.source = source
         self.pipeline = pipeline
 
-    def get(self, steps: list[int]) -> xr.DataArray:
-        da = self.source.get(steps)
+    def get_data(self, steps: list[int]) -> xr.DataArray:
+        da = self.source.get_data(steps)
         da = self.pipeline.apply(da)
         return da

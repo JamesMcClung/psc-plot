@@ -23,5 +23,5 @@ class FieldLoader(FieldSource):
     def get_step(self, step: int) -> xr.DataArray:
         return load_field_variable(self.prefix, step, self.var_name)
 
-    def get(self, steps: list[int]) -> xr.DataArray:
+    def get_data(self, steps: list[int]) -> xr.DataArray:
         return xr.concat((self.get_step(step) for step in steps), "t")
