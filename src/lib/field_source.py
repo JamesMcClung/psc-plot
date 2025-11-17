@@ -9,6 +9,12 @@ class FieldSource(ABC):
     @abstractmethod
     def get_data(self, steps: list[int]) -> xr.DataArray: ...
 
+    @abstractmethod
+    def get_file_prefix(self) -> str: ...
+
+    @abstractmethod
+    def get_var_name(self) -> str: ...
+
 
 class FieldSourceWithPipeline(FieldSource):
     def __init__(self, source: FieldSource, pipeline: FieldPipeline):
@@ -19,3 +25,9 @@ class FieldSourceWithPipeline(FieldSource):
         da = self.source.get_data(steps)
         da = self.pipeline.apply(da)
         return da
+
+    def get_file_prefix(self) -> str:
+        return self.source.get_file_prefix()
+
+    def get_var_name(self) -> str:
+        return self.source.get_var_name()

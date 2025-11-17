@@ -25,3 +25,9 @@ class FieldLoader(FieldSource):
 
     def get_data(self, steps: list[int]) -> xr.DataArray:
         return xr.concat((self.get_data_at_step(step) for step in steps), "t")
+
+    def get_file_prefix(self) -> str:
+        return self.prefix
+
+    def get_var_name(self) -> str:
+        return self.var_name
