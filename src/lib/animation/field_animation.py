@@ -9,9 +9,8 @@ from matplotlib.projections.polar import PolarAxes
 
 from lib.parsing.fit import Fit
 
-from .. import field_util, file_util, plt_util
+from .. import field_source, file_util, plt_util
 from ..adaptors import FieldPipeline
-from ..derived_field_variables import derive_field_variable
 from ..dimension import DIMENSIONS
 from .animation_base import Animation
 
@@ -57,13 +56,12 @@ class FieldAnimation(Animation):
         self.dep_scale = dep_scale
 
     def _load_data(self, step: int) -> xr.DataArray:
-        ds = field_util.load_ds(self.prefix, step)
-        derive_field_variable(ds, self.variable, self.prefix)
-        da = ds[self.variable]
+        da = field_source.load_field_variable(self.prefix, step, self.variable)
+        attrs = da.attrs  # TODO this is just to preserve time
 
         da = self.pipeline.apply(da)
 
-        da = da.assign_attrs(**ds.attrs)
+        da = da.assign_attrs(**attrs)
 
         # filter out near-zero values
         if self.dep_scale == "log":
