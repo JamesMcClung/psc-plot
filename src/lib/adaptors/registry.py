@@ -9,7 +9,7 @@ from typing import Any
 import pandas as pd
 import xarray as xr
 
-from .adaptor_base import Adaptor
+from .adaptor import Adaptor
 
 __all__ = ["FIELD_ADAPTORS", "PARTICLE_ADAPTORS", "adaptor_parser"]
 

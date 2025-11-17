@@ -5,7 +5,7 @@ import xarray as xr
 
 from ...dimension import DIMENSIONS
 from .. import parse_util
-from ..adaptor_base import Adaptor
+from ..adaptor import Adaptor
 from ..registry import adaptor_parser
 
 

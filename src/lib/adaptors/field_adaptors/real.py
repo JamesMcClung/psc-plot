@@ -1,6 +1,6 @@
 import xarray as xr
 
-from ..adaptor_base import Adaptor
+from ..adaptor import Adaptor
 from ..registry import register_const_adaptor
 
 

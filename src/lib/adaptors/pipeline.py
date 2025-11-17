@@ -1,4 +1,4 @@
-from .adaptor_base import Adaptor
+from .adaptor import Adaptor
 
 
 class Pipeline[Data]:
