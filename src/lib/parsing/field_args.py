@@ -31,10 +31,10 @@ class FieldArgs(args_base.ArgsTyped):
         versus_dims = ["y", "z"]
         for adaptor in self.adaptors:
             if isinstance(adaptor, Versus):
-                versus_dims = adaptor.dim_names
+                versus_dims = adaptor.spatial_dims
                 break
         else:
-            self.adaptors.append(Versus(versus_dims))
+            self.adaptors.append(Versus(versus_dims, "t"))
 
         loader = FieldLoader(self.prefix, self.variable)
         pipeline = FieldPipeline(*self.adaptors)

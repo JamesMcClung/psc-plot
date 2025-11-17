@@ -9,16 +9,17 @@ from .reduce import Reduce
 
 
 class Versus(FieldAdaptor):
-    def __init__(self, dim_names: list[str]):
-        # TODO don't add t manually
-        self.dim_names = dim_names + ["t"]
+    def __init__(self, spatial_dims: list[str], time_dim: str | None):
+        self.spatial_dims = spatial_dims
+        self.time_dim = time_dim
+        self.all_dims = spatial_dims + ([time_dim] if time_dim else [])
         self.cached_inner_adaptors: list[FieldAdaptor] | None = None
 
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         if self.cached_inner_adaptors is None:
             self.cached_inner_adaptors = []
             # 1. apply implicit coordinate transforms, as necessary
-            for dim_name in self.dim_names:
+            for dim_name in self.all_dims:
                 # 1a. already have the coordinate; do nothing
                 if dim_name in da.dims:
                     continue
@@ -37,7 +38,7 @@ class Versus(FieldAdaptor):
 
             # 2. reduce remaining dimensions via arithmetic mean
             for dim_name in da.dims:
-                if dim_name not in self.dim_names:
+                if dim_name not in self.all_dims:
                     reduce = Reduce(dim_name, "mean")
                     self.cached_inner_adaptors.append(reduce)
                     da = reduce.apply(da)
@@ -46,7 +47,7 @@ class Versus(FieldAdaptor):
                 da = adaptor.apply(da)
 
         # 3. transpose to correct dimension order
-        da = da.transpose(*self.dim_names)
+        da = da.transpose(*self.all_dims)
 
         return da
 
@@ -60,21 +61,34 @@ class Versus(FieldAdaptor):
 
     def get_name_fragment(self) -> str:
         # don't include inner adaptors because they can be inferred
-        dims = ",".join(self.dim_names)
+        dims = ",".join(self.spatial_dims)
+        if self.time_dim:
+            dims = f"{self.time_dim};{dims}"
         return f"vs_{dims}"
 
 
-_VERSUS_FORMAT = "dim_name"
+_TIME_PREFIX = "time="
+_VERSUS_FORMAT = f"dim_name | {_TIME_PREFIX}[dim_name]"
 
 
 @adaptor_parser(
     "--versus",
     "-v",
     metavar=_VERSUS_FORMAT,
-    help="specifies the independent axes to plot against (automatically performs necessary Fourier and coordinate transforms, and reduces other dimensions via arithmetic mean)",
+    help=f"Specifies the independent axes to plot against (automatically performs necessary Fourier and coordinate transforms, and reduces other dimensions via arithmetic mean). The optional `{_TIME_PREFIX}[dim_name]` specifies an additional dimension to use as the time axis. If unspecified, defaults to `{_TIME_PREFIX}t`. Disable time by passing `{_TIME_PREFIX}`",
     nargs="+",
 )
 def parse_versus(args: list[str]) -> Versus:
+    spatial_dims = []
+    time_dim = "t"
     for arg in args:
-        parse_util.check_value(arg, "dim_name", DIMENSIONS)
-    return Versus(args)
+        if arg.startswith(_TIME_PREFIX):
+            time_dim = arg.removeprefix(_TIME_PREFIX)
+            parse_util.check_value(time_dim, "time dim_name", list(DIMENSIONS) + [""])
+            if time_dim == "":
+                time_dim = None
+        else:
+            parse_util.check_value(arg, "dim_name", DIMENSIONS)
+            spatial_dims.append(arg)
+
+    return Versus(spatial_dims, time_dim)
