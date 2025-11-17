@@ -35,6 +35,7 @@ class FieldAnimation(Animation):
 
         self.source = source
         self.time_dim = time_dim
+        self.data = source.get_data(steps)
 
         self.indep_scale: plt_util.Scale = "linear"
         self.dep_scale: plt_util.Scale = "linear"
@@ -44,7 +45,7 @@ class FieldAnimation(Animation):
         self.dep_scale = dep_scale
 
     def _load_data(self, step: int) -> xr.DataArray:
-        da = self.source.get_data([step]).isel({self.time_dim: 0})
+        da = self.data.isel({self.time_dim: self.steps.index(step)})
 
         # filter out near-zero values
         if self.dep_scale == "log":
