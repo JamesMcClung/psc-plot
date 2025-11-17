@@ -10,7 +10,8 @@ from .reduce import Reduce
 
 class Versus(FieldAdaptor):
     def __init__(self, dim_names: list[str]):
-        self.dim_names = dim_names
+        # TODO don't add t manually
+        self.dim_names = dim_names + ["t"]
         self.cached_inner_adaptors: list[FieldAdaptor] | None = None
 
     def apply(self, da: xr.DataArray) -> xr.DataArray:

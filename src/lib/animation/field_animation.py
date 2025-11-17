@@ -9,10 +9,9 @@ from matplotlib.projections.polar import PolarAxes
 
 from lib.parsing.fit import Fit
 
-from .. import field_loader, file_util, plt_util
-from ..adaptors import FieldPipeline
+from .. import plt_util
 from ..dimension import DIMENSIONS
-from ..field_loader import FieldLoader
+from ..field_source import FieldSource
 from .animation_base import Animation
 
 __all__ = ["FieldAnimation"]
@@ -28,15 +27,13 @@ class FieldAnimation(Animation):
     def __init__(
         self,
         steps: list[int],
-        loader: FieldLoader,
-        pipeline: FieldPipeline,
+        source: FieldSource,
         *,
         subplot_kw: dict[str, typing.Any] = {},
     ):
         super().__init__(steps, subplot_kw=subplot_kw)
 
-        self.loader = loader
-        self.pipeline = pipeline
+        self.source = source
 
         self.indep_scale: plt_util.Scale = "linear"
         self.dep_scale: plt_util.Scale = "linear"
@@ -47,15 +44,14 @@ class FieldAnimation(Animation):
         # This is cached in order to defer its evaluation until after _load_data has been called,
         # and each adaptor has thus seen the data and determined what (if any) internal adaptors it needs
         # (as of the time of this comment, only Versus does this)
-        return self.pipeline.get_modified_var_name(f"\\text{{{self.loader.var_name}}}")
+        return self.source.get_modified_var_name()
 
     def set_scale(self, indep_scale: plt_util.Scale, dep_scale: plt_util.Scale):
         self.indep_scale = indep_scale
         self.dep_scale = dep_scale
 
     def _load_data(self, step: int) -> xr.DataArray:
-        da = self.loader.get_data_at_step(step)
-        da = self.pipeline.apply(da)
+        da = self.source.get_data([step]).isel(t=0)
 
         # filter out near-zero values
         if self.dep_scale == "log":
@@ -78,34 +74,31 @@ class FieldAnimation(Animation):
     @staticmethod
     def get_animation(
         steps: list[int],
-        loader: FieldLoader,
-        pipeline: FieldPipeline,
+        source: FieldSource,
         dims: list[str],
     ) -> FieldAnimation:
         if len(dims) == 1:
-            return FieldAnimation1d(steps, loader, pipeline, dims[0])
+            return FieldAnimation1d(steps, source, dims[0])
         if len(dims) == 2:
             if DIMENSIONS[dims[0]].geometry == "polar:r" and DIMENSIONS[dims[1]].geometry == "polar:theta":
-                return FieldAnimation2dPolar(steps, loader, pipeline, tuple(dims))
+                return FieldAnimation2dPolar(steps, source, tuple(dims))
             else:
-                return FieldAnimation2d(steps, loader, pipeline, tuple(dims))
+                return FieldAnimation2d(steps, source, tuple(dims))
         else:
             raise NotImplementedError("don't have 3D animations yet")
 
     def _get_default_save_path(self) -> str:
-        adaptor_name_fragments = self.pipeline.get_name_fragments()
-        return "-".join([self.loader.prefix, self.loader.var_name] + adaptor_name_fragments) + ".mp4"
+        return "-".join(self.source.get_name_fragments()) + ".mp4"
 
 
 class FieldAnimation2d(FieldAnimation):
     def __init__(
         self,
         steps: list[int],
-        loader: FieldLoader,
-        pipeline: FieldPipeline,
+        source: FieldSource,
         dims: tuple[str, str],
     ):
-        super().__init__(steps, loader, pipeline)
+        super().__init__(steps, source)
 
         self.dims = dims
 
@@ -150,11 +143,10 @@ class FieldAnimation2dPolar(FieldAnimation):
     def __init__(
         self,
         steps: list[int],
-        loader: FieldLoader,
-        pipeline: FieldPipeline,
+        source: FieldSource,
         dims: tuple[str, str],
     ):
-        super().__init__(steps, loader, pipeline, subplot_kw={"projection": "polar"})
+        super().__init__(steps, source, subplot_kw={"projection": "polar"})
 
         self.dims = dims
 
@@ -202,11 +194,10 @@ class FieldAnimation1d(FieldAnimation):
     def __init__(
         self,
         steps: list[int],
-        loader: FieldLoader,
-        pipeline: FieldPipeline,
+        source: FieldSource,
         dim: str,
     ):
-        super().__init__(steps, loader, pipeline)
+        super().__init__(steps, source)
 
         self.dim = dim
         self.fits: list[Fit] = []
