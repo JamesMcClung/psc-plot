@@ -28,19 +28,21 @@ class FieldArgs(args_base.ArgsTyped):
     def get_animation(self) -> Animation:
         steps = field_util.get_available_field_steps(self.prefix)
 
-        versus_dims = ["y", "z"]
+        spatial_dims = ["y", "z"]
+        time_dim = "t"  # TODO use this to sometimes make non-animated figs
         for adaptor in self.adaptors:
             if isinstance(adaptor, Versus):
-                versus_dims = adaptor.spatial_dims
+                spatial_dims = adaptor.spatial_dims
+                time_dim = adaptor.time_dim
                 break
         else:
-            self.adaptors.append(Versus(versus_dims, "t"))
+            self.adaptors.append(Versus(spatial_dims, time_dim))
 
         loader = FieldLoader(self.prefix, self.variable)
         pipeline = FieldPipeline(*self.adaptors)
         source = FieldSourceWithPipeline(loader, pipeline)
 
-        anim = FieldAnimation.get_animation(steps, source, versus_dims)
+        anim = FieldAnimation.get_animation(steps, source, spatial_dims)
 
         if isinstance(anim, FieldAnimation1d):
             anim.add_fits(self.fits)
