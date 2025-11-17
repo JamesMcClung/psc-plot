@@ -27,8 +27,9 @@ class ParticleAnimation(Animation):
         bins: tuple[NBins | BinEdges, NBins | BinEdges] | None = None,
         scales: list[plt_util.Scale],
     ):
-        super().__init__(steps)
+        super().__init__(len(steps))
 
+        self.steps = steps
         self.prefix = prefix
         self.pipeline = pipeline
         self.axis_variables = axis_variables
@@ -61,8 +62,8 @@ class ParticleAnimation(Animation):
 
         self.ax.set_title("reduced f")
 
-    def _update_fig(self, step: int):
-        binned_data, _, _ = self._get_binned_data(step)
+    def _update_fig(self, frame: int):
+        binned_data, _, _ = self._get_binned_data(self.steps[frame])
 
         self.mesh.set_array(binned_data)
         plt_util.update_cbar(self.mesh)
