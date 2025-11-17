@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import functools
 import typing
 
 import numpy as np
@@ -39,14 +38,6 @@ class FieldAnimation(Animation):
 
         self.indep_scale: plt_util.Scale = "linear"
         self.dep_scale: plt_util.Scale = "linear"
-
-    @functools.cached_property
-    def dep_var_name(self) -> str:
-        """The latex-formatted name (including applied formulae) of the dependent variable"""
-        # This is cached in order to defer its evaluation until after _load_data has been called,
-        # and each adaptor has thus seen the data and determined what (if any) internal adaptors it needs
-        # (as of the time of this comment, only Versus does this)
-        return self.source.get_modified_var_name()
 
     def set_scale(self, indep_scale: plt_util.Scale, dep_scale: plt_util.Scale):
         self.indep_scale = indep_scale
@@ -124,7 +115,7 @@ class FieldAnimation2d(FieldAnimation):
         data_lower, data_upper = self._get_var_bounds()
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
-        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
 
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
@@ -137,7 +128,7 @@ class FieldAnimation2d(FieldAnimation):
 
         self.im.set_array(data.T)
 
-        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
         return [self.im, self.ax.title]
 
 
@@ -178,7 +169,7 @@ class FieldAnimation2dPolar(FieldAnimation):
         data_lower, data_upper = self._get_var_bounds()
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
-        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
 
         # FIXME make the labels work
         # self.ax.set_xlabel(DIMENSIONS[self.dims[1]].to_axis_label())
@@ -191,7 +182,7 @@ class FieldAnimation2dPolar(FieldAnimation):
 
         self.im.set_array(data)
 
-        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
         return [self.im, self.ax.title]
 
 
@@ -219,10 +210,10 @@ class FieldAnimation1d(FieldAnimation):
         line_type = "." if self.fits else "-"
         [self.line] = self.ax.plot(xdata, data, line_type)
 
-        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
         self._update_ybounds()
         self.ax.set_xlabel(DIMENSIONS[self.dim].to_axis_label())
-        self.ax.set_ylabel(f"${self.dep_var_name}$")
+        self.ax.set_ylabel(f"${self.source.get_modified_var_name()}$")
 
         self.ax.set_xscale(self.indep_scale)
         self.ax.set_yscale(self.dep_scale)
@@ -247,7 +238,7 @@ class FieldAnimation1d(FieldAnimation):
             # updates legend in case fit labels changed (e.g. to show different fit params)
             self.ax.legend()
 
-        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
         return [self.line, self.ax.yaxis, self.ax.title]
 
     def _update_ybounds(self):
