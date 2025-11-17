@@ -2,9 +2,9 @@ import abc
 import inspect
 
 
-class Adaptor[Data](abc.ABC):
+class Adaptor[Input, Output = Input](abc.ABC):
     @abc.abstractmethod
-    def apply(self, data: Data) -> Data: ...
+    def apply(self, data: Input) -> Output: ...
 
     def get_name_fragments(self) -> list[str]:
         return []
@@ -13,6 +13,6 @@ class Adaptor[Data](abc.ABC):
         return dep_var_name
 
     @classmethod
-    def get_input_data_type(cls) -> type[Data]:
+    def get_input_data_type(cls) -> type[Input]:
         *_, data_param = inspect.signature(cls.apply).parameters.values()
         return data_param.annotation
