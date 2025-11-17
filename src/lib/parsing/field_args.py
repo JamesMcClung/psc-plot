@@ -29,7 +29,7 @@ class FieldArgs(args_base.ArgsTyped):
         steps = field_util.get_available_field_steps(self.prefix)
 
         spatial_dims = ["y", "z"]
-        time_dim = "t"  # TODO use this to sometimes make non-animated figs
+        time_dim: str = "t"
         for adaptor in self.adaptors:
             if isinstance(adaptor, Versus):
                 spatial_dims = adaptor.spatial_dims
@@ -42,7 +42,11 @@ class FieldArgs(args_base.ArgsTyped):
         pipeline = FieldPipeline(*self.adaptors)
         source = FieldSourceWithPipeline(loader, pipeline)
 
-        anim = FieldAnimation.get_animation(steps, source, spatial_dims)
+        if time_dim:
+            anim = FieldAnimation.get_animation(steps, source, time_dim, spatial_dims)
+        else:
+            # TODO use an argparse exception type
+            raise Exception("non-animated plots not supported yet")
 
         if isinstance(anim, FieldAnimation1d):
             anim.add_fits(self.fits)

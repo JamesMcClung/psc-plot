@@ -28,12 +28,14 @@ class FieldAnimation(Animation):
         self,
         steps: list[int],
         source: FieldSource,
+        time_dim: str,
         *,
         subplot_kw: dict[str, typing.Any] = {},
     ):
         super().__init__(steps, subplot_kw=subplot_kw)
 
         self.source = source
+        self.time_dim = time_dim
 
         self.indep_scale: plt_util.Scale = "linear"
         self.dep_scale: plt_util.Scale = "linear"
@@ -51,7 +53,7 @@ class FieldAnimation(Animation):
         self.dep_scale = dep_scale
 
     def _load_data(self, step: int) -> xr.DataArray:
-        da = self.source.get_data([step]).isel(t=0)
+        da = self.source.get_data([step]).isel({self.time_dim: 0})
 
         # filter out near-zero values
         if self.dep_scale == "log":
@@ -75,15 +77,16 @@ class FieldAnimation(Animation):
     def get_animation(
         steps: list[int],
         source: FieldSource,
-        dims: list[str],
+        time_dim: str,
+        spatial_dims: list[str],
     ) -> FieldAnimation:
-        if len(dims) == 1:
-            return FieldAnimation1d(steps, source, dims[0])
-        if len(dims) == 2:
-            if DIMENSIONS[dims[0]].geometry == "polar:r" and DIMENSIONS[dims[1]].geometry == "polar:theta":
-                return FieldAnimation2dPolar(steps, source, tuple(dims))
+        if len(spatial_dims) == 1:
+            return FieldAnimation1d(steps, source, time_dim, spatial_dims[0])
+        if len(spatial_dims) == 2:
+            if DIMENSIONS[spatial_dims[0]].geometry == "polar:r" and DIMENSIONS[spatial_dims[1]].geometry == "polar:theta":
+                return FieldAnimation2dPolar(steps, source, time_dim, tuple(spatial_dims))
             else:
-                return FieldAnimation2d(steps, source, tuple(dims))
+                return FieldAnimation2d(steps, source, time_dim, tuple(spatial_dims))
         else:
             raise NotImplementedError("don't have 3D animations yet")
 
@@ -96,11 +99,12 @@ class FieldAnimation2d(FieldAnimation):
         self,
         steps: list[int],
         source: FieldSource,
-        dims: tuple[str, str],
+        time_dim: str,
+        spatial_dims: tuple[str, str],
     ):
-        super().__init__(steps, source)
+        super().__init__(steps, source, time_dim)
 
-        self.dims = dims
+        self.spatial_dims = spatial_dims
 
     def _init_fig(self):
         data = self._load_data(self.steps[0])
@@ -112,7 +116,7 @@ class FieldAnimation2d(FieldAnimation):
         self.im = self.ax.imshow(
             data.T,
             origin="lower",
-            extent=(*get_extent(data, self.dims[0]), *get_extent(data, self.dims[1])),
+            extent=(*get_extent(data, self.spatial_dims[0]), *get_extent(data, self.spatial_dims[1])),
             norm=self.dep_scale,
         )
 
@@ -120,11 +124,11 @@ class FieldAnimation2d(FieldAnimation):
         data_lower, data_upper = self._get_var_bounds()
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
-        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.t))
+        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
 
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
-        self.ax.set_xlabel(DIMENSIONS[self.dims[0]].to_axis_label())
-        self.ax.set_ylabel(DIMENSIONS[self.dims[1]].to_axis_label())
+        self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
+        self.ax.set_ylabel(DIMENSIONS[self.spatial_dims[1]].to_axis_label())
 
         self.fig.tight_layout()
 
@@ -133,7 +137,7 @@ class FieldAnimation2d(FieldAnimation):
 
         self.im.set_array(data.T)
 
-        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.t))
+        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
         return [self.im, self.ax.title]
 
 
@@ -144,11 +148,12 @@ class FieldAnimation2dPolar(FieldAnimation):
         self,
         steps: list[int],
         source: FieldSource,
-        dims: tuple[str, str],
+        time_dim: str,
+        spatial_dims: tuple[str, str],
     ):
-        super().__init__(steps, source, subplot_kw={"projection": "polar"})
+        super().__init__(steps, source, time_dim, subplot_kw={"projection": "polar"})
 
-        self.dims = dims
+        self.spatial_dims = spatial_dims
 
     def _init_fig(self):
         data = self._load_data(self.steps[0])
@@ -157,9 +162,9 @@ class FieldAnimation2dPolar(FieldAnimation):
         if self.indep_scale == "log":
             self.ax.set_rscale("symlog")
 
-        vertices_theta = np.concat((data.coords[self.dims[1]].data, [2 * np.pi]))
+        vertices_theta = np.concat((data.coords[self.spatial_dims[1]].data, [2 * np.pi]))
         vertices_theta -= vertices_theta[1] / 2
-        vertices_r = list(data.coords[self.dims[0]].data)
+        vertices_r = list(data.coords[self.spatial_dims[0]].data)
         vertices_r += [vertices_r[-1] + vertices_r[1]]
 
         self.im = self.ax.pcolormesh(
@@ -173,7 +178,7 @@ class FieldAnimation2dPolar(FieldAnimation):
         data_lower, data_upper = self._get_var_bounds()
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
-        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.t))
+        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
 
         # FIXME make the labels work
         # self.ax.set_xlabel(DIMENSIONS[self.dims[1]].to_axis_label())
@@ -186,7 +191,7 @@ class FieldAnimation2dPolar(FieldAnimation):
 
         self.im.set_array(data)
 
-        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.t))
+        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
         return [self.im, self.ax.title]
 
 
@@ -195,11 +200,12 @@ class FieldAnimation1d(FieldAnimation):
         self,
         steps: list[int],
         source: FieldSource,
-        dim: str,
+        time_dim: str,
+        spatial_dim: str,
     ):
-        super().__init__(steps, source)
+        super().__init__(steps, source, time_dim)
 
-        self.dim = dim
+        self.dim = spatial_dim
         self.fits: list[Fit] = []
         self.show_t0 = False
 
@@ -213,7 +219,7 @@ class FieldAnimation1d(FieldAnimation):
         line_type = "." if self.fits else "-"
         [self.line] = self.ax.plot(xdata, data, line_type)
 
-        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.t))
+        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
         self._update_ybounds()
         self.ax.set_xlabel(DIMENSIONS[self.dim].to_axis_label())
         self.ax.set_ylabel(f"${self.dep_var_name}$")
@@ -241,7 +247,7 @@ class FieldAnimation1d(FieldAnimation):
             # updates legend in case fit labels changed (e.g. to show different fit params)
             self.ax.legend()
 
-        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS["t"].get_coordinate_label(data.t))
+        plt_util.update_title(self.ax, self.dep_var_name, DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
         return [self.line, self.ax.yaxis, self.ax.title]
 
     def _update_ybounds(self):
