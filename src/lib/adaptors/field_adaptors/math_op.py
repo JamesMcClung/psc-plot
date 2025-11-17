@@ -3,11 +3,11 @@ from typing import Callable
 import xarray as xr
 
 from .. import parse_util
-from ..adaptor_base import FieldAdaptor
+from ..adaptor_base import Adaptor
 from ..registry import adaptor_parser
 
 
-class MathOp(FieldAdaptor):
+class MathOp(Adaptor[xr.DataArray]):
     def __init__(
         self,
         rhs: float,

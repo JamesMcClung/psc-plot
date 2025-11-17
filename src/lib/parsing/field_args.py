@@ -1,8 +1,10 @@
 import argparse
 import typing
 
+import xarray as xr
+
 from .. import field_util
-from ..adaptors import FIELD_ADAPTORS, FieldAdaptor, FieldPipeline
+from ..adaptors import FIELD_ADAPTORS, Adaptor, Pipeline
 from ..adaptors.field_adaptors.versus import Versus
 from ..animation import Animation, FieldAnimation
 from ..animation.field_animation import FieldAnimation1d
@@ -21,7 +23,7 @@ SCALES: list[Scale] = list(Scale.__value__.__args__)
 class FieldArgs(args_base.ArgsTyped):
     variable: str
     scale: Scale
-    adaptors: list[FieldAdaptor]
+    adaptors: list[Adaptor[xr.DataArray]]
     fits: list[Fit]  # 1d only
     show_t0: bool  # 1d only
 
@@ -39,7 +41,7 @@ class FieldArgs(args_base.ArgsTyped):
             self.adaptors.append(Versus(spatial_dims, time_dim))
 
         loader = FieldLoader(self.prefix, self.variable)
-        pipeline = FieldPipeline(*self.adaptors)
+        pipeline = Pipeline(*self.adaptors)
         source = FieldSourceWithPipeline(loader, pipeline)
 
         if time_dim:

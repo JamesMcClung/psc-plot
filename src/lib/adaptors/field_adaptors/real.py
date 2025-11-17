@@ -1,10 +1,10 @@
 import xarray as xr
 
-from ..adaptor_base import FieldAdaptor
+from ..adaptor_base import Adaptor
 from ..registry import register_const_adaptor
 
 
-class Real(FieldAdaptor):
+class Real(Adaptor[xr.DataArray]):
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         return da.real
 

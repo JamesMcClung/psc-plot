@@ -2,11 +2,11 @@ import pandas as pd
 
 from ...particle_util import PRT_VARIABLES
 from .. import parse_util
-from ..adaptor_base import ParticleAdaptor
+from ..adaptor_base import Adaptor
 from ..registry import adaptor_parser
 
 
-class Slice(ParticleAdaptor):
+class Slice(Adaptor[pd.DataFrame]):
     def __init__(self, var_name: str, lower_inclusive: float | None, upper_exclusive: float | None):
         self.var_name = var_name
         self.lower_inclusive = lower_inclusive

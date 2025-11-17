@@ -1,7 +1,9 @@
 import argparse
 
+import pandas as pd
+
 from .. import particle_util, plt_util
-from ..adaptors import PARTICLE_ADAPTORS, ParticleAdaptor, ParticlePipeline
+from ..adaptors import PARTICLE_ADAPTORS, Adaptor, Pipeline
 from ..animation import Animation
 from ..animation.particle_animation import *
 from ..derived_particle_variables import DERIVED_PARTICLE_VARIABLES
@@ -13,7 +15,7 @@ __all__ = ["add_particle_subparsers", "ParticleArgs"]
 
 class ParticleArgs(args_base.ArgsTyped):
     axis_variables: tuple[PrtVariable, PrtVariable]
-    adaptors: list[ParticleAdaptor]
+    adaptors: list[Adaptor[pd.DataFrame]]
     scales: list[plt_util.Scale]
 
     def get_animation(self) -> Animation:
@@ -22,7 +24,7 @@ class ParticleArgs(args_base.ArgsTyped):
         anim = ParticleAnimation(
             steps,
             self.prefix,
-            ParticlePipeline(*self.adaptors),
+            Pipeline(*self.adaptors),
             axis_variables=self.axis_variables,
             bins=None,  # guess
             nicell=100,  # FIXME don't hardcode this

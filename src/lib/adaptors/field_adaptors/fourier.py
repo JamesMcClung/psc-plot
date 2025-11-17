@@ -4,7 +4,7 @@ import xrft
 
 from ...dimension import DIMENSIONS, Dimension
 from .. import parse_util
-from ..adaptor_base import FieldAdaptor
+from ..adaptor_base import Adaptor
 from ..registry import adaptor_parser
 
 
@@ -26,7 +26,7 @@ def toggle_fourier(da: xr.DataArray, dim: Dimension) -> xr.DataArray:
     return da
 
 
-class Fourier(FieldAdaptor):
+class Fourier(Adaptor[xr.DataArray]):
     def __init__(self, dims: Dimension | list[Dimension]):
         if isinstance(dims, Dimension):
             dims = [dims]

@@ -1,11 +1,8 @@
-import pandas as pd
-import xarray as xr
-
-from .adaptor_base import Adaptor, FieldAdaptor, ParticleAdaptor
+from .adaptor_base import Adaptor
 
 
-class Pipeline[Data, AdaptorType: Adaptor[Data]]:
-    def __init__(self, *adaptors: AdaptorType):
+class Pipeline[Data]:
+    def __init__(self, *adaptors: Adaptor[Data]):
         self.adaptors = list(adaptors)
 
     def get_name_fragments(self) -> list[str]:
@@ -18,12 +15,7 @@ class Pipeline[Data, AdaptorType: Adaptor[Data]]:
             data = adaptor.apply(data)
         return data
 
-
-class FieldPipeline(Pipeline[xr.DataArray, FieldAdaptor]):
     def get_modified_var_name(self, dep_var_name: str) -> str:
         for adaptor in self.adaptors:
             dep_var_name = adaptor.get_modified_var_name(dep_var_name)
         return dep_var_name
-
-
-class ParticlePipeline(Pipeline[pd.DataFrame, ParticleAdaptor]): ...

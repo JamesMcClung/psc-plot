@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 import xarray as xr
 
-from .adaptors.pipeline import FieldPipeline
+from .adaptors.pipeline import Pipeline
 
 
 class FieldSource(ABC):
@@ -27,7 +27,7 @@ class FieldSource(ABC):
 
 
 class FieldSourceWithPipeline(FieldSource):
-    def __init__(self, source: FieldSource, pipeline: FieldPipeline):
+    def __init__(self, source: FieldSource, pipeline: Pipeline[xr.DataArray]):
         self.source = source
         self.pipeline = pipeline
 

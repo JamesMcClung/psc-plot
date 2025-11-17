@@ -2,11 +2,11 @@ import xarray as xr
 
 from ...dimension import DIMENSIONS
 from .. import parse_util
-from ..adaptor_base import FieldAdaptor
+from ..adaptor_base import Adaptor
 from ..registry import adaptor_parser
 
 
-class PosSlice(FieldAdaptor):
+class PosSlice(Adaptor[xr.DataArray]):
     def __init__(self, dim_name: str, lower_inclusive: float | None, upper_exclusive: float | None):
         self.dim_name = dim_name
         self.lower_inclusive = lower_inclusive

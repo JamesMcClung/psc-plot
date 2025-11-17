@@ -4,7 +4,7 @@ import pandas as pd
 from matplotlib.colors import SymLogNorm
 
 from .. import file_util, particle_util, plt_util
-from ..adaptors import ParticlePipeline
+from ..adaptors import Pipeline
 from ..derived_particle_variables import derive_particle_variable
 from ..particle_util import PrtVariable
 from .animation_base import Animation
@@ -21,7 +21,7 @@ class ParticleAnimation(Animation):
         self,
         steps: list[int],
         prefix: file_util.ParticlePrefix,
-        pipeline: ParticlePipeline,
+        pipeline: Pipeline[pd.DataFrame],
         *,
         axis_variables: tuple[PrtVariable, PrtVariable],
         nicell: int,

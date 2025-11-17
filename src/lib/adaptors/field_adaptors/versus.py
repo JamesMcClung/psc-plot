@@ -2,18 +2,18 @@ import xarray as xr
 
 from ...dimension import DIMENSIONS
 from .. import parse_util
-from ..adaptor_base import FieldAdaptor
+from ..adaptor_base import Adaptor
 from ..registry import adaptor_parser
 from .fourier import Fourier
 from .reduce import Reduce
 
 
-class Versus(FieldAdaptor):
+class Versus(Adaptor[xr.DataArray]):
     def __init__(self, spatial_dims: list[str], time_dim: str | None):
         self.spatial_dims = spatial_dims
         self.time_dim = time_dim
         self.all_dims = spatial_dims + ([time_dim] if time_dim else [])
-        self.cached_inner_adaptors: list[FieldAdaptor] | None = None
+        self.cached_inner_adaptors: list[Adaptor[xr.DataArray]] | None = None
 
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         if self.cached_inner_adaptors is None:

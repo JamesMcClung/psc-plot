@@ -2,11 +2,11 @@ import xarray as xr
 
 from ...dimension import DIMENSIONS
 from .. import parse_util
-from ..adaptor_base import FieldAdaptor
+from ..adaptor_base import Adaptor
 from ..registry import adaptor_parser
 
 
-class Roll(FieldAdaptor):
+class Roll(Adaptor[xr.DataArray]):
     def __init__(self, dim_name: str, roll_window: int):
         self.dim_name = dim_name
         self.window_size = roll_window

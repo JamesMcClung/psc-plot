@@ -2,11 +2,11 @@ import pandas as pd
 
 from ...particle_util import SPECIES, Species
 from .. import parse_util
-from ..adaptor_base import ParticleAdaptor
+from ..adaptor_base import Adaptor
 from ..registry import adaptor_parser
 
 
-class SpeciesFilter(ParticleAdaptor):
+class SpeciesFilter(Adaptor[pd.DataFrame]):
     def __init__(self, species: Species):
         self.species = species
 

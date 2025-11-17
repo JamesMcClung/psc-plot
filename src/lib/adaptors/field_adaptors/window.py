@@ -6,11 +6,11 @@ from scipy.signal import windows
 
 from ...dimension import DIMENSIONS
 from .. import parse_util
-from ..adaptor_base import FieldAdaptor
+from ..adaptor_base import Adaptor
 from ..registry import adaptor_parser
 
 
-class Window(FieldAdaptor):
+class Window(Adaptor[xr.DataArray]):
     def __init__(self, dim_name: str):
         self.dim_name = dim_name
 

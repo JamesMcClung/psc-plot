@@ -6,12 +6,15 @@ from argparse import Action, ArgumentParser
 from dataclasses import KW_ONLY, dataclass
 from typing import Any
 
-from .adaptor_base import FieldAdaptor, ParticleAdaptor
+import pandas as pd
+import xarray as xr
+
+from .adaptor_base import Adaptor
 
 __all__ = ["FIELD_ADAPTORS", "PARTICLE_ADAPTORS", "adaptor_parser"]
 
-FIELD_ADAPTORS: list[ArgparseAdaptorAdder[FieldAdaptor]] = []
-PARTICLE_ADAPTORS: list[ArgparseAdaptorAdder[ParticleAdaptor]] = []
+FIELD_ADAPTORS: list[ArgparseAdaptorAdder[Adaptor[xr.DataArray]]] = []
+PARTICLE_ADAPTORS: list[ArgparseAdaptorAdder[Adaptor[pd.DataFrame]]] = []
 
 
 def get_combine_args_action(combiner: typing.Callable[[list[Any]], Any]) -> Action:
@@ -84,12 +87,12 @@ def adaptor_parser(
 ):
     def adaptor_parser_inner[AdaptorType](parse_func: typing.Callable[[str | list[str]], AdaptorType]):
         kwargs = ArgparseAdaptorAdder(name_or_flags, help, type=parse_func, metavar=metavar, nargs=nargs)
-        adaptor_type = inspect.signature(parse_func).return_annotation
+        data_param_type = inspect.signature(parse_func).return_annotation.get_data_type()
 
-        if issubclass(adaptor_type, FieldAdaptor):
+        if data_param_type is xr.DataArray:
             FIELD_ADAPTORS.append(kwargs)
 
-        if issubclass(adaptor_type, ParticleAdaptor):
+        if data_param_type is pd.DataFrame:
             PARTICLE_ADAPTORS.append(kwargs)
 
         return parse_func
@@ -97,15 +100,15 @@ def adaptor_parser(
     return adaptor_parser_inner
 
 
-def register_const_adaptor[AdaptorType](
+def register_const_adaptor[Data](
     *name_or_flags: str,
     help: str | None,
-    const: AdaptorType,
+    const: Adaptor[Data],
 ):
     kwargs = ArgparseAdaptorAdder(name_or_flags, help, const=const)
 
-    if isinstance(const, FieldAdaptor):
+    if const.get_data_type() is xr.DataArray:
         FIELD_ADAPTORS.append(kwargs)
 
-    if isinstance(const, ParticleAdaptor):
+    if const.get_data_type() is pd.DataFrame:
         PARTICLE_ADAPTORS.append(kwargs)
