@@ -1,7 +1,7 @@
 from .adaptor import Adaptor
 
 
-class Pipeline[Data]:
+class Pipeline[Data](Adaptor[Data]):
     def __init__(self, *adaptors: Adaptor[Data]):
         self.adaptors = list(adaptors)
 
