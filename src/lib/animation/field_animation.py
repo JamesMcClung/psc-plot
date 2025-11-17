@@ -31,21 +31,23 @@ class FieldAnimation(Animation):
         *,
         subplot_kw: dict[str, typing.Any] = {},
     ):
-        super().__init__(steps, subplot_kw=subplot_kw)
-
         self.source = source
         self.time_dim = time_dim
         self.data = source.get_data(steps)
+        self.nframes = len(self.data.coords[time_dim])
 
         self.indep_scale: plt_util.Scale = "linear"
         self.dep_scale: plt_util.Scale = "linear"
+
+        # TODO: fix steps vs frames
+        super().__init__(list(range(self.nframes)), subplot_kw=subplot_kw)
 
     def set_scale(self, indep_scale: plt_util.Scale, dep_scale: plt_util.Scale):
         self.indep_scale = indep_scale
         self.dep_scale = dep_scale
 
-    def _load_data(self, step: int) -> xr.DataArray:
-        da = self.data.isel({self.time_dim: self.steps.index(step)})
+    def _load_data(self, frame: int) -> xr.DataArray:
+        da = self.data.isel({self.time_dim: frame})
 
         # filter out near-zero values
         if self.dep_scale == "log":
@@ -99,7 +101,7 @@ class FieldAnimation2d(FieldAnimation):
         self.spatial_dims = spatial_dims
 
     def _init_fig(self):
-        data = self._load_data(self.steps[0])
+        data = self._load_data(0)
 
         # must set scale (log, linear) before making image
         self.ax.set_xscale(self.indep_scale)
@@ -124,8 +126,8 @@ class FieldAnimation2d(FieldAnimation):
 
         self.fig.tight_layout()
 
-    def _update_fig(self, step: int):
-        data = self._load_data(step)
+    def _update_fig(self, frame: int):
+        data = self._load_data(frame)
 
         self.im.set_array(data.T)
 
@@ -148,7 +150,7 @@ class FieldAnimation2dPolar(FieldAnimation):
         self.spatial_dims = spatial_dims
 
     def _init_fig(self):
-        data = self._load_data(self.steps[0])
+        data = self._load_data(0)
 
         # must set scale (log, linear) before making image
         if self.indep_scale == "log":
@@ -178,8 +180,8 @@ class FieldAnimation2dPolar(FieldAnimation):
 
         self.fig.tight_layout()
 
-    def _update_fig(self, step: int):
-        data = self._load_data(step)
+    def _update_fig(self, frame: int):
+        data = self._load_data(frame)
 
         self.im.set_array(data)
 
@@ -202,7 +204,7 @@ class FieldAnimation1d(FieldAnimation):
         self.show_t0 = False
 
     def _init_fig(self):
-        data = self._load_data(self.steps[0])
+        data = self._load_data(0)
         xdata = data.coords[data.dims[0]]
 
         if self.show_t0:
@@ -226,8 +228,8 @@ class FieldAnimation1d(FieldAnimation):
 
         self.fig.tight_layout()
 
-    def _update_fig(self, step: int):
-        data = self._load_data(step)
+    def _update_fig(self, frame: int):
+        data = self._load_data(frame)
 
         self.line.set_ydata(data)
 
