@@ -58,14 +58,7 @@ class FieldAnimation(Animation):
         return da
 
     def _get_var_bounds(self) -> tuple[float, float]:
-        lower = np.inf
-        upper = -np.inf
-        for step in self.steps:
-            data = self._load_data(step)
-            lower = min(lower, np.nanmin(data.data))
-            upper = max(upper, np.nanmax(data.data))
-
-        return (lower, upper)
+        return (np.nanmin(self.data), np.nanmax(self.data))
 
     @staticmethod
     def get_animation(
