@@ -4,10 +4,8 @@ from . import field_util, file_util
 from .derived_field_variables import derive_field_variable
 from .field_source import FieldSource
 
-__all__ = ["load_field_variable"]
 
-
-def load_field_variable(prefix: file_util.FieldPrefix, step: int, var_name: str) -> xr.DataArray:
+def _load_field_variable(prefix: file_util.FieldPrefix, step: int, var_name: str) -> xr.DataArray:
     ds = field_util.load_ds(prefix, step)
     ds = ds.assign_coords(t=ds.time)
     derive_field_variable(ds, var_name, prefix)
@@ -21,7 +19,7 @@ class FieldLoader(FieldSource):
         self.var_name = var_name
 
     def get_data_at_step(self, step: int) -> xr.DataArray:
-        return load_field_variable(self.prefix, step, self.var_name)
+        return _load_field_variable(self.prefix, step, self.var_name)
 
     def get_data(self, steps: list[int]) -> xr.DataArray:
         return xr.concat((self.get_data_at_step(step) for step in steps), "t")
