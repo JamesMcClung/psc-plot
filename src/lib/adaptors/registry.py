@@ -87,7 +87,8 @@ def adaptor_parser(
 ):
     def adaptor_parser_inner[AdaptorType](parse_func: typing.Callable[[str | list[str]], AdaptorType]):
         kwargs = ArgparseAdaptorAdder(name_or_flags, help, type=parse_func, metavar=metavar, nargs=nargs)
-        data_param_type = inspect.signature(parse_func).return_annotation.get_data_type()
+        AdaptorType: type[Adaptor] = inspect.signature(parse_func).return_annotation
+        data_param_type = AdaptorType.get_data_type()
 
         if data_param_type is xr.DataArray:
             FIELD_ADAPTORS.append(kwargs)
