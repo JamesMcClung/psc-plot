@@ -201,7 +201,7 @@ class FieldAnimation1d(FieldAnimation):
         xdata = data.coords[data.dims[0]]
 
         if self.show_t0:
-            self.ax.plot(xdata, data, "-", label="$t=0$")
+            self.ax.plot(xdata, data, "-", label=DIMENSIONS[self.time_dim].get_coordinate_label(self.data.coords[self.time_dim][0]))
 
         line_type = "." if self.fits else "-"
         [self.line] = self.ax.plot(xdata, data, line_type)
