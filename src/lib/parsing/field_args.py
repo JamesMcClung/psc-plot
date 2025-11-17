@@ -43,7 +43,8 @@ class FieldArgs(args_base.ArgsTyped):
         source = FieldSourceWithPipeline(loader, pipeline)
 
         if time_dim:
-            anim = FieldAnimation.get_animation(steps, source, time_dim, spatial_dims)
+            AnimationType = FieldAnimation.get_animation_type(spatial_dims)
+            anim = AnimationType(steps, source, time_dim, spatial_dims)
         else:
             # TODO use an argparse exception type
             raise Exception("non-animated plots not supported yet")

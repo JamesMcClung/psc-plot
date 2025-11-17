@@ -62,23 +62,16 @@ class FieldAnimation(Animation):
         return (np.nanmin(self.data), np.nanmax(self.data))
 
     @staticmethod
-    def get_animation(
-        steps: list[int],
-        source: FieldSource,
-        time_dim: str,
-        spatial_dims: list[str],
-    ) -> FieldAnimation:
+    def get_animation_type(spatial_dims: list[str]) -> type[FieldAnimation]:
         if len(spatial_dims) == 1:
-            animation = FieldAnimation1d
+            return FieldAnimation1d
         elif len(spatial_dims) == 2:
             if DIMENSIONS[spatial_dims[0]].geometry == "polar:r" and DIMENSIONS[spatial_dims[1]].geometry == "polar:theta":
-                animation = FieldAnimation2dPolar
+                return FieldAnimation2dPolar
             else:
-                animation = FieldAnimation2d
+                return FieldAnimation2d
         else:
             raise NotImplementedError("don't have 3D animations yet")
-
-        return animation(steps, source, time_dim, spatial_dims)
 
     def _get_default_save_path(self) -> str:
         return "-".join(self.source.get_name_fragments()) + ".mp4"
