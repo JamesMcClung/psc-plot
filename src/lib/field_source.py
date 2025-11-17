@@ -15,6 +15,9 @@ class FieldSource(ABC):
     @abstractmethod
     def get_var_name(self) -> str: ...
 
+    @abstractmethod
+    def get_modified_var_name(self) -> str: ...
+
 
 class FieldSourceWithPipeline(FieldSource):
     def __init__(self, source: FieldSource, pipeline: FieldPipeline):
@@ -31,3 +34,6 @@ class FieldSourceWithPipeline(FieldSource):
 
     def get_var_name(self) -> str:
         return self.source.get_var_name()
+
+    def get_modified_var_name(self) -> str:
+        return self.pipeline.get_modified_dep_var_name(self.source.get_modified_var_name())

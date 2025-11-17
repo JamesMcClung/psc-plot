@@ -31,3 +31,6 @@ class FieldLoader(FieldSource):
 
     def get_var_name(self) -> str:
         return self.var_name
+
+    def get_modified_var_name(self) -> str:
+        return f"\\text{{{self.var_name}}}"
