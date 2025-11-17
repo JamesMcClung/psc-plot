@@ -12,6 +12,7 @@ from lib.parsing.fit import Fit
 from .. import field_source, file_util, plt_util
 from ..adaptors import FieldPipeline
 from ..dimension import DIMENSIONS
+from ..field_source import FieldLoader
 from .animation_base import Animation
 
 __all__ = ["FieldAnimation"]
@@ -27,17 +28,14 @@ class FieldAnimation(Animation):
     def __init__(
         self,
         steps: list[int],
-        prefix: file_util.FieldPrefix,
-        variable: str,
+        loader: FieldLoader,
         pipeline: FieldPipeline,
         *,
         subplot_kw: dict[str, typing.Any] = {},
     ):
         super().__init__(steps, subplot_kw=subplot_kw)
 
-        self.prefix = prefix
-        self.variable = variable
-
+        self.loader = loader
         self.pipeline = pipeline
 
         self.indep_scale: plt_util.Scale = "linear"
@@ -49,14 +47,14 @@ class FieldAnimation(Animation):
         # This is cached in order to defer its evaluation until after _load_data has been called,
         # and each adaptor has thus seen the data and determined what (if any) internal adaptors it needs
         # (as of the time of this comment, only Versus does this)
-        return self.pipeline.get_modified_dep_var_name(f"\\text{{{self.variable}}}")
+        return self.pipeline.get_modified_dep_var_name(f"\\text{{{self.loader.var_name}}}")
 
     def set_scale(self, indep_scale: plt_util.Scale, dep_scale: plt_util.Scale):
         self.indep_scale = indep_scale
         self.dep_scale = dep_scale
 
     def _load_data(self, step: int) -> xr.DataArray:
-        da = field_source.load_field_variable(self.prefix, step, self.variable)
+        da = self.loader.get_step(step)
         da = self.pipeline.apply(da)
 
         # filter out near-zero values
@@ -80,36 +78,34 @@ class FieldAnimation(Animation):
     @staticmethod
     def get_animation(
         steps: list[int],
-        prefix: file_util.FieldPrefix,
-        variable: str,
+        loader: FieldLoader,
         pipeline: FieldPipeline,
         dims: list[str],
     ) -> FieldAnimation:
         if len(dims) == 1:
-            return FieldAnimation1d(steps, prefix, variable, pipeline, dims[0])
+            return FieldAnimation1d(steps, loader, pipeline, dims[0])
         if len(dims) == 2:
             if DIMENSIONS[dims[0]].geometry == "polar:r" and DIMENSIONS[dims[1]].geometry == "polar:theta":
-                return FieldAnimation2dPolar(steps, prefix, variable, pipeline, tuple(dims))
+                return FieldAnimation2dPolar(steps, loader, pipeline, tuple(dims))
             else:
-                return FieldAnimation2d(steps, prefix, variable, pipeline, tuple(dims))
+                return FieldAnimation2d(steps, loader, pipeline, tuple(dims))
         else:
             raise NotImplementedError("don't have 3D animations yet")
 
     def _get_default_save_path(self) -> str:
         adaptor_name_fragments = self.pipeline.get_name_fragments()
-        return "-".join([self.prefix, self.variable] + adaptor_name_fragments) + ".mp4"
+        return "-".join([self.loader.prefix, self.loader.var_name] + adaptor_name_fragments) + ".mp4"
 
 
 class FieldAnimation2d(FieldAnimation):
     def __init__(
         self,
         steps: list[int],
-        prefix: file_util.FieldPrefix,
-        variable: str,
+        loader: FieldLoader,
         pipeline: FieldPipeline,
         dims: tuple[str, str],
     ):
-        super().__init__(steps, prefix, variable, pipeline)
+        super().__init__(steps, loader, pipeline)
 
         self.dims = dims
 
@@ -154,12 +150,11 @@ class FieldAnimation2dPolar(FieldAnimation):
     def __init__(
         self,
         steps: list[int],
-        prefix: file_util.FieldPrefix,
-        variable: str,
+        loader: FieldLoader,
         pipeline: FieldPipeline,
         dims: tuple[str, str],
     ):
-        super().__init__(steps, prefix, variable, pipeline, subplot_kw={"projection": "polar"})
+        super().__init__(steps, loader, pipeline, subplot_kw={"projection": "polar"})
 
         self.dims = dims
 
@@ -207,12 +202,11 @@ class FieldAnimation1d(FieldAnimation):
     def __init__(
         self,
         steps: list[int],
-        prefix: file_util.FieldPrefix,
-        variable: str,
+        loader: FieldLoader,
         pipeline: FieldPipeline,
         dim: str,
     ):
-        super().__init__(steps, prefix, variable, pipeline)
+        super().__init__(steps, loader, pipeline)
 
         self.dim = dim
         self.fits: list[Fit] = []

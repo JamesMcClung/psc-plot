@@ -6,6 +6,7 @@ from ..adaptors import FIELD_ADAPTORS, FieldAdaptor, FieldPipeline
 from ..adaptors.field_adaptors.versus import Versus
 from ..animation import Animation, FieldAnimation
 from ..animation.field_animation import FieldAnimation1d
+from ..field_source import FieldLoader
 from ..file_util import FIELD_PREFIXES
 from . import args_base
 from .fit import Fit
@@ -34,9 +35,10 @@ class FieldArgs(args_base.ArgsTyped):
         else:
             self.adaptors.append(Versus(versus_dims))
 
+        loader = FieldLoader(self.prefix, self.variable)
         pipeline = FieldPipeline(*self.adaptors)
 
-        anim = FieldAnimation.get_animation(steps, self.prefix, self.variable, pipeline, versus_dims)
+        anim = FieldAnimation.get_animation(steps, loader, pipeline, versus_dims)
 
         if isinstance(anim, FieldAnimation1d):
             anim.add_fits(self.fits)
