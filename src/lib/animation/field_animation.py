@@ -199,10 +199,15 @@ class FieldAnimation1d(FieldAnimation):
         data = self._get_data_at_frame(0)
         xdata = data.coords[data.dims[0]]
 
+        line_type = "-"
+
         if self.show_t0:
             self.ax.plot(xdata, data, "-", label=DIMENSIONS[self.time_dim].get_coordinate_label(self.data.coords[self.time_dim][0]))
+            line_type = "--"
 
-        line_type = "." if self.fits else "-"
+        if self.fits:
+            line_type = "."
+
         [self.line] = self.ax.plot(xdata, data, line_type)
 
         plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
