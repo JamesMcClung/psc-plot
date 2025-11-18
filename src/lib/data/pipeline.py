@@ -1,4 +1,5 @@
 import itertools
+import typing
 
 from .adaptor import Adaptor
 from .compatability import require_compatible
@@ -7,9 +8,6 @@ from .compatability import require_compatible
 class Pipeline(Adaptor):
     def __init__(self, *adaptors: Adaptor):
         self.adaptors = list(adaptors)
-
-        if not self.adaptors:
-            raise ValueError("a pipeline must contain at least one adaptor")
 
         for producer, consumer in itertools.pairwise(self.adaptors):
             require_compatible(producer, consumer)
@@ -28,7 +26,11 @@ class Pipeline(Adaptor):
         return dep_var_name
 
     def get_input_data_type(self) -> type:
+        if not self.adaptors:
+            return typing.Any
         return self.adaptors[0].get_input_data_type()
 
     def get_output_data_type(self) -> type:
+        if not self.adaptors:
+            return typing.Any
         return self.adaptors[-1].get_output_data_type()
