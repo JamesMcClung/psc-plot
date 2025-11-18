@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 import xarray as xr
 
-from ...dimension import DIMENSIONS, CartesianToPolar
+from ....dimension import DIMENSIONS, CartesianToPolar
 from .. import parse_util
 from ..adaptor import Adaptor
 from ..registry import adaptor_parser

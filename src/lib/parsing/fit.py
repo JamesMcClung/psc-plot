@@ -4,7 +4,7 @@ import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.lines import Line2D
 
-from ..adaptors.field_adaptors.pos_slice import PosSlice
+from ..data.adaptors.field_adaptors.pos_slice import PosSlice
 
 # TODO make this a plot plugin (and make plot plugins a thing)
 

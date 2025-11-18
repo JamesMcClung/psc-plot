@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 from abc import abstractmethod
 
-from ..data_handling import ConsumesData, ProducesData
+from ..compatability import ConsumesData, ProducesData
 
 
 class Adaptor(ConsumesData, ProducesData):

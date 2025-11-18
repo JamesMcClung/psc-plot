@@ -4,12 +4,12 @@ import typing
 import xarray as xr
 
 from .. import field_util
-from ..adaptors import ADAPTORS, Adaptor, Pipeline
-from ..adaptors.field_adaptors.versus import Versus
 from ..animation import Animation, FieldAnimation
 from ..animation.field_animation import FieldAnimation1d
-from ..data_source import DataSourceWithPipeline
-from ..field_loader import FieldLoader
+from ..data.adaptors import ADAPTORS, Adaptor, Pipeline
+from ..data.adaptors.field_adaptors.versus import Versus
+from ..data.field_loader import FieldLoader
+from ..data.source import DataSourceWithPipeline
 from ..file_util import FIELD_PREFIXES
 from . import args_base
 from .fit import Fit

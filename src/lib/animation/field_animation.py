@@ -9,7 +9,7 @@ from matplotlib.projections.polar import PolarAxes
 from lib.parsing.fit import Fit
 
 from .. import plt_util
-from ..data_source import DataSource
+from ..data.source import DataSource
 from ..dimension import DIMENSIONS
 from .animation_base import Animation
 

@@ -4,7 +4,7 @@ import numpy as np
 import xarray as xr
 from scipy.signal import windows
 
-from ...dimension import DIMENSIONS
+from ....dimension import DIMENSIONS
 from .. import parse_util
 from ..adaptor import Adaptor
 from ..registry import adaptor_parser

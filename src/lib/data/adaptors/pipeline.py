@@ -1,6 +1,6 @@
 import itertools
 
-from ..data_handling import require_compatible
+from ..compatability import require_compatible
 from .adaptor import Adaptor
 
 

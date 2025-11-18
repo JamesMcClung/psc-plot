@@ -3,9 +3,9 @@ import argparse
 import pandas as pd
 
 from .. import particle_util, plt_util
-from ..adaptors import ADAPTORS, Adaptor, Pipeline
 from ..animation import Animation
 from ..animation.particle_animation import *
+from ..data.adaptors import ADAPTORS, Adaptor, Pipeline
 from ..derived_particle_variables import DERIVED_PARTICLE_VARIABLES
 from ..particle_util import PRT_VARIABLES, PrtVariable
 from . import args_base
