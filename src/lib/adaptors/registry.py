@@ -1,20 +1,15 @@
 from __future__ import annotations
 
-import inspect
 import typing
 from argparse import Action, ArgumentParser
 from dataclasses import KW_ONLY, dataclass
 from typing import Any
 
-import pandas as pd
-import xarray as xr
-
 from .adaptor import Adaptor
 
-__all__ = ["FIELD_ADAPTORS", "PARTICLE_ADAPTORS", "adaptor_parser"]
+__all__ = ["ADAPTORS", "adaptor_parser"]
 
-FIELD_ADAPTORS: list[ArgparseAdaptorAdder[Adaptor[xr.DataArray]]] = []
-PARTICLE_ADAPTORS: list[ArgparseAdaptorAdder[Adaptor[pd.DataFrame]]] = []
+ADAPTORS: list[ArgparseAdaptorAdder] = []
 
 
 def get_combine_args_action(combiner: typing.Callable[[list[Any]], Any]) -> Action:
@@ -40,7 +35,7 @@ type ArgparseNArgs = int | typing.Literal["+", "*"] | None
 
 
 @dataclass
-class ArgparseAdaptorAdder[AdaptorType]:
+class ArgparseAdaptorAdder[AdaptorType: Adaptor]:
     """Adds an adaptor argument to an `argparse.ArgumentParser`"""
 
     name_or_flags: tuple[str]
@@ -85,17 +80,8 @@ def adaptor_parser(
     help: str | None,
     nargs: ArgparseNArgs = None,
 ):
-    def adaptor_parser_inner[AdaptorType](parse_func: typing.Callable[[str | list[str]], AdaptorType]):
-        kwargs = ArgparseAdaptorAdder(name_or_flags, help, type=parse_func, metavar=metavar, nargs=nargs)
-        AdaptorType: type[Adaptor] = inspect.signature(parse_func).return_annotation
-        data_param_type = AdaptorType.get_input_data_type()
-
-        if data_param_type is xr.DataArray:
-            FIELD_ADAPTORS.append(kwargs)
-
-        if data_param_type is pd.DataFrame:
-            PARTICLE_ADAPTORS.append(kwargs)
-
+    def adaptor_parser_inner[AdaptorType: Adaptor](parse_func: typing.Callable[[str | list[str]], AdaptorType]):
+        ADAPTORS.append(ArgparseAdaptorAdder(name_or_flags, help, type=parse_func, metavar=metavar, nargs=nargs))
         return parse_func
 
     return adaptor_parser_inner
@@ -106,10 +92,4 @@ def register_const_adaptor[Data](
     help: str | None,
     const: Adaptor[Data],
 ):
-    kwargs = ArgparseAdaptorAdder(name_or_flags, help, const=const)
-
-    if const.get_input_data_type() is xr.DataArray:
-        FIELD_ADAPTORS.append(kwargs)
-
-    if const.get_input_data_type() is pd.DataFrame:
-        PARTICLE_ADAPTORS.append(kwargs)
+    ADAPTORS.append(ArgparseAdaptorAdder(name_or_flags, help, const=const))

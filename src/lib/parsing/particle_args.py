@@ -3,7 +3,7 @@ import argparse
 import pandas as pd
 
 from .. import particle_util, plt_util
-from ..adaptors import PARTICLE_ADAPTORS, Adaptor, Pipeline
+from ..adaptors import ADAPTORS, Adaptor, Pipeline
 from ..animation import Animation
 from ..animation.particle_animation import *
 from ..derived_particle_variables import DERIVED_PARTICLE_VARIABLES
@@ -56,7 +56,7 @@ def add_particle_subparsers(subparsers: argparse._SubParsersAction):
         help="linear or logarithmic scale for dependent variable and axes, in that order",
     )
 
-    for adaptor_adder in PARTICLE_ADAPTORS:
+    for adaptor_adder in ADAPTORS:
         adaptor_adder.add_to(parent)
 
     subparsers.add_parser("prt", parents=[parent])

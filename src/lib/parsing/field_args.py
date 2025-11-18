@@ -4,7 +4,7 @@ import typing
 import xarray as xr
 
 from .. import field_util
-from ..adaptors import FIELD_ADAPTORS, Adaptor, Pipeline
+from ..adaptors import ADAPTORS, Adaptor, Pipeline
 from ..adaptors.field_adaptors.versus import Versus
 from ..animation import Animation, FieldAnimation
 from ..animation.field_animation import FieldAnimation1d
@@ -23,7 +23,7 @@ SCALES: list[Scale] = list(Scale.__value__.__args__)
 class FieldArgs(args_base.ArgsTyped):
     variable: str
     scale: Scale
-    adaptors: list[Adaptor[xr.DataArray]]
+    adaptors: list[Adaptor]
     fits: list[Fit]  # 1d only
     show_t0: bool  # 1d only
 
@@ -75,7 +75,7 @@ def add_field_subparsers(subparsers: argparse._SubParsersAction):
     parent = args_base.get_subparser_parent(FieldArgs)
     parent.add_argument("variable", type=str, help="the variable to plot")
 
-    for adaptor_adder in FIELD_ADAPTORS:
+    for adaptor_adder in ADAPTORS:
         adaptor_adder.add_to(parent)
 
     parent.add_argument(
