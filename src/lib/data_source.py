@@ -1,14 +1,15 @@
 import inspect
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
 from .adaptors.pipeline import Pipeline
+from .data_handling import ProducesData, require_compatible
 
 
-class DataSource(ABC):
+class DataSource(ProducesData):
     @abstractmethod
     def get_data(self, steps: list[int]): ...
 
-    def get_data_type(self) -> type:
+    def get_output_data_type(self) -> type:
         return inspect.signature(self.get_data).return_annotation
 
     @abstractmethod
@@ -33,14 +34,14 @@ class DataSourceWithPipeline(DataSource):
         self.source = source
         self.pipeline = pipeline
 
-        self._validate()
+        require_compatible(self.source, self.pipeline)
 
     def get_data(self, steps: list[int]):
         da = self.source.get_data(steps)
         da = self.pipeline.apply(da)
         return da
 
-    def get_data_type(self) -> type:
+    def get_output_data_type(self) -> type:
         return self.pipeline.get_output_data_type()
 
     def get_file_prefix(self) -> str:
@@ -54,11 +55,3 @@ class DataSourceWithPipeline(DataSource):
 
     def get_name_fragments(self) -> list[str]:
         return self.source.get_name_fragments() + self.pipeline.get_name_fragments()
-
-    def _validate(self):
-        source_output = self.source.get_data_type()
-        pipeline_input = self.pipeline.get_input_data_type()
-        if issubclass(source_output, pipeline_input):
-            return
-
-        raise ValueError(f"source {self.source} emits type {source_output.__name__}, but feeds into pipeline {self.pipeline} which accepts {pipeline_input.__name__}")

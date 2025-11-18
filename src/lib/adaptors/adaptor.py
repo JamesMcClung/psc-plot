@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-import abc
 import inspect
+from abc import abstractmethod
+
+from ..data_handling import ConsumesData, ProducesData
 
 
-class Adaptor(abc.ABC):
-    @abc.abstractmethod
+class Adaptor(ConsumesData, ProducesData):
+    @abstractmethod
     def apply(self, data): ...
 
     def get_name_fragments(self) -> list[str]:

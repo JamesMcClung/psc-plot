@@ -1,12 +1,18 @@
 import itertools
 
+from ..data_handling import require_compatible
 from .adaptor import Adaptor
 
 
 class Pipeline(Adaptor):
     def __init__(self, *adaptors: Adaptor):
         self.adaptors = list(adaptors)
-        self._validate()
+
+        if not self.adaptors:
+            raise ValueError("a pipeline must contain at least one adaptor")
+
+        for producer, consumer in itertools.pairwise(self.adaptors):
+            require_compatible(producer, consumer)
 
     def get_name_fragments(self) -> list[str]:
         return [fragment for adaptor in self.adaptors for fragment in adaptor.get_name_fragments()]
@@ -26,14 +32,3 @@ class Pipeline(Adaptor):
 
     def get_output_data_type(self) -> type:
         return self.adaptors[-1].get_output_data_type()
-
-    def _validate(self):
-        if not self.adaptors:
-            raise ValueError("a pipeline must contain at least one adaptor")
-
-        internal_output_type = self.adaptors[0].get_output_data_type()
-        for i, adaptor in itertools.islice(enumerate(self.adaptors), 1, None):
-            next_input_type = adaptor.get_input_data_type()
-            if not issubclass(internal_output_type, next_input_type):
-                raise ValueError(f"broken pipeline: adaptor {self.adaptors[i-1]} emits type {internal_output_type.__name__}, but feeds into adaptor {adaptor} which accepts {next_input_type.__name__}")
-            internal_output_type = adaptor.get_output_data_type()
