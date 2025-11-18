@@ -33,6 +33,8 @@ class DataSourceWithPipeline(DataSource):
         self.source = source
         self.pipeline = pipeline
 
+        self._validate()
+
     def get_data(self, steps: list[int]):
         da = self.source.get_data(steps)
         da = self.pipeline.apply(da)
@@ -52,3 +54,11 @@ class DataSourceWithPipeline(DataSource):
 
     def get_name_fragments(self) -> list[str]:
         return self.source.get_name_fragments() + self.pipeline.get_name_fragments()
+
+    def _validate(self):
+        source_output = self.source.get_data_type()
+        pipeline_input = self.pipeline.get_input_data_type()
+        if issubclass(source_output, pipeline_input):
+            return
+
+        raise ValueError(f"source {self.source} emits type {source_output.__name__}, but feeds into pipeline {self.pipeline} which accepts {pipeline_input.__name__}")
