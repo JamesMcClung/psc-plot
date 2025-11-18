@@ -9,7 +9,7 @@ from ..adaptor import Adaptor
 from ..registry import adaptor_parser
 
 
-class TransformPolar(Adaptor[xr.DataArray]):
+class TransformPolar(Adaptor):
     def __init__(self, transform: CartesianToPolar):
         self.transform = transform
 

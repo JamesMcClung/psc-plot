@@ -27,7 +27,7 @@ class FieldSource(ABC):
 
 
 class FieldSourceWithPipeline(FieldSource):
-    def __init__(self, source: FieldSource, pipeline: Pipeline[xr.DataArray]):
+    def __init__(self, source: FieldSource, pipeline: Pipeline):
         self.source = source
         self.pipeline = pipeline
 

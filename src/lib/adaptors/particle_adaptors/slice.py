@@ -6,7 +6,7 @@ from ..adaptor import Adaptor
 from ..registry import adaptor_parser
 
 
-class Slice(Adaptor[pd.DataFrame]):
+class Slice(Adaptor):
     def __init__(self, var_name: str, lower_inclusive: float | None, upper_exclusive: float | None):
         self.var_name = var_name
         self.lower_inclusive = lower_inclusive

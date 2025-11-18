@@ -21,7 +21,7 @@ class ParticleAnimation(Animation):
         self,
         steps: list[int],
         prefix: file_util.ParticlePrefix,
-        pipeline: Pipeline[pd.DataFrame],
+        pipeline: Pipeline,
         *,
         axis_variables: tuple[PrtVariable, PrtVariable],
         nicell: int,

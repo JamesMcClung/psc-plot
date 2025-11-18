@@ -6,7 +6,7 @@ from ..adaptor import Adaptor
 from ..registry import adaptor_parser
 
 
-class Roll(Adaptor[xr.DataArray]):
+class Roll(Adaptor):
     def __init__(self, dim_name: str, roll_window: int):
         self.dim_name = dim_name
         self.window_size = roll_window

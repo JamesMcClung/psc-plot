@@ -10,7 +10,7 @@ from ..adaptor import Adaptor
 from ..registry import adaptor_parser
 
 
-class Window(Adaptor[xr.DataArray]):
+class Window(Adaptor):
     def __init__(self, dim_name: str):
         self.dim_name = dim_name
 

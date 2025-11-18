@@ -87,9 +87,9 @@ def adaptor_parser(
     return adaptor_parser_inner
 
 
-def register_const_adaptor[Data](
+def register_const_adaptor(
     *name_or_flags: str,
     help: str | None,
-    const: Adaptor[Data],
+    const: Adaptor,
 ):
     ADAPTORS.append(ArgparseAdaptorAdder(name_or_flags, help, const=const))

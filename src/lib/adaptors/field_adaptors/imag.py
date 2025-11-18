@@ -4,7 +4,7 @@ from ..adaptor import Adaptor
 from ..registry import register_const_adaptor
 
 
-class Imaginary(Adaptor[xr.DataArray]):
+class Imaginary(Adaptor):
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         return da.imag
 

@@ -15,7 +15,7 @@ __all__ = ["add_particle_subparsers", "ParticleArgs"]
 
 class ParticleArgs(args_base.ArgsTyped):
     axis_variables: tuple[PrtVariable, PrtVariable]
-    adaptors: list[Adaptor[pd.DataFrame]]
+    adaptors: list[Adaptor]
     scales: list[plt_util.Scale]
 
     def get_animation(self) -> Animation:

@@ -1,14 +1,14 @@
 from .adaptor import Adaptor
 
 
-class Pipeline[Data](Adaptor[Data, Data]):
-    def __init__(self, *adaptors: Adaptor[Data]):
+class Pipeline(Adaptor):
+    def __init__(self, *adaptors: Adaptor):
         self.adaptors = list(adaptors)
 
     def get_name_fragments(self) -> list[str]:
         return [fragment for adaptor in self.adaptors for fragment in adaptor.get_name_fragments()]
 
-    def apply(self, data: Data) -> Data:
+    def apply(self, data):
         for adaptor in self.adaptors:
             data = adaptor.apply(data)
         return data
@@ -17,3 +17,9 @@ class Pipeline[Data](Adaptor[Data, Data]):
         for adaptor in self.adaptors:
             dep_var_name = adaptor.get_modified_var_name(dep_var_name)
         return dep_var_name
+
+    def get_input_data_type(self) -> type:
+        return self.adaptors[0].get_input_data_type()
+
+    def get_output_data_type(self) -> type:
+        return self.adaptors[-1].get_output_data_type()

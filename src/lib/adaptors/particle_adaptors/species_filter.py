@@ -6,7 +6,7 @@ from ..adaptor import Adaptor
 from ..registry import adaptor_parser
 
 
-class SpeciesFilter(Adaptor[pd.DataFrame]):
+class SpeciesFilter(Adaptor):
     def __init__(self, species: Species):
         self.species = species
 

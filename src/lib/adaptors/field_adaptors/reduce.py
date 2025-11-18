@@ -19,7 +19,7 @@ REDUCE_FUNCS: dict[str, ReduceFunc] = {
 }
 
 
-class Reduce(Adaptor[xr.DataArray]):
+class Reduce(Adaptor):
     def __init__(self, dim_name: str, func_name: str):
         self.dim_name = dim_name
         self.func_name = func_name

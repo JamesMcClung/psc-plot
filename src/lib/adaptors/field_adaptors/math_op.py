@@ -7,7 +7,7 @@ from ..adaptor import Adaptor
 from ..registry import adaptor_parser
 
 
-class MathOp(Adaptor[xr.DataArray]):
+class MathOp(Adaptor):
     def __init__(
         self,
         rhs: float,

@@ -4,7 +4,7 @@ from ..adaptor import Adaptor
 from ..registry import register_const_adaptor
 
 
-class Magnitude(Adaptor[xr.DataArray]):
+class Magnitude(Adaptor):
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         return (da.real**2 + da.imag**2) ** 0.5
 

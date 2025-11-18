@@ -6,7 +6,7 @@ from ..adaptor import Adaptor
 from ..registry import adaptor_parser
 
 
-class IdxSlice(Adaptor[xr.DataArray]):
+class IdxSlice(Adaptor):
     def __init__(self, dim_name: str, lower_inclusive: int | None, upper_exclusive: int | None):
         self.dim_name = dim_name
         self.lower_inclusive = lower_inclusive

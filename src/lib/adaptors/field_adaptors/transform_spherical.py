@@ -9,7 +9,7 @@ from ..adaptor import Adaptor
 from ..registry import adaptor_parser
 
 
-class TransformSpherical(Adaptor[xr.DataArray]):
+class TransformSpherical(Adaptor):
     def __init__(self, transform: CartesianToSpherical):
         self.transform = transform
 
