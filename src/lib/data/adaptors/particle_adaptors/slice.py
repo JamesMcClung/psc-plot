@@ -1,8 +1,8 @@
 import pandas as pd
 
 from ....particle_util import PRT_VARIABLES
+from ...adaptor import Adaptor
 from .. import parse_util
-from ..adaptor import Adaptor
 from ..registry import adaptor_parser
 
 

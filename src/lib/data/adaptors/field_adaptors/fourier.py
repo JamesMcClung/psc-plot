@@ -3,8 +3,8 @@ import xarray as xr
 import xrft
 
 from ....dimension import DIMENSIONS, Dimension
+from ...adaptor import Adaptor
 from .. import parse_util
-from ..adaptor import Adaptor
 from ..registry import adaptor_parser
 
 

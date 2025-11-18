@@ -5,7 +5,7 @@ from argparse import Action, ArgumentParser
 from dataclasses import KW_ONLY, dataclass
 from typing import Any
 
-from .adaptor import Adaptor
+from ..adaptor import Adaptor
 
 __all__ = ["ADAPTORS", "adaptor_parser"]
 

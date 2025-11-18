@@ -4,8 +4,8 @@ import numpy as np
 import xarray as xr
 
 from ....dimension import DIMENSIONS, CartesianToSpherical
+from ...adaptor import Adaptor
 from .. import parse_util
-from ..adaptor import Adaptor
 from ..registry import adaptor_parser
 
 

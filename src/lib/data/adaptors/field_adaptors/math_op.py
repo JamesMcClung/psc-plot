@@ -2,8 +2,8 @@ from typing import Callable
 
 import xarray as xr
 
+from ...adaptor import Adaptor
 from .. import parse_util
-from ..adaptor import Adaptor
 from ..registry import adaptor_parser
 
 

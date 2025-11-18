@@ -1,7 +1,7 @@
 import itertools
 
-from ..compatability import require_compatible
 from .adaptor import Adaptor
+from .compatability import require_compatible
 
 
 class Pipeline(Adaptor):

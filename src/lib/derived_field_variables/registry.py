@@ -4,7 +4,7 @@ from xarray import DataArray, Dataset
 
 from ..data.adaptors.field_adaptors.fourier import Fourier
 from ..data.adaptors.field_adaptors.mag import Magnitude
-from ..data.adaptors.pipeline import Pipeline
+from ..data.pipeline import Pipeline
 from ..dimension import DIMENSIONS
 from .derived_field_variable import derived_field_variable
 

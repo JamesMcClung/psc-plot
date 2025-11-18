@@ -5,8 +5,8 @@ import xarray as xr
 from scipy.signal import windows
 
 from ....dimension import DIMENSIONS
+from ...adaptor import Adaptor
 from .. import parse_util
-from ..adaptor import Adaptor
 from ..registry import adaptor_parser
 
 

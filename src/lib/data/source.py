@@ -1,8 +1,8 @@
 import inspect
 from abc import abstractmethod
 
-from ..data.adaptors.pipeline import Pipeline
 from .compatability import ProducesData, require_compatible
+from .pipeline import Pipeline
 
 
 class DataSource(ProducesData):
