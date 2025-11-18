@@ -9,8 +9,8 @@ from matplotlib.projections.polar import PolarAxes
 from lib.parsing.fit import Fit
 
 from .. import plt_util
+from ..data_source import DataSource
 from ..dimension import DIMENSIONS
-from ..field_source import FieldSource
 from .animation_base import Animation
 
 __all__ = ["FieldAnimation"]
@@ -26,7 +26,7 @@ class FieldAnimation(Animation):
     def __init__(
         self,
         steps: list[int],
-        source: FieldSource,
+        source: DataSource,
         time_dim: str,
         spatial_dims: list[str],
         *,
@@ -116,7 +116,7 @@ class FieldAnimation2dPolar(FieldAnimation):
     def __init__(
         self,
         steps: list[int],
-        source: FieldSource,
+        source: DataSource,
         time_dim: str,
         spatial_dims: list[str],
     ):
@@ -166,7 +166,7 @@ class FieldAnimation1d(FieldAnimation):
     def __init__(
         self,
         steps: list[int],
-        source: FieldSource,
+        source: DataSource,
         time_dim: str,
         spatial_dims: list[str],
     ):

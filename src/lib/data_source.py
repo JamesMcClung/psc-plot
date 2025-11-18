@@ -1,13 +1,15 @@
+import inspect
 from abc import ABC, abstractmethod
-
-import xarray as xr
 
 from .adaptors.pipeline import Pipeline
 
 
-class FieldSource(ABC):
+class DataSource(ABC):
     @abstractmethod
-    def get_data(self, steps: list[int]) -> xr.DataArray: ...
+    def get_data(self, steps: list[int]): ...
+
+    def get_data_type(self) -> type:
+        return inspect.signature(self.get_data).return_annotation
 
     @abstractmethod
     def get_file_prefix(self) -> str:
@@ -26,15 +28,18 @@ class FieldSource(ABC):
         """An ordered list of name fragments representing how this field is loaded and transformed"""
 
 
-class FieldSourceWithPipeline(FieldSource):
-    def __init__(self, source: FieldSource, pipeline: Pipeline):
+class DataSourceWithPipeline(DataSource):
+    def __init__(self, source: DataSource, pipeline: Pipeline):
         self.source = source
         self.pipeline = pipeline
 
-    def get_data(self, steps: list[int]) -> xr.DataArray:
+    def get_data(self, steps: list[int]):
         da = self.source.get_data(steps)
         da = self.pipeline.apply(da)
         return da
+
+    def get_data_type(self) -> type:
+        return self.pipeline.get_output_data_type()
 
     def get_file_prefix(self) -> str:
         return self.source.get_file_prefix()

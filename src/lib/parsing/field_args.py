@@ -8,8 +8,8 @@ from ..adaptors import ADAPTORS, Adaptor, Pipeline
 from ..adaptors.field_adaptors.versus import Versus
 from ..animation import Animation, FieldAnimation
 from ..animation.field_animation import FieldAnimation1d
+from ..data_source import DataSourceWithPipeline
 from ..field_loader import FieldLoader
-from ..field_source import FieldSourceWithPipeline
 from ..file_util import FIELD_PREFIXES
 from . import args_base
 from .fit import Fit
@@ -42,7 +42,7 @@ class FieldArgs(args_base.ArgsTyped):
 
         loader = FieldLoader(self.prefix, self.variable)
         pipeline = Pipeline(*self.adaptors)
-        source = FieldSourceWithPipeline(loader, pipeline)
+        source = DataSourceWithPipeline(loader, pipeline)
 
         if time_dim:
             AnimationType = FieldAnimation.get_animation_type(spatial_dims)

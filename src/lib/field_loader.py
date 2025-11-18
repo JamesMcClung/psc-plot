@@ -1,8 +1,8 @@
 import xarray as xr
 
 from . import field_util, file_util
+from .data_source import DataSource
 from .derived_field_variables import derive_field_variable
-from .field_source import FieldSource
 
 
 def _load_field_variable(prefix: file_util.FieldPrefix, step: int, var_name: str) -> xr.DataArray:
@@ -13,7 +13,7 @@ def _load_field_variable(prefix: file_util.FieldPrefix, step: int, var_name: str
     return ds[var_name]
 
 
-class FieldLoader(FieldSource):
+class FieldLoader(DataSource):
     def __init__(self, prefix: file_util.FieldPrefix, var_name: str):
         self.prefix = prefix
         self.var_name = var_name
