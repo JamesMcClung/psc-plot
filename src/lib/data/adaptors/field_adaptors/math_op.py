@@ -2,12 +2,12 @@ from typing import Callable
 
 import xarray as xr
 
+from ...adaptor import Adaptor
 from .. import parse_util
-from ..adaptor_base import FieldAdaptor
 from ..registry import adaptor_parser
 
 
-class MathOp(FieldAdaptor):
+class MathOp(Adaptor):
     def __init__(
         self,
         rhs: float,
@@ -23,8 +23,8 @@ class MathOp(FieldAdaptor):
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         return self.func(da, self.rhs)
 
-    def get_name_fragment(self) -> str:
-        return f"{self.name_abbrev}_{self.rhs}"
+    def get_name_fragments(self) -> list[str]:
+        return [f"{self.name_abbrev}_{self.rhs}"]
 
     def get_modified_var_name(self, title_stem: str) -> str:
         return f"({title_stem}){self.symbol}{{{self.rhs}}}"

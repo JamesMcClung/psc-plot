@@ -1,12 +1,12 @@
 import xarray as xr
 
-from ...dimension import DIMENSIONS
+from ....dimension import DIMENSIONS
+from ...adaptor import Adaptor
 from .. import parse_util
-from ..adaptor_base import FieldAdaptor
 from ..registry import adaptor_parser
 
 
-class PosSlice(FieldAdaptor):
+class PosSlice(Adaptor):
     def __init__(self, dim_name: str, lower_inclusive: float | None, upper_exclusive: float | None):
         self.dim_name = dim_name
         self.lower_inclusive = lower_inclusive
@@ -15,10 +15,10 @@ class PosSlice(FieldAdaptor):
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         return da.sel({self.dim_name: slice(self.lower_inclusive, self.upper_exclusive)})
 
-    def get_name_fragment(self) -> str:
+    def get_name_fragments(self) -> list[str]:
         lower = f"{self.lower_inclusive:.1f}" if self.lower_inclusive is not None else ""
         upper = f"{self.upper_exclusive:.1f}" if self.upper_exclusive is not None else ""
-        return f"slice_{self.dim_name}={lower}:{upper}"
+        return [f"slice_{self.dim_name}={lower}:{upper}"]
 
 
 _POS_SLICE_FORMAT = "dim_name=lower:upper"

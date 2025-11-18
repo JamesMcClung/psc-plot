@@ -1,12 +1,12 @@
 import pandas as pd
 
-from ...particle_util import PRT_VARIABLES
+from ....particle_util import PRT_VARIABLES
+from ...adaptor import Adaptor
 from .. import parse_util
-from ..adaptor_base import ParticleAdaptor
 from ..registry import adaptor_parser
 
 
-class Slice(ParticleAdaptor):
+class Slice(Adaptor):
     def __init__(self, var_name: str, lower_inclusive: float | None, upper_exclusive: float | None):
         self.var_name = var_name
         self.lower_inclusive = lower_inclusive
@@ -19,10 +19,10 @@ class Slice(ParticleAdaptor):
             df = df[df[self.var_name] < self.upper_exclusive]
         return df
 
-    def get_name_fragment(self) -> str:
+    def get_name_fragments(self) -> list[str]:
         lower = f"{self.lower_inclusive:.1f}" if self.lower_inclusive is not None else ""
         upper = f"{self.upper_exclusive:.1f}" if self.upper_exclusive is not None else ""
-        return f"slice_{self.var_name}={lower}:{upper}"
+        return [f"slice_{self.var_name}={lower}:{upper}"]
 
 
 _SLICE_FORMAT = "var_name=lower:upper"

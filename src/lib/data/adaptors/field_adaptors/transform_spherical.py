@@ -3,13 +3,13 @@ import argparse
 import numpy as np
 import xarray as xr
 
-from ...dimension import DIMENSIONS, CartesianToSpherical
+from ....dimension import DIMENSIONS, CartesianToSpherical
+from ...adaptor import Adaptor
 from .. import parse_util
-from ..adaptor_base import FieldAdaptor
 from ..registry import adaptor_parser
 
 
-class TransformSpherical(FieldAdaptor):
+class TransformSpherical(Adaptor):
     def __init__(self, transform: CartesianToSpherical):
         self.transform = transform
 
@@ -62,8 +62,8 @@ class TransformSpherical(FieldAdaptor):
 
         return da
 
-    def get_name_fragment(self) -> str:
-        return f"spherical_{self.transform.dim_x.name.plain},{self.transform.dim_y.name.plain},{self.transform.dim_z.name.plain}"
+    def get_name_fragments(self) -> list[str]:
+        return ["spherical_{self.transform.dim_x.name.plain},{self.transform.dim_y.name.plain},{self.transform.dim_z.name.plain}"]
 
 
 _SPHERICAL_FORMAT = ("dim_1", "dim_2", "dim_3")

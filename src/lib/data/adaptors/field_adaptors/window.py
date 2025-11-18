@@ -4,13 +4,13 @@ import numpy as np
 import xarray as xr
 from scipy.signal import windows
 
-from ...dimension import DIMENSIONS
+from ....dimension import DIMENSIONS
+from ...adaptor import Adaptor
 from .. import parse_util
-from ..adaptor_base import FieldAdaptor
 from ..registry import adaptor_parser
 
 
-class Window(FieldAdaptor):
+class Window(Adaptor):
     def __init__(self, dim_name: str):
         self.dim_name = dim_name
 
@@ -34,8 +34,8 @@ class Window(FieldAdaptor):
     def get_name_fragment_fragment(self) -> str:
         pass
 
-    def get_name_fragment(self) -> str:
-        return f"window_{self.dim_name}={self.get_name_fragment_fragment()}"
+    def get_name_fragments(self) -> list[str]:
+        return [f"window_{self.dim_name}={self.get_name_fragment_fragment()}"]
 
 
 class Kaiser(Window):

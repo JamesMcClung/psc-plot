@@ -1,12 +1,12 @@
 import pandas as pd
 
-from ...particle_util import SPECIES, Species
+from ....particle_util import SPECIES, Species
+from ...adaptor import Adaptor
 from .. import parse_util
-from ..adaptor_base import ParticleAdaptor
 from ..registry import adaptor_parser
 
 
-class SpeciesFilter(ParticleAdaptor):
+class SpeciesFilter(Adaptor):
     def __init__(self, species: Species):
         self.species = species
 
@@ -17,8 +17,8 @@ class SpeciesFilter(ParticleAdaptor):
             df = df[df["q"] > 0]
         return df
 
-    def get_name_fragment(self) -> str:
-        return self.species
+    def get_name_fragments(self) -> list[str]:
+        return [self.species]
 
 
 _SPECIES_FILTER_FORMAT = "species"

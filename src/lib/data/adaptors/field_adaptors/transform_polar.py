@@ -3,13 +3,13 @@ import argparse
 import numpy as np
 import xarray as xr
 
-from ...dimension import DIMENSIONS, CartesianToPolar
+from ....dimension import DIMENSIONS, CartesianToPolar
+from ...adaptor import Adaptor
 from .. import parse_util
-from ..adaptor_base import FieldAdaptor
 from ..registry import adaptor_parser
 
 
-class TransformPolar(FieldAdaptor):
+class TransformPolar(Adaptor):
     def __init__(self, transform: CartesianToPolar):
         self.transform = transform
 
@@ -51,8 +51,8 @@ class TransformPolar(FieldAdaptor):
 
         return da
 
-    def get_name_fragment(self) -> str:
-        return f"polar_{self.transform.dim_x.name.plain},{self.transform.dim_y.name.plain}"
+    def get_name_fragments(self) -> list[str]:
+        return ["polar_{self.transform.dim_x.name.plain},{self.transform.dim_y.name.plain}"]
 
 
 _POLAR_FORMAT = ("dim_1", "dim_2")

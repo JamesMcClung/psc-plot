@@ -1,13 +1,15 @@
 import argparse
 import typing
 
+import xarray as xr
+
 from .. import field_util
-from ..adaptors import FIELD_ADAPTORS, FieldAdaptor, FieldPipeline
-from ..adaptors.field_adaptors.versus import Versus
 from ..animation import Animation, FieldAnimation
 from ..animation.field_animation import FieldAnimation1d
-from ..field_loader import FieldLoader
-from ..field_source import FieldSourceWithPipeline
+from ..data.adaptors import ADAPTORS, Adaptor, Pipeline
+from ..data.adaptors.field_adaptors.versus import Versus
+from ..data.field_loader import FieldLoader
+from ..data.source import DataSourceWithPipeline
 from ..file_util import FIELD_PREFIXES
 from . import args_base
 from .fit import Fit
@@ -21,7 +23,7 @@ SCALES: list[Scale] = list(Scale.__value__.__args__)
 class FieldArgs(args_base.ArgsTyped):
     variable: str
     scale: Scale
-    adaptors: list[FieldAdaptor]
+    adaptors: list[Adaptor]
     fits: list[Fit]  # 1d only
     show_t0: bool  # 1d only
 
@@ -39,8 +41,8 @@ class FieldArgs(args_base.ArgsTyped):
             self.adaptors.append(Versus(spatial_dims, time_dim))
 
         loader = FieldLoader(self.prefix, self.variable)
-        pipeline = FieldPipeline(*self.adaptors)
-        source = FieldSourceWithPipeline(loader, pipeline)
+        pipeline = Pipeline(*self.adaptors)
+        source = DataSourceWithPipeline(loader, pipeline)
 
         if time_dim:
             AnimationType = FieldAnimation.get_animation_type(spatial_dims)
@@ -73,7 +75,7 @@ def add_field_subparsers(subparsers: argparse._SubParsersAction):
     parent = args_base.get_subparser_parent(FieldArgs)
     parent.add_argument("variable", type=str, help="the variable to plot")
 
-    for adaptor_adder in FIELD_ADAPTORS:
+    for adaptor_adder in ADAPTORS:
         adaptor_adder.add_to(parent)
 
     parent.add_argument(

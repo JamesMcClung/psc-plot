@@ -1,12 +1,12 @@
 import xarray as xr
 
-from ...dimension import DIMENSIONS
+from ....dimension import DIMENSIONS
+from ...adaptor import Adaptor
 from .. import parse_util
-from ..adaptor_base import FieldAdaptor
 from ..registry import adaptor_parser
 
 
-class IdxSlice(FieldAdaptor):
+class IdxSlice(Adaptor):
     def __init__(self, dim_name: str, lower_inclusive: int | None, upper_exclusive: int | None):
         self.dim_name = dim_name
         self.lower_inclusive = lower_inclusive
@@ -15,10 +15,10 @@ class IdxSlice(FieldAdaptor):
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         return da.isel({self.dim_name: slice(self.lower_inclusive, self.upper_exclusive)})
 
-    def get_name_fragment(self) -> str:
+    def get_name_fragments(self) -> list[str]:
         lower = f"{self.lower_inclusive}" if self.lower_inclusive is not None else ""
         upper = f"{self.upper_exclusive}" if self.upper_exclusive is not None else ""
-        return f"slice_{self.dim_name}={lower}:{upper}"
+        return [f"slice_{self.dim_name}={lower}:{upper}"]
 
 
 IDX_SLICE_FORMAT = "dim_name=lower:upper"

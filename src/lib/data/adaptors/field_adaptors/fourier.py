@@ -2,9 +2,9 @@ import numpy as np
 import xarray as xr
 import xrft
 
-from ...dimension import DIMENSIONS, Dimension
+from ....dimension import DIMENSIONS, Dimension
+from ...adaptor import Adaptor
 from .. import parse_util
-from ..adaptor_base import FieldAdaptor
 from ..registry import adaptor_parser
 
 
@@ -26,7 +26,7 @@ def toggle_fourier(da: xr.DataArray, dim: Dimension) -> xr.DataArray:
     return da
 
 
-class Fourier(FieldAdaptor):
+class Fourier(Adaptor):
     def __init__(self, dims: Dimension | list[Dimension]):
         if isinstance(dims, Dimension):
             dims = [dims]
@@ -38,9 +38,9 @@ class Fourier(FieldAdaptor):
 
         return da
 
-    def get_name_fragment(self) -> str:
+    def get_name_fragments(self) -> list[str]:
         dim_names = ",".join(dim.name.plain for dim in self.dims)
-        return f"fourier_{dim_names}"
+        return [f"fourier_{dim_names}"]
 
     def get_modified_var_name(self, title_stem: str) -> str:
         dim_latexs = ",".join(dim.name.latex for dim in self.dims)

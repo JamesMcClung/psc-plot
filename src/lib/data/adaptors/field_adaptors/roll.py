@@ -1,12 +1,12 @@
 import xarray as xr
 
-from ...dimension import DIMENSIONS
+from ....dimension import DIMENSIONS
+from ...adaptor import Adaptor
 from .. import parse_util
-from ..adaptor_base import FieldAdaptor
 from ..registry import adaptor_parser
 
 
-class Roll(FieldAdaptor):
+class Roll(Adaptor):
     def __init__(self, dim_name: str, roll_window: int):
         self.dim_name = dim_name
         self.window_size = roll_window
@@ -14,8 +14,8 @@ class Roll(FieldAdaptor):
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         return da.rolling({self.dim_name: self.window_size}).mean()
 
-    def get_name_fragment(self) -> str:
-        return f"roll_{self.dim_name}={self.window_size}"
+    def get_name_fragments(self) -> list[str]:
+        return ["roll_{self.dim_name}={self.window_size}"]
 
 
 ROLL_FORMAT = "dim_name=window_size"

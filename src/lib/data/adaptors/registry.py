@@ -1,17 +1,15 @@
 from __future__ import annotations
 
-import inspect
 import typing
 from argparse import Action, ArgumentParser
 from dataclasses import KW_ONLY, dataclass
 from typing import Any
 
-from .adaptor_base import FieldAdaptor, ParticleAdaptor
+from ..adaptor import Adaptor
 
-__all__ = ["FIELD_ADAPTORS", "PARTICLE_ADAPTORS", "adaptor_parser"]
+__all__ = ["ADAPTORS", "adaptor_parser"]
 
-FIELD_ADAPTORS: list[ArgparseAdaptorAdder[FieldAdaptor]] = []
-PARTICLE_ADAPTORS: list[ArgparseAdaptorAdder[ParticleAdaptor]] = []
+ADAPTORS: list[ArgparseAdaptorAdder] = []
 
 
 def get_combine_args_action(combiner: typing.Callable[[list[Any]], Any]) -> Action:
@@ -37,7 +35,7 @@ type ArgparseNArgs = int | typing.Literal["+", "*"] | None
 
 
 @dataclass
-class ArgparseAdaptorAdder[AdaptorType]:
+class ArgparseAdaptorAdder[AdaptorType: Adaptor]:
     """Adds an adaptor argument to an `argparse.ArgumentParser`"""
 
     name_or_flags: tuple[str]
@@ -82,30 +80,16 @@ def adaptor_parser(
     help: str | None,
     nargs: ArgparseNArgs = None,
 ):
-    def adaptor_parser_inner[AdaptorType](parse_func: typing.Callable[[str | list[str]], AdaptorType]):
-        kwargs = ArgparseAdaptorAdder(name_or_flags, help, type=parse_func, metavar=metavar, nargs=nargs)
-        adaptor_type = inspect.signature(parse_func).return_annotation
-
-        if issubclass(adaptor_type, FieldAdaptor):
-            FIELD_ADAPTORS.append(kwargs)
-
-        if issubclass(adaptor_type, ParticleAdaptor):
-            PARTICLE_ADAPTORS.append(kwargs)
-
+    def adaptor_parser_inner[AdaptorType: Adaptor](parse_func: typing.Callable[[str | list[str]], AdaptorType]):
+        ADAPTORS.append(ArgparseAdaptorAdder(name_or_flags, help, type=parse_func, metavar=metavar, nargs=nargs))
         return parse_func
 
     return adaptor_parser_inner
 
 
-def register_const_adaptor[AdaptorType](
+def register_const_adaptor(
     *name_or_flags: str,
     help: str | None,
-    const: AdaptorType,
+    const: Adaptor,
 ):
-    kwargs = ArgparseAdaptorAdder(name_or_flags, help, const=const)
-
-    if isinstance(const, FieldAdaptor):
-        FIELD_ADAPTORS.append(kwargs)
-
-    if isinstance(const, ParticleAdaptor):
-        PARTICLE_ADAPTORS.append(kwargs)
+    ADAPTORS.append(ArgparseAdaptorAdder(name_or_flags, help, const=const))

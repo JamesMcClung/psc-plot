@@ -3,9 +3,9 @@ import typing
 import numpy as np
 import xarray as xr
 
-from ...dimension import DIMENSIONS
+from ....dimension import DIMENSIONS
+from ...adaptor import Adaptor
 from .. import parse_util
-from ..adaptor_base import FieldAdaptor
 from ..registry import adaptor_parser
 
 
@@ -19,7 +19,7 @@ REDUCE_FUNCS: dict[str, ReduceFunc] = {
 }
 
 
-class Reduce(FieldAdaptor):
+class Reduce(Adaptor):
     def __init__(self, dim_name: str, func_name: str):
         self.dim_name = dim_name
         self.func_name = func_name
@@ -27,8 +27,8 @@ class Reduce(FieldAdaptor):
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         return REDUCE_FUNCS[self.func_name](da, self.dim_name)
 
-    def get_name_fragment(self) -> str:
-        return f"reduce_{self.dim_name}={self.func_name}"
+    def get_name_fragments(self) -> list[str]:
+        return ["reduce_{self.dim_name}={self.func_name}"]
 
 
 REDUCE_FORMAT = "dim_name=reduce_func"
