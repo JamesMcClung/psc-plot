@@ -26,19 +26,24 @@ def get_path_at_step(prefix: file_util.ParticlePrefix, step: int) -> pathlib.Pat
 def load_df(prefix: file_util.ParticlePrefix, step: int) -> pd.DataFrame:
     data_path = get_path_at_step(prefix, step)
     df = pd.read_hdf(data_path, key=PRT_PARTICLES_KEY)  # using h5py.File not yet supported
+    df.attrs = load_attrs_at_step(step)
+    return df
+
+
+def load_attrs_at_step(prefix: file_util.ParticlePrefix, step: int) -> dict[str, typing.Any]:
+    data_path = get_path_at_step(prefix, step)
+    attrs = {}
     with h5py.File(data_path) as file:
         if "time" in file.keys():
-            time = file["time"][()]
-            corner = file["corner"][:]
-            length = file["length"][:]
-            gdims = file["gdims"][:]
-        else:
-            ds = field_util.load_ds("pfd", step)
-            time = ds.time
-            corner = ds.corner
-            length = ds.length
-            gdims = [len(ds.x), len(ds.y), len(ds.z)]
+            attrs["time"] = file["time"][()]
+            attrs["corner"] = file["corner"][:]
+            attrs["length"] = file["length"][:]
+            attrs["gdims"] = file["gdims"][:]
+    if not attrs:
+        ds = field_util.load_ds("pfd", step)
+        attrs["time"] = ds.time
+        attrs["corner"] = ds.corner
+        attrs["length"] = ds.length
+        attrs["gdims"] = [len(ds.x), len(ds.y), len(ds.z)]
 
-        df.attrs = {"time": time, "corner": corner, "length": length, "gdims": gdims}
-
-    return df
+    return attrs
