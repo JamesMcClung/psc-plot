@@ -90,6 +90,12 @@ class ParticleAnimation(Animation):
 
         df = self.pipeline.apply(df)
 
+        # filter out extreme percentiles
+        for var in self.axis_variables:
+            [low, high] = np.percentile(df[var], [1, 99])
+            df = df[df[var] > low]
+            df = df[df[var] < high]
+
         return df
 
     def _get_binned_data(
