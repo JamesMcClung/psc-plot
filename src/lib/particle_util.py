@@ -1,8 +1,8 @@
 import pathlib
 import typing
 
+import dask.dataframe as dd
 import h5py
-import numpy as np
 import pandas as pd
 
 from . import field_util, file_util
@@ -33,13 +33,21 @@ def load_df_at_step(prefix: file_util.ParticlePrefix, step: int) -> pd.DataFrame
 
 def load_df(prefix: file_util.ParticlePrefix, steps: list[int]) -> dd.DataFrame:
     data_paths = [get_path_at_step(prefix, step) for step in steps]
-    df = dd.read_hdf(data_paths, key=PRT_PARTICLES_KEY)
+    df: dd.DataFrame = dd.read_hdf(data_paths, key=PRT_PARTICLES_KEY)
 
     attrss = [load_attrs_at_step(prefix, step) for step in steps]
-    times = np.array([attrs["time"] for attrs in attrss])
+    times = [attrs["time"] for attrs in attrss]
+
+    def assign_t(partition: pd.DataFrame, partition_info: dict) -> pd.DataFrame:
+        time = times[partition_info["number"]]
+        return partition.assign(t=time)
+
+    meta = dict(zip(df.columns, df.dtypes)) | {"t": times[0].dtype}
+    df = df.map_partitions(assign_t, meta=meta)
+
     df.attrs = attrss[0]
     del df.attrs["time"]
-    df.attrs["times"] = times
+    df.attrs["nt"] = len(times)
 
     return df
 

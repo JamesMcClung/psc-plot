@@ -2,8 +2,9 @@ import numpy as np
 import numpy.typing as npt
 from matplotlib.colors import SymLogNorm
 
+from lib.data.source import DataSource
+
 from .. import plt_util
-from ..data.particle_loader import ParticleLoader
 from .animation_base import Animation
 from .field_animation import get_extent
 
@@ -18,16 +19,16 @@ class ParticleAnimation(Animation):
     def __init__(
         self,
         steps: list[int],
-        loader: ParticleLoader,
+        source: DataSource,
         *,
         scales: list[plt_util.Scale],
     ):
         super().__init__(len(steps))
 
         self.steps = steps
-        self.loader = loader
+        self.source = source
         self.scales = scales + ["linear"] * (3 - len(scales))  # dep scale, then axis scales
-        self.data = self.loader.get_data(steps)
+        self.data = self.source.get_data(steps)
 
     def _init_fig(self):
         data = self.data.isel(t=0)
@@ -52,7 +53,7 @@ class ParticleAnimation(Animation):
         self.ax.set_xscale(self.scales[1])
         self.ax.set_yscale(self.scales[2])
 
-        self.ax.set_title(self.loader.get_modified_var_name())
+        self.ax.set_title(self.source.get_modified_var_name())
 
     def _update_fig(self, frame: int):
         data = self.data.isel(t=frame)
@@ -63,4 +64,4 @@ class ParticleAnimation(Animation):
         return [self.im]
 
     def _get_default_save_path(self) -> str:
-        return "-".join(self.loader.get_name_fragments()) + ".mp4"
+        return "-".join(self.source.get_name_fragments()) + ".mp4"

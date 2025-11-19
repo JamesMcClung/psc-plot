@@ -1,4 +1,4 @@
-import pandas as pd
+import dask.dataframe as dd
 
 from ....particle_util import SPECIES, Species
 from ...adaptor import Adaptor
@@ -10,7 +10,7 @@ class SpeciesFilter(Adaptor):
     def __init__(self, species: Species):
         self.species = species
 
-    def apply(self, df: pd.DataFrame) -> pd.DataFrame:
+    def apply(self, df: dd.DataFrame) -> dd.DataFrame:
         if self.species == "electron":
             df = df[df["q"] < 0]
         elif self.species == "ion":

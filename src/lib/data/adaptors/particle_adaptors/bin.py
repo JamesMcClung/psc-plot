@@ -1,5 +1,5 @@
-import numpy as np
-import pandas as pd
+import dask.array as da
+import dask.dataframe as dd
 import xarray as xr
 
 from ....particle_util import PRT_VARIABLES
@@ -12,19 +12,24 @@ class Bin(Adaptor):
     def __init__(self, varname_to_nbins: dict[str, int | None]):
         self.varname_to_nbins = varname_to_nbins
 
-    def apply(self, df: pd.DataFrame) -> xr.DataArray:
-        binned_data, edges = np.histogramdd(
-            np.array([df[var_name] for var_name in self.varname_to_nbins]).T,
+    def apply(self, df: dd.DataFrame) -> xr.DataArray:
+        mins = [df[var_name].min() for var_name in self.varname_to_nbins]
+        maxs = [df[var_name].max() for var_name in self.varname_to_nbins]
+
+        mins, maxs = da.compute(mins, maxs)
+
+        binned_data, edges = da.histogramdd(
+            [df[var_name].to_dask_array() for var_name in self.varname_to_nbins],
             list(self.varname_to_nbins.values()),
             density=False,
-            weights=df["w"],
+            range=list(zip(mins, maxs)),
+            weights=df["w"].to_dask_array(),
         )
 
         coords = dict(zip(self.varname_to_nbins.keys(), ((edge[1:] + edge[:-1]) / 2.0 for edge in edges)))
-        coords["t"] = df.attrs["time"]
 
         return xr.DataArray(
-            binned_data,
+            binned_data.compute(),
             coords,
             dims=self.varname_to_nbins.keys(),
         )
@@ -60,7 +65,7 @@ def parse_slice(args: list[str]) -> Bin:
 
         [var_name, nbins_arg] = split_arg
 
-        parse_util.check_value(var_name, "var_name", PRT_VARIABLES)
+        # parse_util.check_value(var_name, "var_name", PRT_VARIABLES)
         nbins = parse_util.parse_optional_number(nbins_arg, "nbins", int)
 
         varname_to_nbins[var_name] = nbins
