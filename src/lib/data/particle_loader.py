@@ -8,7 +8,7 @@ from .source import DataSource
 
 
 def _load_particle_df(prefix: file_util.ParticlePrefix, step: int, var_names: list[str]) -> pd.DataFrame:
-    df = particle_util.load_df(prefix, step)
+    df = particle_util.load_df_at_step(prefix, step)
     for var_name in var_names:
         derive_particle_variable(df, var_name, prefix)
     return df

@@ -23,7 +23,7 @@ def get_path_at_step(prefix: file_util.ParticlePrefix, step: int) -> pathlib.Pat
     return file_util.ROOT_DIR / f"{prefix}.{step:09}.h5"
 
 
-def load_df(prefix: file_util.ParticlePrefix, step: int) -> pd.DataFrame:
+def load_df_at_step(prefix: file_util.ParticlePrefix, step: int) -> pd.DataFrame:
     data_path = get_path_at_step(prefix, step)
     df = pd.read_hdf(data_path, key=PRT_PARTICLES_KEY)  # using h5py.File not yet supported
     df.attrs = load_attrs_at_step(step)
