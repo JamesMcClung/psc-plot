@@ -2,7 +2,7 @@ import pathlib
 import typing
 
 import h5py
-import pandas
+import pandas as pd
 
 from . import field_util, file_util
 
@@ -23,9 +23,9 @@ def get_path_at_step(prefix: file_util.ParticlePrefix, step: int) -> pathlib.Pat
     return file_util.ROOT_DIR / f"{prefix}.{step:09}.h5"
 
 
-def load_df(prefix: file_util.ParticlePrefix, step: int) -> pandas.DataFrame:
+def load_df(prefix: file_util.ParticlePrefix, step: int) -> pd.DataFrame:
     data_path = get_path_at_step(prefix, step)
-    df = pandas.read_hdf(data_path, key=PRT_PARTICLES_KEY)  # using h5py.File not yet supported
+    df = pd.read_hdf(data_path, key=PRT_PARTICLES_KEY)  # using h5py.File not yet supported
     with h5py.File(data_path) as file:
         if "time" in file.keys():
             time = file["time"][()]
