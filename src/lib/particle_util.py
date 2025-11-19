@@ -12,6 +12,8 @@ PRT_VARIABLES: list[PrtVariable] = list(PrtVariable.__value__.__args__)
 type Species = typing.Literal["ion", "electron"]
 SPECIES: list[Species] = list(Species.__value__.__args__)
 
+PRT_PARTICLES_KEY = "particles/p0/1d"
+
 
 def get_available_particle_steps(prefix: file_util.ParticlePrefix) -> list[int]:
     return file_util.get_available_steps(f"{prefix}.", ".h5")
@@ -23,7 +25,7 @@ def get_path_at_step(prefix: file_util.ParticlePrefix, step: int) -> pathlib.Pat
 
 def load_df(prefix: file_util.ParticlePrefix, step: int) -> pandas.DataFrame:
     data_path = get_path_at_step(prefix, step)
-    df = pandas.read_hdf(data_path, key="particles/p0/1d")  # using h5py.File not yet supported
+    df = pandas.read_hdf(data_path, key=PRT_PARTICLES_KEY)  # using h5py.File not yet supported
     with h5py.File(data_path) as file:
         if "time" in file.keys():
             time = file["time"][()]
