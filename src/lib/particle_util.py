@@ -2,6 +2,7 @@ import pathlib
 import typing
 
 import h5py
+import numpy as np
 import pandas as pd
 
 from . import field_util, file_util
@@ -27,6 +28,19 @@ def load_df_at_step(prefix: file_util.ParticlePrefix, step: int) -> pd.DataFrame
     data_path = get_path_at_step(prefix, step)
     df = pd.read_hdf(data_path, key=PRT_PARTICLES_KEY)  # using h5py.File not yet supported
     df.attrs = load_attrs_at_step(step)
+    return df
+
+
+def load_df(prefix: file_util.ParticlePrefix, steps: list[int]) -> dd.DataFrame:
+    data_paths = [get_path_at_step(prefix, step) for step in steps]
+    df = dd.read_hdf(data_paths, key=PRT_PARTICLES_KEY)
+
+    attrss = [load_attrs_at_step(prefix, step) for step in steps]
+    times = np.array([attrs["time"] for attrs in attrss])
+    df.attrs = attrss[0]
+    del df.attrs["time"]
+    df.attrs["times"] = times
+
     return df
 
 
