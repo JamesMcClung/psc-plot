@@ -1,3 +1,4 @@
+import pathlib
 import typing
 
 import h5py
@@ -16,8 +17,12 @@ def get_available_particle_steps(prefix: file_util.ParticlePrefix) -> list[int]:
     return file_util.get_available_steps(f"{prefix}.", ".h5")
 
 
+def get_path_at_step(prefix: file_util.ParticlePrefix, step: int) -> pathlib.Path:
+    return file_util.ROOT_DIR / f"{prefix}.{step:09}.h5"
+
+
 def load_df(prefix: file_util.ParticlePrefix, step: int) -> pandas.DataFrame:
-    data_path = file_util.ROOT_DIR / f"{prefix}.{step:09}.h5"
+    data_path = get_path_at_step(prefix, step)
     df = pandas.read_hdf(data_path, key="particles/p0/1d")  # using h5py.File not yet supported
     with h5py.File(data_path) as file:
         if "time" in file.keys():
