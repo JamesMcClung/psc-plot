@@ -2,7 +2,6 @@ import dask.array as da
 import dask.dataframe as dd
 import xarray as xr
 
-from ....particle_util import PRT_VARIABLES
 from ...adaptor import Adaptor
 from .. import parse_util
 from ..registry import adaptor_parser
@@ -65,7 +64,7 @@ def parse_slice(args: list[str]) -> Bin:
 
         [var_name, nbins_arg] = split_arg
 
-        # parse_util.check_value(var_name, "var_name", PRT_VARIABLES)
+        parse_util.check_valid_identifier(var_name, "var_name")
         nbins = parse_util.parse_optional_number(nbins_arg, "nbins", int)
 
         varname_to_nbins[var_name] = nbins
