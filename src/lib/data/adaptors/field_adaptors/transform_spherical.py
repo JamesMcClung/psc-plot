@@ -63,7 +63,7 @@ class TransformSpherical(Adaptor):
         return da
 
     def get_name_fragments(self) -> list[str]:
-        return ["spherical_{self.transform.dim_x.name.plain},{self.transform.dim_y.name.plain},{self.transform.dim_z.name.plain}"]
+        return [f"spherical_{self.transform.dim_x.name.plain},{self.transform.dim_y.name.plain},{self.transform.dim_z.name.plain}"]
 
 
 _SPHERICAL_FORMAT = ("dim_1", "dim_2", "dim_3")

@@ -52,7 +52,7 @@ class TransformPolar(Adaptor):
         return da
 
     def get_name_fragments(self) -> list[str]:
-        return ["polar_{self.transform.dim_x.name.plain},{self.transform.dim_y.name.plain}"]
+        return [f"polar_{self.transform.dim_x.name.plain},{self.transform.dim_y.name.plain}"]
 
 
 _POLAR_FORMAT = ("dim_1", "dim_2")
