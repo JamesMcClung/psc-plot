@@ -5,6 +5,7 @@ from ..animation import Animation
 from ..animation.particle_animation import *
 from ..data.adaptors import ADAPTORS, Adaptor, Pipeline
 from ..data.particle_loader import ParticleLoader
+from ..data.source import DataSourceWithPipeline
 from ..derived_particle_variables import DERIVED_PARTICLE_VARIABLES
 from ..particle_util import PRT_VARIABLES, PrtVariable
 from . import args_base
@@ -19,11 +20,14 @@ class ParticleArgs(args_base.ArgsTyped):
 
     def get_animation(self) -> Animation:
         steps = particle_util.get_available_particle_steps(self.prefix)
-        loader = ParticleLoader(self.prefix, list(self.axis_variables), Pipeline(*self.adaptors))
+
+        loader = ParticleLoader(self.prefix, list(self.axis_variables))
+        pipeline = Pipeline(*self.adaptors)
+        source = DataSourceWithPipeline(loader, pipeline)
 
         anim = ParticleAnimation(
             steps,
-            loader,
+            source,
             scales=self.scales,
         )
 
