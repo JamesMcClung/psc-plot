@@ -1,4 +1,5 @@
 import argparse
+import re
 import typing
 
 
@@ -9,6 +10,11 @@ def fail_format(arg: str, format: str):
 def check_value[T](val: T, val_name: str, valid_options: typing.Container[T]):
     if val not in valid_options:
         raise argparse.ArgumentTypeError(f"Expected {val_name} to be one of {set(valid_options)}; got '{val}'")
+
+
+def check_valid_identifier(val: str, val_name: str):
+    if not re.match(r"^\w[\d\w]*$", val):
+        raise argparse.ArgumentTypeError(f"Expected {val_name} to be a valid identifier; got '{val}'")
 
 
 def check_order[T](lower: T | None, upper: T | None, lower_name: str, upper_name: str):

@@ -1,13 +1,12 @@
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
 from matplotlib.colors import SymLogNorm
 
-from .. import file_util, particle_util, plt_util
-from ..data.adaptors import Pipeline
-from ..derived_particle_variables import derive_particle_variable
-from ..particle_util import PrtVariable
+from lib.data.source import DataSource
+
+from .. import plt_util
 from .animation_base import Animation
+from .field_animation import get_extent
 
 __all__ = ["ParticleAnimation", "NBins", "BinEdges"]
 
@@ -20,97 +19,49 @@ class ParticleAnimation(Animation):
     def __init__(
         self,
         steps: list[int],
-        prefix: file_util.ParticlePrefix,
-        pipeline: Pipeline,
+        source: DataSource,
         *,
-        axis_variables: tuple[PrtVariable, PrtVariable],
-        nicell: int,
-        bins: tuple[NBins | BinEdges, NBins | BinEdges] | None = None,
         scales: list[plt_util.Scale],
     ):
         super().__init__(len(steps))
 
         self.steps = steps
-        self.prefix = prefix
-        self.pipeline = pipeline
-        self.axis_variables = axis_variables
-        self._nicell = nicell
-        self._bins = bins
-        self.scales = scales + ["linear"] * (1 + len(axis_variables) - len(scales))  # dep scale, then axis scales
-
-        assert len(self.scales) == 1 + len(self.axis_variables)
+        self.source = source
+        self.scales = scales + ["linear"] * (3 - len(scales))  # dep scale, then axis scales
+        self.data = self.source.get_data(steps)
 
     def _init_fig(self):
-        binned_data, self.x_edges, self.y_edges = self._get_binned_data(self.steps[0], self._bins or self._guess_bins())
+        data = self.data.isel(t=0)
 
         if self.scales[0] == "symlog":
             self.scales[0] = SymLogNorm(linthresh=1e-8)
 
-        self.mesh = self.ax.pcolormesh(
-            self.x_edges,
-            self.y_edges,
-            binned_data,
-            cmap="inferno",
+        self.im = self.ax.imshow(
+            data.T,
+            origin="lower",
+            extent=(*get_extent(data, data.dims[0]), *get_extent(data, data.dims[1])),
             norm=self.scales[0],
         )
 
-        self.fig.colorbar(self.mesh)
-        plt_util.update_cbar(self.mesh)
+        self.fig.colorbar(self.im)
+        plt_util.update_cbar(self.im)
 
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
-        self.ax.set_xlabel(self.axis_variables[0])
-        self.ax.set_ylabel(self.axis_variables[1])
+        self.ax.set_xlabel(self.data.dims[0])
+        self.ax.set_ylabel(self.data.dims[1])
 
         self.ax.set_xscale(self.scales[1])
         self.ax.set_yscale(self.scales[2])
 
-        self.ax.set_title("reduced f")
+        self.ax.set_title(self.source.get_modified_var_name())
 
     def _update_fig(self, frame: int):
-        binned_data, _, _ = self._get_binned_data(self.steps[frame])
+        data = self.data.isel(t=frame)
 
-        self.mesh.set_array(binned_data)
-        plt_util.update_cbar(self.mesh)
+        self.im.set_array(data.T)
+        plt_util.update_cbar(self.im)
 
-        return [self.mesh]
-
-    def _guess_bins(self) -> tuple[BinEdges, BinEdges]:
-        df_final = self._load_df(self.steps[-1])
-        xmin = df_final[self.axis_variables[0]].min()
-        xmax = df_final[self.axis_variables[0]].max()
-        ymin = df_final[self.axis_variables[1]].min()
-        ymax = df_final[self.axis_variables[1]].max()
-        return (np.linspace(xmin, xmax, 100, endpoint=True), np.linspace(ymin, ymax, 100, endpoint=True))
-
-    def _load_df(self, step: int) -> pd.DataFrame:
-        df = particle_util.load_df(self.prefix, step)
-
-        for var in self.axis_variables:
-            derive_particle_variable(df, var, self.prefix)
-
-        df = self.pipeline.apply(df)
-
-        return df
-
-    def _get_binned_data(
-        self,
-        step: int,
-        bins: tuple[NBins | BinEdges, NBins | BinEdges] | None = None,
-    ) -> tuple[npt.NDArray[np.float64], BinEdges, BinEdges]:
-        df = self._load_df(step)
-
-        binned_data, x_edges, y_edges = np.histogram2d(
-            df[self.axis_variables[0]],
-            df[self.axis_variables[1]],
-            bins=bins or (self.x_edges, self.y_edges),
-            weights=df["w"] / self._nicell,
-        )
-        binned_data = binned_data.T
-
-        # FIXME the binned data cmap is not normalized correctly
-        # it should satisfy $\int binned_data dV' = N_particles (in psc units)$
-        return binned_data, x_edges, y_edges
+        return [self.im]
 
     def _get_default_save_path(self) -> str:
-        adaptor_name_fragments = self.pipeline.get_name_fragments()
-        return "-".join([self.prefix] + list(self.axis_variables) + adaptor_name_fragments) + ".mp4"
+        return "-".join(self.source.get_name_fragments()) + ".mp4"

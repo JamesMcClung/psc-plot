@@ -1,4 +1,4 @@
-import pandas as pd
+import dask.dataframe as dd
 
 from ....particle_util import PRT_VARIABLES
 from ...adaptor import Adaptor
@@ -12,7 +12,7 @@ class Slice(Adaptor):
         self.lower_inclusive = lower_inclusive
         self.upper_exclusive = upper_exclusive
 
-    def apply(self, df: pd.DataFrame) -> pd.DataFrame:
+    def apply(self, df: dd.DataFrame) -> dd.DataFrame:
         if self.lower_inclusive is not None:
             df = df[df[self.var_name] >= self.lower_inclusive]
         if self.upper_exclusive is not None:
