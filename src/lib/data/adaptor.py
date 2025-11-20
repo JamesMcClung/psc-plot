@@ -4,6 +4,7 @@ import inspect
 from abc import abstractmethod
 
 from .compatability import ConsumesData, ProducesData
+from .keys import MODIFIED_VAR_NAME
 
 
 class Adaptor(ConsumesData, ProducesData):
@@ -22,3 +23,14 @@ class Adaptor(ConsumesData, ProducesData):
 
     def get_output_data_type(self) -> type:
         return inspect.signature(self.apply).return_annotation
+
+
+class AtomicAdaptor(Adaptor):
+    @abstractmethod
+    def apply_atomic(self, data):
+        """Transform the data, but don't change the latex-formatted var string."""
+
+    def apply(self, data):
+        data = self.apply_atomic(data)
+        data.attrs[MODIFIED_VAR_NAME] = self.get_modified_var_name(data.attrs[MODIFIED_VAR_NAME])
+        return data
