@@ -27,16 +27,14 @@ class FieldAnimation(Animation):
         self,
         steps: list[int],
         source: DataSource,
-        time_dim: str,
-        spatial_dims: list[str],
         *,
         subplot_kw: dict[str, typing.Any] = {},
     ):
         self.source = source
-        self.time_dim = time_dim
-        self.spatial_dims = spatial_dims
-        self.data = source.get_data(steps)
-        nframes = len(self.data.coords[time_dim])
+        self.data: xr.DataArray = source.get_data(steps)
+        self.spatial_dims: list[str] = self.data.attrs["spatial_dims"]
+        self.time_dim: str = self.data.attrs["time_dim"]
+        nframes = len(self.data.coords[self.time_dim])
 
         super().__init__(nframes, subplot_kw=subplot_kw)
 
@@ -83,7 +81,7 @@ class FieldAnimation2d(FieldAnimation):
         self.ax.set_yscale(self.indep_scale)
 
         self.im = self.ax.imshow(
-            data.T,
+            data,
             origin="lower",
             extent=(*get_extent(data, self.spatial_dims[0]), *get_extent(data, self.spatial_dims[1])),
             norm=self.dep_scale,
@@ -104,10 +102,15 @@ class FieldAnimation2d(FieldAnimation):
     def _update_fig(self, frame: int):
         data = self._get_data_at_frame(frame)
 
-        self.im.set_array(data.T)
+        self.im.set_array(data)
 
         plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
         return [self.im, self.ax.title]
+
+    def _get_data_at_frame(self, frame: int) -> xr.DataArray:
+        data = super()._get_data_at_frame(frame)
+        data = data.transpose(*reversed(self.spatial_dims))
+        return data
 
 
 class FieldAnimation2dPolar(FieldAnimation):
@@ -117,10 +120,8 @@ class FieldAnimation2dPolar(FieldAnimation):
         self,
         steps: list[int],
         source: DataSource,
-        time_dim: str,
-        spatial_dims: list[str],
     ):
-        super().__init__(steps, source, time_dim, spatial_dims, subplot_kw={"projection": "polar"})
+        super().__init__(steps, source, subplot_kw={"projection": "polar"})
 
     def _init_fig(self):
         data = self._get_data_at_frame(0)
@@ -167,10 +168,8 @@ class FieldAnimation1d(FieldAnimation):
         self,
         steps: list[int],
         source: DataSource,
-        time_dim: str,
-        spatial_dims: list[str],
     ):
-        super().__init__(steps, source, time_dim, spatial_dims)
+        super().__init__(steps, source)
 
         self.fits: list[Fit] = []
         self.show_t0 = False
