@@ -46,8 +46,9 @@ class Versus(Adaptor):
             for adaptor in self.cached_inner_adaptors:
                 da = adaptor.apply(da)
 
-        # 3. transpose to correct dimension order
-        da = da.transpose(*self.all_dims)
+        # let the animator take it from here
+        da.attrs["spatial_dims"] = self.spatial_dims
+        da.attrs["time_dim"] = self.time_dim
 
         return da
 
