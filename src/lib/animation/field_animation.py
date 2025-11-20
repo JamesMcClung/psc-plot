@@ -9,6 +9,7 @@ from matplotlib.projections.polar import PolarAxes
 from lib.parsing.fit import Fit
 
 from .. import plt_util
+from ..data.keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY
 from ..data.source import DataSource
 from ..dimension import DIMENSIONS
 from .animation_base import Animation
@@ -32,8 +33,8 @@ class FieldAnimation(Animation):
     ):
         self.source = source
         self.data: xr.DataArray = source.get_data(steps)
-        self.spatial_dims: list[str] = self.data.attrs["spatial_dims"]
-        self.time_dim: str = self.data.attrs["time_dim"]
+        self.spatial_dims: list[str] = self.data.attrs[SPATIAL_DIMS_KEY]
+        self.time_dim: str = self.data.attrs[TIME_DIM_KEY]
         nframes = len(self.data.coords[self.time_dim])
 
         super().__init__(nframes, subplot_kw=subplot_kw)

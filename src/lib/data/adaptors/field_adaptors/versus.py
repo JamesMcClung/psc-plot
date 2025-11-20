@@ -2,6 +2,7 @@ import xarray as xr
 
 from ....dimension import DIMENSIONS
 from ...adaptor import Adaptor
+from ...keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY
 from .. import parse_util
 from ..registry import adaptor_parser
 from .fourier import Fourier
@@ -47,8 +48,8 @@ class Versus(Adaptor):
                 da = adaptor.apply(da)
 
         # let the animator take it from here
-        da.attrs["spatial_dims"] = self.spatial_dims
-        da.attrs["time_dim"] = self.time_dim
+        da.attrs[SPATIAL_DIMS_KEY] = self.spatial_dims
+        da.attrs[TIME_DIM_KEY] = self.time_dim
 
         return da
 
