@@ -2,12 +2,12 @@ from typing import Callable
 
 import xarray as xr
 
-from ...adaptor import Adaptor
+from ...adaptor import AtomicAdaptor
 from .. import parse_util
 from ..registry import adaptor_parser
 
 
-class MathOp(Adaptor):
+class MathOp(AtomicAdaptor):
     def __init__(
         self,
         rhs: float,
@@ -20,14 +20,14 @@ class MathOp(Adaptor):
         self.symbol = symbol
         self.func = func
 
-    def apply(self, da: xr.DataArray) -> xr.DataArray:
+    def apply_atomic(self, da: xr.DataArray) -> xr.DataArray:
         return self.func(da, self.rhs)
 
     def get_name_fragments(self) -> list[str]:
         return [f"{self.name_abbrev}_{self.rhs}"]
 
-    def get_modified_var_name(self, title_stem: str) -> str:
-        return f"({title_stem}){self.symbol}{{{self.rhs}}}"
+    def get_modified_var_latex(self, var_latex: str) -> str:
+        return f"({var_latex}){self.symbol}{{{self.rhs}}}"
 
 
 op_params = [

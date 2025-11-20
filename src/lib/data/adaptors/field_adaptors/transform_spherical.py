@@ -4,16 +4,16 @@ import numpy as np
 import xarray as xr
 
 from ....dimension import DIMENSIONS, CartesianToSpherical
-from ...adaptor import Adaptor
+from ...adaptor import AtomicAdaptor
 from .. import parse_util
 from ..registry import adaptor_parser
 
 
-class TransformSpherical(Adaptor):
+class TransformSpherical(AtomicAdaptor):
     def __init__(self, transform: CartesianToSpherical):
         self.transform = transform
 
-    def apply(self, da: xr.DataArray) -> xr.DataArray:
+    def apply_atomic(self, da: xr.DataArray) -> xr.DataArray:
         name_x = self.transform.dim_x.name.plain
         name_y = self.transform.dim_y.name.plain
         name_z = self.transform.dim_z.name.plain

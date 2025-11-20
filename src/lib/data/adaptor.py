@@ -4,7 +4,7 @@ import inspect
 from abc import abstractmethod
 
 from .compatability import ConsumesData, ProducesData
-from .keys import MODIFIED_VAR_NAME
+from .keys import VAR_LATEX_KEY
 
 
 class Adaptor(ConsumesData, ProducesData):
@@ -14,8 +14,8 @@ class Adaptor(ConsumesData, ProducesData):
     def get_name_fragments(self) -> list[str]:
         return []
 
-    def get_modified_var_name(self, dep_var_name: str) -> str:
-        return dep_var_name
+    def get_modified_var_latex(self, var_latex: str) -> str:
+        return var_latex
 
     def get_input_data_type(self) -> type:
         *_, data_param = inspect.signature(self.apply).parameters.values()
@@ -32,5 +32,5 @@ class AtomicAdaptor(Adaptor):
 
     def apply(self, data):
         data = self.apply_atomic(data)
-        data.attrs[MODIFIED_VAR_NAME] = self.get_modified_var_name(data.attrs[MODIFIED_VAR_NAME])
+        data.attrs[VAR_LATEX_KEY] = self.get_modified_var_latex(data.attrs[VAR_LATEX_KEY])
         return data

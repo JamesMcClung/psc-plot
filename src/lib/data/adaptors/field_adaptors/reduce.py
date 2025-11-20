@@ -4,7 +4,7 @@ import numpy as np
 import xarray as xr
 
 from ....dimension import DIMENSIONS
-from ...adaptor import Adaptor
+from ...adaptor import AtomicAdaptor
 from .. import parse_util
 from ..registry import adaptor_parser
 
@@ -19,12 +19,12 @@ REDUCE_FUNCS: dict[str, ReduceFunc] = {
 }
 
 
-class Reduce(Adaptor):
+class Reduce(AtomicAdaptor):
     def __init__(self, dim_name: str, func_name: str):
         self.dim_name = dim_name
         self.func_name = func_name
 
-    def apply(self, da: xr.DataArray) -> xr.DataArray:
+    def apply_atomic(self, da: xr.DataArray) -> xr.DataArray:
         return REDUCE_FUNCS[self.func_name](da, self.dim_name)
 
     def get_name_fragments(self) -> list[str]:

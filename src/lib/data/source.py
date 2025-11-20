@@ -51,7 +51,7 @@ class DataSourceWithPipeline(DataSource):
         return self.source.get_var_name()
 
     def get_modified_var_name(self) -> str:
-        return self.pipeline.get_modified_var_name(self.source.get_modified_var_name())
+        return self.pipeline.get_modified_var_latex(self.source.get_modified_var_name())
 
     def get_name_fragments(self) -> list[str]:
         return self.source.get_name_fragments() + self.pipeline.get_name_fragments()
