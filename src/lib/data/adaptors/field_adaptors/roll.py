@@ -15,7 +15,7 @@ class Roll(Adaptor):
         return da.rolling({self.dim_name: self.window_size}).mean()
 
     def get_name_fragments(self) -> list[str]:
-        return ["roll_{self.dim_name}={self.window_size}"]
+        return [f"roll_{self.dim_name}={self.window_size}"]
 
 
 ROLL_FORMAT = "dim_name=window_size"
