@@ -64,7 +64,7 @@ def parse_slice(args: list[str]) -> Bin:
 
         [var_name, nbins_arg] = split_arg
 
-        parse_util.check_valid_identifier(var_name, "var_name")
+        parse_util.check_identifier(var_name, "var_name")
         nbins = parse_util.parse_optional_number(nbins_arg, "nbins", int)
 
         varname_to_nbins[var_name] = nbins
