@@ -2,6 +2,7 @@ import xarray as xr
 
 from .. import field_util, file_util
 from ..derived_field_variables import derive_field_variable
+from .keys import VAR_LATEX_KEY
 from .source import DataSource
 
 
@@ -22,7 +23,9 @@ class FieldLoader(DataSource):
         return _load_field_variable(self.prefix, step, self.var_name)
 
     def get_data(self, steps: list[int]) -> xr.DataArray:
-        return xr.concat((self.get_data_at_step(step) for step in steps), "t")
+        da = xr.concat((self.get_data_at_step(step) for step in steps), "t")
+        da.attrs[VAR_LATEX_KEY] = self.var_name
+        return da
 
     def get_file_prefix(self) -> str:
         return self.prefix
