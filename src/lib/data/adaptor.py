@@ -4,7 +4,7 @@ import inspect
 import typing
 from abc import abstractmethod
 
-from .compatability import ConsumesData, ProducesData
+from .compatability import ConsumesData, ProducesData, ensure_type
 from .keys import VAR_LATEX_KEY
 
 
@@ -27,11 +27,14 @@ class Adaptor(ConsumesData, ProducesData):
 
 
 class AtomicAdaptor(Adaptor):
+    allowed_types: list[type]
+
     @abstractmethod
     def apply_atomic(self, data: typing.Any) -> typing.Any:
         """Transform the data, but don't change the latex-formatted var string."""
 
     def apply(self, data: typing.Any) -> typing.Any:
+        ensure_type(self.__class__.__name__, data, *self.allowed_types)
         data = self.apply_atomic(data)
         data.attrs[VAR_LATEX_KEY] = self.get_modified_var_latex(data.attrs[VAR_LATEX_KEY])
         return data
