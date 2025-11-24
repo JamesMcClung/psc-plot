@@ -47,3 +47,8 @@ def hhat2(hx_fc: DataArray, hy_fc: DataArray, hz_fc: DataArray) -> DataArray:
 @derived_field_variable("pfd")
 def h_cc(h2_cc: DataArray) -> DataArray:
     return np.sqrt(h2_cc)
+
+
+@derived_field_variable("pfd")
+def div_h_cc(hx_fc: DataArray, hy_fc: DataArray, hz_fc: DataArray) -> DataArray:
+    return hx_fc.differentiate("") + hy_fc.differentiate("y") + hz_fc.differentiate("z")
