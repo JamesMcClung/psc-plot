@@ -47,8 +47,8 @@ class Dimension:
     def is_fourier(self) -> bool:
         return self.name.starts_with(FOURIER_NAME_PREFIX)
 
-    def register(self) -> typing.Self:
-        DIMENSIONS[self.name.plain] = self
+    def register(self, id: str | None = None) -> typing.Self:
+        DIMENSIONS[id or self.name.plain] = self
         return self
 
 
