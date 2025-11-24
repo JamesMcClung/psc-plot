@@ -80,12 +80,10 @@ def parse_versus(args: list[str]) -> Versus:
     time_dim = "t"
     for arg in args:
         if arg.startswith(_TIME_PREFIX):
-            time_dim = arg.removeprefix(_TIME_PREFIX)
-            parse_util.check_value(time_dim, "time dim_name", list(DIMENSIONS) + [""])
-            if time_dim == "":
-                time_dim = None
+            time_dim = arg.removeprefix(_TIME_PREFIX) or None
+            parse_util.check_optional_identifier(time_dim, "time dim_name")
         else:
-            parse_util.check_value(arg, "dim_name", DIMENSIONS)
+            parse_util.check_identifier(arg, "dim_name")
             spatial_dims.append(arg)
 
     return Versus(spatial_dims, time_dim)
