@@ -28,9 +28,9 @@ def error(d_rho: DataArray, dt_divj: DataArray) -> DataArray:
 
 @derived_field_variable("pfd")
 def h2_cc(hx_fc: DataArray, hy_fc: DataArray, hz_fc: DataArray) -> DataArray:
-    h = Dataset({"hx_fc": hx_fc, "hy_fc": hy_fc, "hz_fc": hz_fc})
+    h = Dataset({"hx2_fc": hx_fc**2, "hy2_fc": hy_fc**2, "hz2_fc": hz_fc**2})
     pscpy.auto_recenter(h, "cc", x="periodic", y="periodic", z="periodic")
-    return h["hx_cc"] ** 2 + h["hy_cc"] ** 2 + h["hz_cc"] ** 2
+    return h["hx2_cc"] + h["hy2_cc"] + h["hz2_cc"]
 
 
 @derived_field_variable("pfd")
