@@ -21,7 +21,7 @@ def check_identifier(val: str, val_name: str):
         raise argparse.ArgumentTypeError(f"Expected {val_name} to be an identifier; got '{val}'")
 
 
-def check_optional_identifier(val: str, val_name: str):
+def check_optional_identifier(val: str | None, val_name: str):
     if val and not _is_identifier(val):
         raise argparse.ArgumentTypeError(f"Expected {val_name} to be an identifier or ''; got '{val}'")
 
