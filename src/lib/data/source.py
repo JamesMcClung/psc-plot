@@ -21,10 +21,6 @@ class DataSource(ProducesData):
         """The plain-text name of the original, dependent variable"""
 
     @abstractmethod
-    def get_modified_var_name(self) -> str:
-        """The latex-formatted name (including applied formulae) of the dependent variable"""
-
-    @abstractmethod
     def get_name_fragments(self) -> list[str]:
         """An ordered list of name fragments representing how this field is loaded and transformed"""
 
@@ -49,9 +45,6 @@ class DataSourceWithPipeline(DataSource):
 
     def get_var_name(self) -> str:
         return self.source.get_var_name()
-
-    def get_modified_var_name(self) -> str:
-        return self.pipeline.get_modified_var_latex(self.source.get_modified_var_name())
 
     def get_name_fragments(self) -> list[str]:
         return self.source.get_name_fragments() + self.pipeline.get_name_fragments()
