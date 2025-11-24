@@ -17,6 +17,10 @@ class SpeciesFilter(Adaptor):
             df = df[df["q"] > 0]
         return df
 
+    def get_modified_var_latex(self, var_latex: str) -> str:
+        subscript = self.species[0]
+        return f"{{{var_latex}}}_{subscript}"
+
     def get_name_fragments(self) -> list[str]:
         return [self.species]
 
