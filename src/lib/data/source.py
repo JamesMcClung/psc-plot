@@ -1,3 +1,4 @@
+import typing
 from abc import abstractmethod
 
 from .pipeline import Pipeline
@@ -5,7 +6,7 @@ from .pipeline import Pipeline
 
 class DataSource:
     @abstractmethod
-    def get_data(self, steps: list[int]): ...
+    def get_data(self, steps: list[int]) -> typing.Any: ...
 
     @abstractmethod
     def get_file_prefix(self) -> str:
@@ -25,7 +26,7 @@ class DataSourceWithPipeline(DataSource):
         self.source = source
         self.pipeline = pipeline
 
-    def get_data(self, steps: list[int]):
+    def get_data(self, steps: list[int]) -> typing.Any:
         da = self.source.get_data(steps)
         da = self.pipeline.apply(da)
         return da
