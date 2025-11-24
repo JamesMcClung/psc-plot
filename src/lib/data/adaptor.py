@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import typing
 from abc import abstractmethod
 
 from .compatability import ConsumesData, ProducesData
@@ -9,7 +10,7 @@ from .keys import VAR_LATEX_KEY
 
 class Adaptor(ConsumesData, ProducesData):
     @abstractmethod
-    def apply(self, data): ...
+    def apply(self, data: typing.Any) -> typing.Any: ...
 
     def get_name_fragments(self) -> list[str]:
         return []
@@ -27,10 +28,10 @@ class Adaptor(ConsumesData, ProducesData):
 
 class AtomicAdaptor(Adaptor):
     @abstractmethod
-    def apply_atomic(self, data):
+    def apply_atomic(self, data: typing.Any) -> typing.Any:
         """Transform the data, but don't change the latex-formatted var string."""
 
-    def apply(self, data):
+    def apply(self, data: typing.Any) -> typing.Any:
         data = self.apply_atomic(data)
         data.attrs[VAR_LATEX_KEY] = self.get_modified_var_latex(data.attrs[VAR_LATEX_KEY])
         return data
