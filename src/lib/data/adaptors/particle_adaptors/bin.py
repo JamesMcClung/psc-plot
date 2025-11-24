@@ -25,7 +25,7 @@ class Bin(AtomicAdaptor):
             weights=df["w"].to_dask_array(),
         )
 
-        coords = dict(zip(self.varname_to_nbins.keys(), ((edge[1:] + edge[:-1]) / 2.0 for edge in edges)))
+        coords = dict(zip(self.varname_to_nbins.keys(), (edge[:-1] for edge in edges)))
 
         return xr.DataArray(
             binned_data.compute(),
