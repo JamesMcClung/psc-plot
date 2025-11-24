@@ -2,16 +2,18 @@ import dask.array as da
 import dask.dataframe as dd
 import xarray as xr
 
-from ...adaptor import Adaptor
+from ...adaptor import AtomicAdaptor
 from .. import parse_util
 from ..registry import adaptor_parser
 
 
-class Bin(Adaptor):
+class Bin(AtomicAdaptor):
+    allowed_types = [dd.DataFrame]
+
     def __init__(self, varname_to_nbins: dict[str, int | None]):
         self.varname_to_nbins = varname_to_nbins
 
-    def apply(self, df: dd.DataFrame) -> xr.DataArray:
+    def apply_atomic(self, df: dd.DataFrame) -> xr.DataArray:
         mins = [df[var_name].min() for var_name in self.varname_to_nbins]
         maxs = [df[var_name].max() for var_name in self.varname_to_nbins]
 
