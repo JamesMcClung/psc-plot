@@ -35,6 +35,7 @@ class AtomicAdaptor(Adaptor):
 
     def apply(self, data: typing.Any) -> typing.Any:
         ensure_type(self.__class__.__name__, data, *self.allowed_types)
+        var_latex = data.attrs[VAR_LATEX_KEY]
         data = self.apply_atomic(data)
-        data.attrs[VAR_LATEX_KEY] = self.get_modified_var_latex(data.attrs[VAR_LATEX_KEY])
+        data.attrs[VAR_LATEX_KEY] = self.get_modified_var_latex(var_latex)
         return data
