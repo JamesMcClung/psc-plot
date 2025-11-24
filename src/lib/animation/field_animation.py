@@ -28,6 +28,7 @@ class FieldAnimation(Animation):
         self,
         steps: list[int],
         source: DataSource,
+        scales: list[plt_util.Scale],
         *,
         subplot_kw: dict[str, typing.Any] = {},
     ):
@@ -36,6 +37,7 @@ class FieldAnimation(Animation):
         self.spatial_dims: list[str] = self.data.attrs[SPATIAL_DIMS_KEY]
         self.time_dim: str = self.data.attrs[TIME_DIM_KEY]
         nframes = len(self.data.coords[self.time_dim])
+        self.scales = scales + ["linear"] * (1 + len(self.spatial_dims) - len(scales))
 
         super().__init__(nframes, subplot_kw=subplot_kw)
 
@@ -121,8 +123,9 @@ class FieldAnimation2dPolar(FieldAnimation):
         self,
         steps: list[int],
         source: DataSource,
+        scales: list[plt_util.Scale],
     ):
-        super().__init__(steps, source, subplot_kw={"projection": "polar"})
+        super().__init__(steps, source, scales, subplot_kw={"projection": "polar"})
 
     def _init_fig(self):
         data = self._get_data_at_frame(0)
