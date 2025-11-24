@@ -56,5 +56,7 @@ def derive_particle_variable(df: pd.DataFrame, var_name: str, ds_prefix: Particl
             derive_particle_variable(df, base_var_name, ds_prefix)
         derived_var.assign_to(df)
     else:
-        message = f"No variable named '{var_name}'.\nThe following variables are defined: {list(df.columns)}\n The following variables can be derived: {list(DERIVED_PARTICLE_VARIABLES[ds_prefix])}"
+        message = f"""No variable named '{var_name}'.
+The following variables are defined:    {list(df.columns)}.
+The following variables can be derived: {list(DERIVED_PARTICLE_VARIABLES[ds_prefix])}."""
         raise ValueError(message)

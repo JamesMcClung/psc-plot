@@ -56,5 +56,7 @@ def derive_field_variable(ds: xr.Dataset, var_name: str, ds_prefix: FieldPrefix)
             derive_field_variable(ds, base_var_name, ds_prefix)
         derived_var.assign_to(ds)
     else:
-        message = f"No variable named '{var_name}'.\nThe following variables are defined: {list(ds.variables)}\n The following variables can be derived: {list(DERIVED_FIELD_VARIABLES[ds_prefix])}"
+        message = f"""No variable named '{var_name}'.
+The following variables are defined:    {list(ds.variables)}.
+The following variables can be derived: {list(DERIVED_FIELD_VARIABLES[ds_prefix])}."""
         raise ValueError(message)
