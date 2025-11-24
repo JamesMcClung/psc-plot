@@ -2,8 +2,9 @@ import argparse
 
 from .. import particle_util, plt_util
 from ..animation import Animation
-from ..animation.particle_animation import *
+from ..animation.field_animation import FieldAnimation
 from ..data.adaptors import ADAPTORS, Adaptor, Pipeline
+from ..data.adaptors.field_adaptors.versus import Versus
 from ..data.particle_loader import ParticleLoader
 from ..data.source import DataSourceWithPipeline
 from ..derived_particle_variables import DERIVED_PARTICLE_VARIABLES
@@ -21,15 +22,28 @@ class ParticleArgs(args_base.ArgsTyped):
     def get_animation(self) -> Animation:
         steps = particle_util.get_available_particle_steps(self.prefix)
 
+        spatial_dims = ["y", "z"]
+        time_dim: str = "t"
+        for adaptor in self.adaptors:
+            if isinstance(adaptor, Versus):
+                spatial_dims = adaptor.spatial_dims
+                time_dim = adaptor.time_dim
+                break
+        else:
+            self.adaptors.append(Versus(spatial_dims, time_dim))
+
         loader = ParticleLoader(self.prefix, list(self.axis_variables))
         pipeline = Pipeline(*self.adaptors)
         source = DataSourceWithPipeline(loader, pipeline)
 
-        anim = ParticleAnimation(
-            steps,
-            source,
-            scales=self.scales,
-        )
+        FieldAnimation.get_animation_type(spatial_dims)
+
+        if time_dim:
+            AnimationType = FieldAnimation.get_animation_type(spatial_dims)
+            anim = AnimationType(steps, source, self.scales)
+        else:
+            # TODO use an argparse exception type
+            raise Exception("non-animated plots not supported yet")
 
         return anim
 
