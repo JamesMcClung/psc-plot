@@ -1,26 +1,18 @@
 from __future__ import annotations
 
-import inspect
 import typing
 from abc import abstractmethod
 
-from .compatability import ConsumesData, ProducesData, ensure_type
+from .compatability import ensure_type
 from .keys import VAR_LATEX_KEY
 
 
-class Adaptor(ConsumesData, ProducesData):
+class Adaptor:
     @abstractmethod
     def apply(self, data: typing.Any) -> typing.Any: ...
 
     def get_name_fragments(self) -> list[str]:
         return []
-
-    def get_input_data_type(self) -> type:
-        *_, data_param = inspect.signature(self.apply).parameters.values()
-        return data_param.annotation
-
-    def get_output_data_type(self) -> type:
-        return inspect.signature(self.apply).return_annotation
 
 
 class AtomicAdaptor(Adaptor):
