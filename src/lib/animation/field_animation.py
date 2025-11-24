@@ -28,6 +28,7 @@ class FieldAnimation(Animation):
         self,
         steps: list[int],
         source: DataSource,
+        scales: list[plt_util.Scale],
         *,
         subplot_kw: dict[str, typing.Any] = {},
     ):
@@ -36,21 +37,15 @@ class FieldAnimation(Animation):
         self.spatial_dims: list[str] = self.data.attrs[SPATIAL_DIMS_KEY]
         self.time_dim: str = self.data.attrs[TIME_DIM_KEY]
         nframes = len(self.data.coords[self.time_dim])
+        self.scales = scales + ["linear"] * (1 + len(self.spatial_dims) - len(scales))
 
         super().__init__(nframes, subplot_kw=subplot_kw)
-
-        self.indep_scale: plt_util.Scale = "linear"
-        self.dep_scale: plt_util.Scale = "linear"
-
-    def set_scale(self, indep_scale: plt_util.Scale, dep_scale: plt_util.Scale):
-        self.indep_scale = indep_scale
-        self.dep_scale = dep_scale
 
     def _get_data_at_frame(self, frame: int) -> xr.DataArray:
         return self.data.isel({self.time_dim: frame})
 
     def _get_var_bounds(self) -> tuple[float, float]:
-        if self.dep_scale == "log":
+        if self.scales[0] == "log":
             return np.exp(np.nanquantile(np.log(self.data), [0.5, 1])) * [0.1, 1.1]
 
         bounds = np.nanquantile(self.data, [0, 1])
@@ -78,14 +73,14 @@ class FieldAnimation2d(FieldAnimation):
         data = self._get_data_at_frame(0)
 
         # must set scale (log, linear) before making image
-        self.ax.set_xscale(self.indep_scale)
-        self.ax.set_yscale(self.indep_scale)
+        self.ax.set_xscale(self.scales[1])
+        self.ax.set_yscale(self.scales[2])
 
         self.im = self.ax.imshow(
             data,
             origin="lower",
             extent=(*get_extent(data, self.spatial_dims[0]), *get_extent(data, self.spatial_dims[1])),
-            norm=self.dep_scale,
+            norm=self.scales[0],
         )
 
         self.fig.colorbar(self.im)
@@ -121,15 +116,15 @@ class FieldAnimation2dPolar(FieldAnimation):
         self,
         steps: list[int],
         source: DataSource,
+        scales: list[plt_util.Scale],
     ):
-        super().__init__(steps, source, subplot_kw={"projection": "polar"})
+        super().__init__(steps, source, scales, subplot_kw={"projection": "polar"})
 
     def _init_fig(self):
         data = self._get_data_at_frame(0)
 
-        # must set scale (log, linear) before making image
-        if self.indep_scale == "log":
-            self.ax.set_rscale("symlog")
+        # must set scale before making image
+        self.ax.set_rscale(self.scales[1])
 
         vertices_theta = np.concat((data.coords[self.spatial_dims[1]].data, [2 * np.pi]))
         vertices_theta -= vertices_theta[1] / 2
@@ -140,7 +135,7 @@ class FieldAnimation2dPolar(FieldAnimation):
             *np.meshgrid(vertices_theta, vertices_r),
             data,
             shading="flat",
-            norm=self.dep_scale,
+            norm=self.scales[0],
         )
 
         self.fig.colorbar(self.im)
@@ -169,8 +164,9 @@ class FieldAnimation1d(FieldAnimation):
         self,
         steps: list[int],
         source: DataSource,
+        scales: list[plt_util.Scale],
     ):
-        super().__init__(steps, source)
+        super().__init__(steps, source, scales)
 
         self.fits: list[Fit] = []
         self.show_t0 = False
@@ -194,8 +190,8 @@ class FieldAnimation1d(FieldAnimation):
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
         self.ax.set_ylabel(f"${data.attrs[VAR_LATEX_KEY]}$")
 
-        self.ax.set_xscale(self.indep_scale)
-        self.ax.set_yscale(self.dep_scale)
+        self.ax.set_xscale(self.scales[1])
+        self.ax.set_yscale(self.scales[0])
 
         self.fit_lines = [fit.plot_fit(self.ax, data) for fit in self.fits]
 
