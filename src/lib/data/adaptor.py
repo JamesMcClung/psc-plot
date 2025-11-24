@@ -15,9 +15,6 @@ class Adaptor(ConsumesData, ProducesData):
     def get_name_fragments(self) -> list[str]:
         return []
 
-    def get_modified_var_latex(self, var_latex: str) -> str:
-        return var_latex
-
     def get_input_data_type(self) -> type:
         *_, data_param = inspect.signature(self.apply).parameters.values()
         return data_param.annotation
@@ -32,6 +29,9 @@ class AtomicAdaptor(Adaptor):
     @abstractmethod
     def apply_atomic(self, data: typing.Any) -> typing.Any:
         """Transform the data, but don't change the latex-formatted var string."""
+
+    def get_modified_var_latex(self, var_latex: str) -> str:
+        return var_latex
 
     def apply(self, data: typing.Any) -> typing.Any:
         ensure_type(self.__class__.__name__, data, *self.allowed_types)

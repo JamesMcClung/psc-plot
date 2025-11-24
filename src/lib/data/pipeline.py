@@ -20,11 +20,6 @@ class Pipeline(Adaptor):
             data = adaptor.apply(data)
         return data
 
-    def get_modified_var_latex(self, var_latex: str) -> str:
-        for adaptor in self.adaptors:
-            var_latex = adaptor.get_modified_var_latex(var_latex)
-        return var_latex
-
     def get_input_data_type(self) -> type:
         if not self.adaptors:
             return typing.Any
