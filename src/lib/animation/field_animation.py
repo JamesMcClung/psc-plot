@@ -9,7 +9,7 @@ from matplotlib.projections.polar import PolarAxes
 from lib.parsing.fit import Fit
 
 from .. import plt_util
-from ..data.keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY
+from ..data.keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY, VAR_LATEX_KEY
 from ..data.source import DataSource
 from ..dimension import DIMENSIONS
 from .animation_base import Animation
@@ -92,7 +92,7 @@ class FieldAnimation2d(FieldAnimation):
         data_lower, data_upper = self._get_var_bounds()
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
-        plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
 
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
@@ -105,7 +105,7 @@ class FieldAnimation2d(FieldAnimation):
 
         self.im.set_array(data)
 
-        plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
         return [self.im, self.ax.title]
 
     def _get_data_at_frame(self, frame: int) -> xr.DataArray:
@@ -147,7 +147,7 @@ class FieldAnimation2dPolar(FieldAnimation):
         data_lower, data_upper = self._get_var_bounds()
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
-        plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
 
         # FIXME make the labels work
         # self.ax.set_xlabel(DIMENSIONS[self.dims[1]].to_axis_label())
@@ -160,7 +160,7 @@ class FieldAnimation2dPolar(FieldAnimation):
 
         self.im.set_array(data)
 
-        plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
         return [self.im, self.ax.title]
 
 
@@ -190,9 +190,9 @@ class FieldAnimation1d(FieldAnimation):
 
         [self.line] = self.ax.plot(xdata, data, line_type)
 
-        plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
-        self.ax.set_ylabel(f"${self.source.get_modified_var_name()}$")
+        self.ax.set_ylabel(f"${data.attrs[VAR_LATEX_KEY]}$")
 
         self.ax.set_xscale(self.indep_scale)
         self.ax.set_yscale(self.dep_scale)
@@ -218,7 +218,7 @@ class FieldAnimation1d(FieldAnimation):
             # updates legend in case fit labels changed (e.g. to show different fit params)
             self.ax.legend()
 
-        plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
         return [self.line, self.ax.yaxis, self.ax.title]
 
     def _update_ybounds(self):

@@ -5,6 +5,7 @@ from matplotlib.colors import SymLogNorm
 from lib.data.source import DataSource
 
 from .. import plt_util
+from ..data.keys import VAR_LATEX_KEY
 from .animation_base import Animation
 from .field_animation import get_extent
 
@@ -53,7 +54,7 @@ class ParticleAnimation(Animation):
         self.ax.set_xscale(self.scales[1])
         self.ax.set_yscale(self.scales[2])
 
-        self.ax.set_title(self.source.get_modified_var_name())
+        self.ax.set_title(data.attrs[VAR_LATEX_KEY])
 
     def _update_fig(self, frame: int):
         data = self.data.isel(t=frame)
