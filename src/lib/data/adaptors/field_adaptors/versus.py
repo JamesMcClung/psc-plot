@@ -2,6 +2,7 @@ import xarray as xr
 
 from ....dimension import DIMENSIONS
 from ...adaptor import Adaptor
+from ...compatability import ensure_type
 from ...keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY
 from .. import parse_util
 from ..registry import adaptor_parser
@@ -10,6 +11,7 @@ from .reduce import Reduce
 
 
 class Versus(Adaptor):
+
     def __init__(self, spatial_dims: list[str], time_dim: str | None):
         self.spatial_dims = spatial_dims
         self.time_dim = time_dim
@@ -17,6 +19,8 @@ class Versus(Adaptor):
         self.cached_inner_adaptors: list[Adaptor] | None = None
 
     def apply(self, da: xr.DataArray) -> xr.DataArray:
+        ensure_type(self.__class__.__name__, da, xr.DataArray)
+
         if self.cached_inner_adaptors is None:
             self.cached_inner_adaptors = []
             # 1. apply implicit coordinate transforms, as necessary

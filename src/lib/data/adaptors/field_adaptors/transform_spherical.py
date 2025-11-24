@@ -10,6 +10,8 @@ from ..registry import adaptor_parser
 
 
 class TransformSpherical(AtomicAdaptor):
+    allowed_types = [xr.DataArray]
+
     def __init__(self, transform: CartesianToSpherical):
         self.transform = transform
 

@@ -11,6 +11,8 @@ from ..registry import adaptor_parser
 
 
 class Window(Adaptor):
+    allowed_types = [xr.DataArray]
+
     def __init__(self, dim_name: str):
         self.dim_name = dim_name
 

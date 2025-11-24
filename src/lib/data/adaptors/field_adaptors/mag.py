@@ -5,6 +5,8 @@ from ..registry import register_const_adaptor
 
 
 class Magnitude(AtomicAdaptor):
+    allowed_types = [xr.DataArray]
+
     def apply_atomic(self, da: xr.DataArray) -> xr.DataArray:
         return (da.real**2 + da.imag**2) ** 0.5
 
