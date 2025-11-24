@@ -7,8 +7,6 @@ from ..registry import adaptor_parser
 
 
 class Slice(AtomicAdaptor):
-    allowed_types = [dd.DataFrame]
-
     def __init__(self, var_name: str, lower_inclusive: float | None, upper_exclusive: float | None):
         self.var_name = var_name
         self.lower_inclusive = lower_inclusive

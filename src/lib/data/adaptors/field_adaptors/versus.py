@@ -11,7 +11,6 @@ from .reduce import Reduce
 
 
 class Versus(Adaptor):
-
     def __init__(self, spatial_dims: list[str], time_dim: str | None):
         self.spatial_dims = spatial_dims
         self.time_dim = time_dim

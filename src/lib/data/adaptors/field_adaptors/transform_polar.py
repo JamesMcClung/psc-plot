@@ -10,8 +10,6 @@ from ..registry import adaptor_parser
 
 
 class TransformPolar(AtomicAdaptor):
-    allowed_types = [xr.DataArray]
-
     def __init__(self, transform: CartesianToPolar):
         self.transform = transform
 

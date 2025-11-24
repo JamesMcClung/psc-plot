@@ -27,8 +27,6 @@ def toggle_fourier(da: xr.DataArray, dim: Dimension) -> xr.DataArray:
 
 
 class Fourier(AtomicAdaptor):
-    allowed_types = [xr.DataArray]
-
     def __init__(self, dims: Dimension | list[Dimension]):
         if isinstance(dims, Dimension):
             dims = [dims]

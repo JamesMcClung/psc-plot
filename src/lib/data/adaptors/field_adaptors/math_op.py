@@ -8,8 +8,6 @@ from ..registry import adaptor_parser
 
 
 class MathOp(AtomicAdaptor):
-    allowed_types = [xr.DataArray]
-
     def __init__(
         self,
         rhs: float,

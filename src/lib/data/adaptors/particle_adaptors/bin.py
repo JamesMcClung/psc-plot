@@ -8,8 +8,6 @@ from ..registry import adaptor_parser
 
 
 class Bin(AtomicAdaptor):
-    allowed_types = [dd.DataFrame]
-
     def __init__(self, varname_to_nbins: dict[str, int | None]):
         self.varname_to_nbins = varname_to_nbins
 

@@ -7,8 +7,6 @@ from ..registry import adaptor_parser
 
 
 class SpeciesFilter(AtomicAdaptor):
-    allowed_types = [dd.DataFrame]
-
     def __init__(self, species: Species):
         self.species = species
 
