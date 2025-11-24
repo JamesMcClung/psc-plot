@@ -1,8 +1,7 @@
 import argparse
 
 from .. import particle_util, plt_util
-from ..animation import Animation
-from ..animation.field_animation import FieldAnimation
+from ..animation.field_animation import Animation, FieldAnimation
 from ..data.adaptors import ADAPTORS, Adaptor, Pipeline
 from ..data.adaptors.field_adaptors.versus import Versus
 from ..data.particle_loader import ParticleLoader

@@ -4,7 +4,7 @@ import abc
 import argparse
 
 from .. import file_util
-from ..animation import Animation
+from ..animation.animation_base import Animation
 
 __all__ = ["add_common_arguments", "add_subparsers", "get_subparser_parent", "ArgsTyped", "ArgsUntyped"]
 

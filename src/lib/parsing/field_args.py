@@ -2,8 +2,7 @@ import argparse
 import typing
 
 from .. import field_util, plt_util
-from ..animation import Animation, FieldAnimation
-from ..animation.field_animation import FieldAnimation1d
+from ..animation.field_animation import Animation, FieldAnimation, FieldAnimation1d
 from ..data.adaptors import ADAPTORS, Adaptor, Pipeline
 from ..data.adaptors.field_adaptors.versus import Versus
 from ..data.field_loader import FieldLoader
