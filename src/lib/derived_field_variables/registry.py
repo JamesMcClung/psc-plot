@@ -34,15 +34,12 @@ def h2_cc(hx_fc: DataArray, hy_fc: DataArray, hz_fc: DataArray) -> DataArray:
 
 
 @derived_field_variable("pfd")
-def hhat2_cc(hx_fc: DataArray, hy_fc: DataArray, hz_fc: DataArray) -> DataArray:
-    h = Dataset({"hx_fc": hx_fc, "hy_fc": hy_fc, "hz_fc": hz_fc})
-    pscpy.auto_recenter(h, "cc", x="periodic", y="periodic", z="periodic")
-
+def hhat2(hx_fc: DataArray, hy_fc: DataArray, hz_fc: DataArray) -> DataArray:
     pipeline = Pipeline(Fourier([DIMENSIONS["x"], DIMENSIONS["y"], DIMENSIONS["z"]]), Magnitude())
 
-    hx_hat = pipeline.apply(h["hx_cc"])
-    hy_hat = pipeline.apply(h["hy_cc"])
-    hz_hat = pipeline.apply(h["hz_cc"])
+    hx_hat = pipeline.apply(hx_fc)
+    hy_hat = pipeline.apply(hy_fc)
+    hz_hat = pipeline.apply(hz_fc)
 
     return hx_hat**2 + hy_hat**2 + hz_hat**2
 
