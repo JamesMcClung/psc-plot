@@ -1,13 +1,13 @@
 import xarray as xr
 
-from lib.animation.animated_plot import (
+from lib.data.keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY
+from lib.dimension import DIMENSIONS
+from lib.plotting.animated_plot import (
     FieldAnimation1d,
     FieldAnimation2d,
     FieldAnimation2dPolar,
 )
-from lib.animation.plot import Plot
-from lib.data.keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY
-from lib.dimension import DIMENSIONS
+from lib.plotting.plot import Plot
 
 
 def get_plot(data: xr.DataArray, **plot_kwargs) -> Plot:
