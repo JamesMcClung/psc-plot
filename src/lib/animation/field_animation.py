@@ -32,14 +32,9 @@ class FieldAnimation(AnimatedPlot):
         *,
         subplot_kw: dict[str, typing.Any] = {},
     ):
-        self.source = source
-        self.data = data
-        self.spatial_dims: list[str] = self.data.attrs[SPATIAL_DIMS_KEY]
-        self.time_dim: str = self.data.attrs[TIME_DIM_KEY]
-        nframes = len(self.data.coords[self.time_dim])
-        self.scales = scales + ["linear"] * (1 + len(self.spatial_dims) - len(scales))
+        super().__init__(source, data, subplot_kw=subplot_kw)
 
-        super().__init__(nframes, subplot_kw=subplot_kw)
+        self.scales = scales + ["linear"] * (1 + len(self.spatial_dims) - len(scales))
 
     def _get_data_at_frame(self, frame: int) -> xr.DataArray:
         return self.data.isel({self.time_dim: frame})
@@ -68,9 +63,6 @@ class FieldAnimation(AnimatedPlot):
                 return FieldAnimation2d
         else:
             raise NotImplementedError("don't have 3D animations yet")
-
-    def _get_default_save_path(self) -> str:
-        return "-".join(self.source.get_name_fragments()) + ".mp4"
 
 
 class FieldAnimation2d(FieldAnimation):
