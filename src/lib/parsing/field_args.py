@@ -5,7 +5,7 @@ from lib.animation.get_plot import get_plot
 from lib.data.compile import compile_source
 
 from .. import field_util, plt_util
-from ..animation.field_animation import AnimatedPlot, FieldAnimation1d
+from ..animation.animated_plot import AnimatedPlot, FieldAnimation1d
 from ..data.adaptors import ADAPTORS, Adaptor
 from ..data.field_loader import FieldLoader
 from ..file_util import FIELD_PREFIXES

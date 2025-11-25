@@ -1,6 +1,6 @@
 import xarray as xr
 
-from lib.animation.field_animation import (
+from lib.animation.animated_plot import (
     FieldAnimation1d,
     FieldAnimation2d,
     FieldAnimation2dPolar,
