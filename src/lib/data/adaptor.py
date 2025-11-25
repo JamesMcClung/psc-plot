@@ -6,7 +6,6 @@ import typing
 from abc import abstractmethod
 
 from .compatability import ensure_type
-from .keys import VAR_LATEX_KEY
 
 
 class Adaptor:
@@ -34,7 +33,7 @@ class AtomicAdaptor(Adaptor):
             allowed_types = apply_atomic_data_annotation.__args__
         ensure_type(self.__class__.__name__, data, *allowed_types)
 
-        var_latex = data.attrs[VAR_LATEX_KEY]
+        attrs = data.attrs
         data = self.apply_atomic(data)
-        data.attrs[VAR_LATEX_KEY] = self.get_modified_var_latex(var_latex)
+        data.attrs = attrs
         return data
