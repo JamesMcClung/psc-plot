@@ -9,7 +9,7 @@ from lib.parsing.fit import Fit
 from .. import plt_util
 from ..data.keys import VAR_LATEX_KEY
 from ..dimension import DIMENSIONS
-from .animation_base import AnimatedPlot
+from .animated_plot import AnimatedPlot
 
 __all__ = ["FieldAnimation"]
 
