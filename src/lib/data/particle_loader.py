@@ -7,12 +7,13 @@ from .source import DataSource
 
 
 class ParticleLoader(DataSource):
-    def __init__(self, prefix: file_util.ParticlePrefix, var_names: list[str]):
+    def __init__(self, prefix: file_util.ParticlePrefix, var_names: list[str], steps: list[int]):
         self.prefix = prefix
         self.var_names = var_names
+        self.steps = steps
 
-    def get_data(self, steps: list[int]) -> dd.DataFrame:
-        df = particle_util.load_df(self.prefix, steps)
+    def get_data(self) -> dd.DataFrame:
+        df = particle_util.load_df(self.prefix, self.steps)
         for var_name in self.var_names:
             derive_particle_variable(df, var_name, self.prefix)
 

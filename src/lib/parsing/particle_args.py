@@ -21,9 +21,9 @@ class ParticleArgs(args_base.ArgsTyped):
     def get_animation(self) -> Animation:
         steps = particle_util.get_available_particle_steps(self.prefix)
 
-        loader = ParticleLoader(self.prefix, list(self.axis_variables))
+        loader = ParticleLoader(self.prefix, list(self.axis_variables), steps)
         source = compile_source(loader, self.adaptors)
-        data = source.get_data(steps)
+        data = source.get_data()
 
         anim = FieldAnimation.get_animation_type(data)(source, data, self.scales)
 

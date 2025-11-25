@@ -27,9 +27,9 @@ class FieldArgs(args_base.ArgsTyped):
     def get_animation(self) -> Animation:
         steps = field_util.get_available_field_steps(self.prefix)
 
-        loader = FieldLoader(self.prefix, self.variable)
+        loader = FieldLoader(self.prefix, self.variable, steps)
         source = compile_source(loader, self.adaptors)
-        data = source.get_data(steps)
+        data = source.get_data()
 
         anim = FieldAnimation.get_animation_type(data)(source, data, self.scales)
 

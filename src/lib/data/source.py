@@ -6,7 +6,7 @@ from .pipeline import Pipeline
 
 class DataSource:
     @abstractmethod
-    def get_data(self, steps: list[int]) -> typing.Any: ...
+    def get_data(self) -> typing.Any: ...
 
     @abstractmethod
     def get_file_prefix(self) -> str:
@@ -26,8 +26,8 @@ class DataSourceWithPipeline(DataSource):
         self.source = source
         self.pipeline = pipeline
 
-    def get_data(self, steps: list[int]) -> typing.Any:
-        da = self.source.get_data(steps)
+    def get_data(self) -> typing.Any:
+        da = self.source.get_data()
         da = self.pipeline.apply(da)
         return da
 
