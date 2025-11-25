@@ -5,6 +5,8 @@ import types
 import typing
 from abc import abstractmethod
 
+from lib.data.keys import NAME_FRAGMENTS_KEY
+
 from .compatability import ensure_type
 
 
@@ -36,4 +38,5 @@ class AtomicAdaptor(Adaptor):
         attrs = data.attrs
         data = self.apply_atomic(data)
         data.attrs = attrs
+        data.attrs[NAME_FRAGMENTS_KEY] += self.get_name_fragments()
         return data
