@@ -30,17 +30,18 @@ class AnimatedPlot(Plot):
     @abstractmethod
     def _update_fig(self, frame: int): ...
 
-    def show(self):
+    def _initialize(self):
         if not self._initialized:
             self._init_fig()
             self._initialized = True
+
+    def show(self):
+        self._initialize()
         plt.show()
 
     def _get_save_ext(self):
         return ".mp4"
 
     def _save_to_path(self, path: Path):
-        if not self._initialized:
-            self._init_fig()
-            self._initialized = True
+        self._initialize()
         self.anim.save(path)
