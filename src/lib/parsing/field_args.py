@@ -4,7 +4,7 @@ import typing
 from lib.data.compile import compile_source
 
 from .. import field_util, plt_util
-from ..animation.field_animation import Animation, FieldAnimation, FieldAnimation1d
+from ..animation.field_animation import AnimatedPlot, FieldAnimation, FieldAnimation1d
 from ..data.adaptors import ADAPTORS, Adaptor
 from ..data.field_loader import FieldLoader
 from ..file_util import FIELD_PREFIXES
@@ -24,7 +24,7 @@ class FieldArgs(args_base.ArgsTyped):
     fits: list[Fit]  # 1d only
     show_t0: bool  # 1d only
 
-    def get_animation(self) -> Animation:
+    def get_animation(self) -> AnimatedPlot:
         steps = field_util.get_available_field_steps(self.prefix)
 
         loader = FieldLoader(self.prefix, self.variable, steps)

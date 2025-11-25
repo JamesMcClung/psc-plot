@@ -3,7 +3,7 @@ import argparse
 from lib.data.compile import compile_source
 
 from .. import particle_util, plt_util
-from ..animation.field_animation import Animation, FieldAnimation
+from ..animation.field_animation import AnimatedPlot, FieldAnimation
 from ..data.adaptors import ADAPTORS, Adaptor
 from ..data.particle_loader import ParticleLoader
 from ..derived_particle_variables import DERIVED_PARTICLE_VARIABLES
@@ -18,7 +18,7 @@ class ParticleArgs(args_base.ArgsTyped):
     adaptors: list[Adaptor]
     scales: list[plt_util.Scale]
 
-    def get_animation(self) -> Animation:
+    def get_animation(self) -> AnimatedPlot:
         steps = particle_util.get_available_particle_steps(self.prefix)
 
         loader = ParticleLoader(self.prefix, list(self.axis_variables), steps)

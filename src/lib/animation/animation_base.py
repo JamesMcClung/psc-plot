@@ -1,12 +1,14 @@
 import typing
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
+from lib.animation.plot import Plot
 
-class Animation(ABC):
+
+class AnimatedPlot(Plot):
     def __init__(self, nframes: int, *, subplot_kw: dict[str, typing.Any] = {}):
         self.nframes = nframes
         self.fig, self.ax = plt.subplots(subplot_kw=subplot_kw)

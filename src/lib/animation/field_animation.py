@@ -12,7 +12,7 @@ from .. import plt_util
 from ..data.keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY, VAR_LATEX_KEY
 from ..data.source import DataSource
 from ..dimension import DIMENSIONS
-from .animation_base import Animation
+from .animation_base import AnimatedPlot
 
 __all__ = ["FieldAnimation"]
 
@@ -23,7 +23,7 @@ def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
     return (float(lower), float(upper))
 
 
-class FieldAnimation(Animation):
+class FieldAnimation(AnimatedPlot):
     def __init__(
         self,
         source: DataSource,
