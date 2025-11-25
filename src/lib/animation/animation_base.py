@@ -13,8 +13,8 @@ from lib.data.source import DataSource
 
 class AnimatedPlot(Plot):
     def __init__(self, source: DataSource, data: xr.DataArray, *, subplot_kw: dict[str, typing.Any] = {}):
+        super().__init__(data)
         self.source = source
-        self.data = data
         self.spatial_dims: list[str] = self.data.attrs[SPATIAL_DIMS_KEY]
         self.time_dim: str = self.data.attrs[TIME_DIM_KEY]
         nframes = len(self.data.coords[self.time_dim])
@@ -38,9 +38,11 @@ class AnimatedPlot(Plot):
             self._initialized = True
         plt.show()
 
-    def save(self, path_override: Path | None = None):
+    def _get_save_ext(self):
+        return ".mp4"
+
+    def _save_to_path(self, path: Path):
         if not self._initialized:
             self._init_fig()
             self._initialized = True
-        path = path_override or "-".join(self.source.get_name_fragments()) + ".mp4"
         self.anim.save(path)
