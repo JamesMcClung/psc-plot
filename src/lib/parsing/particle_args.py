@@ -4,7 +4,7 @@ from lib.animation.get_plot import get_plot
 from lib.data.compile import compile_source
 
 from .. import particle_util, plt_util
-from ..animation.field_animation import AnimatedPlot, FieldAnimation
+from ..animation.field_animation import AnimatedPlot
 from ..data.adaptors import ADAPTORS, Adaptor
 from ..data.particle_loader import ParticleLoader
 from ..derived_particle_variables import DERIVED_PARTICLE_VARIABLES

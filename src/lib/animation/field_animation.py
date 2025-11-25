@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import typing
-
 import numpy as np
 import xarray as xr
 from matplotlib.projections.polar import PolarAxes
@@ -9,7 +7,7 @@ from matplotlib.projections.polar import PolarAxes
 from lib.parsing.fit import Fit
 
 from .. import plt_util
-from ..data.keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY, VAR_LATEX_KEY
+from ..data.keys import VAR_LATEX_KEY
 from ..dimension import DIMENSIONS
 from .animation_base import AnimatedPlot
 
@@ -22,31 +20,7 @@ def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
     return (float(lower), float(upper))
 
 
-class FieldAnimation(AnimatedPlot):
-    def __init__(
-        self,
-        data: xr.DataArray,
-        scales: list[plt_util.Scale],
-        *,
-        subplot_kw: dict[str, typing.Any] = {},
-    ):
-        super().__init__(data, subplot_kw=subplot_kw)
-
-        self.scales = scales + ["linear"] * (1 + len(self.spatial_dims) - len(scales))
-
-    def _get_data_at_frame(self, frame: int) -> xr.DataArray:
-        return self.data.isel({self.time_dim: frame})
-
-    def _get_var_bounds(self) -> tuple[float, float]:
-        if self.scales[0] == "log":
-            return np.exp(np.nanquantile(np.log(self.data), [0.5, 1])) * [0.1, 1.1]
-
-        bounds = np.nanquantile(self.data, [0, 1])
-        bounds *= 1 + 0.1 * np.array([-float(bounds[0] > 0), float(bounds[1] > 0)])
-        return bounds
-
-
-class FieldAnimation2d(FieldAnimation):
+class FieldAnimation2d(AnimatedPlot):
     def _init_fig(self):
         data = self._get_data_at_frame(0)
 
@@ -87,7 +61,7 @@ class FieldAnimation2d(FieldAnimation):
         return data
 
 
-class FieldAnimation2dPolar(FieldAnimation):
+class FieldAnimation2dPolar(AnimatedPlot):
     ax: PolarAxes
 
     def __init__(
@@ -136,16 +110,19 @@ class FieldAnimation2dPolar(FieldAnimation):
         return [self.im, self.ax.title]
 
 
-class FieldAnimation1d(FieldAnimation):
+class FieldAnimation1d(AnimatedPlot):
     def __init__(
         self,
         data: xr.DataArray,
-        scales: list[plt_util.Scale],
+        *,
+        scales: list[plt_util.Scale] = [],
+        fits: list[Fit] = [],
+        show_t0: bool = False,
     ):
-        super().__init__(data, scales)
+        super().__init__(data, scales=scales)
 
-        self.fits: list[Fit] = []
-        self.show_t0 = False
+        self.fits = fits
+        self.show_t0 = show_t0
 
     def _init_fig(self):
         data = self._get_data_at_frame(0)
