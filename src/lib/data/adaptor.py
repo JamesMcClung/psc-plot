@@ -5,7 +5,7 @@ import types
 import typing
 from abc import abstractmethod
 
-from lib.data.keys import NAME_FRAGMENTS_KEY
+from lib.data.keys import NAME_FRAGMENTS_KEY, VAR_LATEX_KEY
 
 from .compatability import ensure_type
 
@@ -21,7 +21,7 @@ class Adaptor:
 class AtomicAdaptor(Adaptor):
     @abstractmethod
     def apply_atomic(self, data: typing.Any) -> typing.Any:
-        """Transform the data, but don't change the latex-formatted var string."""
+        """Transform the data, ignoring attributes"""
 
     def get_modified_var_latex(self, var_latex: str) -> str:
         return var_latex
@@ -39,4 +39,5 @@ class AtomicAdaptor(Adaptor):
         data = self.apply_atomic(data)
         data.attrs = attrs
         data.attrs[NAME_FRAGMENTS_KEY] += self.get_name_fragments()
+        data.attrs[VAR_LATEX_KEY] = self.get_modified_var_latex(data.attrs[VAR_LATEX_KEY])
         return data
