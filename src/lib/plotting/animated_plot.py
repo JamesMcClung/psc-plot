@@ -1,45 +1,64 @@
 from __future__ import annotations
 
 import typing
+from abc import abstractmethod
+from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
+from matplotlib.animation import FuncAnimation
 from matplotlib.projections.polar import PolarAxes
 
+from lib.data.keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY, VAR_LATEX_KEY
+from lib.dimension import DIMENSIONS
 from lib.parsing.fit import Fit
-
-from .. import plt_util
-from ..data.keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY, VAR_LATEX_KEY
-from ..data.source import DataSource
-from ..dimension import DIMENSIONS
-from .animation_base import Animation
-
-__all__ = ["FieldAnimation"]
+from lib.plotting import plt_util
+from lib.plotting.plot import Plot
 
 
-def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
-    lower = da[dim][0]
-    upper = da[dim][-1] + (da[dim][1] - da[dim][0])
-    return (float(lower), float(upper))
-
-
-class FieldAnimation(Animation):
+class AnimatedPlot(Plot):
     def __init__(
         self,
-        steps: list[int],
-        source: DataSource,
-        scales: list[plt_util.Scale],
+        data: xr.DataArray,
         *,
+        scales: list[plt_util.Scale] = [],
         subplot_kw: dict[str, typing.Any] = {},
     ):
-        self.source = source
-        self.data: xr.DataArray = source.get_data(steps)
+        super().__init__(data)
         self.spatial_dims: list[str] = self.data.attrs[SPATIAL_DIMS_KEY]
         self.time_dim: str = self.data.attrs[TIME_DIM_KEY]
-        nframes = len(self.data.coords[self.time_dim])
         self.scales = scales + ["linear"] * (1 + len(self.spatial_dims) - len(scales))
+        nframes = len(self.data.coords[self.time_dim])
 
-        super().__init__(nframes, subplot_kw=subplot_kw)
+        self.fig, self.ax = plt.subplots(subplot_kw=subplot_kw)
+        self._initialized = False
+
+        # FIXME get blitting to work with the title
+        # note: blitting doesn't seem to affect saved animations, only ones displayed with plt.show
+        self.anim = FuncAnimation(self.fig, self._update_fig, frames=nframes, blit=False)
+
+    @abstractmethod
+    def _init_fig(self): ...
+
+    @abstractmethod
+    def _update_fig(self, frame: int): ...
+
+    def _initialize(self):
+        if not self._initialized:
+            self._init_fig()
+            self._initialized = True
+
+    def show(self):
+        self._initialize()
+        plt.show()
+
+    def _get_save_ext(self):
+        return ".mp4"
+
+    def _save_to_path(self, path: Path):
+        self._initialize()
+        self.anim.save(path)
 
     def _get_data_at_frame(self, frame: int) -> xr.DataArray:
         return self.data.isel({self.time_dim: frame})
@@ -52,23 +71,14 @@ class FieldAnimation(Animation):
         bounds *= 1 + 0.1 * np.array([-float(bounds[0] > 0), float(bounds[1] > 0)])
         return bounds
 
-    @staticmethod
-    def get_animation_type(spatial_dims: list[str]) -> type[FieldAnimation]:
-        if len(spatial_dims) == 1:
-            return FieldAnimation1d
-        elif len(spatial_dims) == 2:
-            if DIMENSIONS[spatial_dims[0]].geometry == "polar:r" and DIMENSIONS[spatial_dims[1]].geometry == "polar:theta":
-                return FieldAnimation2dPolar
-            else:
-                return FieldAnimation2d
-        else:
-            raise NotImplementedError("don't have 3D animations yet")
 
-    def _get_default_save_path(self) -> str:
-        return "-".join(self.source.get_name_fragments()) + ".mp4"
+def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
+    lower = da[dim][0]
+    upper = da[dim][-1] + (da[dim][1] - da[dim][0])
+    return (float(lower), float(upper))
 
 
-class FieldAnimation2d(FieldAnimation):
+class FieldAnimation2d(AnimatedPlot):
     def _init_fig(self):
         data = self._get_data_at_frame(0)
 
@@ -109,16 +119,15 @@ class FieldAnimation2d(FieldAnimation):
         return data
 
 
-class FieldAnimation2dPolar(FieldAnimation):
+class FieldAnimation2dPolar(AnimatedPlot):
     ax: PolarAxes
 
     def __init__(
         self,
-        steps: list[int],
-        source: DataSource,
+        data: xr.DataArray,
         scales: list[plt_util.Scale],
     ):
-        super().__init__(steps, source, scales, subplot_kw={"projection": "polar"})
+        super().__init__(data, scales, subplot_kw={"projection": "polar"})
 
     def _init_fig(self):
         data = self._get_data_at_frame(0)
@@ -159,17 +168,19 @@ class FieldAnimation2dPolar(FieldAnimation):
         return [self.im, self.ax.title]
 
 
-class FieldAnimation1d(FieldAnimation):
+class FieldAnimation1d(AnimatedPlot):
     def __init__(
         self,
-        steps: list[int],
-        source: DataSource,
-        scales: list[plt_util.Scale],
+        data: xr.DataArray,
+        *,
+        scales: list[plt_util.Scale] = [],
+        fits: list[Fit] = [],
+        show_t0: bool = False,
     ):
-        super().__init__(steps, source, scales)
+        super().__init__(data, scales=scales)
 
-        self.fits: list[Fit] = []
-        self.show_t0 = False
+        self.fits = fits
+        self.show_t0 = show_t0
 
     def _init_fig(self):
         data = self._get_data_at_frame(0)

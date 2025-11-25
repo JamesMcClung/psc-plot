@@ -4,7 +4,7 @@ import abc
 import argparse
 
 from .. import file_util
-from ..animation.animation_base import Animation
+from ..plotting.animated_plot import AnimatedPlot
 
 __all__ = ["add_common_arguments", "add_subparsers", "get_subparser_parent", "ArgsTyped", "ArgsUntyped"]
 
@@ -15,7 +15,7 @@ class ArgsTyped(argparse.Namespace, abc.ABC):
     save: bool
 
     @abc.abstractmethod
-    def get_animation(self) -> Animation: ...
+    def get_animation(self) -> AnimatedPlot: ...
 
 
 class ArgsUntyped(argparse.Namespace):

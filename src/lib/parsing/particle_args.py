@@ -1,13 +1,15 @@
 import argparse
 
-from .. import particle_util, plt_util
-from ..animation.field_animation import Animation, FieldAnimation
-from ..data.adaptors import ADAPTORS, Adaptor, Pipeline
-from ..data.adaptors.field_adaptors.versus import Versus
+from lib.data.compile import compile_source
+from lib.plotting.get_plot import get_plot
+
+from .. import particle_util
+from ..data.adaptors import ADAPTORS, Adaptor
 from ..data.particle_loader import ParticleLoader
-from ..data.source import DataSourceWithPipeline
 from ..derived_particle_variables import DERIVED_PARTICLE_VARIABLES
 from ..particle_util import PRT_VARIABLES, PrtVariable
+from ..plotting import plt_util
+from ..plotting.animated_plot import AnimatedPlot
 from . import args_base
 
 __all__ = ["add_particle_subparsers", "ParticleArgs"]
@@ -18,33 +20,14 @@ class ParticleArgs(args_base.ArgsTyped):
     adaptors: list[Adaptor]
     scales: list[plt_util.Scale]
 
-    def get_animation(self) -> Animation:
+    def get_animation(self) -> AnimatedPlot:
         steps = particle_util.get_available_particle_steps(self.prefix)
 
-        spatial_dims = ["y", "z"]
-        time_dim: str = "t"
-        for adaptor in self.adaptors:
-            if isinstance(adaptor, Versus):
-                spatial_dims = adaptor.spatial_dims
-                time_dim = adaptor.time_dim
-                break
-        else:
-            self.adaptors.append(Versus(spatial_dims, time_dim))
+        loader = ParticleLoader(self.prefix, list(self.axis_variables), steps)
+        source = compile_source(loader, self.adaptors)
+        data = source.get_data()
 
-        loader = ParticleLoader(self.prefix, list(self.axis_variables))
-        pipeline = Pipeline(*self.adaptors)
-        source = DataSourceWithPipeline(loader, pipeline)
-
-        FieldAnimation.get_animation_type(spatial_dims)
-
-        if time_dim:
-            AnimationType = FieldAnimation.get_animation_type(spatial_dims)
-            anim = AnimationType(steps, source, self.scales)
-        else:
-            # TODO use an argparse exception type
-            raise Exception("non-animated plots not supported yet")
-
-        return anim
+        return get_plot(data, scales=self.scales)
 
 
 def add_particle_subparsers(subparsers: argparse._SubParsersAction):

@@ -2,7 +2,7 @@ import xarray as xr
 
 from .. import field_util, file_util
 from ..derived_field_variables import derive_field_variable
-from .keys import VAR_LATEX_KEY
+from .keys import NAME_FRAGMENTS_KEY, VAR_LATEX_KEY
 from .source import DataSource
 
 
@@ -15,16 +15,15 @@ def _load_field_variable(prefix: file_util.FieldPrefix, step: int, var_name: str
 
 
 class FieldLoader(DataSource):
-    def __init__(self, prefix: file_util.FieldPrefix, var_name: str):
+    def __init__(self, prefix: file_util.FieldPrefix, var_name: str, steps: list[int]):
         self.prefix = prefix
         self.var_name = var_name
+        self.steps = steps
 
-    def get_data_at_step(self, step: int) -> xr.DataArray:
-        return _load_field_variable(self.prefix, step, self.var_name)
-
-    def get_data(self, steps: list[int]) -> xr.DataArray:
-        da = xr.concat((self.get_data_at_step(step) for step in steps), "t")
+    def get_data(self) -> xr.DataArray:
+        da = xr.concat((_load_field_variable(self.prefix, step, self.var_name) for step in self.steps), "t")
         da.attrs[VAR_LATEX_KEY] = f"\\text{{{self.var_name}}}"
+        da.attrs[NAME_FRAGMENTS_KEY] = self.get_name_fragments()
         return da
 
     def get_file_prefix(self) -> str:

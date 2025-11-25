@@ -34,7 +34,7 @@ class Bin(AtomicAdaptor):
         )
 
     def get_name_fragments(self) -> list[str]:
-        subfrags = "_".join(f"{varname}={nbins}" if nbins else varname for varname, nbins in self.varname_to_nbins)
+        subfrags = "_".join(f"{varname}={nbins}" if nbins else varname for varname, nbins in self.varname_to_nbins.items())
         return [f"bin_{subfrags}"]
 
 

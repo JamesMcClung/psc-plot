@@ -1,13 +1,15 @@
 import argparse
 import typing
 
-from .. import field_util, plt_util
-from ..animation.field_animation import Animation, FieldAnimation, FieldAnimation1d
-from ..data.adaptors import ADAPTORS, Adaptor, Pipeline
-from ..data.adaptors.field_adaptors.versus import Versus
+from lib.data.compile import compile_source
+from lib.plotting.get_plot import get_plot
+
+from .. import field_util
+from ..data.adaptors import ADAPTORS, Adaptor
 from ..data.field_loader import FieldLoader
-from ..data.source import DataSourceWithPipeline
 from ..file_util import FIELD_PREFIXES
+from ..plotting import plt_util
+from ..plotting.animated_plot import AnimatedPlot, FieldAnimation1d
 from . import args_base
 from .fit import Fit
 
@@ -24,29 +26,14 @@ class FieldArgs(args_base.ArgsTyped):
     fits: list[Fit]  # 1d only
     show_t0: bool  # 1d only
 
-    def get_animation(self) -> Animation:
+    def get_animation(self) -> AnimatedPlot:
         steps = field_util.get_available_field_steps(self.prefix)
 
-        spatial_dims = ["y", "z"]
-        time_dim: str = "t"
-        for adaptor in self.adaptors:
-            if isinstance(adaptor, Versus):
-                spatial_dims = adaptor.spatial_dims
-                time_dim = adaptor.time_dim
-                break
-        else:
-            self.adaptors.append(Versus(spatial_dims, time_dim))
+        loader = FieldLoader(self.prefix, self.variable, steps)
+        source = compile_source(loader, self.adaptors)
+        data = source.get_data()
 
-        loader = FieldLoader(self.prefix, self.variable)
-        pipeline = Pipeline(*self.adaptors)
-        source = DataSourceWithPipeline(loader, pipeline)
-
-        if time_dim:
-            AnimationType = FieldAnimation.get_animation_type(spatial_dims)
-            anim = AnimationType(steps, source, self.scales)
-        else:
-            # TODO use an argparse exception type
-            raise Exception("non-animated plots not supported yet")
+        anim = get_plot(data, scales=self.scales)
 
         if isinstance(anim, FieldAnimation1d):
             anim.add_fits(self.fits)
