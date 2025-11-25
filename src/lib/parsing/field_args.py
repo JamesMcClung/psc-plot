@@ -1,12 +1,12 @@
 import argparse
 import typing
 
+from lib.data.compile import compile_source
+
 from .. import field_util, plt_util
 from ..animation.field_animation import Animation, FieldAnimation, FieldAnimation1d
-from ..data.adaptors import ADAPTORS, Adaptor, Pipeline
-from ..data.adaptors.field_adaptors.versus import Versus
+from ..data.adaptors import ADAPTORS, Adaptor
 from ..data.field_loader import FieldLoader
-from ..data.source import DataSourceWithPipeline
 from ..file_util import FIELD_PREFIXES
 from . import args_base
 from .fit import Fit
@@ -27,27 +27,11 @@ class FieldArgs(args_base.ArgsTyped):
     def get_animation(self) -> Animation:
         steps = field_util.get_available_field_steps(self.prefix)
 
-        spatial_dims = ["y", "z"]
-        time_dim: str = "t"
-        for adaptor in self.adaptors:
-            if isinstance(adaptor, Versus):
-                spatial_dims = adaptor.spatial_dims
-                time_dim = adaptor.time_dim
-                break
-        else:
-            self.adaptors.append(Versus(spatial_dims, time_dim))
-
         loader = FieldLoader(self.prefix, self.variable)
-        pipeline = Pipeline(*self.adaptors)
-        source = DataSourceWithPipeline(loader, pipeline)
+        source = compile_source(loader, self.adaptors)
         data = source.get_data(steps)
 
-        if time_dim:
-            AnimationType = FieldAnimation.get_animation_type(data)
-            anim = AnimationType(source, data, self.scales)
-        else:
-            # TODO use an argparse exception type
-            raise Exception("non-animated plots not supported yet")
+        anim = FieldAnimation.get_animation_type(data)(source, data, self.scales)
 
         if isinstance(anim, FieldAnimation1d):
             anim.add_fits(self.fits)
