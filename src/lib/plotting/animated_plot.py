@@ -10,10 +10,10 @@ import xarray as xr
 from matplotlib.animation import FuncAnimation
 from matplotlib.projections.polar import PolarAxes
 
-from lib import plt_util
 from lib.data.keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY, VAR_LATEX_KEY
 from lib.dimension import DIMENSIONS
 from lib.parsing.fit import Fit
+from lib.plotting import plt_util
 from lib.plotting.plot import Plot
 
 
