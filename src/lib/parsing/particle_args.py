@@ -34,12 +34,13 @@ class ParticleArgs(args_base.ArgsTyped):
         loader = ParticleLoader(self.prefix, list(self.axis_variables))
         pipeline = Pipeline(*self.adaptors)
         source = DataSourceWithPipeline(loader, pipeline)
+        data = source.get_data(steps)
 
         FieldAnimation.get_animation_type(spatial_dims)
 
         if time_dim:
             AnimationType = FieldAnimation.get_animation_type(spatial_dims)
-            anim = AnimationType(steps, source, self.scales)
+            anim = AnimationType(source, data, self.scales)
         else:
             # TODO use an argparse exception type
             raise Exception("non-animated plots not supported yet")

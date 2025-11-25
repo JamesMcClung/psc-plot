@@ -26,14 +26,14 @@ def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
 class FieldAnimation(Animation):
     def __init__(
         self,
-        steps: list[int],
         source: DataSource,
+        data: xr.DataArray,
         scales: list[plt_util.Scale],
         *,
         subplot_kw: dict[str, typing.Any] = {},
     ):
         self.source = source
-        self.data: xr.DataArray = source.get_data(steps)
+        self.data = data
         self.spatial_dims: list[str] = self.data.attrs[SPATIAL_DIMS_KEY]
         self.time_dim: str = self.data.attrs[TIME_DIM_KEY]
         nframes = len(self.data.coords[self.time_dim])
@@ -114,11 +114,11 @@ class FieldAnimation2dPolar(FieldAnimation):
 
     def __init__(
         self,
-        steps: list[int],
         source: DataSource,
+        data: xr.DataArray,
         scales: list[plt_util.Scale],
     ):
-        super().__init__(steps, source, scales, subplot_kw={"projection": "polar"})
+        super().__init__(source, data, scales, subplot_kw={"projection": "polar"})
 
     def _init_fig(self):
         data = self._get_data_at_frame(0)
@@ -162,11 +162,11 @@ class FieldAnimation2dPolar(FieldAnimation):
 class FieldAnimation1d(FieldAnimation):
     def __init__(
         self,
-        steps: list[int],
         source: DataSource,
+        data: xr.DataArray,
         scales: list[plt_util.Scale],
     ):
-        super().__init__(steps, source, scales)
+        super().__init__(source, data, scales)
 
         self.fits: list[Fit] = []
         self.show_t0 = False
