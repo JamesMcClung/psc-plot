@@ -54,6 +54,10 @@ class FieldAnimation(Animation):
 
     @staticmethod
     def get_animation_type(data: xr.DataArray) -> type[FieldAnimation]:
+        if not data.attrs[TIME_DIM_KEY]:
+            # TODO use an argparse exception type
+            raise Exception("non-animated plots not supported yet")
+
         spatial_dims = data.attrs[SPATIAL_DIMS_KEY]
         if len(spatial_dims) == 1:
             return FieldAnimation1d
