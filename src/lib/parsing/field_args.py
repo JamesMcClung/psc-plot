@@ -1,10 +1,11 @@
 import argparse
 import typing
 
+from lib.animation.get_plot import get_plot
 from lib.data.compile import compile_source
 
 from .. import field_util, plt_util
-from ..animation.field_animation import AnimatedPlot, FieldAnimation, FieldAnimation1d
+from ..animation.field_animation import AnimatedPlot, FieldAnimation1d
 from ..data.adaptors import ADAPTORS, Adaptor
 from ..data.field_loader import FieldLoader
 from ..file_util import FIELD_PREFIXES
@@ -31,7 +32,7 @@ class FieldArgs(args_base.ArgsTyped):
         source = compile_source(loader, self.adaptors)
         data = source.get_data()
 
-        anim = FieldAnimation.get_animation_type(data)(data, self.scales)
+        anim = get_plot(data, scales=self.scales)
 
         if isinstance(anim, FieldAnimation1d):
             anim.add_fits(self.fits)

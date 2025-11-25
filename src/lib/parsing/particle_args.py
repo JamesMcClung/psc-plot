@@ -1,5 +1,6 @@
 import argparse
 
+from lib.animation.get_plot import get_plot
 from lib.data.compile import compile_source
 
 from .. import particle_util, plt_util
@@ -25,9 +26,7 @@ class ParticleArgs(args_base.ArgsTyped):
         source = compile_source(loader, self.adaptors)
         data = source.get_data()
 
-        anim = FieldAnimation.get_animation_type(data)(data, self.scales)
-
-        return anim
+        return get_plot(data, scales=self.scales)
 
 
 def add_particle_subparsers(subparsers: argparse._SubParsersAction):

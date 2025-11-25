@@ -45,23 +45,6 @@ class FieldAnimation(AnimatedPlot):
         bounds *= 1 + 0.1 * np.array([-float(bounds[0] > 0), float(bounds[1] > 0)])
         return bounds
 
-    @staticmethod
-    def get_animation_type(data: xr.DataArray) -> type[FieldAnimation]:
-        if not data.attrs[TIME_DIM_KEY]:
-            # TODO use an argparse exception type
-            raise Exception("non-animated plots not supported yet")
-
-        spatial_dims = data.attrs[SPATIAL_DIMS_KEY]
-        if len(spatial_dims) == 1:
-            return FieldAnimation1d
-        elif len(spatial_dims) == 2:
-            if DIMENSIONS[spatial_dims[0]].geometry == "polar:r" and DIMENSIONS[spatial_dims[1]].geometry == "polar:theta":
-                return FieldAnimation2dPolar
-            else:
-                return FieldAnimation2d
-        else:
-            raise NotImplementedError("don't have 3D animations yet")
-
 
 class FieldAnimation2d(FieldAnimation):
     def _init_fig(self):
