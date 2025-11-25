@@ -53,7 +53,8 @@ class FieldAnimation(Animation):
         return bounds
 
     @staticmethod
-    def get_animation_type(spatial_dims: list[str]) -> type[FieldAnimation]:
+    def get_animation_type(data: xr.DataArray) -> type[FieldAnimation]:
+        spatial_dims = data.attrs[SPATIAL_DIMS_KEY]
         if len(spatial_dims) == 1:
             return FieldAnimation1d
         elif len(spatial_dims) == 2:

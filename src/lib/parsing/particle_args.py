@@ -37,7 +37,7 @@ class ParticleArgs(args_base.ArgsTyped):
         data = source.get_data(steps)
 
         if time_dim:
-            AnimationType = FieldAnimation.get_animation_type(spatial_dims)
+            AnimationType = FieldAnimation.get_animation_type(data)
             anim = AnimationType(source, data, self.scales)
         else:
             # TODO use an argparse exception type
