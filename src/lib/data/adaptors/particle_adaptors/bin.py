@@ -2,16 +2,16 @@ import dask.array as da
 import dask.dataframe as dd
 import xarray as xr
 
-from ...adaptor import Adaptor
+from ...adaptor import AtomicAdaptor
 from .. import parse_util
 from ..registry import adaptor_parser
 
 
-class Bin(Adaptor):
+class Bin(AtomicAdaptor):
     def __init__(self, varname_to_nbins: dict[str, int | None]):
         self.varname_to_nbins = varname_to_nbins
 
-    def apply(self, df: dd.DataFrame) -> xr.DataArray:
+    def apply_atomic(self, df: dd.DataFrame) -> xr.DataArray:
         mins = [df[var_name].min() for var_name in self.varname_to_nbins]
         maxs = [df[var_name].max() for var_name in self.varname_to_nbins]
 
@@ -25,7 +25,7 @@ class Bin(Adaptor):
             weights=df["w"].to_dask_array(),
         )
 
-        coords = dict(zip(self.varname_to_nbins.keys(), ((edge[1:] + edge[:-1]) / 2.0 for edge in edges)))
+        coords = dict(zip(self.varname_to_nbins.keys(), (edge[:-1] for edge in edges)))
 
         return xr.DataArray(
             binned_data.compute(),
@@ -64,7 +64,7 @@ def parse_slice(args: list[str]) -> Bin:
 
         [var_name, nbins_arg] = split_arg
 
-        parse_util.check_valid_identifier(var_name, "var_name")
+        parse_util.check_identifier(var_name, "var_name")
         nbins = parse_util.parse_optional_number(nbins_arg, "nbins", int)
 
         varname_to_nbins[var_name] = nbins

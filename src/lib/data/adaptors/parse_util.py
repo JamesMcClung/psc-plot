@@ -3,6 +3,10 @@ import re
 import typing
 
 
+def _is_identifier(val: str) -> bool:
+    return re.match(r"^\w[\d\w]*$", val)
+
+
 def fail_format(arg: str, format: str):
     raise argparse.ArgumentTypeError(f"Expected value of form '{format}'; got '{arg}'")
 
@@ -12,9 +16,14 @@ def check_value[T](val: T, val_name: str, valid_options: typing.Container[T]):
         raise argparse.ArgumentTypeError(f"Expected {val_name} to be one of {set(valid_options)}; got '{val}'")
 
 
-def check_valid_identifier(val: str, val_name: str):
-    if not re.match(r"^\w[\d\w]*$", val):
-        raise argparse.ArgumentTypeError(f"Expected {val_name} to be a valid identifier; got '{val}'")
+def check_identifier(val: str, val_name: str):
+    if not _is_identifier(val):
+        raise argparse.ArgumentTypeError(f"Expected {val_name} to be an identifier; got '{val}'")
+
+
+def check_optional_identifier(val: str | None, val_name: str):
+    if val and not _is_identifier(val):
+        raise argparse.ArgumentTypeError(f"Expected {val_name} to be an identifier or ''; got '{val}'")
 
 
 def check_order[T](lower: T | None, upper: T | None, lower_name: str, upper_name: str):

@@ -9,6 +9,7 @@ from matplotlib.projections.polar import PolarAxes
 from lib.parsing.fit import Fit
 
 from .. import plt_util
+from ..data.keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY, VAR_LATEX_KEY
 from ..data.source import DataSource
 from ..dimension import DIMENSIONS
 from .animation_base import Animation
@@ -27,31 +28,24 @@ class FieldAnimation(Animation):
         self,
         steps: list[int],
         source: DataSource,
-        time_dim: str,
-        spatial_dims: list[str],
+        scales: list[plt_util.Scale],
         *,
         subplot_kw: dict[str, typing.Any] = {},
     ):
         self.source = source
-        self.time_dim = time_dim
-        self.spatial_dims = spatial_dims
-        self.data = source.get_data(steps)
-        nframes = len(self.data.coords[time_dim])
+        self.data: xr.DataArray = source.get_data(steps)
+        self.spatial_dims: list[str] = self.data.attrs[SPATIAL_DIMS_KEY]
+        self.time_dim: str = self.data.attrs[TIME_DIM_KEY]
+        nframes = len(self.data.coords[self.time_dim])
+        self.scales = scales + ["linear"] * (1 + len(self.spatial_dims) - len(scales))
 
         super().__init__(nframes, subplot_kw=subplot_kw)
-
-        self.indep_scale: plt_util.Scale = "linear"
-        self.dep_scale: plt_util.Scale = "linear"
-
-    def set_scale(self, indep_scale: plt_util.Scale, dep_scale: plt_util.Scale):
-        self.indep_scale = indep_scale
-        self.dep_scale = dep_scale
 
     def _get_data_at_frame(self, frame: int) -> xr.DataArray:
         return self.data.isel({self.time_dim: frame})
 
     def _get_var_bounds(self) -> tuple[float, float]:
-        if self.dep_scale == "log":
+        if self.scales[0] == "log":
             return np.exp(np.nanquantile(np.log(self.data), [0.5, 1])) * [0.1, 1.1]
 
         bounds = np.nanquantile(self.data, [0, 1])
@@ -79,21 +73,21 @@ class FieldAnimation2d(FieldAnimation):
         data = self._get_data_at_frame(0)
 
         # must set scale (log, linear) before making image
-        self.ax.set_xscale(self.indep_scale)
-        self.ax.set_yscale(self.indep_scale)
+        self.ax.set_xscale(self.scales[1])
+        self.ax.set_yscale(self.scales[2])
 
         self.im = self.ax.imshow(
-            data.T,
+            data,
             origin="lower",
             extent=(*get_extent(data, self.spatial_dims[0]), *get_extent(data, self.spatial_dims[1])),
-            norm=self.dep_scale,
+            norm=self.scales[0],
         )
 
         self.fig.colorbar(self.im)
         data_lower, data_upper = self._get_var_bounds()
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
-        plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
 
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
@@ -104,10 +98,15 @@ class FieldAnimation2d(FieldAnimation):
     def _update_fig(self, frame: int):
         data = self._get_data_at_frame(frame)
 
-        self.im.set_array(data.T)
+        self.im.set_array(data)
 
-        plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
         return [self.im, self.ax.title]
+
+    def _get_data_at_frame(self, frame: int) -> xr.DataArray:
+        data = super()._get_data_at_frame(frame)
+        data = data.transpose(*reversed(self.spatial_dims))
+        return data
 
 
 class FieldAnimation2dPolar(FieldAnimation):
@@ -117,17 +116,15 @@ class FieldAnimation2dPolar(FieldAnimation):
         self,
         steps: list[int],
         source: DataSource,
-        time_dim: str,
-        spatial_dims: list[str],
+        scales: list[plt_util.Scale],
     ):
-        super().__init__(steps, source, time_dim, spatial_dims, subplot_kw={"projection": "polar"})
+        super().__init__(steps, source, scales, subplot_kw={"projection": "polar"})
 
     def _init_fig(self):
         data = self._get_data_at_frame(0)
 
-        # must set scale (log, linear) before making image
-        if self.indep_scale == "log":
-            self.ax.set_rscale("symlog")
+        # must set scale before making image
+        self.ax.set_rscale(self.scales[1])
 
         vertices_theta = np.concat((data.coords[self.spatial_dims[1]].data, [2 * np.pi]))
         vertices_theta -= vertices_theta[1] / 2
@@ -138,14 +135,14 @@ class FieldAnimation2dPolar(FieldAnimation):
             *np.meshgrid(vertices_theta, vertices_r),
             data,
             shading="flat",
-            norm=self.dep_scale,
+            norm=self.scales[0],
         )
 
         self.fig.colorbar(self.im)
         data_lower, data_upper = self._get_var_bounds()
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
-        plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
 
         # FIXME make the labels work
         # self.ax.set_xlabel(DIMENSIONS[self.dims[1]].to_axis_label())
@@ -158,7 +155,7 @@ class FieldAnimation2dPolar(FieldAnimation):
 
         self.im.set_array(data)
 
-        plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
         return [self.im, self.ax.title]
 
 
@@ -167,10 +164,9 @@ class FieldAnimation1d(FieldAnimation):
         self,
         steps: list[int],
         source: DataSource,
-        time_dim: str,
-        spatial_dims: list[str],
+        scales: list[plt_util.Scale],
     ):
-        super().__init__(steps, source, time_dim, spatial_dims)
+        super().__init__(steps, source, scales)
 
         self.fits: list[Fit] = []
         self.show_t0 = False
@@ -190,12 +186,12 @@ class FieldAnimation1d(FieldAnimation):
 
         [self.line] = self.ax.plot(xdata, data, line_type)
 
-        plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
-        self.ax.set_ylabel(f"${self.source.get_modified_var_name()}$")
+        self.ax.set_ylabel(f"${data.attrs[VAR_LATEX_KEY]}$")
 
-        self.ax.set_xscale(self.indep_scale)
-        self.ax.set_yscale(self.dep_scale)
+        self.ax.set_xscale(self.scales[1])
+        self.ax.set_yscale(self.scales[0])
 
         self.fit_lines = [fit.plot_fit(self.ax, data) for fit in self.fits]
 
@@ -218,7 +214,7 @@ class FieldAnimation1d(FieldAnimation):
             # updates legend in case fit labels changed (e.g. to show different fit params)
             self.ax.legend()
 
-        plt_util.update_title(self.ax, self.source.get_modified_var_name(), DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
         return [self.line, self.ax.yaxis, self.ax.title]
 
     def _update_ybounds(self):

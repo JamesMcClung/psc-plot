@@ -1,18 +1,18 @@
 import dask.dataframe as dd
 
 from ....particle_util import PRT_VARIABLES
-from ...adaptor import Adaptor
+from ...adaptor import AtomicAdaptor
 from .. import parse_util
 from ..registry import adaptor_parser
 
 
-class Slice(Adaptor):
+class Slice(AtomicAdaptor):
     def __init__(self, var_name: str, lower_inclusive: float | None, upper_exclusive: float | None):
         self.var_name = var_name
         self.lower_inclusive = lower_inclusive
         self.upper_exclusive = upper_exclusive
 
-    def apply(self, df: dd.DataFrame) -> dd.DataFrame:
+    def apply_atomic(self, df: dd.DataFrame) -> dd.DataFrame:
         if self.lower_inclusive is not None:
             df = df[df[self.var_name] >= self.lower_inclusive]
         if self.upper_exclusive is not None:

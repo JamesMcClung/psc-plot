@@ -1,11 +1,8 @@
 import argparse
 import typing
 
-import xarray as xr
-
-from .. import field_util
-from ..animation import Animation, FieldAnimation
-from ..animation.field_animation import FieldAnimation1d
+from .. import field_util, plt_util
+from ..animation.field_animation import Animation, FieldAnimation, FieldAnimation1d
 from ..data.adaptors import ADAPTORS, Adaptor, Pipeline
 from ..data.adaptors.field_adaptors.versus import Versus
 from ..data.field_loader import FieldLoader
@@ -22,7 +19,7 @@ SCALES: list[Scale] = list(Scale.__value__.__args__)
 
 class FieldArgs(args_base.ArgsTyped):
     variable: str
-    scale: Scale
+    scales: list[plt_util.Scale]
     adaptors: list[Adaptor]
     fits: list[Fit]  # 1d only
     show_t0: bool  # 1d only
@@ -46,7 +43,7 @@ class FieldArgs(args_base.ArgsTyped):
 
         if time_dim:
             AnimationType = FieldAnimation.get_animation_type(spatial_dims)
-            anim = AnimationType(steps, source, time_dim, spatial_dims)
+            anim = AnimationType(steps, source, self.scales)
         else:
             # TODO use an argparse exception type
             raise Exception("non-animated plots not supported yet")
@@ -61,13 +58,6 @@ class FieldArgs(args_base.ArgsTyped):
             # TODO use an argparse exception type
             raise Exception("show t=0 not supported on higher-dimensional data")
 
-        if self.scale == "linear":
-            anim.set_scale("linear", "linear")
-        elif self.scale == "log":
-            anim.set_scale("linear", "log")
-        elif self.scale == "loglog":
-            anim.set_scale("log", "log")
-
         return anim
 
 
@@ -80,9 +70,11 @@ def add_field_subparsers(subparsers: argparse._SubParsersAction):
 
     parent.add_argument(
         "--scale",
-        choices=SCALES,
-        default="linear",
-        help="use this scale",
+        choices=plt_util.SCALES,
+        nargs="+",
+        default=[],
+        dest="scales",
+        help="linear or logarithmic scale for dependent variable and axes, in that order (default: linear)",
     )
 
     parent.add_argument(

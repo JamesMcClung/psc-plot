@@ -3,7 +3,7 @@ import xarray as xr
 import xrft
 
 from ....dimension import DIMENSIONS, Dimension
-from ...adaptor import Adaptor
+from ...adaptor import AtomicAdaptor
 from .. import parse_util
 from ..registry import adaptor_parser
 
@@ -26,13 +26,13 @@ def toggle_fourier(da: xr.DataArray, dim: Dimension) -> xr.DataArray:
     return da
 
 
-class Fourier(Adaptor):
+class Fourier(AtomicAdaptor):
     def __init__(self, dims: Dimension | list[Dimension]):
         if isinstance(dims, Dimension):
             dims = [dims]
         self.dims = dims
 
-    def apply(self, da: xr.DataArray) -> xr.DataArray:
+    def apply_atomic(self, da: xr.DataArray) -> xr.DataArray:
         for dim in self.dims:
             da = toggle_fourier(da, dim)
 
@@ -42,9 +42,9 @@ class Fourier(Adaptor):
         dim_names = ",".join(dim.name.plain for dim in self.dims)
         return [f"fourier_{dim_names}"]
 
-    def get_modified_var_name(self, title_stem: str) -> str:
+    def get_modified_var_latex(self, var_latex: str) -> str:
         dim_latexs = ",".join(dim.name.latex for dim in self.dims)
-        return f"\\mathcal{{F}}_{{{dim_latexs}}}[{title_stem}]"
+        return f"\\mathcal{{F}}_{{{dim_latexs}}}[{var_latex}]"
 
 
 FOURIER_FORMAT = "dim_name"

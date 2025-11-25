@@ -1,21 +1,25 @@
 import dask.dataframe as dd
 
 from ....particle_util import SPECIES, Species
-from ...adaptor import Adaptor
+from ...adaptor import AtomicAdaptor
 from .. import parse_util
 from ..registry import adaptor_parser
 
 
-class SpeciesFilter(Adaptor):
+class SpeciesFilter(AtomicAdaptor):
     def __init__(self, species: Species):
         self.species = species
 
-    def apply(self, df: dd.DataFrame) -> dd.DataFrame:
+    def apply_atomic(self, df: dd.DataFrame) -> dd.DataFrame:
         if self.species == "electron":
             df = df[df["q"] < 0]
         elif self.species == "ion":
             df = df[df["q"] > 0]
         return df
+
+    def get_modified_var_latex(self, var_latex: str) -> str:
+        subscript = self.species[0]
+        return f"{{{var_latex}}}_{subscript}"
 
     def get_name_fragments(self) -> list[str]:
         return [self.species]

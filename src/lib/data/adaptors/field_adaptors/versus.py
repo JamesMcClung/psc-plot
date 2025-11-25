@@ -2,6 +2,8 @@ import xarray as xr
 
 from ....dimension import DIMENSIONS
 from ...adaptor import Adaptor
+from ...compatability import ensure_type
+from ...keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY
 from .. import parse_util
 from ..registry import adaptor_parser
 from .fourier import Fourier
@@ -13,51 +15,38 @@ class Versus(Adaptor):
         self.spatial_dims = spatial_dims
         self.time_dim = time_dim
         self.all_dims = spatial_dims + ([time_dim] if time_dim else [])
-        self.cached_inner_adaptors: list[Adaptor] | None = None
 
     def apply(self, da: xr.DataArray) -> xr.DataArray:
-        if self.cached_inner_adaptors is None:
-            self.cached_inner_adaptors = []
-            # 1. apply implicit coordinate transforms, as necessary
-            for dim_name in self.all_dims:
-                # 1a. already have the coordinate; do nothing
-                if dim_name in da.dims:
-                    continue
+        ensure_type(self.__class__.__name__, da, xr.DataArray)
 
-                # 1b. need to do a Fourier transform
-                dim = DIMENSIONS[dim_name]
-                f_dim = dim.toggle_fourier()
-                if f_dim.name.plain in da.dims:
-                    fourier = Fourier(f_dim)
-                    self.cached_inner_adaptors.append(fourier)
-                    da = fourier.apply(da)
-                    continue
+        # 1. apply implicit coordinate transforms, as necessary
+        for dim_name in self.all_dims:
+            # 1a. already have the coordinate; do nothing
+            if dim_name in da.dims:
+                continue
 
-                # 1c. need to do a coordinate transform
-                # TODO
+            # 1b. need to do a Fourier transform
+            dim = DIMENSIONS[dim_name]
+            f_dim = dim.toggle_fourier()
+            if f_dim.name.plain in da.dims:
+                fourier = Fourier(f_dim)
+                da = fourier.apply(da)
+                continue
 
-            # 2. reduce remaining dimensions via arithmetic mean
-            for dim_name in da.dims:
-                if dim_name not in self.all_dims:
-                    reduce = Reduce(dim_name, "mean")
-                    self.cached_inner_adaptors.append(reduce)
-                    da = reduce.apply(da)
-        else:
-            for adaptor in self.cached_inner_adaptors:
-                da = adaptor.apply(da)
+            # 1c. need to do a coordinate transform
+            # TODO
 
-        # 3. transpose to correct dimension order
-        da = da.transpose(*self.all_dims)
+        # 2. reduce remaining dimensions via arithmetic mean
+        for dim_name in da.dims:
+            if dim_name not in self.all_dims:
+                reduce = Reduce(dim_name, "mean")
+                da = reduce.apply(da)
+
+        # let the animator take it from here
+        da.attrs[SPATIAL_DIMS_KEY] = self.spatial_dims
+        da.attrs[TIME_DIM_KEY] = self.time_dim
 
         return da
-
-    def get_modified_var_name(self, dep_var_name):
-        assert self.cached_inner_adaptors is not None, "can't modify dep var name—don't know what inner adaptors are required yet"
-
-        for p in self.cached_inner_adaptors:
-            dep_var_name = p.get_modified_var_name(dep_var_name)
-
-        return dep_var_name
 
     def get_name_fragments(self) -> list[str]:
         # don't include inner adaptors because they can be inferred
@@ -83,12 +72,10 @@ def parse_versus(args: list[str]) -> Versus:
     time_dim = "t"
     for arg in args:
         if arg.startswith(_TIME_PREFIX):
-            time_dim = arg.removeprefix(_TIME_PREFIX)
-            parse_util.check_value(time_dim, "time dim_name", list(DIMENSIONS) + [""])
-            if time_dim == "":
-                time_dim = None
+            time_dim = arg.removeprefix(_TIME_PREFIX) or None
+            parse_util.check_optional_identifier(time_dim, "time dim_name")
         else:
-            parse_util.check_value(arg, "dim_name", DIMENSIONS)
+            parse_util.check_identifier(arg, "dim_name")
             spatial_dims.append(arg)
 
     return Versus(spatial_dims, time_dim)

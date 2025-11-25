@@ -1,16 +1,12 @@
-import inspect
+import typing
 from abc import abstractmethod
 
-from .compatability import ProducesData, require_compatible
 from .pipeline import Pipeline
 
 
-class DataSource(ProducesData):
+class DataSource:
     @abstractmethod
-    def get_data(self, steps: list[int]): ...
-
-    def get_output_data_type(self) -> type:
-        return inspect.signature(self.get_data).return_annotation
+    def get_data(self, steps: list[int]) -> typing.Any: ...
 
     @abstractmethod
     def get_file_prefix(self) -> str:
@@ -19,10 +15,6 @@ class DataSource(ProducesData):
     @abstractmethod
     def get_var_name(self) -> str:
         """The plain-text name of the original, dependent variable"""
-
-    @abstractmethod
-    def get_modified_var_name(self) -> str:
-        """The latex-formatted name (including applied formulae) of the dependent variable"""
 
     @abstractmethod
     def get_name_fragments(self) -> list[str]:
@@ -34,24 +26,16 @@ class DataSourceWithPipeline(DataSource):
         self.source = source
         self.pipeline = pipeline
 
-        require_compatible(self.source, self.pipeline)
-
-    def get_data(self, steps: list[int]):
+    def get_data(self, steps: list[int]) -> typing.Any:
         da = self.source.get_data(steps)
         da = self.pipeline.apply(da)
         return da
-
-    def get_output_data_type(self) -> type:
-        return self.pipeline.get_output_data_type()
 
     def get_file_prefix(self) -> str:
         return self.source.get_file_prefix()
 
     def get_var_name(self) -> str:
         return self.source.get_var_name()
-
-    def get_modified_var_name(self) -> str:
-        return self.pipeline.get_modified_var_name(self.source.get_modified_var_name())
 
     def get_name_fragments(self) -> list[str]:
         return self.source.get_name_fragments() + self.pipeline.get_name_fragments()

@@ -4,16 +4,16 @@ import numpy as np
 import xarray as xr
 
 from ....dimension import DIMENSIONS, CartesianToPolar
-from ...adaptor import Adaptor
+from ...adaptor import AtomicAdaptor
 from .. import parse_util
 from ..registry import adaptor_parser
 
 
-class TransformPolar(Adaptor):
+class TransformPolar(AtomicAdaptor):
     def __init__(self, transform: CartesianToPolar):
         self.transform = transform
 
-    def apply(self, da: xr.DataArray) -> xr.DataArray:
+    def apply_atomic(self, da: xr.DataArray) -> xr.DataArray:
         name_x = self.transform.dim_x.name.plain
         name_y = self.transform.dim_y.name.plain
         name_r = self.transform.dim_r.name.plain
@@ -52,7 +52,7 @@ class TransformPolar(Adaptor):
         return da
 
     def get_name_fragments(self) -> list[str]:
-        return ["polar_{self.transform.dim_x.name.plain},{self.transform.dim_y.name.plain}"]
+        return [f"polar_{self.transform.dim_x.name.plain},{self.transform.dim_y.name.plain}"]
 
 
 _POLAR_FORMAT = ("dim_1", "dim_2")

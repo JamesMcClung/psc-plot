@@ -12,6 +12,7 @@ from .latex import Latex
 INVERSE_ELECTRON_PLASMA_FREQUENCY = Latex("\\omega_\\text{pe}^{-1}")
 ELECTRON_SKIN_DEPTH = Latex("d_\\text{e}")
 RADIAN = Latex("\\text{rad}")
+SPEED_OF_LIGHT = Latex("c")
 
 FOURIER_NAME_PREFIX = "k_"
 
@@ -47,8 +48,8 @@ class Dimension:
     def is_fourier(self) -> bool:
         return self.name.starts_with(FOURIER_NAME_PREFIX)
 
-    def register(self) -> typing.Self:
-        DIMENSIONS[self.name.plain] = self
+    def register(self, id: str | None = None) -> typing.Self:
+        DIMENSIONS[id or self.name.plain] = self
         return self
 
 
@@ -122,6 +123,9 @@ Dimension(Latex("x"), ELECTRON_SKIN_DEPTH, "cartesian").register()
 Dimension(Latex("y"), ELECTRON_SKIN_DEPTH, "cartesian").register()
 Dimension(Latex("z"), ELECTRON_SKIN_DEPTH, "cartesian").register()
 Dimension(Latex("t"), INVERSE_ELECTRON_PLASMA_FREQUENCY, "temporal").register()
+Dimension(Latex("\\gamma v_x"), SPEED_OF_LIGHT, "cartesian").register("px")
+Dimension(Latex("\\gamma v_y"), SPEED_OF_LIGHT, "cartesian").register("py")
+Dimension(Latex("\\gamma v_z"), SPEED_OF_LIGHT, "cartesian").register("pz")
 
 for dim in ["x", "y", "z"]:
     DIMENSIONS[dim].toggle_fourier().register()
