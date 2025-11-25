@@ -39,7 +39,11 @@ def load_df(prefix: file_util.ParticlePrefix, steps: list[int]) -> dd.DataFrame:
     times = [attrs["time"] for attrs in attrss]
 
     def assign_t(partition: pd.DataFrame, partition_info: dict) -> pd.DataFrame:
-        time = times[partition_info["number"]]
+        # assume each step is divided into the same number of partitions
+        # TODO this is probably violated if there is significant variation in the number of particles per step
+        partitions_per_step = df.npartitions / len(steps)
+        assert partitions_per_step == int(partitions_per_step), "varying n partitions per step; see todo"
+        time = times[partition_info["number"] // int(partitions_per_step)]
         return partition.assign(t=time)
 
     meta = dict(zip(df.columns, df.dtypes)) | {"t": times[0].dtype}
