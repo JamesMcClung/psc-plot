@@ -25,7 +25,7 @@ class ParticleArgs(args_base.ArgsTyped):
         source = compile_source(loader, self.adaptors)
         data = source.get_data()
 
-        anim = FieldAnimation.get_animation_type(data)(source, data, self.scales)
+        anim = FieldAnimation.get_animation_type(data)(data, self.scales)
 
         return anim
 

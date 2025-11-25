@@ -10,7 +10,6 @@ from lib.parsing.fit import Fit
 
 from .. import plt_util
 from ..data.keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY, VAR_LATEX_KEY
-from ..data.source import DataSource
 from ..dimension import DIMENSIONS
 from .animation_base import AnimatedPlot
 
@@ -26,13 +25,12 @@ def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
 class FieldAnimation(AnimatedPlot):
     def __init__(
         self,
-        source: DataSource,
         data: xr.DataArray,
         scales: list[plt_util.Scale],
         *,
         subplot_kw: dict[str, typing.Any] = {},
     ):
-        super().__init__(source, data, subplot_kw=subplot_kw)
+        super().__init__(data, subplot_kw=subplot_kw)
 
         self.scales = scales + ["linear"] * (1 + len(self.spatial_dims) - len(scales))
 
@@ -111,11 +109,10 @@ class FieldAnimation2dPolar(FieldAnimation):
 
     def __init__(
         self,
-        source: DataSource,
         data: xr.DataArray,
         scales: list[plt_util.Scale],
     ):
-        super().__init__(source, data, scales, subplot_kw={"projection": "polar"})
+        super().__init__(data, scales, subplot_kw={"projection": "polar"})
 
     def _init_fig(self):
         data = self._get_data_at_frame(0)
@@ -159,11 +156,10 @@ class FieldAnimation2dPolar(FieldAnimation):
 class FieldAnimation1d(FieldAnimation):
     def __init__(
         self,
-        source: DataSource,
         data: xr.DataArray,
         scales: list[plt_util.Scale],
     ):
-        super().__init__(source, data, scales)
+        super().__init__(data, scales)
 
         self.fits: list[Fit] = []
         self.show_t0 = False

@@ -8,13 +8,11 @@ from matplotlib.animation import FuncAnimation
 
 from lib.animation.plot import Plot
 from lib.data.keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY
-from lib.data.source import DataSource
 
 
 class AnimatedPlot(Plot):
-    def __init__(self, source: DataSource, data: xr.DataArray, *, subplot_kw: dict[str, typing.Any] = {}):
+    def __init__(self, data: xr.DataArray, *, subplot_kw: dict[str, typing.Any] = {}):
         super().__init__(data)
-        self.source = source
         self.spatial_dims: list[str] = self.data.attrs[SPATIAL_DIMS_KEY]
         self.time_dim: str = self.data.attrs[TIME_DIM_KEY]
         nframes = len(self.data.coords[self.time_dim])
