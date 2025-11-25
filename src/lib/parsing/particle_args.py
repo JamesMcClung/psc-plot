@@ -36,8 +36,6 @@ class ParticleArgs(args_base.ArgsTyped):
         source = DataSourceWithPipeline(loader, pipeline)
         data = source.get_data(steps)
 
-        FieldAnimation.get_animation_type(spatial_dims)
-
         if time_dim:
             AnimationType = FieldAnimation.get_animation_type(spatial_dims)
             anim = AnimationType(source, data, self.scales)
