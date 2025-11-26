@@ -3,7 +3,7 @@ import xarray as xr
 from ....dimension import DIMENSIONS
 from ...adaptor import Adaptor
 from ...compatability import ensure_type
-from ...keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY
+from ...keys import NAME_FRAGMENTS_KEY, SPATIAL_DIMS_KEY, TIME_DIM_KEY
 from .. import parse_util
 from ..registry import adaptor_parser
 from .fourier import Fourier
@@ -18,6 +18,7 @@ class Versus(Adaptor):
 
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         ensure_type(self.__class__.__name__, da, xr.DataArray)
+        name_frags_before = da.attrs[NAME_FRAGMENTS_KEY]
 
         # 1. apply implicit coordinate transforms, as necessary
         for dim_name in self.all_dims:
@@ -45,6 +46,7 @@ class Versus(Adaptor):
         # let the animator take it from here
         da.attrs[SPATIAL_DIMS_KEY] = self.spatial_dims
         da.attrs[TIME_DIM_KEY] = self.time_dim
+        da.attrs[NAME_FRAGMENTS_KEY] = name_frags_before + self.get_name_fragments()
 
         return da
 
