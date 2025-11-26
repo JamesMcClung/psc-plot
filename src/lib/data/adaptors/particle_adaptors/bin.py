@@ -7,19 +7,25 @@ from .. import parse_util
 from ..registry import adaptor_parser
 
 
+def _guess_bins(df: dd.DataFrame, varname_to_nbins: dict[str, int | None]) -> tuple:
+    mins = [df[var_name].min() for var_name in varname_to_nbins]
+    maxs = [df[var_name].max() for var_name in varname_to_nbins]
+
+    mins, maxs = da.compute(mins, maxs)
+    nbinss = list(varname_to_nbins.values())
+    return mins, maxs, nbinss
+
+
 class Bin(AtomicAdaptor):
     def __init__(self, varname_to_nbins: dict[str, int | None]):
         self.varname_to_nbins = varname_to_nbins
 
     def apply_atomic(self, df: dd.DataFrame) -> xr.DataArray:
-        mins = [df[var_name].min() for var_name in self.varname_to_nbins]
-        maxs = [df[var_name].max() for var_name in self.varname_to_nbins]
-
-        mins, maxs = da.compute(mins, maxs)
+        mins, maxs, nbinss = _guess_bins(df, self.varname_to_nbins)
 
         binned_data, edges = da.histogramdd(
             [df[var_name].to_dask_array() for var_name in self.varname_to_nbins],
-            list(self.varname_to_nbins.values()),
+            nbinss,
             density=False,
             range=list(zip(mins, maxs)),
             weights=df["w"].to_dask_array(),
