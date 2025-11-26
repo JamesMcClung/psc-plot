@@ -1,5 +1,6 @@
 import dask.array as da
 import dask.dataframe as dd
+import numpy as np
 import xarray as xr
 
 from ...adaptor import AtomicAdaptor
@@ -7,13 +8,14 @@ from .. import parse_util
 from ..registry import adaptor_parser
 
 
-def _guess_bins(df: dd.DataFrame, varname_to_nbins: dict[str, int | None]) -> tuple:
+def _guess_bin_edgess(df: dd.DataFrame, varname_to_nbins: dict[str, int | None]) -> list:
     mins = [df[var_name].min() for var_name in varname_to_nbins]
     maxs = [df[var_name].max() for var_name in varname_to_nbins]
 
     mins, maxs = da.compute(mins, maxs)
-    nbinss = list(varname_to_nbins.values())
-    return mins, maxs, nbinss
+
+    bin_edgess = [np.linspace(min, max, nbins, endpoint=False) for min, max, nbins in zip(mins, maxs, varname_to_nbins.values())]
+    return bin_edgess
 
 
 class Bin(AtomicAdaptor):
@@ -21,17 +23,16 @@ class Bin(AtomicAdaptor):
         self.varname_to_nbins = varname_to_nbins
 
     def apply_atomic(self, df: dd.DataFrame) -> xr.DataArray:
-        mins, maxs, nbinss = _guess_bins(df, self.varname_to_nbins)
+        bin_edgess = _guess_bin_edgess(df, self.varname_to_nbins)
 
-        binned_data, edges = da.histogramdd(
+        binned_data, _ = da.histogramdd(
             [df[var_name].to_dask_array() for var_name in self.varname_to_nbins],
-            nbinss,
+            bin_edgess,
             density=False,
-            range=list(zip(mins, maxs)),
             weights=df["w"].to_dask_array(),
         )
 
-        coords = dict(zip(self.varname_to_nbins.keys(), (edge[:-1] for edge in edges)))
+        coords = dict(zip(self.varname_to_nbins.keys(), (edges[:-1] for edges in bin_edgess)))
 
         return xr.DataArray(
             binned_data.compute(),
