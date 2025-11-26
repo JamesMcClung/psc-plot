@@ -127,7 +127,7 @@ class FieldAnimation2dPolar(AnimatedPlot):
         data: xr.DataArray,
         scales: list[plt_util.Scale],
     ):
-        super().__init__(data, scales, subplot_kw={"projection": "polar"})
+        super().__init__(data, scales=scales, subplot_kw={"projection": "polar"})
 
     def _init_fig(self):
         data = self._get_data_at_frame(0)
