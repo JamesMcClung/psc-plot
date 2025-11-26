@@ -28,7 +28,7 @@ class Reduce(AtomicAdaptor):
         return REDUCE_FUNCS[self.func_name](da, self.dim_name)
 
     def get_name_fragments(self) -> list[str]:
-        return ["reduce_{self.dim_name}={self.func_name}"]
+        return [f"reduce_{self.dim_name}={self.func_name}"]
 
 
 REDUCE_FORMAT = "dim_name=reduce_func"
