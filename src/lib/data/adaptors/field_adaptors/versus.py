@@ -18,7 +18,7 @@ class Versus(Adaptor):
 
     def apply(self, da: xr.DataArray) -> xr.DataArray:
         ensure_type(self.__class__.__name__, da, xr.DataArray)
-        name_frags_before = da.attrs[NAME_FRAGMENTS_KEY]
+        name_frags_before = list(da.attrs[NAME_FRAGMENTS_KEY])
 
         # 1. apply implicit coordinate transforms, as necessary
         for dim_name in self.all_dims:
