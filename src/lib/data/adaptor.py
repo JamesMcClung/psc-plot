@@ -38,6 +38,7 @@ class AtomicAdaptor(Adaptor):
         attrs = data.attrs
         data = self.apply_atomic(data)
         data.attrs = attrs
-        data.attrs[NAME_FRAGMENTS_KEY] += self.get_name_fragments()
-        data.attrs[VAR_LATEX_KEY] = self.get_modified_var_latex(data.attrs[VAR_LATEX_KEY])
+        data.attrs[NAME_FRAGMENTS_KEY] = data.attrs.get(NAME_FRAGMENTS_KEY, []) + self.get_name_fragments()
+        if VAR_LATEX_KEY in data.attrs:
+            data.attrs[VAR_LATEX_KEY] = self.get_modified_var_latex(data.attrs[VAR_LATEX_KEY])
         return data
