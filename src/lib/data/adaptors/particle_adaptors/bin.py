@@ -45,21 +45,21 @@ _BIN_FORMAT = "var_name[=nbins]"
     "--bin",
     "-b",
     metavar=_BIN_FORMAT,
-    help="Bin the data along these variables, which serve as axes. If nbins is unspecified, it is guessed.",
+    help="Bin the data along these variables, which serve as axes. If nbins is unspecified, it is guessed. Note that t is implicitly binned; disable by passing t= (with no nbins).",
     nargs="+",
 )
 def parse_slice(args: list[str]) -> Bin:
     varname_to_nbins = {}
+    insert_bin_t = True
 
     for arg in args:
-        arg_with_eq = arg
+        split_arg = arg.split("=")
 
-        if "=" not in arg_with_eq:
-            arg_with_eq += "="
-
-        split_arg = arg_with_eq.split("=")
-
-        if len(split_arg) != 2:
+        if len(split_arg) == 1:
+            # arg is "t=", i.e., disable implicit binning along t
+            parse_util.check_value(split_arg[0], "var_name", ["t"])
+            insert_bin_t = False
+        elif len(split_arg) != 2:
             parse_util.fail_format(arg, _BIN_FORMAT)
 
         [var_name, nbins_arg] = split_arg
@@ -68,5 +68,10 @@ def parse_slice(args: list[str]) -> Bin:
         nbins = parse_util.parse_optional_number(nbins_arg, "nbins", int)
 
         varname_to_nbins[var_name] = nbins
+        if var_name == "t":
+            insert_bin_t = False
+
+    if insert_bin_t:
+        varname_to_nbins["t"] = None
 
     return Bin(varname_to_nbins)
