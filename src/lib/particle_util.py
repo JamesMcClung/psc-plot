@@ -3,6 +3,7 @@ import typing
 
 import dask.dataframe as dd
 import h5py
+import numpy as np
 import pandas as pd
 
 from . import field_util, file_util
@@ -51,7 +52,7 @@ def load_df(prefix: file_util.ParticlePrefix, steps: list[int]) -> dd.DataFrame:
 
     df.attrs = attrss[0]
     del df.attrs["time"]
-    df.attrs["nt"] = len(times)
+    df.attrs["times"] = np.array(times)
 
     return df
 
