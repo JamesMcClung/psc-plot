@@ -31,7 +31,7 @@ class AnimatedScatterPlot(AnimatedPlot[pd.DataFrame]):
         self.ax.set_ylabel(f"${self.data.attrs[VAR_LATEX_KEY]}$")
 
         data = self._get_data_at_frame(0)
-        self.scatter = self.ax.scatter(data[self.spatial_dims[0]], data[DEPENDENT_VAR_KEY])
+        self.scatter = self.ax.scatter(data[self.spatial_dims[0]], data[DEPENDENT_VAR_KEY], s=0.5)
         plt_util.update_title(self.ax, self.data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(self.times[0]))
 
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
