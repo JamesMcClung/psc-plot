@@ -1,9 +1,15 @@
+import pandas as pd
 import xarray as xr
 
 from ....dimension import DIMENSIONS
 from ...adaptor import Adaptor
-from ...compatability import ensure_type
-from ...keys import NAME_FRAGMENTS_KEY, SPATIAL_DIMS_KEY, TIME_DIM_KEY
+from ...compatability import ensure_type, get_allowed_types
+from ...keys import (
+    DEPENDENT_VAR_KEY,
+    NAME_FRAGMENTS_KEY,
+    SPATIAL_DIMS_KEY,
+    TIME_DIM_KEY,
+)
 from .. import parse_util
 from ..registry import adaptor_parser
 from .fourier import Fourier
@@ -16,32 +22,44 @@ class Versus(Adaptor):
         self.time_dim = time_dim
         self.all_dims = spatial_dims + ([time_dim] if time_dim else [])
 
-    def apply(self, da: xr.DataArray) -> xr.DataArray:
-        ensure_type(self.__class__.__name__, da, xr.DataArray)
+    def apply[T: xr.DataArray | pd.DataFrame](self, da: T) -> T:
+        ensure_type(self.__class__.__name__, da, *get_allowed_types(T))
         name_frags_before = list(da.attrs.get(NAME_FRAGMENTS_KEY, []))
 
-        # 1. apply implicit coordinate transforms, as necessary
-        for dim_name in self.all_dims:
-            # 1a. already have the coordinate; do nothing
-            if dim_name in da.dims:
-                continue
+        if isinstance(da, xr.DataArray):
+            # 1. apply implicit coordinate transforms, as necessary
+            for dim_name in self.all_dims:
+                # 1a. already have the coordinate; do nothing
+                if dim_name in da.dims:
+                    continue
 
-            # 1b. need to do a Fourier transform
-            dim = DIMENSIONS[dim_name]
-            f_dim = dim.toggle_fourier()
-            if f_dim.name.plain in da.dims:
-                fourier = Fourier(f_dim)
-                da = fourier.apply(da)
-                continue
+                # 1b. need to do a Fourier transform
+                dim = DIMENSIONS[dim_name]
+                f_dim = dim.toggle_fourier()
+                if f_dim.name.plain in da.dims:
+                    fourier = Fourier(f_dim)
+                    da = fourier.apply(da)
+                    continue
 
-            # 1c. need to do a coordinate transform
+                # 1c. need to do a coordinate transform
+                # TODO
+
+            # 2. reduce remaining dimensions via arithmetic mean
+            for dim_name in da.dims:
+                if dim_name not in self.all_dims:
+                    reduce = Reduce(dim_name, "mean")
+                    da = reduce.apply(da)
+
+        elif isinstance(da, pd.DataFrame):
+            # 1. coordinate transform
             # TODO
 
-        # 2. reduce remaining dimensions via arithmetic mean
-        for dim_name in da.dims:
-            if dim_name not in self.all_dims:
-                reduce = Reduce(dim_name, "mean")
-                da = reduce.apply(da)
+            # 2. drop unused vars
+            drop_vars = []
+            for var_name in da.columns:
+                if var_name not in self.all_dims + [DEPENDENT_VAR_KEY]:
+                    drop_vars.append(var_name)
+            da = da.drop(columns=drop_vars)
 
         # let the animator take it from here
         da.attrs[SPATIAL_DIMS_KEY] = self.spatial_dims

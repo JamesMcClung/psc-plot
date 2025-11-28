@@ -9,7 +9,7 @@ from ..data.adaptors import ADAPTORS, Adaptor
 from ..data.field_loader import FieldLoader
 from ..file_util import FIELD_PREFIXES
 from ..plotting import plt_util
-from ..plotting.animated_plot import AnimatedPlot, FieldAnimation1d
+from ..plotting.animated_field_plot import AnimatedFieldPlot, FieldAnimation1d
 from . import args_base
 from .fit import Fit
 
@@ -26,7 +26,7 @@ class FieldArgs(args_base.ArgsTyped):
     fits: list[Fit]  # 1d only
     show_t0: bool  # 1d only
 
-    def get_animation(self) -> AnimatedPlot:
+    def get_animation(self) -> AnimatedFieldPlot:
         steps = field_util.get_available_field_steps(self.prefix)
 
         loader = FieldLoader(self.prefix, self.variable, steps)
