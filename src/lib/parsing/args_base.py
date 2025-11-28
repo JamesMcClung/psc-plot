@@ -4,7 +4,7 @@ import abc
 import argparse
 
 from .. import file_util
-from ..plotting.animated_plot import AnimatedPlot
+from ..plotting.animated_field_plot import AnimatedPlot
 
 __all__ = ["add_common_arguments", "add_subparsers", "get_subparser_parent", "ArgsTyped", "ArgsUntyped"]
 

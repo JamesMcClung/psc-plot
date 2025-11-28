@@ -2,7 +2,7 @@ import xarray as xr
 
 from lib.data.keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY
 from lib.dimension import DIMENSIONS
-from lib.plotting.animated_plot import (
+from lib.plotting.animated_field_plot import (
     FieldAnimation1d,
     FieldAnimation2d,
     FieldAnimation2dPolar,

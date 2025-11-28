@@ -9,7 +9,7 @@ from ..data.particle_loader import ParticleLoader
 from ..derived_particle_variables import DERIVED_PARTICLE_VARIABLES
 from ..particle_util import PRT_VARIABLES, PrtVariable
 from ..plotting import plt_util
-from ..plotting.animated_plot import AnimatedPlot
+from ..plotting.animated_field_plot import AnimatedPlot
 from . import args_base
 
 __all__ = ["add_particle_subparsers", "ParticleArgs"]

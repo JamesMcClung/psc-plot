@@ -9,7 +9,7 @@ from ..data.adaptors import ADAPTORS, Adaptor
 from ..data.field_loader import FieldLoader
 from ..file_util import FIELD_PREFIXES
 from ..plotting import plt_util
-from ..plotting.animated_plot import AnimatedPlot, FieldAnimation1d
+from ..plotting.animated_field_plot import AnimatedPlot, FieldAnimation1d
 from . import args_base
 from .fit import Fit
 
