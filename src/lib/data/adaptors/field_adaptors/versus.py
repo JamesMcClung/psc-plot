@@ -4,7 +4,12 @@ import xarray as xr
 from ....dimension import DIMENSIONS
 from ...adaptor import Adaptor
 from ...compatability import ensure_type, get_allowed_types
-from ...keys import NAME_FRAGMENTS_KEY, SPATIAL_DIMS_KEY, TIME_DIM_KEY
+from ...keys import (
+    DEPENDENT_VAR_KEY,
+    NAME_FRAGMENTS_KEY,
+    SPATIAL_DIMS_KEY,
+    TIME_DIM_KEY,
+)
 from .. import parse_util
 from ..registry import adaptor_parser
 from .fourier import Fourier
@@ -46,9 +51,15 @@ class Versus(Adaptor):
                     da = reduce.apply(da)
 
         elif isinstance(da, pd.DataFrame):
-            # TODO support coordinate transforms
-            # not much else to do
-            pass
+            # 1. coordinate transform
+            # TODO
+
+            # 2. drop unused vars
+            drop_vars = []
+            for var_name in da.columns:
+                if var_name not in self.all_dims + [DEPENDENT_VAR_KEY]:
+                    drop_vars.append(var_name)
+            da = da.drop(columns=drop_vars)
 
         # let the animator take it from here
         da.attrs[SPATIAL_DIMS_KEY] = self.spatial_dims
