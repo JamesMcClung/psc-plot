@@ -1,4 +1,5 @@
 import dask.dataframe as dd
+import pandas as pd
 
 from ...adaptor import AtomicAdaptor
 from .. import parse_util
@@ -11,7 +12,7 @@ class Slice(AtomicAdaptor):
         self.lower_inclusive = lower_inclusive
         self.upper_exclusive = upper_exclusive
 
-    def apply_atomic(self, df: dd.DataFrame) -> dd.DataFrame:
+    def apply_atomic[T: dd.DataFrame | pd.DataFrame](self, df: T) -> T:
         if self.lower_inclusive is not None:
             df = df[df[self.var_name] >= self.lower_inclusive]
         if self.upper_exclusive is not None:
