@@ -4,7 +4,7 @@ import numpy as np
 import xarray as xr
 from matplotlib.projections.polar import PolarAxes
 
-from lib.data.keys import TIME_DIM_KEY, VAR_LATEX_KEY
+from lib.data.keys import VAR_LATEX_KEY
 from lib.dimension import DIMENSIONS
 from lib.parsing.fit import Fit
 from lib.plotting import plt_util
@@ -12,9 +12,8 @@ from lib.plotting.animated_plot import AnimatedPlot
 
 
 class AnimatedFieldPlot(AnimatedPlot[xr.DataArray]):
-    @classmethod
-    def _get_nframes(cls, data: xr.DataArray) -> int:
-        return len(data.coords[data.attrs[TIME_DIM_KEY]])
+    def _get_nframes(self) -> int:
+        return len(self.data.coords[self.time_dim])
 
     def _get_data_at_frame(self, frame: int) -> xr.DataArray:
         return self.data.isel({self.time_dim: frame})
