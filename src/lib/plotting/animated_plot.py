@@ -17,7 +17,7 @@ from lib.plotting import plt_util
 from lib.plotting.plot import Plot
 
 
-class AnimatedPlot(Plot):
+class AnimatedPlot(Plot[xr.DataArray]):
     def __init__(
         self,
         data: xr.DataArray,
