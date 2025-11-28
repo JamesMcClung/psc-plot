@@ -31,8 +31,10 @@ class AtomicAdaptor(Adaptor):
         apply_atomic_data_annotation = apply_atomic_data_param.annotation
         if isinstance(apply_atomic_data_annotation, type):
             allowed_types = [apply_atomic_data_annotation]
-        if isinstance(apply_atomic_data_annotation, types.UnionType):
+        elif isinstance(apply_atomic_data_annotation, types.UnionType):
             allowed_types = apply_atomic_data_annotation.__args__
+        else:
+            raise NotImplementedError(f"IDK how to ensure object is type {apply_atomic_data_annotation}")
         ensure_type(self.__class__.__name__, data, *allowed_types)
 
         attrs = data.attrs
