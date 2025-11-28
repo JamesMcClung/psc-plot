@@ -58,4 +58,4 @@ def h_cc(h2_cc: DataArray) -> DataArray:
 
 @derived_field_variable("pfd")
 def div_h_cc(hx_fc: DataArray, hy_fc: DataArray, hz_fc: DataArray) -> DataArray:
-    return hx_fc.differentiate("") + hy_fc.differentiate("y") + hz_fc.differentiate("z")
+    return hx_fc.differentiate("x") + hy_fc.differentiate("y") + hz_fc.differentiate("z")
