@@ -1,4 +1,5 @@
 import types
+import typing
 
 
 class DataError(Exception): ...
@@ -15,5 +16,7 @@ def get_allowed_types(type_annotation) -> list[type]:
         return [type_annotation]
     elif isinstance(type_annotation, types.UnionType):
         return type_annotation.__args__
+    elif isinstance(type_annotation, typing.TypeVar):
+        return get_allowed_types(type_annotation.__bound__)
     else:
         raise NotImplementedError(f"not sure how to find allowed types for the following type annotation: {type_annotation}")
