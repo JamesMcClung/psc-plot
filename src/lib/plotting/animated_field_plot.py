@@ -17,7 +17,7 @@ from lib.plotting import plt_util
 from lib.plotting.plot import Plot
 
 
-class AnimatedPlot(Plot[xr.DataArray]):
+class AnimatedFieldPlot(Plot[xr.DataArray]):
     def __init__(
         self,
         data: xr.DataArray,
@@ -78,7 +78,7 @@ def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
     return (float(lower), float(upper))
 
 
-class FieldAnimation2d(AnimatedPlot):
+class FieldAnimation2d(AnimatedFieldPlot):
     def _init_fig(self):
         data = self._get_data_at_frame(0)
 
@@ -119,7 +119,7 @@ class FieldAnimation2d(AnimatedPlot):
         return data
 
 
-class FieldAnimation2dPolar(AnimatedPlot):
+class FieldAnimation2dPolar(AnimatedFieldPlot):
     ax: PolarAxes
 
     def __init__(
@@ -168,7 +168,7 @@ class FieldAnimation2dPolar(AnimatedPlot):
         return [self.im, self.ax.title]
 
 
-class FieldAnimation1d(AnimatedPlot):
+class FieldAnimation1d(AnimatedFieldPlot):
     def __init__(
         self,
         data: xr.DataArray,
