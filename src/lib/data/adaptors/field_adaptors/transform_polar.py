@@ -1,6 +1,7 @@
 import argparse
 
 import numpy as np
+import pandas as pd
 import xarray as xr
 
 from ....dimension import DIMENSIONS, CartesianToPolar
@@ -13,41 +14,47 @@ class TransformPolar(AtomicAdaptor):
     def __init__(self, transform: CartesianToPolar):
         self.transform = transform
 
-    def apply_atomic(self, da: xr.DataArray) -> xr.DataArray:
+    def apply_atomic[T: xr.DataArray | pd.DataFrame](self, da: T) -> T:
         name_x = self.transform.dim_x.name.plain
         name_y = self.transform.dim_y.name.plain
         name_r = self.transform.dim_r.name.plain
         name_theta = self.transform.dim_theta.name.plain
 
-        coords_x: xr.DataArray = da.coords[name_x]
-        coords_y: xr.DataArray = da.coords[name_y]
+        if isinstance(da, xr.DataArray):
+            coords_x: xr.DataArray = da.coords[name_x]
+            coords_y: xr.DataArray = da.coords[name_y]
 
-        max_x = float(abs(coords_x).max())
-        max_y = float(abs(coords_y).max())
+            max_x = float(abs(coords_x).max())
+            max_y = float(abs(coords_y).max())
 
-        nx = len(coords_x)
-        ny = len(coords_y)
+            nx = len(coords_x)
+            ny = len(coords_y)
 
-        dx = coords_x[1] - coords_x[0]
-        dy = coords_y[1] - coords_y[0]
+            dx = coords_x[1] - coords_x[0]
+            dy = coords_y[1] - coords_y[0]
 
-        max_r = (max_x**2 + max_y**2) ** 0.5
-        dr = min(dx, dy)
-        nr = int(max_r / dr)
+            max_r = (max_x**2 + max_y**2) ** 0.5
+            dr = min(dx, dy)
+            nr = int(max_r / dr)
 
-        max_theta = 2 * np.pi
-        ntheta = 2 * (nx - 2) + 2 * (ny - 2) + 4  # perimeter, but don't double-count corners
+            max_theta = 2 * np.pi
+            ntheta = 2 * (nx - 2) + 2 * (ny - 2) + 4  # perimeter, but don't double-count corners
 
-        rs = np.linspace(0.0, max_r, nr, endpoint=False)
-        thetas = np.linspace(0.0, max_theta, ntheta, endpoint=False)
+            rs = np.linspace(0.0, max_r, nr, endpoint=False)
+            thetas = np.linspace(0.0, max_theta, ntheta, endpoint=False)
 
-        xgrid, ygrid = self.transform.inverse(*np.meshgrid(rs, thetas, indexing="ij"))
-        xgrid = xr.Variable([name_r, name_theta], xgrid)
-        ygrid = xr.Variable([name_r, name_theta], ygrid)
+            xgrid, ygrid = self.transform.inverse(*np.meshgrid(rs, thetas, indexing="ij"))
+            xgrid = xr.Variable([name_r, name_theta], xgrid)
+            ygrid = xr.Variable([name_r, name_theta], ygrid)
 
-        da = da.interp({name_x: xgrid, name_y: ygrid}, assume_sorted=True)
-        da = da.drop_vars([name_x, name_y])
-        da = da.assign_coords({name_r: rs, name_theta: thetas})
+            da = da.interp({name_x: xgrid, name_y: ygrid}, assume_sorted=True)
+            da = da.drop_vars([name_x, name_y])
+            da = da.assign_coords({name_r: rs, name_theta: thetas})
+
+        else:
+            rs, thetas = self.transform.apply(da[name_x], da[name_y])
+            da[name_r] = rs
+            da[name_theta] = thetas
 
         return da
 
