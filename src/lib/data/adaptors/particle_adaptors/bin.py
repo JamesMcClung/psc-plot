@@ -1,4 +1,5 @@
 import math
+import warnings
 
 import dask.array as da
 import dask.dataframe as dd
@@ -22,22 +23,26 @@ def _guess_bin_edgess(df: dd.DataFrame, varname_to_nbins: dict[str, int | None])
     # Calculate edges using metadata when possible
 
     for varname, nbins in varname_to_nbins.items():
-        if varname == "t":
+        if "times" in df.attrs and varname == "t":
             times = df.attrs["times"]
             nt = len(times)
-            nbins = nbins or nt
-            if nbins != nt:
-                print("todo: proper warning for t nbins")  # TODO
-            dt = times[1] - times[0] if nt >= 2 else 1
+
+            if nbins == nt:
+                warnings.warn(f"Number of time steps is known to be {nt}; no need to specify nbins for t", stacklevel=2)
+            elif nbins:
+                raise ValueError(f"Number of time steps is {nt}, but nbins={nbins} (they must match)")
+
             # cheat, kinda: to avoid floating-point comparison errors, center the bins on the times
+            nbins = nt
+            dt = times[1] - times[0] if nt >= 2 else 1
             varname_to_edges[varname] = np.linspace(times[0] - dt * 0.5, times[-1] + dt * 0.5, nbins + 1, endpoint=True)
 
-        elif varname in ["x", "y", "z"]:
+        elif "gdims" in df.attrs and varname in ["x", "y", "z"]:
             dim_idx = ["x", "y", "z"].index(varname)
             ncells = df.attrs["gdims"][dim_idx]
             nbins = nbins or ncells
             if nbins != ncells:
-                print(f"todo: proper warning for {varname} nbins")  # TODO
+                warnings.warn(f"Number of cells in {varname} is known to be {ncells}, but nbins={nbins}", stacklevel=2)
             mins = df.attrs["corner"]
             maxs = mins + df.attrs["length"]
             varname_to_edges[varname] = np.linspace(mins[dim_idx], maxs[dim_idx], nbins + 1, endpoint=True)
@@ -92,7 +97,7 @@ class Bin(AtomicAdaptor):
 
         coords = dict(zip(self.varname_to_nbins.keys(), (edges[:-1] for edges in bin_edgess)))
 
-        if "t" in coords:
+        if "times" in df.attrs and "t" in coords:
             # fulfillment of the "cheating": want actual t values, but time bins are centered on those values to avoid floating point comparison errors
             coords["t"] = df.attrs["times"]
 
