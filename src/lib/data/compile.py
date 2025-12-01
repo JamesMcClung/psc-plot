@@ -14,7 +14,7 @@ def compile_source(loader: DataSource, adaptors: list[Adaptor]) -> DataSource:
             time_dim = adaptor.time_dim
             break
     else:
-        adaptors.append(Versus(spatial_dims, time_dim))
+        adaptors.append(Versus(spatial_dims, time_dim, color_dim=None))
 
     pipeline = Pipeline(*adaptors)
     source = DataSourceWithPipeline(loader, pipeline)
