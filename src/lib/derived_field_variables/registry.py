@@ -41,6 +41,16 @@ def hxz2_cc(hx_fc: DataArray, hz_fc: DataArray) -> DataArray:
 
 
 @derived_field_variable("pfd")
+def hxzhat2(hx_fc: DataArray, hz_fc: DataArray) -> DataArray:
+    pipeline = Pipeline(Fourier([DIMENSIONS["x"], DIMENSIONS["y"], DIMENSIONS["z"]]), Magnitude())
+
+    hx_hat = pipeline.apply(hx_fc)
+    hz_hat = pipeline.apply(hz_fc)
+
+    return hx_hat**2 + hz_hat**2
+
+
+@derived_field_variable("pfd")
 def hhat2(hx_fc: DataArray, hy_fc: DataArray, hz_fc: DataArray) -> DataArray:
     pipeline = Pipeline(Fourier([DIMENSIONS["x"], DIMENSIONS["y"], DIMENSIONS["z"]]), Magnitude())
 
