@@ -52,6 +52,7 @@ class Fit:
             data = slicer.apply(data)
             return (data.coords[data.dims[0]], data)
         elif isinstance(data, pd.DataFrame):
-            slicer = Slice(DEPENDENT_VAR_KEY, self.min_x, self.max_x)
+            spatial_dim = data.attrs[SPATIAL_DIMS_KEY][0]
+            slicer = Slice(spatial_dim, self.min_x, self.max_x)
             data = slicer.apply(data)
-            return (data[DEPENDENT_VAR_KEY], data[data.attrs[SPATIAL_DIMS_KEY][0]])
+            return (data[spatial_dim], data[DEPENDENT_VAR_KEY])
