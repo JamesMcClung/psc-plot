@@ -48,7 +48,7 @@ class AnimatedScatterPlot(AnimatedPlot[pd.DataFrame]):
 
         if data.attrs[COLOR_DIM_KEY]:
             # TODO update cbar
-            self.fig.colorbar(self.scatter)
+            self.fig.colorbar(self.scatter, label=DIMENSIONS[data.attrs[COLOR_DIM_KEY]].to_axis_label())
 
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
         self.fig.tight_layout()
