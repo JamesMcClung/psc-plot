@@ -34,7 +34,8 @@ class AnimatedScatterPlot(AnimatedPlot[pd.DataFrame]):
         self.ax.set_ylabel(f"${self.data.attrs[VAR_LATEX_KEY]}$")
 
         data = self._get_data_at_frame(0)
-        self.scatter = self.ax.scatter(data[self.spatial_dims[0]], data[DEPENDENT_VAR_KEY], s=0.5)
+        color = self.ax._get_lines.get_next_color()  # scatter() uses a different color cycler than plot(); this uses the plot() cycler manually
+        self.scatter = self.ax.scatter(data[self.spatial_dims[0]], data[DEPENDENT_VAR_KEY], s=0.5, color=color)
         plt_util.update_title(self.ax, self.data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(self.times[0]))
 
         self.fit_lines = [fit.plot_fit(self.ax, data) for fit in self.fits]
