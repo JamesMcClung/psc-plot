@@ -36,7 +36,7 @@ class FieldArgs(args_base.ArgsTyped):
         anim = get_plot(data, scales=self.scales)
 
         if isinstance(anim, FieldAnimation1d):
-            anim.add_fits(self.fits)
+            anim.fits.extend(self.fits)
             anim.show_t0 = self.show_t0
         elif self.fits:
             # TODO use an argparse exception type

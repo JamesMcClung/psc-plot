@@ -186,6 +186,3 @@ class FieldAnimation1d(AnimatedFieldPlot):
     def _update_ybounds(self):
         ymin, ymax = plt_util.symmetrize_bounds(*self._get_var_bounds())
         self.ax.set_ybound(ymin, ymax)
-
-    def add_fits(self, fits: list[Fit]):
-        self.fits.extend(fits)
