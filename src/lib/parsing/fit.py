@@ -23,17 +23,18 @@ class Fit:
         self.max_x = float(max_x)
 
     def plot_fit(self, ax: Axes, data: xr.DataArray | pd.DataFrame) -> Line2D:
-        fit_da, label = self._get_fit_data(data)
-        [fit_line] = ax.plot(fit_da.coords[fit_da.dims[0]], fit_da, "--", label=label)
+        x_data, y_data = self._get_xy_data(data)
+        fit_y_data, label = self._get_fit_y_data(x_data, y_data)
+        [fit_line] = ax.plot(x_data, fit_y_data, "--", label=label)
         return fit_line
 
     def update_fit(self, data: xr.DataArray | pd.DataFrame, line: Line2D):
-        fit_da, label = self._get_fit_data(data)
-        line.set_data(fit_da.coords[fit_da.dims[0]], fit_da)
+        x_data, y_data = self._get_xy_data(data)
+        fit_y_data, label = self._get_fit_y_data(x_data, y_data)
+        line.set_data(x_data, fit_y_data)
         line.set_label(label)
 
-    def _get_fit_data(self, data: xr.DataArray | pd.DataFrame) -> tuple[xr.DataArray, str]:
-        x_data, y_data = self._get_xy_data(data)
+    def _get_fit_y_data(self, x_data: np.ndarray, y_data: np.ndarray) -> tuple[np.ndarray, str]:
         x_log = np.log(x_data)
         y_log = np.log(y_data)
 
