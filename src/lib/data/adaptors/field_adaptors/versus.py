@@ -72,7 +72,7 @@ class Versus(Adaptor):
         # don't include inner adaptors because they can be inferred
         dims = ",".join(self.spatial_dims)
         if self.time_dim:
-            dims = f"{self.time_dim};{dims}"
+            dims += f";time={self.time_dim}"
         return [f"vs_{dims}"]
 
 
