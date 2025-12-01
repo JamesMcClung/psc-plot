@@ -2,6 +2,7 @@ import argparse
 import typing
 
 from lib.data.compile import compile_source
+from lib.plotting.animated_scatter_plot import AnimatedScatterPlot
 from lib.plotting.get_plot import get_plot
 
 from .. import field_util
@@ -35,12 +36,14 @@ class FieldArgs(args_base.ArgsTyped):
 
         anim = get_plot(data, scales=self.scales)
 
-        if isinstance(anim, FieldAnimation1d):
-            anim.add_fits(self.fits)
-            anim.show_t0 = self.show_t0
+        if isinstance(anim, (FieldAnimation1d, AnimatedScatterPlot)):
+            anim.fits.extend(self.fits)
         elif self.fits:
             # TODO use an argparse exception type
             raise Exception("fits not supported on higher-dimensional data")
+
+        if isinstance(anim, FieldAnimation1d):
+            anim.show_t0 = self.show_t0
         elif self.show_t0:
             # TODO use an argparse exception type
             raise Exception("show t=0 not supported on higher-dimensional data")

@@ -1,10 +1,13 @@
 import numpy as np
+import pandas as pd
 import scipy.stats as stats
 import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.lines import Line2D
 
-from ..data.adaptors.field_adaptors.pos_slice import PosSlice
+from lib.data.adaptors.field_adaptors.pos_slice import PosSlice
+from lib.data.adaptors.particle_adaptors.slice import Slice
+from lib.data.keys import DEPENDENT_VAR_KEY, SPATIAL_DIMS_KEY
 
 # TODO make this a plot plugin (and make plot plugins a thing)
 
@@ -18,22 +21,21 @@ class Fit:
         self.min_x = float(min_x)
         self.max_x = float(max_x)
 
-    def plot_fit(self, ax: Axes, da: xr.DataArray) -> Line2D:
-        fit_da, label = self._get_fit_data(da)
-        [fit_line] = ax.plot(fit_da.coords[fit_da.dims[0]], fit_da, "--", label=label)
+    def plot_fit(self, ax: Axes, data: xr.DataArray | pd.DataFrame) -> Line2D:
+        x_data, y_data = self._get_xy_data(data)
+        fit_y_data, label = self._get_fit_y_data(x_data, y_data)
+        [fit_line] = ax.plot(x_data, fit_y_data, "--", label=label)
         return fit_line
 
-    def update_fit(self, da: xr.DataArray, line: Line2D):
-        fit_da, label = self._get_fit_data(da)
-        line.set_data(fit_da.coords[fit_da.dims[0]], fit_da)
+    def update_fit(self, data: xr.DataArray | pd.DataFrame, line: Line2D):
+        x_data, y_data = self._get_xy_data(data)
+        fit_y_data, label = self._get_fit_y_data(x_data, y_data)
+        line.set_data(x_data, fit_y_data)
         line.set_label(label)
 
-    def _get_fit_data(self, da: xr.DataArray) -> tuple[xr.DataArray, str]:
-        slicer = PosSlice(da.dims[0], self.min_x, self.max_x)
-        da = slicer.apply(da)
-
-        x_log = np.log(da.coords[da.dims[0]])
-        y_log = np.log(da)
+    def _get_fit_y_data(self, x_data: np.ndarray, y_data: np.ndarray) -> tuple[np.ndarray, str]:
+        x_log = np.log(x_data)
+        y_log = np.log(y_data)
 
         [slope, intercept, rvalue, *_] = stats.linregress(x_log, y_log)
 
@@ -43,3 +45,14 @@ class Fit:
         label = f"$\\gamma={-slope:.3f}$ ($r^2={rvalue**2:.3f}$)"
 
         return y_fit, label
+
+    def _get_xy_data(self, data: xr.DataArray | pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
+        if isinstance(data, xr.DataArray):
+            slicer = PosSlice(data.dims[0], self.min_x, self.max_x)
+            data = slicer.apply(data)
+            return (data.coords[data.dims[0]], data)
+        elif isinstance(data, pd.DataFrame):
+            spatial_dim = data.attrs[SPATIAL_DIMS_KEY][0]
+            slicer = Slice(spatial_dim, self.min_x, self.max_x)
+            data = slicer.apply(data)
+            return (data[spatial_dim], data[DEPENDENT_VAR_KEY])
