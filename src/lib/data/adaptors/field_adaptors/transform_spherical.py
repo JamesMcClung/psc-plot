@@ -1,6 +1,7 @@
 import argparse
 
 import numpy as np
+import pandas as pd
 import xarray as xr
 
 from ....dimension import DIMENSIONS, CartesianToSpherical
@@ -13,7 +14,7 @@ class TransformSpherical(AtomicAdaptor):
     def __init__(self, transform: CartesianToSpherical):
         self.transform = transform
 
-    def apply_atomic(self, da: xr.DataArray) -> xr.DataArray:
+    def apply_atomic[T: xr.DataArray | pd.DataFrame](self, da: T) -> T:
         name_x = self.transform.dim_x.name.plain
         name_y = self.transform.dim_y.name.plain
         name_z = self.transform.dim_z.name.plain
@@ -21,44 +22,51 @@ class TransformSpherical(AtomicAdaptor):
         name_theta = self.transform.dim_theta.name.plain
         name_phi = self.transform.dim_phi.name.plain
 
-        coords_x: xr.DataArray = da.coords[name_x]
-        coords_y: xr.DataArray = da.coords[name_y]
-        coords_z: xr.DataArray = da.coords[name_z]
+        if isinstance(da, xr.DataArray):
+            coords_x: xr.DataArray = da.coords[name_x]
+            coords_y: xr.DataArray = da.coords[name_y]
+            coords_z: xr.DataArray = da.coords[name_z]
 
-        max_x = float(abs(coords_x).max())
-        max_y = float(abs(coords_y).max())
-        max_z = float(abs(coords_z).max())
+            max_x = float(abs(coords_x).max())
+            max_y = float(abs(coords_y).max())
+            max_z = float(abs(coords_z).max())
 
-        nx = len(coords_x)
-        ny = len(coords_y)
-        nz = len(coords_z)
+            nx = len(coords_x)
+            ny = len(coords_y)
+            nz = len(coords_z)
 
-        dx = coords_x[1] - coords_x[0]
-        dy = coords_y[1] - coords_y[0]
-        dz = coords_z[1] - coords_z[0]
+            dx = coords_x[1] - coords_x[0]
+            dy = coords_y[1] - coords_y[0]
+            dz = coords_z[1] - coords_z[0]
 
-        max_r = (max_x**2 + max_y**2 + max_z**2) ** 0.5
-        dr = min(dx, dy, dz)
-        nr = int(max_r / dr)
+            max_r = (max_x**2 + max_y**2 + max_z**2) ** 0.5
+            dr = min(dx, dy, dz)
+            nr = int(max_r / dr)
 
-        max_theta = np.pi
-        ntheta = nz
+            max_theta = np.pi
+            ntheta = nz
 
-        max_phi = 2 * np.pi
-        nphi = 2 * (nx - 2) + 2 * (ny - 2) + 4  # perimeter, but don't double-count corners
+            max_phi = 2 * np.pi
+            nphi = 2 * (nx - 2) + 2 * (ny - 2) + 4  # perimeter, but don't double-count corners
 
-        rs = np.linspace(0.0, max_r, nr, endpoint=False)
-        thetas = np.linspace(0.0, max_theta, ntheta, endpoint=False)
-        phis = np.linspace(0.0, max_phi, nphi, endpoint=False)
+            rs = np.linspace(0.0, max_r, nr, endpoint=False)
+            thetas = np.linspace(0.0, max_theta, ntheta, endpoint=False)
+            phis = np.linspace(0.0, max_phi, nphi, endpoint=False)
 
-        xgrid, ygrid, zgrid = self.transform.inverse(*np.meshgrid(rs, thetas, phis, indexing="ij"))
-        xgrid = xr.Variable([name_r, name_theta, name_phi], xgrid)
-        ygrid = xr.Variable([name_r, name_theta, name_phi], ygrid)
-        zgrid = xr.Variable([name_r, name_theta, name_phi], zgrid)
+            xgrid, ygrid, zgrid = self.transform.inverse(*np.meshgrid(rs, thetas, phis, indexing="ij"))
+            xgrid = xr.Variable([name_r, name_theta, name_phi], xgrid)
+            ygrid = xr.Variable([name_r, name_theta, name_phi], ygrid)
+            zgrid = xr.Variable([name_r, name_theta, name_phi], zgrid)
 
-        da = da.interp({name_x: xgrid, name_y: ygrid, name_z: zgrid}, assume_sorted=True)
-        da = da.drop_vars([name_x, name_y, name_z])
-        da = da.assign_coords({name_r: rs, name_theta: thetas, name_phi: phis})
+            da = da.interp({name_x: xgrid, name_y: ygrid, name_z: zgrid}, assume_sorted=True)
+            da = da.drop_vars([name_x, name_y, name_z])
+            da = da.assign_coords({name_r: rs, name_theta: thetas, name_phi: phis})
+
+        else:
+            rs, thetas, phis = self.transform.apply(da[name_x], da[name_y], da[name_z])
+            da[name_r] = rs
+            da[name_theta] = thetas
+            da[name_phi] = phis
 
         return da
 
