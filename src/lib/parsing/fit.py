@@ -5,10 +5,9 @@ import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.lines import Line2D
 
+from lib.data.adaptors.field_adaptors.pos_slice import PosSlice
 from lib.data.adaptors.particle_adaptors.slice import Slice
 from lib.data.keys import DEPENDENT_VAR_KEY, SPATIAL_DIMS_KEY
-
-from ..data.adaptors.field_adaptors.pos_slice import PosSlice
 
 # TODO make this a plot plugin (and make plot plugins a thing)
 
