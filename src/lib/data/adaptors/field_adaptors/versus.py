@@ -1,3 +1,4 @@
+import dask.dataframe as df
 import pandas as pd
 import xarray as xr
 
@@ -24,7 +25,7 @@ class Versus(Adaptor):
         self.color_dim = color_dim
         self.all_dims = spatial_dims + ([time_dim] if time_dim else []) + ([color_dim] if color_dim else [])
 
-    def apply[T: xr.DataArray | pd.DataFrame](self, da: T) -> T:
+    def apply[T: xr.DataArray | pd.DataFrame | df.DataFrame](self, da: T) -> T:
         ensure_type(self.__class__.__name__, da, *get_allowed_types(T))
         name_frags_before = list(da.attrs.get(NAME_FRAGMENTS_KEY, []))
 
@@ -52,7 +53,7 @@ class Versus(Adaptor):
                     reduce = Reduce(dim_name, "mean")
                     da = reduce.apply(da)
 
-        elif isinstance(da, pd.DataFrame):
+        elif isinstance(da, (pd.DataFrame, df.DataFrame)):
             # 1. coordinate transform
             # TODO
 
