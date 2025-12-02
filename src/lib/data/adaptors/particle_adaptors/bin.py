@@ -4,6 +4,7 @@ import warnings
 import dask.array as da
 import dask.dataframe as dd
 import numpy as np
+import pandas as pd
 import xarray as xr
 
 from lib.data.keys import COORDS_KEY, WEIGHT_VAR_KEY
@@ -13,7 +14,7 @@ from .. import parse_util
 from ..registry import adaptor_parser
 
 
-def _guess_bin_edgess(df: dd.DataFrame, varname_to_nbins: dict[str, int | None]) -> list:
+def _guess_bin_edgess(df: dd.DataFrame | pd.DataFrame, varname_to_nbins: dict[str, int | None]) -> list:
     varname_to_edges: dict[str, np.array] = {}
 
     compute_varnames = []
@@ -47,7 +48,10 @@ def _guess_bin_edgess(df: dd.DataFrame, varname_to_nbins: dict[str, int | None])
     # If needed, batch-compute the missing edges
 
     if compute_varnames:
-        computed_mins, computed_maxs = da.compute(mins_to_compute, maxs_to_compute)
+        if isinstance(df, dd.DataFrame):
+            computed_mins, computed_maxs = da.compute(mins_to_compute, maxs_to_compute)
+        else:
+            computed_mins, computed_maxs = mins_to_compute, maxs_to_compute
 
         if varnames_with_missing_nbins:
             # split bins evenly across remaining dimensions
@@ -72,21 +76,30 @@ class Bin(AtomicAdaptor):
     def __init__(self, varname_to_nbins: dict[str, int | None]):
         self.varname_to_nbins = varname_to_nbins
 
-    def apply_atomic(self, df: dd.DataFrame) -> xr.DataArray:
+    def apply_atomic(self, df: dd.DataFrame | pd.DataFrame) -> xr.DataArray:
         bin_edgess = _guess_bin_edgess(df, self.varname_to_nbins)
 
-        binned_data, _ = da.histogramdd(
-            [df[var_name].to_dask_array() for var_name in self.varname_to_nbins],
-            bin_edgess,
-            density=False,
-            weights=df[df.attrs[WEIGHT_VAR_KEY]].to_dask_array(),
-        )
+        if isinstance(df, dd.DataFrame):
+            binned_data, _ = da.histogramdd(
+                [df[var_name].to_dask_array() for var_name in self.varname_to_nbins],
+                bin_edgess,
+                density=False,
+                weights=df[df.attrs[WEIGHT_VAR_KEY]].to_dask_array(),
+            )
+            binned_data = binned_data.compute()
+        else:
+            binned_data, _ = np.histogramdd(
+                [df[var_name] for var_name in self.varname_to_nbins],
+                bin_edgess,
+                density=False,
+                weights=df[df.attrs[WEIGHT_VAR_KEY]],
+            )
 
         # note: the slice removes any infs
         coords = dict(zip(self.varname_to_nbins.keys(), (edges[:-1] for edges in bin_edgess)))
 
         return xr.DataArray(
-            binned_data.compute(),
+            binned_data,
             coords,
             dims=self.varname_to_nbins.keys(),
         )
