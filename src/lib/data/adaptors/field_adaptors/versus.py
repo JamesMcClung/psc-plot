@@ -25,52 +25,52 @@ class Versus(Adaptor):
         self.color_dim = color_dim
         self.all_dims = spatial_dims + ([time_dim] if time_dim else []) + ([color_dim] if color_dim else [])
 
-    def apply[T: xr.DataArray | pd.DataFrame | df.DataFrame](self, da: T) -> T:
-        ensure_type(self.__class__.__name__, da, *get_allowed_types(T))
-        name_frags_before = list(da.attrs.get(NAME_FRAGMENTS_KEY, []))
+    def apply[T: xr.DataArray | pd.DataFrame | df.DataFrame](self, data: T) -> T:
+        ensure_type(self.__class__.__name__, data, *get_allowed_types(T))
+        name_frags_before = list(data.attrs.get(NAME_FRAGMENTS_KEY, []))
 
-        if isinstance(da, xr.DataArray):
+        if isinstance(data, xr.DataArray):
             # 1. apply implicit coordinate transforms, as necessary
             for dim_name in self.all_dims:
                 # 1a. already have the coordinate; do nothing
-                if dim_name in da.dims:
+                if dim_name in data.dims:
                     continue
 
                 # 1b. need to do a Fourier transform
                 dim = DIMENSIONS[dim_name]
                 f_dim = dim.toggle_fourier()
-                if f_dim.name.plain in da.dims:
+                if f_dim.name.plain in data.dims:
                     fourier = Fourier(f_dim)
-                    da = fourier.apply(da)
+                    data = fourier.apply(data)
                     continue
 
                 # 1c. need to do a coordinate transform
                 # TODO
 
             # 2. reduce remaining dimensions via arithmetic mean
-            for dim_name in da.dims:
+            for dim_name in data.dims:
                 if dim_name not in self.all_dims:
                     reduce = Reduce(dim_name, "mean")
-                    da = reduce.apply(da)
+                    data = reduce.apply(data)
 
-        elif isinstance(da, (pd.DataFrame, df.DataFrame)):
+        elif isinstance(data, (pd.DataFrame, df.DataFrame)):
             # 1. coordinate transform
             # TODO
 
             # 2. drop unused vars
             drop_vars = []
-            for var_name in da.columns:
+            for var_name in data.columns:
                 if var_name not in self.all_dims + [DEPENDENT_VAR_KEY]:
                     drop_vars.append(var_name)
-            da = da.drop(columns=drop_vars)
+            data = data.drop(columns=drop_vars)
 
         # let the animator take it from here
-        da.attrs[SPATIAL_DIMS_KEY] = self.spatial_dims
-        da.attrs[TIME_DIM_KEY] = self.time_dim
-        da.attrs[COLOR_DIM_KEY] = self.color_dim
-        da.attrs[NAME_FRAGMENTS_KEY] = name_frags_before + self.get_name_fragments()
+        data.attrs[SPATIAL_DIMS_KEY] = self.spatial_dims
+        data.attrs[TIME_DIM_KEY] = self.time_dim
+        data.attrs[COLOR_DIM_KEY] = self.color_dim
+        data.attrs[NAME_FRAGMENTS_KEY] = name_frags_before + self.get_name_fragments()
 
-        return da
+        return data
 
     def get_name_fragments(self) -> list[str]:
         # don't include inner adaptors because they can be inferred
