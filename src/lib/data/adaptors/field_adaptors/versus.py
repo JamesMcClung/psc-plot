@@ -64,7 +64,7 @@ class Versus(Adaptor):
                     drop_vars.append(var_name)
             data = data.drop(columns=drop_vars)
 
-        # let the animator take it from here
+        # do the main job of Versus: specify which dims are spatial, temporal, etc.
         data.attrs = (
             attrs_before
             | getattr(data, "attrs", {})
@@ -75,6 +75,9 @@ class Versus(Adaptor):
                 NAME_FRAGMENTS_KEY: attrs_before[NAME_FRAGMENTS_KEY] + self.get_name_fragments(),
             }
         )
+
+        if isinstance(data, (pd.DataFrame, df.DataFrame)) and DEPENDENT_VAR_KEY not in data.attrs:
+            data.attrs[DEPENDENT_VAR_KEY] = data.attrs[SPATIAL_DIMS_KEY].pop()
 
         return data
 
