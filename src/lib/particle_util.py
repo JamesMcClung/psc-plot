@@ -37,7 +37,7 @@ def load_df(prefix: file_util.ParticlePrefix, steps: list[int]) -> dd.DataFrame:
     df: dd.DataFrame = dd.read_hdf(data_paths, key=PRT_PARTICLES_KEY)
 
     attrss = [load_attrs_at_step(prefix, step) for step in steps]
-    times = [attrs["time"] for attrs in attrss]
+    times = np.array([attrs["time"] for attrs in attrss])
 
     def assign_t(partition: pd.DataFrame, partition_info: dict) -> pd.DataFrame:
         # assume each step is divided into the same number of partitions
@@ -47,7 +47,7 @@ def load_df(prefix: file_util.ParticlePrefix, steps: list[int]) -> dd.DataFrame:
         time = times[partition_info["number"] // int(partitions_per_step)]
         return partition.assign(t=time)
 
-    meta = dict(zip(df.columns, df.dtypes)) | {"t": times[0].dtype}
+    meta = dict(zip(df.columns, df.dtypes)) | {"t": times.dtype}
     df = df.map_partitions(assign_t, meta=meta)
 
     df.attrs = attrss[0]
