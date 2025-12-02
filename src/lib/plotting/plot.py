@@ -1,12 +1,8 @@
-import typing
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+from lib.data.data_with_attrs import DataWithAttrs
 from lib.data.keys import NAME_FRAGMENTS_KEY
-
-
-class DataWithAttrs(typing.Protocol):
-    attrs: dict[str, typing.Any]
 
 
 class Plot[Data: DataWithAttrs](ABC):
