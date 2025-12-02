@@ -57,8 +57,11 @@ def load_df(prefix: file_util.ParticlePrefix, steps: list[int]) -> dd.DataFrame:
     gdims = np.array(attrss[0]["gdims"])
     coords = {dim: np.linspace(corner, corner + length, ncells, endpoint=False) for dim, corner, length, ncells in zip(("x", "y", "z"), corner, length, gdims)}
     coords["t"] = times
-    df.attrs[COORDS_KEY] = coords
-    df.attrs[WEIGHT_VAR_KEY] = "w"
+
+    df.attrs = {
+        COORDS_KEY: coords,
+        WEIGHT_VAR_KEY: "w",
+    }
 
     return df
 
