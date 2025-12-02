@@ -20,7 +20,7 @@ class Adaptor:
 class AtomicAdaptor(Adaptor):
     @abstractmethod
     def apply_atomic(self, data: typing.Any) -> typing.Any:
-        """Transform the data, ignoring attributes"""
+        """Transform the data. Doesn't need to propagate existing attrs, but may assign new ones."""
 
     def get_modified_var_latex(self, var_latex: str) -> str:
         return var_latex
@@ -32,7 +32,7 @@ class AtomicAdaptor(Adaptor):
 
         attrs = data.attrs
         data = self.apply_atomic(data)
-        data.attrs = attrs
+        data.attrs = attrs | data.attrs
         data.attrs[NAME_FRAGMENTS_KEY] = data.attrs.get(NAME_FRAGMENTS_KEY, []) + self.get_name_fragments()
         if VAR_LATEX_KEY in data.attrs:
             data.attrs[VAR_LATEX_KEY] = self.get_modified_var_latex(data.attrs[VAR_LATEX_KEY])
