@@ -7,3 +7,4 @@ NAME_FRAGMENTS_KEY = "name_fragments"
 # dataframe keys
 DEPENDENT_VAR_KEY = "dep_var"
 COORDS_KEY = "coords"
+WEIGHT_VAR_KEY = "weight_var"
