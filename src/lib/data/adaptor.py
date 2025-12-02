@@ -36,11 +36,11 @@ class AtomicAdaptor(Adaptor):
 
         data.attrs = (
             attrs_before
+            | getattr(data, "attrs", {})
             | {
                 NAME_FRAGMENTS_KEY: attrs_before[NAME_FRAGMENTS_KEY] + self.get_name_fragments(),
                 VAR_LATEX_KEY: self.get_modified_var_latex(attrs_before[VAR_LATEX_KEY]),
             }
-            | getattr(data, "attrs", {})
         )
 
         return data
