@@ -31,7 +31,7 @@ def _guess_bin_edgess(df: dd.DataFrame | pd.DataFrame, varname_to_nbins: dict[st
             if nbins == len(coords):
                 warnings.warn(f"Number of bins in {varname} is known to be {nbins}; no need to specify nbins", stacklevel=2)
             elif nbins:
-                raise Exception(f"Number of bins in {varname} is known to be {nbins}, but nbins={nbins}")
+                raise Exception(f"Number of bins in {varname} is known to be {len(coords)}, but nbins={nbins}")
             nbins = len(coords)
             # note: use inf as right edge for convenience; it gets sliced out later
             varname_to_edges[varname] = np.concat((coords, [np.inf]))
