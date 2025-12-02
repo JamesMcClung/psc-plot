@@ -3,7 +3,7 @@ import typing
 import numpy as np
 import pandas as pd
 
-from lib.data.keys import DEPENDENT_VAR_KEY, TIME_DIM_KEY, VAR_LATEX_KEY
+from lib.data.keys import COLOR_DIM_KEY, DEPENDENT_VAR_KEY, TIME_DIM_KEY, VAR_LATEX_KEY
 from lib.dimension import DIMENSIONS
 from lib.parsing.fit import Fit
 from lib.plotting import plt_util
@@ -34,13 +34,21 @@ class AnimatedScatterPlot(AnimatedPlot[pd.DataFrame]):
         self.ax.set_ylabel(f"${self.data.attrs[VAR_LATEX_KEY]}$")
 
         data = self._get_data_at_frame(0)
-        color = self.ax._get_lines.get_next_color()  # scatter() uses a different color cycler than plot(); this uses the plot() cycler manually
-        self.scatter = self.ax.scatter(data[self.spatial_dims[0]], data[DEPENDENT_VAR_KEY], s=0.5, color=color)
+        if data.attrs[COLOR_DIM_KEY]:
+            self.scatter = self.ax.scatter(data[self.spatial_dims[0]], data[DEPENDENT_VAR_KEY], c=data[data.attrs[COLOR_DIM_KEY]], s=1)
+        else:
+            color = self.ax._get_lines.get_next_color()  # scatter() uses a different color cycler than plot(); this uses the plot() cycler manually
+            self.scatter = self.ax.scatter(data[self.spatial_dims[0]], data[DEPENDENT_VAR_KEY], s=0.5, color=color)
+
         plt_util.update_title(self.ax, self.data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(self.times[0]))
 
         self.fit_lines = [fit.plot_fit(self.ax, data) for fit in self.fits]
         if self.fits:
             self.ax.legend()
+
+        if data.attrs[COLOR_DIM_KEY]:
+            # TODO update cbar
+            self.fig.colorbar(self.scatter, label=DIMENSIONS[data.attrs[COLOR_DIM_KEY]].to_axis_label())
 
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
         self.fig.tight_layout()
