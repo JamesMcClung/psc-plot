@@ -6,7 +6,7 @@ import dask.dataframe as dd
 import numpy as np
 import xarray as xr
 
-from lib.data.keys import COORDS_KEY
+from lib.data.keys import COORDS_KEY, WEIGHT_VAR_KEY
 
 from ...adaptor import AtomicAdaptor
 from .. import parse_util
@@ -79,7 +79,7 @@ class Bin(AtomicAdaptor):
             [df[var_name].to_dask_array() for var_name in self.varname_to_nbins],
             bin_edgess,
             density=False,
-            weights=df["w"].to_dask_array(),
+            weights=df[df.attrs[WEIGHT_VAR_KEY]].to_dask_array(),
         )
 
         # note: the slice removes any infs
