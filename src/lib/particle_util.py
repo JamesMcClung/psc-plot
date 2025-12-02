@@ -6,6 +6,8 @@ import h5py
 import numpy as np
 import pandas as pd
 
+from lib.data.keys import COORDS_KEY, WEIGHT_VAR_KEY
+
 from . import field_util, file_util
 
 type PrtVariable = typing.Literal["x", "y", "z", "px", "py", "pz", "q", "m", "w", "id", "tag"]
@@ -37,7 +39,7 @@ def load_df(prefix: file_util.ParticlePrefix, steps: list[int]) -> dd.DataFrame:
     df: dd.DataFrame = dd.read_hdf(data_paths, key=PRT_PARTICLES_KEY)
 
     attrss = [load_attrs_at_step(prefix, step) for step in steps]
-    times = [attrs["time"] for attrs in attrss]
+    times = np.array([attrs["time"] for attrs in attrss])
 
     def assign_t(partition: pd.DataFrame, partition_info: dict) -> pd.DataFrame:
         # assume each step is divided into the same number of partitions
@@ -47,12 +49,19 @@ def load_df(prefix: file_util.ParticlePrefix, steps: list[int]) -> dd.DataFrame:
         time = times[partition_info["number"] // int(partitions_per_step)]
         return partition.assign(t=time)
 
-    meta = dict(zip(df.columns, df.dtypes)) | {"t": times[0].dtype}
+    meta = dict(zip(df.columns, df.dtypes)) | {"t": times.dtype}
     df = df.map_partitions(assign_t, meta=meta)
 
-    df.attrs = attrss[0]
-    del df.attrs["time"]
-    df.attrs["times"] = np.array(times)
+    corner = np.array(attrss[0]["corner"])
+    length = np.array(attrss[0]["length"])
+    gdims = np.array(attrss[0]["gdims"])
+    coords = {dim: np.linspace(corner, corner + length, ncells, endpoint=False) for dim, corner, length, ncells in zip(("x", "y", "z"), corner, length, gdims)}
+    coords["t"] = times
+
+    df.attrs = {
+        COORDS_KEY: coords,
+        WEIGHT_VAR_KEY: "w",
+    }
 
     return df
 

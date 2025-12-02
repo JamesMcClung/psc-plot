@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import inspect
-import typing
 from abc import abstractmethod
 
+from lib.data.data_with_attrs import DataWithAttrs
 from lib.data.keys import NAME_FRAGMENTS_KEY, VAR_LATEX_KEY
 
 from .compatability import ensure_type, get_allowed_types
@@ -11,7 +11,7 @@ from .compatability import ensure_type, get_allowed_types
 
 class Adaptor:
     @abstractmethod
-    def apply(self, data: typing.Any) -> typing.Any: ...
+    def apply(self, data: DataWithAttrs) -> DataWithAttrs: ...
 
     def get_name_fragments(self) -> list[str]:
         return []
@@ -19,21 +19,28 @@ class Adaptor:
 
 class AtomicAdaptor(Adaptor):
     @abstractmethod
-    def apply_atomic(self, data: typing.Any) -> typing.Any:
-        """Transform the data, ignoring attributes"""
+    def apply_atomic(self, data: DataWithAttrs) -> DataWithAttrs:
+        """Transform the data. Doesn't need to propagate existing attrs, but may assign new ones."""
 
     def get_modified_var_latex(self, var_latex: str) -> str:
         return var_latex
 
-    def apply(self, data: typing.Any) -> typing.Any:
+    def apply(self, data: DataWithAttrs) -> DataWithAttrs:
         *_, apply_atomic_data_param = inspect.signature(self.apply_atomic).parameters.values()
         allowed_types = get_allowed_types(apply_atomic_data_param.annotation)
         ensure_type(self.__class__.__name__, data, *allowed_types)
 
-        attrs = data.attrs
+        attrs_before = data.attrs
+
         data = self.apply_atomic(data)
-        data.attrs = attrs
-        data.attrs[NAME_FRAGMENTS_KEY] = data.attrs.get(NAME_FRAGMENTS_KEY, []) + self.get_name_fragments()
-        if VAR_LATEX_KEY in data.attrs:
-            data.attrs[VAR_LATEX_KEY] = self.get_modified_var_latex(data.attrs[VAR_LATEX_KEY])
+
+        data.attrs = (
+            attrs_before
+            | {
+                NAME_FRAGMENTS_KEY: attrs_before[NAME_FRAGMENTS_KEY] + self.get_name_fragments(),
+                VAR_LATEX_KEY: self.get_modified_var_latex(attrs_before[VAR_LATEX_KEY]),
+            }
+            | getattr(data, "attrs", {})
+        )
+
         return data

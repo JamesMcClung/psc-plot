@@ -21,6 +21,7 @@ class AnimatedScatterPlot(AnimatedPlot[pd.DataFrame]):
         self.times = sorted(set(data[data.attrs[TIME_DIM_KEY]]))
         super().__init__(data, scales=scales, subplot_kw=subplot_kw)
 
+        self.dependent_var = data.attrs[DEPENDENT_VAR_KEY]
         self.fits: list[Fit] = []
 
     def _get_nframes(self) -> int:
@@ -31,14 +32,14 @@ class AnimatedScatterPlot(AnimatedPlot[pd.DataFrame]):
         self.ax.set_yscale(self.scales[0])
 
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
-        self.ax.set_ylabel(f"${self.data.attrs[VAR_LATEX_KEY]}$")
+        self.ax.set_ylabel(f"${self.data.attrs[VAR_LATEX_KEY]}$" if self.dependent_var == DEPENDENT_VAR_KEY else DIMENSIONS[self.dependent_var].to_axis_label())
 
         data = self._get_data_at_frame(0)
         if data.attrs[COLOR_DIM_KEY]:
-            self.scatter = self.ax.scatter(data[self.spatial_dims[0]], data[DEPENDENT_VAR_KEY], c=data[data.attrs[COLOR_DIM_KEY]], s=1)
+            self.scatter = self.ax.scatter(data[self.spatial_dims[0]], data[self.dependent_var], c=data[data.attrs[COLOR_DIM_KEY]], s=1)
         else:
             color = self.ax._get_lines.get_next_color()  # scatter() uses a different color cycler than plot(); this uses the plot() cycler manually
-            self.scatter = self.ax.scatter(data[self.spatial_dims[0]], data[DEPENDENT_VAR_KEY], s=0.5, color=color)
+            self.scatter = self.ax.scatter(data[self.spatial_dims[0]], data[self.dependent_var], s=0.5, color=color)
 
         plt_util.update_title(self.ax, self.data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(self.times[0]))
 
@@ -55,7 +56,7 @@ class AnimatedScatterPlot(AnimatedPlot[pd.DataFrame]):
 
     def _update_fig(self, frame: int):
         data = self._get_data_at_frame(frame)
-        self.scatter.set_offsets(np.array([data[self.spatial_dims[0]], data[DEPENDENT_VAR_KEY]]).T)
+        self.scatter.set_offsets(np.array([data[self.spatial_dims[0]], data[self.dependent_var]]).T)
         plt_util.update_title(self.ax, self.data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(self.times[frame]))
 
         for fit, line in zip(self.fits, self.fit_lines):

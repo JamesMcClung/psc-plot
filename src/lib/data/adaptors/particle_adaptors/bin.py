@@ -4,14 +4,17 @@ import warnings
 import dask.array as da
 import dask.dataframe as dd
 import numpy as np
+import pandas as pd
 import xarray as xr
+
+from lib.data.keys import COORDS_KEY, WEIGHT_VAR_KEY
 
 from ...adaptor import AtomicAdaptor
 from .. import parse_util
 from ..registry import adaptor_parser
 
 
-def _guess_bin_edgess(df: dd.DataFrame, varname_to_nbins: dict[str, int | None]) -> list:
+def _guess_bin_edgess(df: dd.DataFrame | pd.DataFrame, varname_to_nbins: dict[str, int | None]) -> list:
     varname_to_edges: dict[str, np.array] = {}
 
     compute_varnames = []
@@ -23,30 +26,15 @@ def _guess_bin_edgess(df: dd.DataFrame, varname_to_nbins: dict[str, int | None])
     # Calculate edges using metadata when possible
 
     for varname, nbins in varname_to_nbins.items():
-        if "times" in df.attrs and varname == "t":
-            times = df.attrs["times"]
-            nt = len(times)
-
-            if nbins == nt:
-                warnings.warn(f"Number of time steps is known to be {nt}; no need to specify nbins for t", stacklevel=2)
+        if varname in df.attrs[COORDS_KEY]:
+            coords = df.attrs[COORDS_KEY][varname]
+            if nbins == len(coords):
+                warnings.warn(f"Number of bins in {varname} is known to be {nbins}; no need to specify nbins", stacklevel=2)
             elif nbins:
-                raise ValueError(f"Number of time steps is {nt}, but nbins={nbins} (they must match)")
-
-            # cheat, kinda: to avoid floating-point comparison errors, center the bins on the times
-            nbins = nt
-            dt = times[1] - times[0] if nt >= 2 else 1
-            varname_to_edges[varname] = np.linspace(times[0] - dt * 0.5, times[-1] + dt * 0.5, nbins + 1, endpoint=True)
-
-        elif "gdims" in df.attrs and varname in ["x", "y", "z"]:
-            dim_idx = ["x", "y", "z"].index(varname)
-            ncells = df.attrs["gdims"][dim_idx]
-            nbins = nbins or ncells
-            if nbins != ncells:
-                warnings.warn(f"Number of cells in {varname} is known to be {ncells}, but nbins={nbins}", stacklevel=2)
-            mins = df.attrs["corner"]
-            maxs = mins + df.attrs["length"]
-            varname_to_edges[varname] = np.linspace(mins[dim_idx], maxs[dim_idx], nbins + 1, endpoint=True)
-
+                raise Exception(f"Number of bins in {varname} is known to be {len(coords)}, but nbins={nbins}")
+            nbins = len(coords)
+            # note: use inf as right edge for convenience; it gets sliced out later
+            varname_to_edges[varname] = np.concat((coords, [np.inf]))
         else:
             compute_varnames.append(varname)
             mins_to_compute.append(df[varname].min())
@@ -60,7 +48,10 @@ def _guess_bin_edgess(df: dd.DataFrame, varname_to_nbins: dict[str, int | None])
     # If needed, batch-compute the missing edges
 
     if compute_varnames:
-        computed_mins, computed_maxs = da.compute(mins_to_compute, maxs_to_compute)
+        if isinstance(df, dd.DataFrame):
+            computed_mins, computed_maxs = da.compute(mins_to_compute, maxs_to_compute)
+        else:
+            computed_mins, computed_maxs = mins_to_compute, maxs_to_compute
 
         if varnames_with_missing_nbins:
             # split bins evenly across remaining dimensions
@@ -85,24 +76,30 @@ class Bin(AtomicAdaptor):
     def __init__(self, varname_to_nbins: dict[str, int | None]):
         self.varname_to_nbins = varname_to_nbins
 
-    def apply_atomic(self, df: dd.DataFrame) -> xr.DataArray:
+    def apply_atomic(self, df: dd.DataFrame | pd.DataFrame) -> xr.DataArray:
         bin_edgess = _guess_bin_edgess(df, self.varname_to_nbins)
 
-        binned_data, _ = da.histogramdd(
-            [df[var_name].to_dask_array() for var_name in self.varname_to_nbins],
-            bin_edgess,
-            density=False,
-            weights=df["w"].to_dask_array(),
-        )
+        if isinstance(df, dd.DataFrame):
+            binned_data, _ = da.histogramdd(
+                [df[var_name].to_dask_array() for var_name in self.varname_to_nbins],
+                bin_edgess,
+                density=False,
+                weights=df[df.attrs[WEIGHT_VAR_KEY]].to_dask_array(),
+            )
+            binned_data = binned_data.compute()
+        else:
+            binned_data, _ = np.histogramdd(
+                [df[var_name] for var_name in self.varname_to_nbins],
+                bin_edgess,
+                density=False,
+                weights=df[df.attrs[WEIGHT_VAR_KEY]],
+            )
 
+        # note: the slice removes any infs
         coords = dict(zip(self.varname_to_nbins.keys(), (edges[:-1] for edges in bin_edgess)))
 
-        if "times" in df.attrs and "t" in coords:
-            # fulfillment of the "cheating": want actual t values, but time bins are centered on those values to avoid floating point comparison errors
-            coords["t"] = df.attrs["times"]
-
         return xr.DataArray(
-            binned_data.compute(),
+            binned_data,
             coords,
             dims=self.varname_to_nbins.keys(),
         )

@@ -14,11 +14,19 @@ class ParticleLoader(DataSource):
 
     def get_data(self) -> dd.DataFrame:
         df = particle_util.load_df(self.prefix, self.steps)
+        attrs_before = df.attrs
+
         for var_name in self.var_names:
             derive_particle_variable(df, var_name, self.prefix)
 
-        df.attrs[VAR_LATEX_KEY] = "f"
-        df.attrs[NAME_FRAGMENTS_KEY] = self.get_name_fragments()
+        df.attrs = (
+            attrs_before
+            | getattr(df, "attrs", {})
+            | {
+                VAR_LATEX_KEY: "f",
+                NAME_FRAGMENTS_KEY: self.get_name_fragments(),
+            }
+        )
 
         return df
 
