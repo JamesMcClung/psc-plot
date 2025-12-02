@@ -1,3 +1,4 @@
+import dask.dataframe as df
 import pandas as pd
 import xarray as xr
 
@@ -19,6 +20,11 @@ def get_plot(data: DataWithAttrs, **plot_kwargs) -> Plot:
         raise Exception("non-animated plots not supported yet")
 
     spatial_dims = data.attrs[SPATIAL_DIMS_KEY]
+
+    if isinstance(data, df.DataFrame):
+        attrs_before = data.attrs
+        data = data.compute()
+        data.attrs = attrs_before
 
     if isinstance(data, xr.DataArray):
         if len(spatial_dims) == 1:
