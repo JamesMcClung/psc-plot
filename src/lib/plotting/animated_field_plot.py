@@ -19,11 +19,7 @@ class AnimatedFieldPlot(AnimatedPlot[xr.DataArray]):
         return self.data.isel({self.time_dim: frame})
 
     def _get_var_bounds(self) -> tuple[float, float]:
-        if self.scales[0] == "log":
-            return np.exp(np.nanquantile(np.log(self.data), [0.5, 1])) * [0.1, 1.1]
-
         bounds = np.nanquantile(self.data, [0, 1])
-        bounds *= 1 + 0.1 * np.array([-float(bounds[0] > 0), float(bounds[1] > 0)])
         return bounds
 
 
