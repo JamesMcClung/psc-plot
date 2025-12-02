@@ -22,8 +22,10 @@ class FieldLoader(DataSource):
 
     def get_data(self) -> xr.DataArray:
         da = xr.concat((_load_field_variable(self.prefix, step, self.var_name) for step in self.steps), "t")
-        da.attrs[VAR_LATEX_KEY] = f"\\text{{{self.var_name}}}"
-        da.attrs[NAME_FRAGMENTS_KEY] = self.get_name_fragments()
+        da.attrs = {
+            VAR_LATEX_KEY: f"\\text{{{self.var_name}}}",
+            NAME_FRAGMENTS_KEY: self.get_name_fragments(),
+        }
         return da
 
     def get_file_prefix(self) -> str:
