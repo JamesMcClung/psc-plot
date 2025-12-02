@@ -30,10 +30,13 @@ class AtomicAdaptor(Adaptor):
         allowed_types = get_allowed_types(apply_atomic_data_param.annotation)
         ensure_type(self.__class__.__name__, data, *allowed_types)
 
-        attrs = data.attrs
+        attrs_before = data.attrs
+
         data = self.apply_atomic(data)
-        data.attrs = attrs | data.attrs
+
+        data.attrs = attrs_before | getattr(data, "attrs", {})
         data.attrs[NAME_FRAGMENTS_KEY] = data.attrs.get(NAME_FRAGMENTS_KEY, []) + self.get_name_fragments()
         if VAR_LATEX_KEY in data.attrs:
             data.attrs[VAR_LATEX_KEY] = self.get_modified_var_latex(data.attrs[VAR_LATEX_KEY])
+
         return data
