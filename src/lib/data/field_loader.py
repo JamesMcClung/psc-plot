@@ -9,6 +9,11 @@ from .source import DataSource
 def _load_field_variable(prefix: file_util.FieldPrefix, step: int, var_name: str) -> xr.DataArray:
     ds = field_util.load_ds(prefix, step)
     ds = ds.assign_coords(t=ds.time)
+    for da_name in ds:
+        ds[da_name].attrs = {
+            VAR_LATEX_KEY: f"\\text{{{da_name}}}",
+            NAME_FRAGMENTS_KEY: [],
+        }
     derive_field_variable(ds, var_name, prefix)
 
     return ds[var_name]
