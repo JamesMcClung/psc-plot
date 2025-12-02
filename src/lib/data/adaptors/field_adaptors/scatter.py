@@ -14,6 +14,7 @@ class Scatter(AtomicAdaptor):
         coord_grids = np.meshgrid(*ordered_coords, indexing="ij")
 
         df = pd.DataFrame({DEPENDENT_VAR_KEY: np.ravel(da)} | dict(zip(da.dims, (np.ravel(coord_grid) for coord_grid in coord_grids))))
+        df.attrs[DEPENDENT_VAR_KEY] = DEPENDENT_VAR_KEY
         df.attrs[WEIGHT_VAR_KEY] = DEPENDENT_VAR_KEY
         df.attrs[COORDS_KEY] = dict(da.coords)
         return df
