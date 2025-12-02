@@ -32,7 +32,7 @@ class AnimatedScatterPlot(AnimatedPlot[pd.DataFrame]):
         self.ax.set_yscale(self.scales[0])
 
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
-        self.ax.set_ylabel(f"${self.data.attrs[VAR_LATEX_KEY]}$")
+        self.ax.set_ylabel(f"${self.data.attrs[VAR_LATEX_KEY]}$" if self.dependent_var == DEPENDENT_VAR_KEY else DIMENSIONS[self.dependent_var].to_axis_label())
 
         data = self._get_data_at_frame(0)
         if data.attrs[COLOR_DIM_KEY]:
