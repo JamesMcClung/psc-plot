@@ -1,6 +1,7 @@
 import pandas as pd
 import xarray as xr
 
+from lib.data.data_with_attrs import DataWithAttrs
 from lib.data.keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY
 from lib.dimension import DIMENSIONS
 from lib.plotting.animated_field_plot import (
@@ -12,7 +13,7 @@ from lib.plotting.animated_scatter_plot import AnimatedScatterPlot
 from lib.plotting.plot import Plot
 
 
-def get_plot(data: xr.DataArray | pd.DataFrame, **plot_kwargs) -> Plot:
+def get_plot(data: DataWithAttrs, **plot_kwargs) -> Plot:
     if not data.attrs[TIME_DIM_KEY]:
         # TODO use an argparse exception type
         raise Exception("non-animated plots not supported yet")
