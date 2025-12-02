@@ -4,7 +4,7 @@ import xarray as xr
 
 from lib.data.adaptor import AtomicAdaptor
 from lib.data.adaptors.registry import register_const_adaptor
-from lib.data.keys import DEPENDENT_VAR_KEY, WEIGHT_VAR_KEY
+from lib.data.keys import COORDS_KEY, DEPENDENT_VAR_KEY, WEIGHT_VAR_KEY
 
 
 class Scatter(AtomicAdaptor):
@@ -15,6 +15,7 @@ class Scatter(AtomicAdaptor):
 
         df = pd.DataFrame({DEPENDENT_VAR_KEY: np.ravel(da)} | dict(zip(da.dims, (np.ravel(coord_grid) for coord_grid in coord_grids))))
         df.attrs[WEIGHT_VAR_KEY] = DEPENDENT_VAR_KEY
+        df.attrs[COORDS_KEY] = dict(da.coords)
         return df
 
 
