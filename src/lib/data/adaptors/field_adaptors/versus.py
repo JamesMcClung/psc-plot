@@ -27,7 +27,7 @@ class Versus(Adaptor):
 
     def apply[T: xr.DataArray | pd.DataFrame | df.DataFrame](self, data: T) -> T:
         ensure_type(self.__class__.__name__, data, *get_allowed_types(T))
-        name_frags_before = list(data.attrs.get(NAME_FRAGMENTS_KEY, []))
+        attrs_before = data.attrs
 
         if isinstance(data, xr.DataArray):
             # 1. apply implicit coordinate transforms, as necessary
@@ -65,10 +65,16 @@ class Versus(Adaptor):
             data = data.drop(columns=drop_vars)
 
         # let the animator take it from here
-        data.attrs[SPATIAL_DIMS_KEY] = self.spatial_dims
-        data.attrs[TIME_DIM_KEY] = self.time_dim
-        data.attrs[COLOR_DIM_KEY] = self.color_dim
-        data.attrs[NAME_FRAGMENTS_KEY] = name_frags_before + self.get_name_fragments()
+        data.attrs = (
+            attrs_before
+            | getattr(data, "attrs", {})
+            | {
+                SPATIAL_DIMS_KEY: self.spatial_dims,
+                TIME_DIM_KEY: self.time_dim,
+                COLOR_DIM_KEY: self.color_dim,
+                NAME_FRAGMENTS_KEY: attrs_before[NAME_FRAGMENTS_KEY] + self.get_name_fragments(),
+            }
+        )
 
         return data
 
