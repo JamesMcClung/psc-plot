@@ -74,7 +74,7 @@ class CartesianToPolar(Transform2D):
 
         self.dim_x = dim_x
         self.dim_y = dim_y
-        r_name = "k" if dim_x.is_fourier() else "r"
+        r_name = "kp" if dim_x.is_fourier() else "rp"
         self.dim_r = Dimension(Latex(r_name), dim_x.unit, "polar:r").register()
         self.dim_theta = Dimension(Latex("\\theta"), RADIAN, "polar:theta").register()
 
@@ -97,7 +97,7 @@ class CartesianToSpherical(Transform3D):
         self.dim_x = dim_x
         self.dim_y = dim_y
         self.dim_z = dim_z
-        r_name = "k" if dim_x.is_fourier() else "r"
+        r_name = "ks" if dim_x.is_fourier() else "rs"
         self.dim_r = Dimension(Latex(r_name), dim_x.unit, "spherical:r").register()
         self.dim_theta = Dimension(Latex("\\theta"), RADIAN, "spherical:theta").register()
         self.dim_phi = Dimension(Latex("\\phi"), RADIAN, "spherical:phi").register()
