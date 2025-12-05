@@ -3,7 +3,6 @@ import typing
 import numpy as np
 import pandas as pd
 
-from lib.data.adaptors.field_adaptors.idx import Idx
 from lib.data.keys import (
     COLOR_DIM_KEY,
     COORDS_KEY,
@@ -75,6 +74,3 @@ class AnimatedScatterPlot(AnimatedPlot[pd.DataFrame]):
             self.ax.legend()
 
         return [self.scatter, self.ax.title]
-
-    def _get_data_at_frame(self, frame: int) -> pd.DataFrame:
-        return Idx({self.time_dim: frame}).apply(self.data)

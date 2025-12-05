@@ -7,6 +7,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
+from lib.data.adaptors.field_adaptors.idx import Idx
 from lib.data.keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY
 from lib.plotting import plt_util
 from lib.plotting.plot import DataWithAttrs, Plot
@@ -31,6 +32,9 @@ class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
         # FIXME get blitting to work with the title
         # note: blitting doesn't seem to affect saved animations, only ones displayed with plt.show
         self.anim = FuncAnimation(self.fig, self._update_fig, frames=self._get_nframes(), blit=False)
+
+    def _get_data_at_frame(self, frame: int) -> Data:
+        return Idx({self.time_dim: frame}).apply(self.data)
 
     @abstractmethod
     def _get_nframes(self) -> int:

@@ -15,9 +15,6 @@ class AnimatedFieldPlot(AnimatedPlot[xr.DataArray]):
     def _get_nframes(self) -> int:
         return len(self.data.coords[self.time_dim])
 
-    def _get_data_at_frame(self, frame: int) -> xr.DataArray:
-        return self.data.isel({self.time_dim: frame})
-
     def _get_var_bounds(self) -> tuple[float, float]:
         bounds = np.nanquantile(self.data, [0, 1])
         return bounds
