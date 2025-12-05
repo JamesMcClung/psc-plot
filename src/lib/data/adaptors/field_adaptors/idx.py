@@ -1,11 +1,10 @@
 import pandas as pd
 import xarray as xr
 
+from lib.data.adaptor import AtomicAdaptor
+from lib.data.adaptors import parse_util
+from lib.data.adaptors.registry import adaptor_parser
 from lib.data.keys import COORDS_KEY
-
-from ...adaptor import AtomicAdaptor
-from .. import parse_util
-from ..registry import adaptor_parser
 
 
 class Idx(AtomicAdaptor):
