@@ -15,9 +15,6 @@ class AnimatedFieldPlot(AnimatedPlot[xr.DataArray]):
     def _get_nframes(self) -> int:
         return len(self.data.coords[self.time_dim])
 
-    def _get_data_at_frame(self, frame: int) -> xr.DataArray:
-        return self.data.isel({self.time_dim: frame})
-
     def _get_var_bounds(self) -> tuple[float, float]:
         bounds = np.nanquantile(self.data, [0, 1])
         return bounds
@@ -48,7 +45,7 @@ class FieldAnimation2d(AnimatedFieldPlot):
         data_lower, data_upper = self._get_var_bounds()
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
-        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coords.items() if pos.shape == ()])
 
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
@@ -61,7 +58,7 @@ class FieldAnimation2d(AnimatedFieldPlot):
 
         self.im.set_array(data)
 
-        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coords.items() if pos.shape == ()])
         return [self.im, self.ax.title]
 
     def _get_data_at_frame(self, frame: int) -> xr.DataArray:
@@ -102,7 +99,7 @@ class FieldAnimation2dPolar(AnimatedFieldPlot):
         data_lower, data_upper = self._get_var_bounds()
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
-        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coords.items() if pos.shape == ()])
 
         # FIXME make the labels work
         # self.ax.set_xlabel(DIMENSIONS[self.dims[1]].to_axis_label())
@@ -115,7 +112,7 @@ class FieldAnimation2dPolar(AnimatedFieldPlot):
 
         self.im.set_array(data)
 
-        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coords.items() if pos.shape == ()])
         return [self.im, self.ax.title]
 
 
@@ -148,7 +145,7 @@ class FieldAnimation1d(AnimatedFieldPlot):
 
         [self.line] = self.ax.plot(xdata, data, line_type)
 
-        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coords.items() if pos.shape == ()])
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
         self.ax.set_ylabel(f"${data.attrs[VAR_LATEX_KEY]}$")
 
@@ -176,7 +173,7 @@ class FieldAnimation1d(AnimatedFieldPlot):
             # updates legend in case fit labels changed (e.g. to show different fit params)
             self.ax.legend()
 
-        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(data[self.time_dim]))
+        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coords.items() if pos.shape == ()])
         return [self.line, self.ax.yaxis, self.ax.title]
 
     def _update_ybounds(self):

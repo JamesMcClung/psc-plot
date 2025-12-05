@@ -3,7 +3,13 @@ import typing
 import numpy as np
 import pandas as pd
 
-from lib.data.keys import COLOR_DIM_KEY, DEPENDENT_VAR_KEY, TIME_DIM_KEY, VAR_LATEX_KEY
+from lib.data.keys import (
+    COLOR_DIM_KEY,
+    COORDS_KEY,
+    DEPENDENT_VAR_KEY,
+    TIME_DIM_KEY,
+    VAR_LATEX_KEY,
+)
 from lib.dimension import DIMENSIONS
 from lib.parsing.fit import Fit
 from lib.plotting import plt_util
@@ -18,7 +24,7 @@ class AnimatedScatterPlot(AnimatedPlot[pd.DataFrame]):
         scales: list[plt_util.Scale] = [],
         subplot_kw: dict[str, typing.Any] = {},
     ):
-        self.times = sorted(set(data[data.attrs[TIME_DIM_KEY]]))
+        self.times = np.array(data.attrs[COORDS_KEY][data.attrs[TIME_DIM_KEY]])
         super().__init__(data, scales=scales, subplot_kw=subplot_kw)
 
         self.dependent_var = data.attrs[DEPENDENT_VAR_KEY]
@@ -41,7 +47,7 @@ class AnimatedScatterPlot(AnimatedPlot[pd.DataFrame]):
             color = self.ax._get_lines.get_next_color()  # scatter() uses a different color cycler than plot(); this uses the plot() cycler manually
             self.scatter = self.ax.scatter(data[self.spatial_dims[0]], data[self.dependent_var], s=0.5, color=color)
 
-        plt_util.update_title(self.ax, self.data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(self.times[0]))
+        plt_util.update_title(self.ax, self.data.attrs[VAR_LATEX_KEY], [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.attrs[COORDS_KEY].items() if isinstance(pos, float)])
 
         self.fit_lines = [fit.plot_fit(self.ax, data) for fit in self.fits]
         if self.fits:
@@ -57,7 +63,7 @@ class AnimatedScatterPlot(AnimatedPlot[pd.DataFrame]):
     def _update_fig(self, frame: int):
         data = self._get_data_at_frame(frame)
         self.scatter.set_offsets(np.array([data[self.spatial_dims[0]], data[self.dependent_var]]).T)
-        plt_util.update_title(self.ax, self.data.attrs[VAR_LATEX_KEY], DIMENSIONS[self.time_dim].get_coordinate_label(self.times[frame]))
+        plt_util.update_title(self.ax, self.data.attrs[VAR_LATEX_KEY], [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.attrs[COORDS_KEY].items() if isinstance(pos, float)])
 
         for fit, line in zip(self.fits, self.fit_lines):
             # TODO properly add and remove lines from fits
@@ -68,6 +74,3 @@ class AnimatedScatterPlot(AnimatedPlot[pd.DataFrame]):
             self.ax.legend()
 
         return [self.scatter, self.ax.title]
-
-    def _get_data_at_frame(self, frame: int) -> pd.DataFrame:
-        return self.data[self.data[self.time_dim] == self.times[frame]]

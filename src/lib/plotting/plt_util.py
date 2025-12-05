@@ -36,5 +36,8 @@ def update_cbar(mappable: _ScalarMappable, *, data_min_override: float | None = 
     mappable.set_cmap(plt.get_cmap(cmap))
 
 
-def update_title(ax: Axes, dep_var_name: str, time_label: str):
-    ax.set_title(f"${dep_var_name}$ ({time_label})")
+def update_title(ax: Axes, dep_var_name: str, cut_labels: list[str]):
+    cut_labels_str = ", ".join(cut_labels)
+    if cut_labels_str:
+        cut_labels_str = f" ({cut_labels_str})"
+    ax.set_title(f"${dep_var_name}${cut_labels_str}")
