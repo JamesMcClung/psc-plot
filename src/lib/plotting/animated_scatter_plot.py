@@ -3,7 +3,13 @@ import typing
 import numpy as np
 import pandas as pd
 
-from lib.data.keys import COLOR_DIM_KEY, DEPENDENT_VAR_KEY, TIME_DIM_KEY, VAR_LATEX_KEY
+from lib.data.keys import (
+    COLOR_DIM_KEY,
+    COORDS_KEY,
+    DEPENDENT_VAR_KEY,
+    TIME_DIM_KEY,
+    VAR_LATEX_KEY,
+)
 from lib.dimension import DIMENSIONS
 from lib.parsing.fit import Fit
 from lib.plotting import plt_util
@@ -18,7 +24,7 @@ class AnimatedScatterPlot(AnimatedPlot[pd.DataFrame]):
         scales: list[plt_util.Scale] = [],
         subplot_kw: dict[str, typing.Any] = {},
     ):
-        self.times = sorted(set(data[data.attrs[TIME_DIM_KEY]]))
+        self.times = np.array(data.attrs[COORDS_KEY][data.attrs[TIME_DIM_KEY]])
         super().__init__(data, scales=scales, subplot_kw=subplot_kw)
 
         self.dependent_var = data.attrs[DEPENDENT_VAR_KEY]
