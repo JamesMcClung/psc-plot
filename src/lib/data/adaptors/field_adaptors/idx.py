@@ -1,4 +1,7 @@
+import pandas as pd
 import xarray as xr
+
+from lib.data.keys import COORDS_KEY
 
 from ...adaptor import AtomicAdaptor
 from .. import parse_util
@@ -9,8 +12,22 @@ class Idx(AtomicAdaptor):
     def __init__(self, dim_names_to_idx: dict[str, int]):
         self.dim_names_to_idx = dim_names_to_idx
 
-    def apply_atomic(self, da: xr.DataArray) -> xr.DataArray:
-        return da.isel(self.dim_names_to_idx)
+    def apply_atomic[T: xr.DataArray | pd.DataFrame](self, data: T) -> T:
+        if isinstance(data, xr.DataArray):
+            return data.isel(self.dim_names_to_idx)
+        elif isinstance(data, pd.DataFrame):
+            coords = data.attrs[COORDS_KEY]
+            new_coords = dict(coords)
+            for dim, idx in self.dim_names_to_idx.items():
+                if dim not in coords:
+                    raise ValueError(f"Data has no coordinate information for dimension {dim}")
+
+                pos = float(coords[dim][idx])
+                data = data[data[dim] == pos]
+                new_coords[dim] = pos
+
+            data.attrs[COORDS_KEY] = new_coords
+            return data
 
     def get_name_fragments(self) -> list[str]:
         subfrags = "_".join(f"{dim_name}={idx}" for dim_name, idx in self.dim_names_to_idx.items())
