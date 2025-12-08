@@ -39,14 +39,7 @@ def parse_idx_slice(arg: str) -> IdxSlice:
 
     parse_util.check_value(dim_name, "dim_name", DIMENSIONS)
 
-    split_slice_arg = slice_arg.split(":")
-    if len(split_slice_arg) != 2:
-        parse_util.fail_format(arg, IDX_SLICE_FORMAT)
-
-    [lower_arg, upper_arg] = split_slice_arg
-    lower = parse_util.parse_optional_number(lower_arg, "lower", int)
-    upper = parse_util.parse_optional_number(upper_arg, "upper", int)
-
-    parse_util.check_order(lower, upper, "lower", "upper")
+    parse_util.check_identifier(dim_name, "dim_name")
+    lower, upper = parse_util.parse_range(slice_arg, int)
 
     return IdxSlice(dim_name, lower, upper)

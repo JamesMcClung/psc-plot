@@ -46,15 +46,6 @@ def parse_pos_slice(arg: str) -> PosSlice:
     [dim_name, slice_arg] = split_arg
 
     parse_util.check_identifier(dim_name, "dim_name")
-
-    split_slice_arg = slice_arg.split(":")
-    if len(split_slice_arg) != 2:
-        parse_util.fail_format(arg, _POS_SLICE_FORMAT)
-
-    [lower_arg, upper_arg] = split_slice_arg
-    lower = parse_util.parse_optional_number(lower_arg, "lower", float)
-    upper = parse_util.parse_optional_number(upper_arg, "upper", float)
-
-    parse_util.check_order(lower, upper, "lower", "upper")
+    lower, upper = parse_util.parse_range(slice_arg, float)
 
     return PosSlice(dim_name, lower, upper)
