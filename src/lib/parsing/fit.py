@@ -6,7 +6,6 @@ from matplotlib.axes import Axes
 from matplotlib.lines import Line2D
 
 from lib.data.adaptors.field_adaptors.pos_slice import PosSlice
-from lib.data.adaptors.particle_adaptors.slice import Slice
 from lib.data.keys import DEPENDENT_VAR_KEY, SPATIAL_DIMS_KEY
 
 # TODO make this a plot plugin (and make plot plugins a thing)
@@ -53,6 +52,6 @@ class Fit:
             return (data.coords[data.dims[0]], data)
         elif isinstance(data, pd.DataFrame):
             spatial_dim = data.attrs[SPATIAL_DIMS_KEY][0]
-            slicer = Slice(spatial_dim, self.min_x, self.max_x)
+            slicer = PosSlice(spatial_dim, self.min_x, self.max_x)
             data = slicer.apply(data)
             return (data[spatial_dim], data[DEPENDENT_VAR_KEY])
