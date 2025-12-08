@@ -32,6 +32,7 @@ def get_combine_args_action(combiner: typing.Callable[[list[Any]], Any]) -> Acti
 
 
 type ArgparseNArgs = int | typing.Literal["+", "*"] | None
+type NArgs = ArgparseNArgs | typing.Literal["just one"]
 
 
 @dataclass
@@ -44,7 +45,7 @@ class ArgparseAdaptorAdder[AdaptorType: Adaptor]:
     const: AdaptorType | None = None
     type: typing.Callable[[str], AdaptorType] | None = None
     metavar: str | tuple[str] | None = None
-    nargs: ArgparseNArgs = None
+    nargs: NArgs = None
 
     def __post_init__(self):
         # exactly 1 must be not None
@@ -63,6 +64,9 @@ class ArgparseAdaptorAdder[AdaptorType: Adaptor]:
                 # to write e.g. "--fourier x y" as a shorthand for "--fourier x --fourier y".
                 # Therefore, the nargs that argparse receives is "+", with the "extend" action.
                 parser.add_argument(*self.name_or_flags, dest="adaptors", help=self.help, action="extend", type=self.type, metavar=self.metavar, nargs="+")
+            elif self.nargs == "just one":
+                # Don't allow the above shorthand
+                parser.add_argument(*self.name_or_flags, dest="adaptors", help=self.help, action="append", type=self.type, metavar=self.metavar, nargs=None)
             else:
                 # On the other hand, if an adaptor parser specifies a non-None nargs, it means the
                 # parser maps that many command-line arguments to a single adaptor instance. This
@@ -78,7 +82,7 @@ def adaptor_parser(
     *name_or_flags: str,
     metavar: str | tuple[str] | None,
     help: str | None,
-    nargs: ArgparseNArgs = None,
+    nargs: NArgs = None,
 ):
     def adaptor_parser_inner[AdaptorType: Adaptor](parse_func: typing.Callable[[str | list[str]], AdaptorType]):
         ADAPTORS.append(ArgparseAdaptorAdder(name_or_flags, help, type=parse_func, metavar=metavar, nargs=nargs))

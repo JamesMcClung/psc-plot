@@ -44,6 +44,7 @@ for name_abbrev, metavar, help, symbol, func in op_params:
         f"--{name_abbrev}",
         metavar=metavar,
         help=help,
+        nargs="just one",
     )
     def parse(arg: str, *, metavar=metavar, name_abbrev=name_abbrev, symbol=symbol, func=func) -> MathOp:
         # without these default kwargs, the function def captures by reference,
