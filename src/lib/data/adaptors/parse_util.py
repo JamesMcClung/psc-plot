@@ -74,3 +74,12 @@ def parse_slice[T](
     check_order(lower, upper, lower_name, upper_name)
 
     return slice(lower, upper)
+
+
+def parse_assignment(arg: str, arg_format: str) -> tuple[str, str]:
+    split_arg = arg.split("=")
+
+    if len(split_arg) != 2:
+        fail_format(arg, arg_format)
+
+    return tuple(split_arg)
