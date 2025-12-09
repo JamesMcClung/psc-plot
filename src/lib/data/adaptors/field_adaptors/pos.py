@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from lib.data import data_util
 from lib.data.adaptor import AtomicAdaptor
 from lib.data.adaptors import parse_util
 from lib.data.adaptors.registry import adaptor_parser
@@ -67,7 +68,7 @@ class Pos(AtomicAdaptor):
             return data
 
     def get_name_fragments(self) -> list[str]:
-        subfrags = "_".join(f"{dim_name}={pos}" for dim_name, pos in self.dim_names_to_sel.items())
+        subfrags = "_".join(f"{dim_name}={data_util.sel_to_frag(sel)}" for dim_name, sel in self.dim_names_to_sel.items())
         return [f"pos_{subfrags}"]
 
 
