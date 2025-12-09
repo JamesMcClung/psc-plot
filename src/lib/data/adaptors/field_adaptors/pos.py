@@ -27,42 +27,42 @@ class Pos(AtomicAdaptor):
             dim_names_to_pos = {dim_name: pos for dim_name, pos in self.dim_names_to_sel.items() if isinstance(pos, float)}
             dim_names_to_slice = {dim_name: s for dim_name, s in self.dim_names_to_sel.items() if isinstance(s, slice)}
             return data.sel(dim_names_to_pos, method="nearest").sel(dim_names_to_slice)
-        else:
-            coordss = data.attrs[COORDS_KEY]
-            new_coordss = dict(coordss)
 
-            for dim, sel in self.dim_names_to_sel.items():
-                if isinstance(sel, float):
-                    if dim not in coordss:
-                        raise ValueError(f"Data has no coordinate information for dimension {dim}")
+        coordss = data.attrs[COORDS_KEY]
+        new_coordss = dict(coordss)
 
-                    nearest_coord = float(coordss[dim][0])
-                    for coord in coordss[dim]:
-                        if abs(coord - sel) < abs(nearest_coord - sel):
-                            nearest_coord = float(coord)
+        for dim, sel in self.dim_names_to_sel.items():
+            if isinstance(sel, float):
+                if dim not in coordss:
+                    raise ValueError(f"Data has no coordinate information for dimension {dim}")
 
-                    data = data[data[dim] == nearest_coord]
-                    new_coordss[dim] = nearest_coord
-                else:
-                    if sel.start is not None:
-                        if self.dim_names_to_include_bounds[dim][0]:
-                            data = data[data[dim] >= sel.start]
-                        else:
-                            data = data[data[dim] > sel.start]
+                nearest_coord = float(coordss[dim][0])
+                for coord in coordss[dim]:
+                    if abs(coord - sel) < abs(nearest_coord - sel):
+                        nearest_coord = float(coord)
 
-                    if sel.stop is not None:
-                        if self.dim_names_to_include_bounds[dim][1]:
-                            data = data[data[dim] <= sel.stop]
-                        else:
-                            data = data[data[dim] < sel.stop]
+                data = data[data[dim] == nearest_coord]
+                new_coordss[dim] = nearest_coord
+            else:
+                if sel.start is not None:
+                    if self.dim_names_to_include_bounds[dim][0]:
+                        data = data[data[dim] >= sel.start]
+                    else:
+                        data = data[data[dim] > sel.start]
 
-                    if dim in coordss:
-                        coords = coordss[dim]
+                if sel.stop is not None:
+                    if self.dim_names_to_include_bounds[dim][1]:
+                        data = data[data[dim] <= sel.stop]
+                    else:
+                        data = data[data[dim] < sel.stop]
 
-                        lower_idx = None if sel.start is None else np.searchsorted(coords, sel.start, side="right") - 1
-                        upper_idx = None if sel.stop is None else np.searchsorted(coords, sel.stop, side="right")
+                if dim in coordss:
+                    coords = coordss[dim]
 
-                        new_coordss[dim] = coords[lower_idx:upper_idx]
+                    lower_idx = None if sel.start is None else np.searchsorted(coords, sel.start, side="right") - 1
+                    upper_idx = None if sel.stop is None else np.searchsorted(coords, sel.stop, side="right")
+
+                    new_coordss[dim] = coords[lower_idx:upper_idx]
 
             data.attrs[COORDS_KEY] = new_coordss
             return data
