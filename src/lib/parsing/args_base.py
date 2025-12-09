@@ -26,8 +26,8 @@ class ArgsUntyped(argparse.Namespace):
 
 
 def add_common_arguments(parser: argparse.ArgumentParser):
-    parser.add_argument("-s", "--save", action="store_true")
-    parser.add_argument("-q", "--quiet", action="store_false", dest="show")
+    parser.add_argument("-s", "--save", action="store_true", help="save the figure")
+    parser.add_argument("-q", "--quiet", action="store_false", dest="show", help="don't show the figure")
 
 
 def add_subparsers(parser: argparse.ArgumentParser) -> argparse._SubParsersAction:
