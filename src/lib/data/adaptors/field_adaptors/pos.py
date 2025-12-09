@@ -78,7 +78,7 @@ def parse_pos(args: list[str]) -> Pos:
 
         parse_util.check_identifier(dim_name, "dim_name")
         if ":" in sel_arg:
-            dim_names_to_sel[dim_name] = slice(*parse_util.parse_range(sel_arg, float))
+            dim_names_to_sel[dim_name] = parse_util.parse_slice(sel_arg, float)
         else:
             dim_names_to_sel[dim_name] = parse_util.parse_number(sel_arg, "pos", float)
 

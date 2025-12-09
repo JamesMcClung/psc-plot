@@ -66,7 +66,7 @@ def parse_idx(args: list[str]) -> Idx:
 
         parse_util.check_identifier(dim_name, "dim_name")
         if ":" in isel_arg:
-            dim_names_to_isel[dim_name] = slice(*parse_util.parse_range(isel_arg, int))
+            dim_names_to_isel[dim_name] = parse_util.parse_slice(isel_arg, int)
         else:
             dim_names_to_isel[dim_name] = parse_util.parse_number(isel_arg, "idx", int)
 
