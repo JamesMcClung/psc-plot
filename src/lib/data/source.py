@@ -1,12 +1,14 @@
 import typing
 from abc import abstractmethod
 
+from lib.data.data_with_attrs import DataWithAttrs
+
 from .pipeline import Pipeline
 
 
 class DataSource:
     @abstractmethod
-    def get_data(self) -> typing.Any: ...
+    def get_data(self) -> DataWithAttrs: ...
 
     @abstractmethod
     def get_file_prefix(self) -> str:
