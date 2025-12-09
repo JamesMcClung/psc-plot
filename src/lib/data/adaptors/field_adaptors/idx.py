@@ -35,7 +35,7 @@ class Idx(AtomicAdaptor):
                         pos_upper = float(coords[dim][isel.stop])
                         data = data[data[dim] < pos_upper]
 
-                    new_coords[dim] = coords[isel]
+                    new_coords[dim] = coords[dim][isel]
 
             data.attrs[COORDS_KEY] = new_coords
             return data
