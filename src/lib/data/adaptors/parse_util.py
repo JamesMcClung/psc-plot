@@ -55,3 +55,31 @@ def parse_optional_number[T](num_arg: str, num_name: str, num_parser: typing.Cal
         return None
 
     return parse_number(num_arg, num_name, num_parser)
+
+
+def parse_slice[T](
+    range_arg: str,
+    num_parser: typing.Callable[[str], T],
+    lower_name: str = "lower",
+    upper_name: str = "upper",
+) -> slice:
+    split_range_arg = range_arg.split(":")
+    if len(split_range_arg) != 2:
+        fail_format(range_arg, f"{lower_name}:{upper_name}")
+
+    [lower_arg, upper_arg] = split_range_arg
+    lower = parse_optional_number(lower_arg, lower_name, num_parser)
+    upper = parse_optional_number(upper_arg, upper_name, num_parser)
+
+    check_order(lower, upper, lower_name, upper_name)
+
+    return slice(lower, upper)
+
+
+def parse_assignment(arg: str, arg_format: str) -> tuple[str, str]:
+    split_arg = arg.split("=")
+
+    if len(split_arg) != 2:
+        fail_format(arg, arg_format)
+
+    return tuple(split_arg)

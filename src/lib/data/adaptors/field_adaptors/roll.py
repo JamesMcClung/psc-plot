@@ -27,12 +27,7 @@ ROLL_FORMAT = "dim_name=window_size"
     help="plot the rolling average against the given dimension with the given window size",
 )
 def parse(arg: str) -> Roll:
-    split_str = arg.split("=")
-
-    if len(split_str) != 2:
-        parse_util.fail_format(arg, ROLL_FORMAT)
-
-    [dim_name, window_size_arg] = split_str
+    [dim_name, window_size_arg] = parse_util.parse_assignment(arg, ROLL_FORMAT)
 
     parse_util.check_value(dim_name, "dim_name", DIMENSIONS)
 
