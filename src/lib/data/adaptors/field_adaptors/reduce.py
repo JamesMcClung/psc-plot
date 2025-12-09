@@ -39,13 +39,8 @@ REDUCE_FORMAT = "dim_name=reduce_func"
     metavar=REDUCE_FORMAT,
     help="reduce the given dimension using the given method",
 )
-def parse_reduce(args: str) -> Reduce:
-    split_args = args.split("=")
-
-    if len(split_args) != 2:
-        parse_util.fail_format(args, REDUCE_FORMAT)
-
-    [dim_name, func_name] = split_args
+def parse_reduce(arg: str) -> Reduce:
+    [dim_name, func_name] = parse_util.parse_assignment(arg, REDUCE_FORMAT)
 
     parse_util.check_value(dim_name, "dim_name", DIMENSIONS)
     parse_util.check_value(func_name, "reduce_func", REDUCE_FUNCS)

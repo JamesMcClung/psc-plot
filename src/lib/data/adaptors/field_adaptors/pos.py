@@ -69,12 +69,7 @@ POS_FORMAT = "dim_name=[pos | lower?:upper?]"
 def parse_pos(args: list[str]) -> Pos:
     dim_names_to_sel = {}
     for arg in args:
-        split_arg = arg.split("=")
-
-        if len(split_arg) != 2:
-            parse_util.fail_format(arg, POS_FORMAT)
-
-        [dim_name, sel_arg] = split_arg
+        [dim_name, sel_arg] = parse_util.parse_assignment(arg, POS_FORMAT)
 
         parse_util.check_identifier(dim_name, "dim_name")
         if ":" in sel_arg:

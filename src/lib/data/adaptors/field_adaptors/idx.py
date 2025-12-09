@@ -57,12 +57,7 @@ IDX_FORMAT = "dim_name=[idx | lower?:upper?]"
 def parse_idx(args: list[str]) -> Idx:
     dim_names_to_isel = {}
     for arg in args:
-        split_arg = arg.split("=")
-
-        if len(split_arg) != 2:
-            parse_util.fail_format(arg, IDX_FORMAT)
-
-        [dim_name, isel_arg] = split_arg
+        [dim_name, isel_arg] = parse_util.parse_assignment(arg, IDX_FORMAT)
 
         parse_util.check_identifier(dim_name, "dim_name")
         if ":" in isel_arg:

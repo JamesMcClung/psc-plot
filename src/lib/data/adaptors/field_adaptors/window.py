@@ -58,13 +58,8 @@ KAISER_FORMAT = "dim_name=beta"
     metavar=KAISER_FORMAT,
     help="apply the Kaiser window of the given beta along the given dimension",
 )
-def parse_window(args: str) -> Window:
-    split_args = args.split("=")
-
-    if len(split_args) != 2:
-        parse_util.fail_format(args, KAISER_FORMAT)
-
-    [dim_name, beta] = split_args
+def parse_window(arg: str) -> Window:
+    [dim_name, beta] = parse_util.parse_assignment(arg, KAISER_FORMAT)
 
     parse_util.check_value(dim_name, "dim_name", DIMENSIONS)
     beta = parse_util.parse_number(beta, "beta", float)
