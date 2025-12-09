@@ -1,6 +1,7 @@
 import pandas as pd
 import xarray as xr
 
+from lib.data import data_util
 from lib.data.adaptor import AtomicAdaptor
 from lib.data.adaptors import parse_util
 from lib.data.adaptors.registry import adaptor_parser
@@ -40,7 +41,7 @@ class Idx(AtomicAdaptor):
             return data
 
     def get_name_fragments(self) -> list[str]:
-        subfrags = "_".join(f"{dim_name}={idx}" for dim_name, idx in self.dim_names_to_isel.items())
+        subfrags = "_".join(f"{dim_name}={data_util.sel_to_frag(isel)}" for dim_name, isel in self.dim_names_to_isel.items())
         return [f"idx_{subfrags}"]
 
 
