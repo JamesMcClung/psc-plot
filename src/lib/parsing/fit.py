@@ -5,7 +5,7 @@ import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.lines import Line2D
 
-from lib.data.adaptors.field_adaptors.pos_slice import PosSlice
+from lib.data.adaptors.field_adaptors.pos import Pos
 from lib.data.keys import DEPENDENT_VAR_KEY, SPATIAL_DIMS_KEY
 
 # TODO make this a plot plugin (and make plot plugins a thing)
@@ -47,11 +47,11 @@ class Fit:
 
     def _get_xy_data(self, data: xr.DataArray | pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
         if isinstance(data, xr.DataArray):
-            slicer = PosSlice(data.dims[0], self.min_x, self.max_x)
+            slicer = Pos({data.dims[0]: slice(self.min_x, self.max_x)})
             data = slicer.apply(data)
             return (data.coords[data.dims[0]], data)
         elif isinstance(data, pd.DataFrame):
             spatial_dim = data.attrs[SPATIAL_DIMS_KEY][0]
-            slicer = PosSlice(spatial_dim, self.min_x, self.max_x)
+            slicer = Pos({spatial_dim: slice(self.min_x, self.max_x)})
             data = slicer.apply(data)
             return (data[spatial_dim], data[DEPENDENT_VAR_KEY])
