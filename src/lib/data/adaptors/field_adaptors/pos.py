@@ -10,8 +10,16 @@ from lib.data.keys import COORDS_KEY
 
 
 class Pos(AtomicAdaptor):
-    def __init__(self, dim_names_to_sel: dict[str, float | slice]):
+    def __init__(
+        self,
+        dim_names_to_sel: dict[str, float | slice],
+        dim_names_to_include_bounds: dict[str, tuple[bool, bool]] | None = None,
+    ):
         self.dim_names_to_sel = dim_names_to_sel
+
+        self.dim_names_to_include_bounds = dim_names_to_include_bounds or {}
+        for dim_name in self.dim_names_to_sel:
+            self.dim_names_to_include_bounds.setdefault(dim_name, (True, False))
 
     def apply_atomic[T: xr.DataArray | pd.DataFrame | dd.DataFrame](self, data: T) -> T:
         if isinstance(data, xr.DataArray):
@@ -36,10 +44,16 @@ class Pos(AtomicAdaptor):
                     new_coordss[dim] = nearest_coord
                 else:
                     if sel.start is not None:
-                        data = data[data[dim] >= sel.start]
+                        if self.dim_names_to_include_bounds[dim][0]:
+                            data = data[data[dim] >= sel.start]
+                        else:
+                            data = data[data[dim] > sel.start]
 
                     if sel.stop is not None:
-                        data = data[data[dim] < sel.stop]
+                        if self.dim_names_to_include_bounds[dim][1]:
+                            data = data[data[dim] <= sel.stop]
+                        else:
+                            data = data[data[dim] < sel.stop]
 
                     if dim in coordss:
                         coords = coordss[dim]
