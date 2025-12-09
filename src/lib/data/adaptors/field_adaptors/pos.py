@@ -64,7 +64,7 @@ class Pos(AtomicAdaptor):
 
                     new_coordss[dim] = coords[lower_idx:upper_idx]
 
-            data.attrs[COORDS_KEY] = new_coordss
+            data.attrs = {COORDS_KEY: new_coordss}
             return data
 
     def get_name_fragments(self) -> list[str]:
