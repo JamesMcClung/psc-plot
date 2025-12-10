@@ -100,22 +100,26 @@ _VERSUS_FORMAT = f"dim_name | {_TIME_PREFIX}[dim_name] | {_COLOR_PREFIX}dim_name
     "--versus",
     "-v",
     metavar=_VERSUS_FORMAT,
-    help=f"Specifies the independent axes to plot against (automatically performs necessary Fourier and coordinate transforms, and reduces other dimensions via arithmetic mean). The optional `{_TIME_PREFIX}[dim_name]` specifies an additional dimension to use as the time axis. If unspecified, defaults to `{_TIME_PREFIX}t`. Disable time by passing `{_TIME_PREFIX}`",
+    help=f"Specifies the independent axes to plot against (automatically performs necessary Fourier and coordinate transforms, and reduces other dimensions via arithmetic mean). The optional `{_TIME_PREFIX}[dim_name]` specifies an additional dimension to use as the time axis. If unspecified, defaults to `{_TIME_PREFIX}t` unless t is used as a spatial axis. Alternatively, disable time by passing `{_TIME_PREFIX}` (with no dim_name).",
     nargs="+",
 )
 def parse_versus(args: list[str]) -> Versus:
     spatial_dims = []
     time_dim = "t"
+    time_dim_is_default = True
     color_dim = None
     for arg in args:
         if arg.startswith(_TIME_PREFIX):
             time_dim = arg.removeprefix(_TIME_PREFIX) or None
             parse_util.check_optional_identifier(time_dim, "time dim_name")
+            time_dim_is_default = False
         elif arg.startswith(_COLOR_PREFIX):
             color_dim = arg.removeprefix(_COLOR_PREFIX)
             parse_util.check_identifier(color_dim, "color dim_name")
         else:
             parse_util.check_identifier(arg, "dim_name")
             spatial_dims.append(arg)
+            if time_dim_is_default and arg == time_dim:
+                time_dim = None
 
     return Versus(spatial_dims, time_dim, color_dim)
