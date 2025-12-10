@@ -6,9 +6,9 @@ from lib.data.data_with_attrs import DataWithAttrs
 from lib.data.keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY
 from lib.dimension import DIMENSIONS
 from lib.plotting.animated_field_plot import (
-    FieldAnimation1d,
-    FieldAnimation2d,
-    FieldAnimation2dPolar,
+    Animated1dFieldPlot,
+    Animated2dFieldPlot,
+    AnimatedPolarFieldPlot,
 )
 from lib.plotting.animated_scatter_plot import AnimatedScatterPlot
 from lib.plotting.plot import Plot
@@ -28,12 +28,12 @@ def get_plot(data: DataWithAttrs, **plot_kwargs) -> Plot:
 
     if isinstance(data, xr.DataArray):
         if len(spatial_dims) == 1:
-            PlotType = FieldAnimation1d
+            PlotType = Animated1dFieldPlot
         elif len(spatial_dims) == 2:
             if DIMENSIONS[spatial_dims[0]].geometry == "polar:r" and DIMENSIONS[spatial_dims[1]].geometry == "polar:theta":
-                PlotType = FieldAnimation2dPolar
+                PlotType = AnimatedPolarFieldPlot
             else:
-                PlotType = FieldAnimation2d
+                PlotType = Animated2dFieldPlot
         else:
             raise NotImplementedError("don't have 3D field animations yet")
 

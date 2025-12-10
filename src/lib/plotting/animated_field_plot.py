@@ -26,7 +26,7 @@ def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
     return (float(lower), float(upper))
 
 
-class FieldAnimation2d(AnimatedFieldPlot):
+class Animated2dFieldPlot(AnimatedFieldPlot):
     def _init_fig(self):
         data = self._get_data_at_frame(0)
 
@@ -67,7 +67,7 @@ class FieldAnimation2d(AnimatedFieldPlot):
         return data
 
 
-class FieldAnimation2dPolar(AnimatedFieldPlot):
+class AnimatedPolarFieldPlot(AnimatedFieldPlot):
     ax: PolarAxes
 
     def __init__(
@@ -116,7 +116,7 @@ class FieldAnimation2dPolar(AnimatedFieldPlot):
         return [self.im, self.ax.title]
 
 
-class FieldAnimation1d(AnimatedFieldPlot):
+class Animated1dFieldPlot(AnimatedFieldPlot):
     def __init__(
         self,
         data: xr.DataArray,

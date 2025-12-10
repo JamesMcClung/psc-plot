@@ -10,7 +10,7 @@ from ..data.adaptors import ADAPTORS, Adaptor
 from ..data.field_loader import FieldLoader
 from ..file_util import FIELD_PREFIXES
 from ..plotting import plt_util
-from ..plotting.animated_field_plot import AnimatedFieldPlot, FieldAnimation1d
+from ..plotting.animated_field_plot import Animated1dFieldPlot, AnimatedFieldPlot
 from . import args_base
 from .fit import Fit
 
@@ -36,13 +36,13 @@ class FieldArgs(args_base.ArgsTyped):
 
         anim = get_plot(data, scales=self.scales)
 
-        if isinstance(anim, (FieldAnimation1d, AnimatedScatterPlot)):
+        if isinstance(anim, (Animated1dFieldPlot, AnimatedScatterPlot)):
             anim.fits.extend(self.fits)
         elif self.fits:
             # TODO use an argparse exception type
             raise Exception("fits not supported on higher-dimensional data")
 
-        if isinstance(anim, FieldAnimation1d):
+        if isinstance(anim, Animated1dFieldPlot):
             anim.show_t0 = self.show_t0
         elif self.show_t0:
             # TODO use an argparse exception type
