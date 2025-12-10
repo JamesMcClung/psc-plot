@@ -47,7 +47,7 @@ def parse_number[T](num_arg: str, num_name: str, num_parser: typing.Callable[[st
         else:
             raise ValueError(num_parser)
 
-        raise argparse.ArgumentTypeError(f"Expected {num_name} to be {num_type_desc} or absent; got '{num_arg}'")
+        raise argparse.ArgumentTypeError(f"Expected {num_name} to be {num_type_desc}; got '{num_arg}'")
 
 
 def parse_optional_number[T](num_arg: str, num_name: str, num_parser: typing.Callable[[str], T]) -> T | None:
