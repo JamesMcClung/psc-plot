@@ -50,6 +50,7 @@ IDX_FORMAT = "dim_name=[idx | lower?:upper?]"
 
 @adaptor_parser(
     "--idx",
+    "-i",
     metavar=IDX_FORMAT,
     help="select data at the given index, or between the lower index (inclusive) and upper index (exclusive)",
     nargs="+",
