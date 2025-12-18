@@ -2,12 +2,13 @@ from typing import Callable
 
 import xarray as xr
 
-from ...adaptor import AtomicAdaptor
+from lib.data.adaptor import BareAdaptor
+
 from .. import parse_util
 from ..registry import adaptor_parser
 
 
-class MathOp(AtomicAdaptor):
+class MathOp(BareAdaptor):
     def __init__(
         self,
         rhs: float,
@@ -20,7 +21,7 @@ class MathOp(AtomicAdaptor):
         self.symbol = symbol
         self.func = func
 
-    def apply_atomic(self, da: xr.DataArray) -> xr.DataArray:
+    def apply_bare(self, da: xr.DataArray) -> xr.DataArray:
         return self.func(da, self.rhs)
 
     def get_name_fragments(self) -> list[str]:

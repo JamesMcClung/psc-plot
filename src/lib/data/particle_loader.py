@@ -1,8 +1,7 @@
-import dask.dataframe as dd
+from lib.data.data_with_attrs import LazyList
 
 from .. import file_util, particle_util
 from ..derived_particle_variables import derive_particle_variable
-from .keys import NAME_FRAGMENTS_KEY, VAR_LATEX_KEY
 from .source import DataSource
 
 
@@ -12,23 +11,17 @@ class ParticleLoader(DataSource):
         self.var_names = var_names
         self.steps = steps
 
-    def get_data(self) -> dd.DataFrame:
+    def get_data(self) -> LazyList:
         df = particle_util.load_df(self.prefix, self.steps)
-        attrs_before = df.attrs
 
         for var_name in self.var_names:
-            derive_particle_variable(df, var_name, self.prefix)
+            df = derive_particle_variable(df, var_name, self.prefix)
 
-        df.attrs = (
-            attrs_before
-            | getattr(df, "attrs", {})
-            | {
-                VAR_LATEX_KEY: "f",
-                NAME_FRAGMENTS_KEY: self.get_name_fragments(),
-            }
+        return df.assign_metadata(
+            name_fragments=self.get_name_fragments(),
+            var_name=self.get_var_name(),
+            var_latex=self.get_var_name(),
         )
-
-        return df
 
     def get_file_prefix(self) -> str:
         return self.prefix

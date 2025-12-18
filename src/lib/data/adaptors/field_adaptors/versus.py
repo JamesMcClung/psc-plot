@@ -1,35 +1,25 @@
-import dask.dataframe as df
-import pandas as pd
-import xarray as xr
+from lib.data.adaptor import CheckedAdaptor
+from lib.data.data_with_attrs import Field, List
 
 from ....dimension import DIMENSIONS
-from ...adaptor import Adaptor
-from ...compatability import ensure_type, get_allowed_types
-from ...keys import (
-    COLOR_DIM_KEY,
-    DEPENDENT_VAR_KEY,
-    NAME_FRAGMENTS_KEY,
-    SPATIAL_DIMS_KEY,
-    TIME_DIM_KEY,
-)
 from .. import parse_util
 from ..registry import adaptor_parser
 from .fourier import Fourier
 from .reduce import Reduce
 
 
-class Versus(Adaptor):
+class Versus(CheckedAdaptor):
     def __init__(self, spatial_dims: list[str], time_dim: str | None, color_dim: str | None):
         self.spatial_dims = spatial_dims
         self.time_dim = time_dim
         self.color_dim = color_dim
         self.all_dims = spatial_dims + ([time_dim] if time_dim else []) + ([color_dim] if color_dim else [])
 
-    def apply[T: xr.DataArray | pd.DataFrame | df.DataFrame](self, data: T) -> T:
-        ensure_type(self.__class__.__name__, data, *get_allowed_types(T))
-        attrs_before = data.attrs
+    def apply_checked[D: Field | List](self, data: D) -> D:
+        # going to cut out name fragments of inner adaptors, since they can be inferred
+        initial_name_fragments = data.metadata.name_fragments
 
-        if isinstance(data, xr.DataArray):
+        if isinstance(data, Field):
             # 1. apply implicit coordinate transforms, as necessary
             for dim_name in self.all_dims:
                 # 1a. already have the coordinate; do nothing
@@ -53,36 +43,33 @@ class Versus(Adaptor):
                     reduce = Reduce(dim_name, "mean")
                     data = reduce.apply(data)
 
-        elif isinstance(data, (pd.DataFrame, df.DataFrame)):
+        elif isinstance(data, List):
             # 1. coordinate transform
             # TODO
 
             # 2. drop unused vars
             drop_vars = []
-            for var_name in data.columns:
-                if var_name not in self.all_dims + [DEPENDENT_VAR_KEY]:
+            for var_name in data.dims:
+                if var_name not in self.all_dims + [data.metadata.dependent_var]:
                     drop_vars.append(var_name)
-            data = data.drop(columns=drop_vars)
+
+            data = data.assign_data(data.data.drop(columns=drop_vars))
 
         # do the main job of Versus: specify which dims are spatial, temporal, etc.
-        data.attrs = (
-            attrs_before
-            | getattr(data, "attrs", {})
-            | {
-                SPATIAL_DIMS_KEY: self.spatial_dims,
-                TIME_DIM_KEY: self.time_dim,
-                COLOR_DIM_KEY: self.color_dim,
-                NAME_FRAGMENTS_KEY: attrs_before[NAME_FRAGMENTS_KEY] + self.get_name_fragments(),
-            }
+
+        spatial_dims = self.spatial_dims.copy()
+
+        if isinstance(data, List) and not data.metadata.dependent_var:
+            data = data.assign_metadata(dependent_var=spatial_dims.pop())
+
+        return data.assign_metadata(
+            spatial_dims=spatial_dims,
+            time_dim=self.time_dim,
+            color_dim=self.color_dim,
+            name_fragments=initial_name_fragments,
         )
 
-        if isinstance(data, (pd.DataFrame, df.DataFrame)) and DEPENDENT_VAR_KEY not in data.attrs:
-            data.attrs[DEPENDENT_VAR_KEY] = data.attrs[SPATIAL_DIMS_KEY].pop()
-
-        return data
-
     def get_name_fragments(self) -> list[str]:
-        # don't include inner adaptors because they can be inferred
         dims = ",".join(self.spatial_dims)
         if self.time_dim:
             dims += f";time={self.time_dim}"

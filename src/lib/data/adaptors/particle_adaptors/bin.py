@@ -7,14 +7,14 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from lib.data.keys import COORDS_KEY, WEIGHT_VAR_KEY
+from lib.data.data_with_attrs import Field, FieldMetadata, List
 
-from ...adaptor import AtomicAdaptor
+from ...adaptor import CheckedAdaptor
 from .. import parse_util
 from ..registry import adaptor_parser
 
 
-def _guess_bin_edgess(df: dd.DataFrame | pd.DataFrame, varname_to_nbins: dict[str, int | None]) -> list:
+def _guess_bin_edgess(data: List, varname_to_nbins: dict[str, int | None]) -> list:
     varname_to_edges: dict[str, np.array] = {}
 
     compute_varnames = []
@@ -23,11 +23,13 @@ def _guess_bin_edgess(df: dd.DataFrame | pd.DataFrame, varname_to_nbins: dict[st
     nbins_so_far = 1
     varnames_with_missing_nbins = []
 
+    df = data.data
+
     # Calculate edges using metadata when possible
 
     for varname, nbins in varname_to_nbins.items():
-        if varname in df.attrs[COORDS_KEY]:
-            coords = df.attrs[COORDS_KEY][varname]
+        if varname in data.coordss:
+            coords = data.coordss[varname]
             if nbins == len(coords):
                 warnings.warn(f"Number of bins in {varname} is known to be {nbins}; no need to specify nbins", stacklevel=2)
             elif nbins:
@@ -72,19 +74,20 @@ def _guess_bin_edgess(df: dd.DataFrame | pd.DataFrame, varname_to_nbins: dict[st
     return edgess
 
 
-class Bin(AtomicAdaptor):
+class Bin(CheckedAdaptor):
     def __init__(self, varname_to_nbins: dict[str, int | None]):
         self.varname_to_nbins = varname_to_nbins
 
-    def apply_atomic(self, df: dd.DataFrame | pd.DataFrame) -> xr.DataArray:
-        bin_edgess = _guess_bin_edgess(df, self.varname_to_nbins)
+    def apply_checked(self, data: List) -> Field:
+        bin_edgess = _guess_bin_edgess(data, self.varname_to_nbins)
 
+        df = data.data
         if isinstance(df, dd.DataFrame):
             binned_data, _ = da.histogramdd(
                 [df[var_name].to_dask_array() for var_name in self.varname_to_nbins],
                 bin_edgess,
                 density=False,
-                weights=df[df.attrs[WEIGHT_VAR_KEY]].to_dask_array(),
+                weights=df[data.metadata.weight_var].to_dask_array() if data.metadata.weight_var else None,
             )
             binned_data = binned_data.compute()
         else:
@@ -92,17 +95,19 @@ class Bin(AtomicAdaptor):
                 [df[var_name] for var_name in self.varname_to_nbins],
                 bin_edgess,
                 density=False,
-                weights=df[df.attrs[WEIGHT_VAR_KEY]],
+                weights=df[data.metadata.weight_var] if data.metadata.weight_var else None,
             )
 
         # note: the slice removes any infs
         coords = dict(zip(self.varname_to_nbins.keys(), (edges[:-1] for edges in bin_edgess)))
 
-        return xr.DataArray(
+        da = xr.DataArray(
             binned_data,
             coords,
             dims=self.varname_to_nbins.keys(),
         )
+
+        return Field(da, FieldMetadata.create_from(data.metadata))
 
     def get_name_fragments(self) -> list[str]:
         subfrags = "_".join(f"{varname}={nbins}" if nbins else varname for varname, nbins in self.varname_to_nbins.items())

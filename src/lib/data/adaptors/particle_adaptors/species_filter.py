@@ -1,16 +1,17 @@
 import dask.dataframe as dd
 
+from lib.data.adaptor import BareAdaptor
+
 from ....particle_util import SPECIES, Species
-from ...adaptor import AtomicAdaptor
 from .. import parse_util
 from ..registry import adaptor_parser
 
 
-class SpeciesFilter(AtomicAdaptor):
+class SpeciesFilter(BareAdaptor):
     def __init__(self, species: Species):
         self.species = species
 
-    def apply_atomic(self, df: dd.DataFrame) -> dd.DataFrame:
+    def apply_bare(self, df: dd.DataFrame) -> dd.DataFrame:
         if self.species == "electron":
             df = df[df["q"] < 0]
         elif self.species == "ion":

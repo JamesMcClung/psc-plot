@@ -2,8 +2,9 @@ import numpy as np
 import xarray as xr
 import xrft
 
+from lib.data.adaptor import BareAdaptor
+
 from ....dimension import DIMENSIONS, Dimension
-from ...adaptor import AtomicAdaptor
 from .. import parse_util
 from ..registry import adaptor_parser
 
@@ -26,13 +27,13 @@ def toggle_fourier(da: xr.DataArray, dim: Dimension) -> xr.DataArray:
     return da
 
 
-class Fourier(AtomicAdaptor):
+class Fourier(BareAdaptor):
     def __init__(self, dims: Dimension | list[Dimension]):
         if isinstance(dims, Dimension):
             dims = [dims]
         self.dims = dims
 
-    def apply_atomic(self, da: xr.DataArray) -> xr.DataArray:
+    def apply_bare(self, da: xr.DataArray) -> xr.DataArray:
         for dim in self.dims:
             da = toggle_fourier(da, dim)
 

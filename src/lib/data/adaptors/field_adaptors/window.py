@@ -4,13 +4,14 @@ import numpy as np
 import xarray as xr
 from scipy.signal import windows
 
+from lib.data.adaptor import BareAdaptor
+
 from ....dimension import DIMENSIONS
-from ...adaptor import Adaptor
 from .. import parse_util
 from ..registry import adaptor_parser
 
 
-class Window(Adaptor):
+class Window(BareAdaptor):
     def __init__(self, dim_name: str):
         self.dim_name = dim_name
 
@@ -18,7 +19,7 @@ class Window(Adaptor):
     def get_window(self, n_points: int) -> np.ndarray:
         pass
 
-    def apply(self, da: xr.DataArray) -> xr.DataArray:
+    def apply_bare(self, da: xr.DataArray) -> xr.DataArray:
         dim_idx = da.dims.index(self.dim_name)
         dim_len = da.shape[dim_idx]
 

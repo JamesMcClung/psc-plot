@@ -42,21 +42,23 @@ def hxz2_cc(hx_fc: DataArray, hz_fc: DataArray) -> DataArray:
 
 @derived_field_variable("pfd")
 def hxzhat2(hx_fc: DataArray, hz_fc: DataArray) -> DataArray:
-    pipeline = Pipeline(Fourier([DIMENSIONS["x"], DIMENSIONS["y"], DIMENSIONS["z"]]), Magnitude())
+    fourier = Fourier([DIMENSIONS["x"], DIMENSIONS["y"], DIMENSIONS["z"]])
+    magnitude = Magnitude()
 
-    hx_hat = pipeline.apply(hx_fc)
-    hz_hat = pipeline.apply(hz_fc)
+    hx_hat = magnitude.apply_bare(fourier.apply_bare(hx_fc))
+    hz_hat = magnitude.apply_bare(fourier.apply_bare(hz_fc))
 
     return hx_hat**2 + hz_hat**2
 
 
 @derived_field_variable("pfd")
 def hhat2(hx_fc: DataArray, hy_fc: DataArray, hz_fc: DataArray) -> DataArray:
-    pipeline = Pipeline(Fourier([DIMENSIONS["x"], DIMENSIONS["y"], DIMENSIONS["z"]]), Magnitude())
+    fourier = Fourier([DIMENSIONS["x"], DIMENSIONS["y"], DIMENSIONS["z"]])
+    magnitude = Magnitude()
 
-    hx_hat = pipeline.apply(hx_fc)
-    hy_hat = pipeline.apply(hy_fc)
-    hz_hat = pipeline.apply(hz_fc)
+    hx_hat = magnitude.apply_bare(fourier.apply_bare(hx_fc))
+    hy_hat = magnitude.apply_bare(fourier.apply_bare(hy_fc))
+    hz_hat = magnitude.apply_bare(fourier.apply_bare(hz_fc))
 
     return hx_hat**2 + hy_hat**2 + hz_hat**2
 

@@ -1,18 +1,16 @@
-import dask.dataframe as dd
-import pandas as pd
-
 from lib.data import data_util
-from lib.data.adaptor import AtomicAdaptor
+from lib.data.adaptor import CheckedAdaptor
 from lib.data.adaptors import parse_util
 from lib.data.adaptors.field_adaptors.pos import Pos
 from lib.data.adaptors.registry import adaptor_parser
+from lib.data.data_with_attrs import List
 
 
-class Quantile(AtomicAdaptor):
+class Quantile(CheckedAdaptor):
     def __init__(self, dim_names_to_quants: dict[str, slice]):
         self.dim_names_to_quants = dim_names_to_quants
 
-    def apply_atomic[T: pd.DataFrame | dd.DataFrame](self, data: T) -> T:
+    def apply_checked(self, data: List) -> List:
         dim_names_to_slices: dict[str, slice] = {}
 
         for dim, quants in self.dim_names_to_quants.items():
@@ -20,16 +18,16 @@ class Quantile(AtomicAdaptor):
             upper_quant_val = None
 
             if quants.start not in [0.0, None]:
-                lower_quant_val = data[dim].quantile(quants.start)
+                lower_quant_val = data.data[dim].quantile(quants.start)
 
             if quants.stop not in [1.0, None]:
-                upper_quant_val = data[dim].quantile(quants.stop)
+                upper_quant_val = data.data[dim].quantile(quants.stop)
 
             dim_names_to_slices[dim] = slice(lower_quant_val, upper_quant_val)
 
         dim_names_to_include_bounds = {dim: (True, True) for dim in dim_names_to_slices}
 
-        return Pos(dim_names_to_slices, dim_names_to_include_bounds).apply_atomic(data)
+        return Pos(dim_names_to_slices, dim_names_to_include_bounds).apply_checked(data)
 
     def get_name_fragments(self) -> list[str]:
         subfrags = "_".join(f"{dim_name}={data_util.sel_to_frag(quants)}" for dim_name, quants in self.dim_names_to_quants.items())

@@ -6,7 +6,7 @@ from matplotlib.axes import Axes
 from matplotlib.lines import Line2D
 
 from lib.data.adaptors.field_adaptors.pos import Pos
-from lib.data.keys import DEPENDENT_VAR_KEY, SPATIAL_DIMS_KEY
+from lib.data.data_with_attrs import DataWithAttrs, Field, List
 
 # TODO make this a plot plugin (and make plot plugins a thing)
 
@@ -20,13 +20,13 @@ class Fit:
         self.min_x = float(min_x)
         self.max_x = float(max_x)
 
-    def plot_fit(self, ax: Axes, data: xr.DataArray | pd.DataFrame) -> Line2D:
+    def plot_fit(self, ax: Axes, data: DataWithAttrs) -> Line2D:
         x_data, y_data = self._get_xy_data(data)
         fit_y_data, label = self._get_fit_y_data(x_data, y_data)
         [fit_line] = ax.plot(x_data, fit_y_data, "--", label=label)
         return fit_line
 
-    def update_fit(self, data: xr.DataArray | pd.DataFrame, line: Line2D):
+    def update_fit(self, data: DataWithAttrs, line: Line2D):
         x_data, y_data = self._get_xy_data(data)
         fit_y_data, label = self._get_fit_y_data(x_data, y_data)
         line.set_data(x_data, fit_y_data)
@@ -45,13 +45,11 @@ class Fit:
 
         return y_fit, label
 
-    def _get_xy_data(self, data: xr.DataArray | pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
-        if isinstance(data, xr.DataArray):
-            slicer = Pos({data.dims[0]: slice(self.min_x, self.max_x)})
-            data = slicer.apply(data)
-            return (data.coords[data.dims[0]], data)
-        elif isinstance(data, pd.DataFrame):
-            spatial_dim = data.attrs[SPATIAL_DIMS_KEY][0]
-            slicer = Pos({spatial_dim: slice(self.min_x, self.max_x)})
-            data = slicer.apply(data)
-            return (data[spatial_dim], data[DEPENDENT_VAR_KEY])
+    def _get_xy_data(self, data: DataWithAttrs) -> tuple[np.ndarray, np.ndarray]:
+        spatial_dim = data.metadata.spatial_dims[0]
+        slicer = Pos({spatial_dim: slice(self.min_x, self.max_x)})
+        data = slicer.apply(data)
+        if isinstance(data, Field):
+            return (data.coordss[spatial_dim], data.data)
+        elif isinstance(data, List):
+            return (data.data[spatial_dim], data.data[data.metadata.dependent_var])
