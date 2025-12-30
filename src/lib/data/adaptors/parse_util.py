@@ -83,3 +83,9 @@ def parse_assignment(arg: str, arg_format: str) -> tuple[str, str]:
         fail_format(arg, arg_format)
 
     return tuple(split_arg)
+
+
+def parse_comma_separated_list(arg: str) -> list[str]:
+    args = arg.split(",")
+    args = [arg.strip() for arg in args]
+    return args
