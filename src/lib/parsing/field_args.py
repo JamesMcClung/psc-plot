@@ -11,8 +11,8 @@ from ..data.field_loader import FieldLoader
 from ..file_util import FIELD_PREFIXES
 from ..plotting import plt_util
 from ..plotting.animated_field_plot import Animated1dFieldPlot, AnimatedFieldPlot
+from ..plotting.hooks.fit import Fit
 from . import args_base
-from .fit import Fit
 
 __all__ = ["add_field_subparsers", "FieldArgs"]
 

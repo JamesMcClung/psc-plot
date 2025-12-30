@@ -4,9 +4,9 @@ import numpy as np
 
 from lib.data.data_with_attrs import FullList
 from lib.dimension import DIMENSIONS
-from lib.parsing.fit import Fit
 from lib.plotting import plt_util
 from lib.plotting.animated_plot import AnimatedPlot
+from lib.plotting.hooks.fit import Fit
 
 
 class AnimatedScatterPlot(AnimatedPlot[FullList]):

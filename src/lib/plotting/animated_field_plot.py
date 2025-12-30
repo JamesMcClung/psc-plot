@@ -6,9 +6,9 @@ from matplotlib.projections.polar import PolarAxes
 
 from lib.data.data_with_attrs import Field
 from lib.dimension import DIMENSIONS
-from lib.parsing.fit import Fit
 from lib.plotting import plt_util
 from lib.plotting.animated_plot import AnimatedPlot
+from lib.plotting.hooks.fit import Fit
 
 
 class AnimatedFieldPlot(AnimatedPlot[Field]):
