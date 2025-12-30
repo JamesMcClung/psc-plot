@@ -53,18 +53,22 @@ class Reduce(BareAdaptor):
         return [f"reduce_{','.join(self.dim_names)}={self.func_name}"]
 
 
-REDUCE_FORMAT = "dim_name=reduce_func"
+REDUCE_FORMAT = "dim_name[,dim_name ...]=reduce_func"
 
 
 @adaptor_parser(
     "--reduce",
     metavar=REDUCE_FORMAT,
-    help="reduce the given dimension using the given method",
+    help="reduce the given dimension(s) via the given method",
 )
 def parse_reduce(arg: str) -> Reduce:
-    [dim_name, func_name] = parse_util.parse_assignment(arg, REDUCE_FORMAT)
+    [dim_names_arg, func_name] = parse_util.parse_assignment(arg, REDUCE_FORMAT)
 
-    parse_util.check_value(dim_name, "dim_name", DIMENSIONS)
+    dim_names = parse_util.parse_comma_separated_list(dim_names_arg)
+
+    for dim_name in dim_names:
+        parse_util.check_identifier(dim_name, "dim_name")
+
     parse_util.check_value(func_name, "reduce_func", REDUCE_FUNCS)
 
-    return Reduce(dim_name, func_name)
+    return Reduce(dim_names, func_name)
