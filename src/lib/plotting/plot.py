@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from pathlib import Path
 
@@ -7,6 +9,13 @@ from lib.data.data_with_attrs import DataWithAttrs
 class Plot[Data: DataWithAttrs](ABC):
     def __init__(self, data: Data):
         self.data = data
+        self.hooks: list[Hook] = []
+
+    def add_hook(self, hook: Hook):
+        if not hook.is_compatible(self):
+            raise Exception("TODO better error message")
+
+        self.hooks.append(hook)
 
     @abstractmethod
     def show(self): ...
