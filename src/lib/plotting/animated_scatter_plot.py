@@ -36,6 +36,16 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
         self.ax.set_ylabel(f"${data.metadata.var_latex}$" if self.dependent_var == data.metadata.var_name else DIMENSIONS[self.dependent_var].to_axis_label())
 
+        if self.spatial_dims[0] in self.data.metadata.coordss:
+            x_coords = self.data.metadata.coordss[self.spatial_dims[0]]
+            dx = x_coords[1] - x_coords[0]
+            self.ax.set_xlim(x_coords[0], x_coords[-1] + dx)
+
+        if self.dependent_var in self.data.metadata.coordss:
+            y_coords = self.data.metadata.coordss[self.dependent_var]
+            dy = y_coords[1] - y_coords[0]
+            self.ax.set_ylim(y_coords[0], y_coords[-1] + dy)
+
         if data.metadata.color_dim:
             self.scatter = self.ax.scatter(df[self.spatial_dims[0]], df[self.dependent_var], c=df[data.metadata.color_dim], s=1)
         else:
