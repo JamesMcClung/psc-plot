@@ -21,3 +21,8 @@ class Plot[Data: DataWithAttrs](ABC):
         path = path_override or "-".join(self.data.metadata.name_fragments) + self._get_save_ext()
         self._save_to_path(path)
         print(f"wrote to {path}")
+
+
+class Hook:
+    @abstractmethod
+    def is_compatible(self, plot: Plot) -> bool: ...
