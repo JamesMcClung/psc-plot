@@ -4,19 +4,19 @@ import numpy as np
 import xarray as xr
 from matplotlib.projections.polar import PolarAxes
 
-from lib.data.keys import VAR_LATEX_KEY
+from lib.data.data_with_attrs import Field
 from lib.dimension import DIMENSIONS
 from lib.parsing.fit import Fit
 from lib.plotting import plt_util
 from lib.plotting.animated_plot import AnimatedPlot
 
 
-class AnimatedFieldPlot(AnimatedPlot[xr.DataArray]):
+class AnimatedFieldPlot(AnimatedPlot[Field]):
     def _get_nframes(self) -> int:
-        return len(self.data.coords[self.time_dim])
+        return len(self.data.coordss[self.time_dim])
 
     def _get_var_bounds(self) -> tuple[float, float]:
-        bounds = np.nanquantile(self.data, [0, 1])
+        bounds = np.nanquantile(self.data.data, [0, 1])
         return bounds
 
 
@@ -29,15 +29,16 @@ def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
 class Animated2dFieldPlot(AnimatedFieldPlot):
     def _init_fig(self):
         data = self._get_data_at_frame(0)
+        da = data.data
 
         # must set scale (log, linear) before making image
         self.ax.set_xscale(self.scales[1])
         self.ax.set_yscale(self.scales[2])
 
         self.im = self.ax.imshow(
-            data,
+            da,
             origin="lower",
-            extent=(*get_extent(data, self.spatial_dims[0]), *get_extent(data, self.spatial_dims[1])),
+            extent=(*get_extent(da, self.spatial_dims[0]), *get_extent(da, self.spatial_dims[1])),
             norm=self.scales[0],
         )
 
@@ -45,7 +46,7 @@ class Animated2dFieldPlot(AnimatedFieldPlot):
         data_lower, data_upper = self._get_var_bounds()
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
-        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coords.items() if pos.shape == ()])
+        plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
 
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
@@ -56,15 +57,14 @@ class Animated2dFieldPlot(AnimatedFieldPlot):
     def _update_fig(self, frame: int):
         data = self._get_data_at_frame(frame)
 
-        self.im.set_array(data)
+        self.im.set_data(data.data)
 
-        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coords.items() if pos.shape == ()])
+        plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
         return [self.im, self.ax.title]
 
-    def _get_data_at_frame(self, frame: int) -> xr.DataArray:
+    def _get_data_at_frame(self, frame: int) -> Field:
         data = super()._get_data_at_frame(frame)
-        data = data.transpose(*reversed(self.spatial_dims))
-        return data
+        return data.assign_data(data.data.transpose(*reversed(self.spatial_dims)))
 
 
 class AnimatedPolarFieldPlot(AnimatedFieldPlot):
@@ -72,7 +72,7 @@ class AnimatedPolarFieldPlot(AnimatedFieldPlot):
 
     def __init__(
         self,
-        data: xr.DataArray,
+        data: Field,
         scales: list[plt_util.Scale],
     ):
         super().__init__(data, scales=scales, subplot_kw={"projection": "polar"})
@@ -83,9 +83,9 @@ class AnimatedPolarFieldPlot(AnimatedFieldPlot):
         # must set scale before making image
         self.ax.set_rscale(self.scales[1])
 
-        vertices_theta = np.concat((data.coords[self.spatial_dims[1]].data, [2 * np.pi]))
+        vertices_theta = np.concat((data.coordss[self.spatial_dims[1]].data, [2 * np.pi]))
         vertices_theta -= vertices_theta[1] / 2
-        vertices_r = list(data.coords[self.spatial_dims[0]].data)
+        vertices_r = list(data.coordss[self.spatial_dims[0]].data)
         vertices_r += [vertices_r[-1] + vertices_r[1]]
 
         self.im = self.ax.pcolormesh(
@@ -99,7 +99,7 @@ class AnimatedPolarFieldPlot(AnimatedFieldPlot):
         data_lower, data_upper = self._get_var_bounds()
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
-        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coords.items() if pos.shape == ()])
+        plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
 
         # FIXME make the labels work
         # self.ax.set_xlabel(DIMENSIONS[self.dims[1]].to_axis_label())
@@ -112,14 +112,14 @@ class AnimatedPolarFieldPlot(AnimatedFieldPlot):
 
         self.im.set_array(data)
 
-        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coords.items() if pos.shape == ()])
+        plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
         return [self.im, self.ax.title]
 
 
 class Animated1dFieldPlot(AnimatedFieldPlot):
     def __init__(
         self,
-        data: xr.DataArray,
+        data: Field,
         *,
         scales: list[plt_util.Scale] = [],
         fits: list[Fit] = [],
@@ -132,22 +132,23 @@ class Animated1dFieldPlot(AnimatedFieldPlot):
 
     def _init_fig(self):
         data = self._get_data_at_frame(0)
-        xdata = data.coords[data.dims[0]]
+        xdata = data.coordss[data.dims[0]]
+        ydata = data.data
 
         line_type = "-"
 
         if self.show_t0:
-            self.ax.plot(xdata, data, "-", label=DIMENSIONS[self.time_dim].get_coordinate_label(self.data.coords[self.time_dim][0]))
+            self.ax.plot(xdata, ydata, "-", label=DIMENSIONS[self.time_dim].get_coordinate_label(self.data.coordss[self.time_dim][0]))
             line_type = "--"
 
         if self.fits:
             line_type = "."
 
-        [self.line] = self.ax.plot(xdata, data, line_type)
+        [self.line] = self.ax.plot(xdata, ydata, line_type)
 
-        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coords.items() if pos.shape == ()])
+        plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
-        self.ax.set_ylabel(f"${data.attrs[VAR_LATEX_KEY]}$")
+        self.ax.set_ylabel(f"${data.metadata.var_latex}$")
 
         self.ax.set_xscale(self.scales[1])
         self.ax.set_yscale(self.scales[0])
@@ -162,18 +163,19 @@ class Animated1dFieldPlot(AnimatedFieldPlot):
 
     def _update_fig(self, frame: int):
         data = self._get_data_at_frame(frame)
+        ydata = data.data
 
-        self.line.set_ydata(data)
+        self.line.set_ydata(ydata)
 
         for fit, line in zip(self.fits, self.fit_lines):
             # TODO properly add and remove lines from fits
-            fit.update_fit(data, line)
+            fit.update_fit(ydata, line)
 
         if self.fits:
             # updates legend in case fit labels changed (e.g. to show different fit params)
             self.ax.legend()
 
-        plt_util.update_title(self.ax, data.attrs[VAR_LATEX_KEY], [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coords.items() if pos.shape == ()])
+        plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
         return [self.line, self.ax.yaxis, self.ax.title]
 
     def _update_ybounds(self):

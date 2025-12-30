@@ -5,7 +5,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 from lib.data.data_with_attrs import DataWithAttrs
-from lib.data.keys import SPATIAL_DIMS_KEY
 from lib.plotting import plt_util
 from lib.plotting.plot import Plot
 
@@ -19,7 +18,8 @@ class StaticPlot[Data: DataWithAttrs](Plot[Data]):
         subplot_kw: dict[str, typing.Any] = {},
     ):
         super().__init__(data)
-        self.spatial_dims: list[str] = self.data.attrs[SPATIAL_DIMS_KEY]
+        # TODO don't bother setting this?
+        self.spatial_dims = self.data.metadata.spatial_dims
         self.scales = scales + ["linear"] * (1 + len(self.spatial_dims) - len(scales))
 
         self.fig, self.ax = plt.subplots(subplot_kw=subplot_kw)

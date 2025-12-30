@@ -1,9 +1,4 @@
-import dask.dataframe as df
-import pandas as pd
-import xarray as xr
-
-from lib.data.data_with_attrs import DataWithAttrs
-from lib.data.keys import SPATIAL_DIMS_KEY, TIME_DIM_KEY
+from lib.data.data_with_attrs import DataWithAttrs, Field, FullList, LazyList
 from lib.dimension import DIMENSIONS
 from lib.plotting.animated_field_plot import (
     Animated1dFieldPlot,
@@ -16,20 +11,18 @@ from lib.plotting.static_field_plot import Static1dFieldPlot
 
 
 def get_plot(data: DataWithAttrs, **plot_kwargs) -> Plot:
-    spatial_dims = data.attrs[SPATIAL_DIMS_KEY]
+    spatial_dims = data.metadata.spatial_dims
 
-    if not data.attrs[TIME_DIM_KEY]:
-        if isinstance(data, xr.DataArray) and len(spatial_dims) == 1:
+    if not data.metadata.time_dim:
+        if isinstance(data, Field) and len(spatial_dims) == 1:
             PlotType = Static1dFieldPlot
         else:
             raise Exception("non-animated 2d/scatter plots not supported yet")
     else:
-        if isinstance(data, df.DataFrame):
-            attrs_before = data.attrs
+        if isinstance(data, LazyList):
             data = data.compute()
-            data.attrs = attrs_before
 
-        if isinstance(data, xr.DataArray):
+        if isinstance(data, Field):
             if len(spatial_dims) == 1:
                 PlotType = Animated1dFieldPlot
             elif len(spatial_dims) == 2:
@@ -40,7 +33,7 @@ def get_plot(data: DataWithAttrs, **plot_kwargs) -> Plot:
             else:
                 raise NotImplementedError("don't have 3D field animations yet")
 
-        elif isinstance(data, pd.DataFrame):
+        elif isinstance(data, FullList):
             if len(spatial_dims) == 1:
                 PlotType = AnimatedScatterPlot
             else:

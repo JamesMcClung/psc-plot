@@ -1,11 +1,12 @@
 import xarray as xr
 
-from ...adaptor import AtomicAdaptor
+from lib.data.adaptor import BareAdaptor
+
 from ..registry import register_const_adaptor
 
 
-class Magnitude(AtomicAdaptor):
-    def apply_atomic(self, da: xr.DataArray) -> xr.DataArray:
+class Magnitude(BareAdaptor):
+    def apply_bare(self, da: xr.DataArray) -> xr.DataArray:
         return (da.real**2 + da.imag**2) ** 0.5
 
     def get_name_fragments(self) -> list[str]:

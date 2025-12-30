@@ -1,11 +1,12 @@
 import xarray as xr
 
-from ...adaptor import AtomicAdaptor
+from lib.data.adaptor import BareAdaptor
+
 from ..registry import register_const_adaptor
 
 
-class Imaginary(AtomicAdaptor):
-    def apply_atomic(self, da: xr.DataArray) -> xr.DataArray:
+class Imaginary(BareAdaptor):
+    def apply_bare(self, da: xr.DataArray) -> xr.DataArray:
         return da.imag
 
     def get_name_fragments(self) -> list[str]:

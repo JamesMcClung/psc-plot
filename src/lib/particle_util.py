@@ -6,7 +6,7 @@ import h5py
 import numpy as np
 import pandas as pd
 
-from lib.data.keys import COORDS_KEY, WEIGHT_VAR_KEY
+from lib.data.data_with_attrs import LazyList, ListMetadata
 
 from . import field_util, file_util
 
@@ -34,7 +34,7 @@ def load_df_at_step(prefix: file_util.ParticlePrefix, step: int) -> pd.DataFrame
     return df
 
 
-def load_df(prefix: file_util.ParticlePrefix, steps: list[int]) -> dd.DataFrame:
+def load_df(prefix: file_util.ParticlePrefix, steps: list[int]) -> LazyList:
     data_paths = [get_path_at_step(prefix, step) for step in steps]
     df: dd.DataFrame = dd.read_hdf(data_paths, key=PRT_PARTICLES_KEY)
 
@@ -52,18 +52,20 @@ def load_df(prefix: file_util.ParticlePrefix, steps: list[int]) -> dd.DataFrame:
     meta = dict(zip(df.columns, df.dtypes)) | {"t": times.dtype}
     df = df.map_partitions(assign_t, meta=meta)
 
-    corner = np.array(attrss[0]["corner"])
-    length = np.array(attrss[0]["length"])
+    corners = np.array(attrss[0]["corner"])
+    lengths = np.array(attrss[0]["length"])
     gdims = np.array(attrss[0]["gdims"])
-    coords = {dim: np.linspace(corner, corner + length, ncells, endpoint=False) for dim, corner, length, ncells in zip(("x", "y", "z"), corner, length, gdims)}
-    coords["t"] = times
+    coordss = {dim: np.linspace(corner, corner + length, ncells, endpoint=False) for dim, corner, length, ncells in zip(("x", "y", "z"), corners, lengths, gdims)}
+    coordss["t"] = times
 
-    df.attrs = {
-        COORDS_KEY: coords,
-        WEIGHT_VAR_KEY: "w",
-    }
+    metadata = ListMetadata(
+        var_name="f",
+        var_latex="f",
+        weight_var="w",
+        coordss=coordss,
+    )
 
-    return df
+    return LazyList(df, metadata)
 
 
 def load_attrs_at_step(prefix: file_util.ParticlePrefix, step: int) -> dict[str, typing.Any]:

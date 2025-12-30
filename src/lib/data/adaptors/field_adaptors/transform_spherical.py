@@ -1,20 +1,21 @@
 import argparse
 
 import numpy as np
-import pandas as pd
 import xarray as xr
 
+from lib.data.data_with_attrs import Field, FullList
+
 from ....dimension import DIMENSIONS, CartesianToSpherical
-from ...adaptor import AtomicAdaptor
+from ...adaptor import CheckedAdaptor
 from .. import parse_util
 from ..registry import adaptor_parser
 
 
-class TransformSpherical(AtomicAdaptor):
+class TransformSpherical(CheckedAdaptor):
     def __init__(self, transform: CartesianToSpherical):
         self.transform = transform
 
-    def apply_atomic[T: xr.DataArray | pd.DataFrame](self, da: T) -> T:
+    def apply_checked[D: Field | FullList](self, data: D) -> D:
         name_x = self.transform.dim_x.name.plain
         name_y = self.transform.dim_y.name.plain
         name_z = self.transform.dim_z.name.plain
@@ -22,10 +23,10 @@ class TransformSpherical(AtomicAdaptor):
         name_theta = self.transform.dim_theta.name.plain
         name_phi = self.transform.dim_phi.name.plain
 
-        if isinstance(da, xr.DataArray):
-            coords_x: xr.DataArray = da.coords[name_x]
-            coords_y: xr.DataArray = da.coords[name_y]
-            coords_z: xr.DataArray = da.coords[name_z]
+        if isinstance(data, Field):
+            coords_x = data.coordss[name_x]
+            coords_y = data.coordss[name_y]
+            coords_z = data.coordss[name_z]
 
             max_x = float(abs(coords_x).max())
             max_y = float(abs(coords_y).max())
@@ -58,17 +59,17 @@ class TransformSpherical(AtomicAdaptor):
             ygrid = xr.Variable([name_r, name_theta, name_phi], ygrid)
             zgrid = xr.Variable([name_r, name_theta, name_phi], zgrid)
 
+            da = data.data
             da = da.interp({name_x: xgrid, name_y: ygrid, name_z: zgrid}, assume_sorted=True)
             da = da.drop_vars([name_x, name_y, name_z])
             da = da.assign_coords({name_r: rs, name_theta: thetas, name_phi: phis})
+            return data.assign_data(da)
 
         else:
-            rs, thetas, phis = self.transform.apply(da[name_x], da[name_y], da[name_z])
-            da[name_r] = rs
-            da[name_theta] = thetas
-            da[name_phi] = phis
-
-        return da
+            df = data.data
+            rs, thetas, phis = self.transform.apply(df[name_x], df[name_y], df[name_z])
+            df = df.assign({name_r: rs, name_theta: thetas, name_phi: phis})
+            return data.assign_data(df)
 
     def get_name_fragments(self) -> list[str]:
         return [f"spherical_{self.transform.dim_x.name.plain},{self.transform.dim_y.name.plain},{self.transform.dim_z.name.plain}"]

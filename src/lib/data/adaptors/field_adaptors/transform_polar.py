@@ -1,28 +1,29 @@
 import argparse
 
 import numpy as np
-import pandas as pd
 import xarray as xr
 
+from lib.data.data_with_attrs import Field, FullList
+
 from ....dimension import DIMENSIONS, CartesianToPolar
-from ...adaptor import AtomicAdaptor
+from ...adaptor import CheckedAdaptor
 from .. import parse_util
 from ..registry import adaptor_parser
 
 
-class TransformPolar(AtomicAdaptor):
+class TransformPolar(CheckedAdaptor):
     def __init__(self, transform: CartesianToPolar):
         self.transform = transform
 
-    def apply_atomic[T: xr.DataArray | pd.DataFrame](self, da: T) -> T:
+    def apply_checked[D: Field | FullList](self, data: D) -> D:
         name_x = self.transform.dim_x.name.plain
         name_y = self.transform.dim_y.name.plain
         name_r = self.transform.dim_r.name.plain
         name_theta = self.transform.dim_theta.name.plain
 
-        if isinstance(da, xr.DataArray):
-            coords_x: xr.DataArray = da.coords[name_x]
-            coords_y: xr.DataArray = da.coords[name_y]
+        if isinstance(data, Field):
+            coords_x = data.coordss[name_x]
+            coords_y = data.coordss[name_y]
 
             max_x = float(abs(coords_x).max())
             max_y = float(abs(coords_y).max())
@@ -47,16 +48,19 @@ class TransformPolar(AtomicAdaptor):
             xgrid = xr.Variable([name_r, name_theta], xgrid)
             ygrid = xr.Variable([name_r, name_theta], ygrid)
 
+            da = data.data
             da = da.interp({name_x: xgrid, name_y: ygrid}, assume_sorted=True)
             da = da.drop_vars([name_x, name_y])
             da = da.assign_coords({name_r: rs, name_theta: thetas})
+            data = data.assign_data(da)
 
         else:
-            rs, thetas = self.transform.apply(da[name_x], da[name_y])
-            da[name_r] = rs
-            da[name_theta] = thetas
+            df = data.data
+            rs, thetas = self.transform.apply(df[name_x], df[name_y])
+            df = df.assign({name_r: rs, name_theta: thetas})
+            data = data.assign_data(df)
 
-        return da
+        return data
 
     def get_name_fragments(self) -> list[str]:
         return [f"polar_{self.transform.dim_x.name.plain},{self.transform.dim_y.name.plain}"]
