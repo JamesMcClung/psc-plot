@@ -18,6 +18,9 @@ class Plot[Data: DataWithAttrs](ABC):
 
         self.hooks.append(hook)
 
+        for hook in self.hooks.copy():  # hooks might reorder themselves
+            hook.post_add(self)
+
     @abstractmethod
     def show(self): ...
 
@@ -36,3 +39,6 @@ class Plot[Data: DataWithAttrs](ABC):
 class Hook[P]:
     def is_compatible(self, plot: Plot) -> bool:
         return isinstance(plot, get_args(self.__class__.__orig_bases__[0]))
+
+    def post_add(self, plot: P):
+        pass
