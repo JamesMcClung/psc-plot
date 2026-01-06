@@ -68,7 +68,7 @@ class TransformSpherical(CheckedAdaptor):
         else:
             df = data.data
             rs, thetas, phis = self.transform.apply(df[name_x], df[name_y], df[name_z])
-            df = df.assign({name_r: rs, name_theta: thetas, name_phi: phis})
+            df = df.assign(**{name_r: rs, name_theta: thetas, name_phi: phis})
             return data.assign_data(df)
 
     def get_name_fragments(self) -> list[str]:

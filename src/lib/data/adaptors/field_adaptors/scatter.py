@@ -13,7 +13,7 @@ class Scatter(CheckedAdaptor):
         ordered_coordss = [coordss[dim] for dim in data.dims]
         coord_grids = np.meshgrid(*ordered_coordss, indexing="ij")
 
-        df = pd.DataFrame({data.metadata.var_name: np.ravel(data)} | dict(zip(data.dims, (np.ravel(coord_grid) for coord_grid in coord_grids))))
+        df = pd.DataFrame({data.metadata.var_name: np.ravel(data.data)} | dict(zip(data.dims, (np.ravel(coord_grid) for coord_grid in coord_grids))))
 
         metadata = ListMetadata.create_from(
             data.metadata,

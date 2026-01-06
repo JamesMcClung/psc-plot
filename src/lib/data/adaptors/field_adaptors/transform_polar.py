@@ -57,7 +57,7 @@ class TransformPolar(CheckedAdaptor):
         else:
             df = data.data
             rs, thetas = self.transform.apply(df[name_x], df[name_y])
-            df = df.assign({name_r: rs, name_theta: thetas})
+            df = df.assign(**{name_r: rs, name_theta: thetas})
             data = data.assign_data(df)
 
         return data
