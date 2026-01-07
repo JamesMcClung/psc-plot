@@ -27,7 +27,7 @@ class DerivedParticleVariable:
 
     def assign_to(self, data: List) -> List:
         df = data.data
-        return data.assign_data(df.assign({self.name: self.derive(*(df[base_var_name] for base_var_name in self.base_var_names))}))
+        return data.assign_data(df.assign(**{self.name: self.derive(*(df[base_var_name] for base_var_name in self.base_var_names))}))
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(({', '.join(self.base_var_names)}) -> {self.name}: {self.derive!r})"
