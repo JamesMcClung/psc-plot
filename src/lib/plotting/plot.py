@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import get_args
 
 from lib.data.data_with_attrs import DataWithAttrs
 
@@ -12,14 +11,8 @@ class Plot[Data: DataWithAttrs](ABC):
         self.data = data
         self.hooks: list[Hook] = []
 
-    def add_hook(self, hook: Hook):
-        if not hook.is_compatible(self):
-            raise Exception("TODO better error message")
-
+    def add_hook[FrameData](self, hook: Hook[FrameData]):
         self.hooks.append(hook)
-
-        for hook in self.hooks.copy():  # hooks might reorder themselves
-            hook.post_add(self)
 
     @abstractmethod
     def show(self): ...
@@ -36,9 +29,15 @@ class Plot[Data: DataWithAttrs](ABC):
         print(f"wrote to {path}")
 
 
-class Hook[P]:
-    def is_compatible(self, plot: Plot) -> bool:
-        return isinstance(plot, get_args(self.__class__.__orig_bases__[0]))
+class Hook[FrameData]:
+    def pre_init_fig(self, plot: Plot, frame_data: FrameData):
+        pass
 
-    def post_add(self, plot: P):
+    def post_init_fig(self, plot: Plot, frame_data: FrameData):
+        pass
+
+    def pre_update_fig(self, plot: Plot, frame_data: FrameData):
+        pass
+
+    def post_update_fig(self, plot: Plot, frame_data: FrameData):
         pass
