@@ -11,7 +11,7 @@ class Plot[Data: DataWithAttrs](ABC):
         self.data = data
         self.hooks: list[Hook] = []
 
-    def add_hook[FrameData](self, hook: Hook[FrameData]):
+    def add_hook[ID, UD](self, hook: Hook[ID, UD]):
         self.hooks.append(hook)
 
     @abstractmethod
@@ -29,15 +29,15 @@ class Plot[Data: DataWithAttrs](ABC):
         print(f"wrote to {path}")
 
 
-class Hook[FrameData]:
-    def pre_init_fig(self, plot: Plot, frame_data: FrameData):
+class Hook[InitData, UpdateData]:
+    def pre_init_fig(self, plot: Plot, init_data: InitData):
         pass
 
-    def post_init_fig(self, plot: Plot, frame_data: FrameData):
+    def post_init_fig(self, plot: Plot, init_data: InitData):
         pass
 
-    def pre_update_fig(self, plot: Plot, frame_data: FrameData):
+    def pre_update_fig(self, plot: Plot, update_data: UpdateData):
         pass
 
-    def post_update_fig(self, plot: Plot, frame_data: FrameData):
+    def post_update_fig(self, plot: Plot, update_data: UpdateData):
         pass
