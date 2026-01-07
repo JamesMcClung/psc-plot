@@ -1,7 +1,5 @@
 import numpy as np
-import pandas as pd
 import scipy.stats as stats
-import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.lines import Line2D
 
