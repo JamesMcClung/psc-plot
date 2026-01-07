@@ -74,7 +74,7 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
 
         for fit, line in zip(self.fits, self.fit_lines):
             # TODO properly add and remove lines from fits
-            fit.update_fit(df, line)
+            fit.update_fit(data, line)
 
         if self.fits:
             # updates legend in case fit labels changed (e.g. to show different fit params)
