@@ -30,14 +30,14 @@ class Plot[Data: DataWithAttrs](ABC):
 
 
 class Hook[InitData, UpdateData]:
-    def pre_init_fig(self, plot: Plot, init_data: InitData):
+    def pre_init_fig(self, init_data: InitData):
         pass
 
-    def post_init_fig(self, plot: Plot, init_data: InitData):
+    def post_init_fig(self, init_data: InitData):
         pass
 
-    def pre_update_fig(self, plot: Plot, update_data: UpdateData):
+    def pre_update_fig(self, update_data: UpdateData):
         pass
 
-    def post_update_fig(self, plot: Plot, update_data: UpdateData):
+    def post_update_fig(self, update_data: UpdateData):
         pass
