@@ -156,8 +156,7 @@ class Animated1dFieldPlot(AnimatedFieldPlot):
             self.ax.plot(xdata, ydata, "-", label=DIMENSIONS[self.time_dim].get_coordinate_label(self.data.coordss[self.time_dim][0]))
             init_data.line_type = "--"
 
-        for hook in self.hooks:
-            hook.pre_init_fig(init_data)
+        self.pre_init_fig(init_data)
 
         [self.line] = self.ax.plot(xdata, ydata, init_data.line_type)
 
@@ -173,8 +172,7 @@ class Animated1dFieldPlot(AnimatedFieldPlot):
 
         self._update_ybounds()
 
-        for hook in self.hooks:
-            hook.post_init_fig(init_data)
+        self.post_init_fig(init_data)
 
         self.fig.tight_layout()
 
@@ -184,15 +182,13 @@ class Animated1dFieldPlot(AnimatedFieldPlot):
 
         update_data = self.UpdateData(data, self.ax)
 
-        for hook in self.hooks:
-            hook.pre_update_fig(update_data)
+        self.pre_update_fig(update_data)
 
         self.line.set_ydata(ydata)
 
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
 
-        for hook in self.hooks:
-            hook.post_update_fig(update_data)
+        self.post_update_fig(update_data)
 
         return [self.line, self.ax.yaxis, self.ax.title]
 

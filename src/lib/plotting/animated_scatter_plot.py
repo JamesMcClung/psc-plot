@@ -45,8 +45,7 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
 
         init_data = self.InitData(data, self.ax)
 
-        for hook in self.hooks:
-            hook.pre_init_fig(init_data)
+        self.pre_init_fig(init_data)
 
         self.ax.set_xscale(self.scales[1])
         self.ax.set_yscale(self.scales[0])
@@ -78,8 +77,7 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
 
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
 
-        for hook in self.hooks:
-            hook.post_init_fig(init_data)
+        self.post_init_fig(init_data)
 
         self.fig.tight_layout()
 
@@ -89,13 +87,11 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
 
         update_data = self.UpdateData(data, self.ax)
 
-        for hook in self.hooks:
-            hook.pre_update_fig(update_data)
+        self.pre_update_fig(update_data)
 
         self.scatter.set_offsets(np.array([df[self.spatial_dims[0]], df[self.dependent_var]]).T)
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if isinstance(pos, float)])
 
-        for hook in self.hooks:
-            hook.post_update_fig(update_data)
+        self.post_update_fig(update_data)
 
         return [self.scatter, self.ax.title]
