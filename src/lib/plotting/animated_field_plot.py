@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 import xarray as xr
+from matplotlib.axes import Axes
 from matplotlib.projections.polar import PolarAxes
 
 from lib.data.data_with_attrs import Field
 from lib.dimension import DIMENSIONS
 from lib.plotting import plt_util
 from lib.plotting.animated_plot import AnimatedPlot
-from lib.plotting.hooks.fit import Fit
+from lib.plotting.frame_data_traits import HasAxes, HasFieldData, HasLineType
 
 
 class AnimatedFieldPlot(AnimatedPlot[Field]):
@@ -117,17 +120,28 @@ class AnimatedPolarFieldPlot(AnimatedFieldPlot):
 
 
 class Animated1dFieldPlot(AnimatedFieldPlot):
+    @dataclass
+    class InitData(HasFieldData, HasLineType, HasAxes):
+        # TODO generate these fields automatically from the protocols
+        data: Field
+        axes: Axes
+        line_type: str
+
+    @dataclass
+    class UpdateData(HasFieldData, HasAxes):
+        # TODO generate these fields automatically from the protocols
+        data: Field
+        axes: Axes
+
     def __init__(
         self,
         data: Field,
         *,
         scales: list[plt_util.Scale] = [],
-        fits: list[Fit] = [],
         show_t0: bool = False,
     ):
         super().__init__(data, scales=scales)
 
-        self.fits = fits
         self.show_t0 = show_t0
 
     def _init_fig(self):
@@ -135,16 +149,17 @@ class Animated1dFieldPlot(AnimatedFieldPlot):
         xdata = data.coordss[data.dims[0]]
         ydata = data.data
 
-        line_type = "-"
+        init_data = self.InitData(data, self.ax, line_type="-")
 
+        # TODO make show_t0 a hook (that gets added before fits)
         if self.show_t0:
             self.ax.plot(xdata, ydata, "-", label=DIMENSIONS[self.time_dim].get_coordinate_label(self.data.coordss[self.time_dim][0]))
-            line_type = "--"
+            init_data.line_type = "--"
 
-        if self.fits:
-            line_type = "."
+        for hook in self.hooks:
+            hook.pre_init_fig(init_data)
 
-        [self.line] = self.ax.plot(xdata, ydata, line_type)
+        [self.line] = self.ax.plot(xdata, ydata, init_data.line_type)
 
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
@@ -153,29 +168,32 @@ class Animated1dFieldPlot(AnimatedFieldPlot):
         self.ax.set_xscale(self.scales[1])
         self.ax.set_yscale(self.scales[0])
 
-        self.fit_lines = [fit.plot_fit(self.ax, data) for fit in self.fits]
-
-        if self.fits or self.show_t0:
+        if self.show_t0:
             self.ax.legend()
 
         self._update_ybounds()
+
+        for hook in self.hooks:
+            hook.post_init_fig(init_data)
+
         self.fig.tight_layout()
 
     def _update_fig(self, frame: int):
         data = self._get_data_at_frame(frame)
         ydata = data.data
 
+        update_data = self.UpdateData(data, self.ax)
+
+        for hook in self.hooks:
+            hook.pre_update_fig(update_data)
+
         self.line.set_ydata(ydata)
 
-        for fit, line in zip(self.fits, self.fit_lines):
-            # TODO properly add and remove lines from fits
-            fit.update_fit(data, line)
-
-        if self.fits:
-            # updates legend in case fit labels changed (e.g. to show different fit params)
-            self.ax.legend()
-
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
+
+        for hook in self.hooks:
+            hook.post_update_fig(update_data)
+
         return [self.line, self.ax.yaxis, self.ax.title]
 
     def _update_ybounds(self):

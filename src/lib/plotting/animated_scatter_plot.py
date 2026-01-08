@@ -1,15 +1,29 @@
 import typing
+from dataclasses import dataclass
 
 import numpy as np
+from matplotlib.axes import Axes
 
 from lib.data.data_with_attrs import FullList
 from lib.dimension import DIMENSIONS
 from lib.plotting import plt_util
 from lib.plotting.animated_plot import AnimatedPlot
-from lib.plotting.hooks.fit import Fit
+from lib.plotting.frame_data_traits import HasAxes, HasFullListData
 
 
 class AnimatedScatterPlot(AnimatedPlot[FullList]):
+    @dataclass
+    class InitData(HasFullListData, HasAxes):
+        # TODO generate these fields automatically from the protocols
+        data: FullList
+        axes: Axes
+
+    @dataclass
+    class UpdateData(HasFullListData, HasAxes):
+        # TODO generate these fields automatically from the protocols
+        data: FullList
+        axes: Axes
+
     def __init__(
         self,
         data: FullList,
@@ -21,7 +35,6 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
         super().__init__(data, scales=scales, subplot_kw=subplot_kw)
 
         self.dependent_var = data.metadata.dependent_var
-        self.fits: list[Fit] = []
 
     def _get_nframes(self) -> int:
         return len(self.times)
@@ -29,6 +42,11 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
     def _init_fig(self):
         data = self._get_data_at_frame(0)
         df = data.data
+
+        init_data = self.InitData(data, self.ax)
+
+        for hook in self.hooks:
+            hook.pre_init_fig(init_data)
 
         self.ax.set_xscale(self.scales[1])
         self.ax.set_yscale(self.scales[0])
@@ -54,30 +72,30 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
 
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if isinstance(pos, float)])
 
-        self.fit_lines = [fit.plot_fit(self.ax, data) for fit in self.fits]
-        if self.fits:
-            self.ax.legend()
-
         if data.metadata.color_dim:
             # TODO update cbar
             self.fig.colorbar(self.scatter, label=DIMENSIONS[data.metadata.color_dim].to_axis_label())
 
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
+
+        for hook in self.hooks:
+            hook.post_init_fig(init_data)
+
         self.fig.tight_layout()
 
     def _update_fig(self, frame: int):
         data = self._get_data_at_frame(frame)
         df = data.data
 
+        update_data = self.UpdateData(data, self.ax)
+
+        for hook in self.hooks:
+            hook.pre_update_fig(update_data)
+
         self.scatter.set_offsets(np.array([df[self.spatial_dims[0]], df[self.dependent_var]]).T)
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if isinstance(pos, float)])
 
-        for fit, line in zip(self.fits, self.fit_lines):
-            # TODO properly add and remove lines from fits
-            fit.update_fit(data, line)
-
-        if self.fits:
-            # updates legend in case fit labels changed (e.g. to show different fit params)
-            self.ax.legend()
+        for hook in self.hooks:
+            hook.post_update_fig(update_data)
 
         return [self.scatter, self.ax.title]

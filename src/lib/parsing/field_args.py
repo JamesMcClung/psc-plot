@@ -24,6 +24,7 @@ class FieldArgs(args_base.ArgsTyped):
     variable: str
     scales: list[plt_util.Scale]
     adaptors: list[Adaptor]
+    # TODO have a list of hooks instead of fits, show_t0, even scales
     fits: list[Fit]  # 1d only
     show_t0: bool  # 1d only
 
@@ -36,11 +37,8 @@ class FieldArgs(args_base.ArgsTyped):
 
         anim = get_plot(data, scales=self.scales)
 
-        if isinstance(anim, (Animated1dFieldPlot, AnimatedScatterPlot)):
-            anim.fits.extend(self.fits)
-        elif self.fits:
-            # TODO use an argparse exception type
-            raise Exception("fits not supported on higher-dimensional data")
+        for fit in self.fits:
+            anim.add_hook(fit)
 
         if isinstance(anim, Animated1dFieldPlot):
             anim.show_t0 = self.show_t0

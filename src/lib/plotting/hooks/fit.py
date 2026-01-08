@@ -5,11 +5,17 @@ from matplotlib.lines import Line2D
 
 from lib.data.adaptors.field_adaptors.pos import Pos
 from lib.data.data_with_attrs import DataWithAttrs, Field, List
+from lib.plotting.frame_data_traits import HasAxes, HasData, HasLineType
+from lib.plotting.plot import Hook
 
-# TODO make this a plot plugin (and make plot plugins a thing)
+
+class HookInitData(HasData, HasAxes): ...
 
 
-class Fit:
+class HookUpdateData(HasData, HasAxes): ...
+
+
+class Fit(Hook[HookInitData, HookUpdateData]):
     def __init__(self, arg: str):
         # TODO proper error handling
         # TODO actually parse different options for fits
@@ -17,6 +23,18 @@ class Fit:
         [min_x, max_x] = arg.split(":")
         self.min_x = float(min_x)
         self.max_x = float(max_x)
+
+    def pre_init_fig(self, init_data):
+        if isinstance(init_data, HasLineType):
+            init_data.line_type = "."
+
+    def post_init_fig(self, init_data):
+        self.line = self.plot_fit(init_data.axes, init_data.data)
+        init_data.axes.legend()
+
+    def post_update_fig(self, update_data):
+        self.update_fit(update_data.data, self.line)
+        update_data.axes.legend()  # in case label changed
 
     def plot_fit(self, ax: Axes, data: DataWithAttrs) -> Line2D:
         x_data, y_data = self._get_xy_data(data)
