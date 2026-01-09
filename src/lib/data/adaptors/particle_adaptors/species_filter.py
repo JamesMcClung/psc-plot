@@ -1,10 +1,10 @@
 import dask.dataframe as dd
 
 from lib.data.adaptor import BareAdaptor
+from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
 from ....particle_util import SPECIES, Species
-from .. import parse_util
 
 
 class SpeciesFilter(BareAdaptor):

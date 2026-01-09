@@ -7,10 +7,10 @@ import numpy as np
 import xarray as xr
 
 from lib.data.data_with_attrs import Field, FieldMetadata, List
+from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
 from ...adaptor import CheckedAdaptor
-from .. import parse_util
 
 
 def _guess_bin_edgess(data: List, varname_to_nbins: dict[str, int | None]) -> list:

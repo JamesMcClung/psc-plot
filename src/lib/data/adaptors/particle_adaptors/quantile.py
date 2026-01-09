@@ -1,8 +1,8 @@
 from lib.data import data_util
 from lib.data.adaptor import CheckedAdaptor
-from lib.data.adaptors import parse_util
 from lib.data.adaptors.field_adaptors.pos import Pos
 from lib.data.data_with_attrs import List
+from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
 

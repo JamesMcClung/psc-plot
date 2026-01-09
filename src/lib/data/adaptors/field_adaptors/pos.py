@@ -2,8 +2,8 @@ import numpy as np
 
 from lib.data import data_util
 from lib.data.adaptor import CheckedAdaptor
-from lib.data.adaptors import parse_util
 from lib.data.data_with_attrs import Field, List
+from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
 

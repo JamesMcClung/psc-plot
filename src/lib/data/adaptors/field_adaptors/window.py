@@ -5,10 +5,10 @@ import xarray as xr
 from scipy.signal import windows
 
 from lib.data.adaptor import BareAdaptor
+from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
 from ....dimension import DIMENSIONS
-from .. import parse_util
 
 
 class Window(BareAdaptor):

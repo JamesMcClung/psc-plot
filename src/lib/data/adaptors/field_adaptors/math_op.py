@@ -3,9 +3,8 @@ from typing import Callable
 import xarray as xr
 
 from lib.data.adaptor import BareAdaptor
+from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
-
-from .. import parse_util
 
 
 class MathOp(BareAdaptor):
