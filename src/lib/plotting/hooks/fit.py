@@ -1,7 +1,5 @@
 import numpy as np
 import scipy.stats as stats
-from matplotlib.axes import Axes
-from matplotlib.lines import Line2D
 
 from lib.data.adaptors.field_adaptors.pos import Pos
 from lib.data.data_with_attrs import DataWithAttrs, Field, List
@@ -34,25 +32,22 @@ class Fit(Hook):
 
     def post_init_fig(self, init_data):
         init_data = assert_impl(init_data, Fit.InitData)
-        self.line = self.plot_fit(init_data.axes, init_data.data)
+
+        x_data, y_data = self._get_xy_data(init_data.data)
+        fit_y_data, label = self._get_fit_y_data(x_data, y_data)
+        [self.line] = init_data.axes.plot(x_data, fit_y_data, "--", label=label)
+
         init_data.axes.legend()
 
     def post_update_fig(self, update_data):
         update_data = assert_impl(update_data, Fit.UpdateData)
-        self.update_fit(update_data.data, self.line)
+
+        x_data, y_data = self._get_xy_data(update_data.data)
+        fit_y_data, label = self._get_fit_y_data(x_data, y_data)
+        self.line.set_data(x_data, fit_y_data)
+        self.line.set_label(label)
+
         update_data.axes.legend()  # in case label changed
-
-    def plot_fit(self, ax: Axes, data: DataWithAttrs) -> Line2D:
-        x_data, y_data = self._get_xy_data(data)
-        fit_y_data, label = self._get_fit_y_data(x_data, y_data)
-        [fit_line] = ax.plot(x_data, fit_y_data, "--", label=label)
-        return fit_line
-
-    def update_fit(self, data: DataWithAttrs, line: Line2D):
-        x_data, y_data = self._get_xy_data(data)
-        fit_y_data, label = self._get_fit_y_data(x_data, y_data)
-        line.set_data(x_data, fit_y_data)
-        line.set_label(label)
 
     def _get_fit_y_data(self, x_data: np.ndarray, y_data: np.ndarray) -> tuple[np.ndarray, str]:
         x_log = np.log(x_data)
