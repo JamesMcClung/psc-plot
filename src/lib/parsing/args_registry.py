@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing
 from argparse import Action, ArgumentParser
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 
 CUSTOM_ARGS: list[ArgparseArgAdder] = []
 
@@ -86,7 +86,7 @@ def arg_parser(
     dest: str,
     nargs: NArgs = None,
 ):
-    def arg_parser_inner[ArgType](parse_func: typing.Callable[[str | list[str]], ArgType]):
+    def arg_parser_inner[ArgType](parse_func: Callable[[str | list[str]], ArgType]):
         CUSTOM_ARGS.append(ArgparseArgAdder(flags=_ensure_list(flags), help=help, dest=dest, type=parse_func, metavar=metavar, nargs=nargs))
         return parse_func
 
@@ -99,7 +99,7 @@ def const_arg(
     help: str | None,
     dest: str,
 ):
-    def const_inner[ArgType](const_type: typing.Callable[[], ArgType]):
+    def const_inner[ArgType](const_type: Callable[[], ArgType]):
         CUSTOM_ARGS.append(ArgparseArgAdder(flags=_ensure_list(flags), help=help, dest=dest, const=const_type()))
         return const_type
 
