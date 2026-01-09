@@ -5,7 +5,8 @@ from lib.data.adaptor import Adaptor
 from lib.data.compile import compile_source
 from lib.parsing.args_registry import CUSTOM_ARGS
 from lib.plotting.get_plot import get_plot
-from lib.plotting.plot import Hook
+from lib.plotting.hook import Hook
+from lib.plotting.plot import Plot
 
 from .. import field_util
 from ..data.field_loader import FieldLoader

@@ -12,7 +12,7 @@ from lib.plotting.frame_data_traits import (
     assert_impl,
     check_impl,
 )
-from lib.plotting.plot import Hook
+from lib.plotting.hook import Hook
 
 
 class Fit(Hook):

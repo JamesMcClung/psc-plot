@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from lib.data.data_with_attrs import DataWithAttrs
+from lib.plotting.hook import Hook
 
 
 class Plot[Data: DataWithAttrs](ABC):
@@ -44,17 +45,3 @@ class Plot[Data: DataWithAttrs](ABC):
     def post_update_fig(self, update_data: Any):
         for hook in self.hooks:
             hook.post_update_fig(update_data)
-
-
-class Hook:
-    def pre_init_fig(self, init_data: Any):
-        pass
-
-    def post_init_fig(self, init_data: Any):
-        pass
-
-    def pre_update_fig(self, update_data: Any):
-        pass
-
-    def post_update_fig(self, update_data: Any):
-        pass
