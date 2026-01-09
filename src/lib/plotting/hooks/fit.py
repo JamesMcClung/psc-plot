@@ -3,6 +3,7 @@ import scipy.stats as stats
 
 from lib.data.adaptors.pos import Pos
 from lib.data.data_with_attrs import DataWithAttrs, Field, List
+from lib.parsing.args_registry import arg_parser
 from lib.plotting.frame_data_traits import (
     HasAxes,
     HasData,
@@ -70,3 +71,13 @@ class Fit(Hook):
             return (data.coordss[spatial_dim], data.data)
         elif isinstance(data, List):
             return (data.data[spatial_dim], data.data[data.metadata.dependent_var])
+
+
+@arg_parser(
+    flags="--fit",
+    metavar="lower:upper",
+    help="(1d only) fit the data to a power law on the given subdomain",
+    dest="hooks",
+)
+def parse_fit(arg: str) -> Fit:
+    return Fit(arg)
