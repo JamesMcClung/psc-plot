@@ -4,6 +4,7 @@ from typing import Any, TypeGuard
 from matplotlib.axes import Axes
 
 from lib.data.data_with_attrs import Field, FullList, List
+from lib.plotting.hook import Hook
 
 
 def check_impl[T](data: Any, data_type: type[T]) -> TypeGuard[T]:
@@ -55,3 +56,8 @@ class HasLineType:
 @dataclass(kw_only=True)
 class HasAxes:
     axes: Axes
+
+
+@dataclass(kw_only=True)
+class HasHookList:
+    hooks: list[Hook]

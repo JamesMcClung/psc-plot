@@ -5,16 +5,24 @@ from pathlib import Path
 from typing import Any
 
 from lib.data.data_with_attrs import DataWithAttrs
+from lib.plotting.frame_data_traits import HasHookList
 from lib.plotting.hook import Hook
 
 
 class Plot[Data: DataWithAttrs](ABC):
+    class AddHookData(HasHookList): ...
+
     def __init__(self, data: Data):
         self.data = data
         self.hooks: list[Hook] = []
 
     def add_hook(self, hook: Hook):
         self.hooks.append(hook)
+
+        post_add_data = Plot.AddHookData(hooks=self.hooks)
+
+        for hook in self.hooks.copy():  # hooks might reorder themselves
+            hook.post_add_hook(post_add_data)
 
     @abstractmethod
     def show(self): ...
