@@ -5,7 +5,7 @@ from lib.data.adaptors.registry import const_adaptor
 
 
 @const_adaptor(
-    "--real",
+    flags="--real",
     help="take the real part",
 )
 class Real(BareAdaptor):

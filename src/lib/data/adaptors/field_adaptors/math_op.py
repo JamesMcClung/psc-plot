@@ -42,7 +42,7 @@ op_params = [
 for name_abbrev, metavar, help, symbol, func in op_params:
 
     @adaptor_parser(
-        f"--{name_abbrev}",
+        flags=f"--{name_abbrev}",
         metavar=metavar,
         help=help,
         nargs="just one",

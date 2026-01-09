@@ -118,8 +118,7 @@ _BIN_FORMAT = "var_name[=nbins]"
 
 
 @adaptor_parser(
-    "--bin",
-    "-b",
+    flags=["--bin", "-b"],
     metavar=_BIN_FORMAT,
     help="Bin the data along these variables, which serve as axes. If nbins is unspecified, it is guessed. Note that t is implicitly binned; disable by passing t= (with no nbins).",
     nargs="+",

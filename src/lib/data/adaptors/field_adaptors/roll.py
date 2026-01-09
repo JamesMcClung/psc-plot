@@ -23,7 +23,7 @@ ROLL_FORMAT = "dim_name=window_size"
 
 
 @adaptor_parser(
-    "--roll",
+    flags="--roll",
     metavar=ROLL_FORMAT,
     help="plot the rolling average against the given dimension with the given window size",
 )

@@ -30,7 +30,7 @@ _SPECIES_FILTER_FORMAT = "species"
 
 
 @adaptor_parser(
-    "--species",
+    flags="--species",
     metavar=_SPECIES_FILTER_FORMAT,
     help="include only particles of this species",
 )

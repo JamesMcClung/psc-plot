@@ -79,7 +79,7 @@ _SPHERICAL_FORMAT = ("dim_1", "dim_2", "dim_3")
 
 
 @adaptor_parser(
-    "--transform-spherical",
+    flags="--transform-spherical",
     metavar=_SPHERICAL_FORMAT,
     help="perform a coordinate transform from cartesian (dim_1, dim_2) to polar (r, theta)",
     nargs=3,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing
 from argparse import Action, ArgumentParser
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import dataclass
 from typing import Any
 
 CUSTOM_ARGS: list[ArgparseArgAdder] = []
@@ -31,14 +31,13 @@ type ArgparseNArgs = int | typing.Literal["+", "*"] | None
 type NArgs = ArgparseNArgs | typing.Literal["just one"]
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ArgparseArgAdder[ArgType]:
     """Adds an argument to an `argparse.ArgumentParser`"""
 
-    name_or_flags: tuple[str]
+    flags: list[str]
     help: str
     dest: str
-    _: KW_ONLY  # fields below this sentinel are keyword-only
     const: ArgType | None = None
     type: typing.Callable[[str], ArgType] | None = None
     metavar: str | tuple[str] | None = None
@@ -60,42 +59,48 @@ class ArgparseArgAdder[ArgType]:
                 # to chain multiple instances of an arg together, it is convenient to be able
                 # to write e.g. "--fourier x y" as a shorthand for "--fourier x --fourier y".
                 # Therefore, the nargs that argparse receives is "+", with the "extend" action.
-                parser.add_argument(*self.name_or_flags, dest=self.dest, help=self.help, action="extend", type=self.type, metavar=self.metavar, nargs="+")
+                parser.add_argument(*self.flags, dest=self.dest, help=self.help, action="extend", type=self.type, metavar=self.metavar, nargs="+")
             elif self.nargs == "just one":
                 # Don't allow the above shorthand
-                parser.add_argument(*self.name_or_flags, dest=self.dest, help=self.help, action="append", type=self.type, metavar=self.metavar, nargs=None)
+                parser.add_argument(*self.flags, dest=self.dest, help=self.help, action="append", type=self.type, metavar=self.metavar, nargs=None)
             else:
                 # On the other hand, if an parser specifies a non-None nargs, it means the
                 # parser maps that many command-line arguments to a single arg instance. This
                 # actually requires a custom action, as argparse only supports one-to-one mappings
                 # between command-line arguments and stored values of the given type.
                 action = get_combine_args_action(self.type)
-                parser.add_argument(*self.name_or_flags, dest=self.dest, help=self.help, action=action, metavar=self.metavar, nargs=self.nargs)
+                parser.add_argument(*self.flags, dest=self.dest, help=self.help, action=action, metavar=self.metavar, nargs=self.nargs)
         elif self.const is not None:
-            parser.add_argument(*self.name_or_flags, dest=self.dest, help=self.help, action="append_const", const=self.const)
+            parser.add_argument(*self.flags, dest=self.dest, help=self.help, action="append_const", const=self.const)
+
+
+def _ensure_list[T](x: T | list[T]) -> list[T]:
+    return x if isinstance(x, list) else [x]
 
 
 def arg_parser(
-    *name_or_flags: str,
+    *,
+    flags: str | list[str],
     metavar: str | tuple[str] | None,
     help: str | None,
     dest: str,
     nargs: NArgs = None,
 ):
     def arg_parser_inner[ArgType](parse_func: typing.Callable[[str | list[str]], ArgType]):
-        CUSTOM_ARGS.append(ArgparseArgAdder(name_or_flags, help, dest, type=parse_func, metavar=metavar, nargs=nargs))
+        CUSTOM_ARGS.append(ArgparseArgAdder(flags=_ensure_list(flags), help=help, dest=dest, type=parse_func, metavar=metavar, nargs=nargs))
         return parse_func
 
     return arg_parser_inner
 
 
 def const_arg(
-    *name_or_flags: str,
+    *,
+    flags: str | list[str],
     help: str | None,
     dest: str,
 ):
     def const_inner[ArgType](const_type: typing.Callable[[], ArgType]):
-        CUSTOM_ARGS.append(ArgparseArgAdder(name_or_flags, help, dest, const=const_type()))
+        CUSTOM_ARGS.append(ArgparseArgAdder(flags=_ensure_list(flags), help=help, dest=dest, const=const_type()))
         return const_type
 
     return const_inner

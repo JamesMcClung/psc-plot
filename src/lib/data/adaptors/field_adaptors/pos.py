@@ -76,7 +76,7 @@ POS_FORMAT = "dim_name=[pos | lower?:upper?]"
 
 
 @adaptor_parser(
-    "--pos",
+    flags="--pos",
     metavar=POS_FORMAT,
     help="select data nearest to the given position, or between the lower position (inclusive) and upper position (exclusive)",
     nargs="+",

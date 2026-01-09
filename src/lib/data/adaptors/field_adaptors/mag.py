@@ -5,7 +5,7 @@ from lib.data.adaptors.registry import const_adaptor
 
 
 @const_adaptor(
-    "--mag",
+    flags="--mag",
     help="take the (complex) absolute value",
 )
 class Magnitude(BareAdaptor):

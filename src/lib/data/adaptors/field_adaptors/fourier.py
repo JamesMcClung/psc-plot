@@ -52,8 +52,7 @@ FOURIER_FORMAT = "dim_name"
 
 
 @adaptor_parser(
-    "--fourier",
-    "-f",
+    flags=["--fourier", "-f"],
     metavar=FOURIER_FORMAT,
     help="perform a Fourier transform along the given dimensions",
     nargs="+",

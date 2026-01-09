@@ -70,7 +70,7 @@ _POLAR_FORMAT = ("dim_1", "dim_2")
 
 
 @adaptor_parser(
-    "--transform-polar",
+    flags="--transform-polar",
     metavar=_POLAR_FORMAT,
     help="perform a coordinate transform from cartesian (dim_1, dim_2) to polar (r, theta)",
     nargs=2,

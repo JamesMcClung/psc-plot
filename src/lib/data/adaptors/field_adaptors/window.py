@@ -55,7 +55,7 @@ KAISER_FORMAT = "dim_name=beta"
 
 
 @adaptor_parser(
-    "--window-kaiser",
+    flags="--window-kaiser",
     metavar=KAISER_FORMAT,
     help="apply the Kaiser window of the given beta along the given dimension",
 )

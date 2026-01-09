@@ -57,7 +57,7 @@ REDUCE_FORMAT = "dim_name[,dim_name ...]=reduce_func"
 
 
 @adaptor_parser(
-    "--reduce",
+    flags="--reduce",
     metavar=REDUCE_FORMAT,
     help="reduce the given dimension(s) via the given method",
 )

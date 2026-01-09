@@ -7,7 +7,7 @@ from lib.data.data_with_attrs import Field, FullList, ListMetadata
 
 
 @const_adaptor(
-    "--scatter",
+    flags="--scatter",
     help="convert to list of values and coordinates",
 )
 class Scatter(CheckedAdaptor):

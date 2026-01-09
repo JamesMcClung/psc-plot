@@ -5,7 +5,7 @@ from lib.data.adaptors.registry import const_adaptor
 
 
 @const_adaptor(
-    "--image",
+    flags="--image",
     help="take the imaginary part",
 )
 class Imaginary(BareAdaptor):

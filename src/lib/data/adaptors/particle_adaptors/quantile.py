@@ -38,7 +38,7 @@ QUANTILE_FORMAT = "dim_name=lower?:upper?"
 
 
 @adaptor_parser(
-    "--quantile",
+    flags="--quantile",
     metavar=QUANTILE_FORMAT,
     help="select data within the given quantiles (both bounds are inclusive), specified between 0 and 1",
     nargs="+",

@@ -84,8 +84,7 @@ _VERSUS_FORMAT = f"dim_name | {_TIME_PREFIX}[dim_name] | {_COLOR_PREFIX}dim_name
 
 
 @adaptor_parser(
-    "--versus",
-    "-v",
+    flags=["--versus", "-v"],
     metavar=_VERSUS_FORMAT,
     help=f"Specifies the independent axes to plot against (automatically performs necessary Fourier and coordinate transforms, and reduces other dimensions via arithmetic mean). The optional `{_TIME_PREFIX}[dim_name]` specifies an additional dimension to use as the time axis. If unspecified, defaults to `{_TIME_PREFIX}t` unless t is used as a spatial axis. Alternatively, disable time by passing `{_TIME_PREFIX}` (with no dim_name).",
     nargs="+",
