@@ -5,7 +5,13 @@ from matplotlib.lines import Line2D
 
 from lib.data.adaptors.field_adaptors.pos import Pos
 from lib.data.data_with_attrs import DataWithAttrs, Field, List
-from lib.plotting.frame_data_traits import HasAxes, HasData, HasLineType
+from lib.plotting.frame_data_traits import (
+    HasAxes,
+    HasData,
+    HasLineType,
+    assert_impl,
+    check_impl,
+)
 from lib.plotting.plot import Hook
 
 
@@ -15,7 +21,7 @@ class HookInitData(HasData, HasAxes): ...
 class HookUpdateData(HasData, HasAxes): ...
 
 
-class Fit(Hook[HookInitData, HookUpdateData]):
+class Fit(Hook):
     def __init__(self, arg: str):
         # TODO proper error handling
         # TODO actually parse different options for fits
@@ -25,14 +31,16 @@ class Fit(Hook[HookInitData, HookUpdateData]):
         self.max_x = float(max_x)
 
     def pre_init_fig(self, init_data):
-        if isinstance(init_data, HasLineType):
+        if check_impl(init_data, HasLineType):
             init_data.line_type = "."
 
     def post_init_fig(self, init_data):
+        init_data = assert_impl(init_data, HookInitData)
         self.line = self.plot_fit(init_data.axes, init_data.data)
         init_data.axes.legend()
 
     def post_update_fig(self, update_data):
+        update_data = assert_impl(update_data, HookUpdateData)
         self.update_fit(update_data.data, self.line)
         update_data.axes.legend()  # in case label changed
 

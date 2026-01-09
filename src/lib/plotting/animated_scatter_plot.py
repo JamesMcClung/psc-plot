@@ -2,7 +2,6 @@ import typing
 from dataclasses import dataclass
 
 import numpy as np
-from matplotlib.axes import Axes
 
 from lib.data.data_with_attrs import FullList
 from lib.dimension import DIMENSIONS
@@ -12,17 +11,11 @@ from lib.plotting.frame_data_traits import HasAxes, HasFullListData
 
 
 class AnimatedScatterPlot(AnimatedPlot[FullList]):
-    @dataclass
-    class InitData(HasFullListData, HasAxes):
-        # TODO generate these fields automatically from the protocols
-        data: FullList
-        axes: Axes
+    @dataclass(kw_only=True)
+    class InitData(HasFullListData, HasAxes): ...
 
-    @dataclass
-    class UpdateData(HasFullListData, HasAxes):
-        # TODO generate these fields automatically from the protocols
-        data: FullList
-        axes: Axes
+    @dataclass(kw_only=True)
+    class UpdateData(HasFullListData, HasAxes): ...
 
     def __init__(
         self,
@@ -43,7 +36,7 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
         data = self._get_data_at_frame(0)
         df = data.data
 
-        init_data = self.InitData(data, self.ax)
+        init_data = self.InitData(data=data, axes=self.ax)
 
         self.pre_init_fig(init_data)
 
@@ -85,7 +78,7 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
         data = self._get_data_at_frame(frame)
         df = data.data
 
-        update_data = self.UpdateData(data, self.ax)
+        update_data = self.UpdateData(data=data, axes=self.ax)
 
         self.pre_update_fig(update_data)
 

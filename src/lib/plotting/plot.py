@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Any
 
 from lib.data.data_with_attrs import DataWithAttrs
 
@@ -11,7 +12,7 @@ class Plot[Data: DataWithAttrs](ABC):
         self.data = data
         self.hooks: list[Hook] = []
 
-    def add_hook[ID, UD](self, hook: Hook[ID, UD]):
+    def add_hook(self, hook: Hook):
         self.hooks.append(hook)
 
     @abstractmethod
@@ -28,32 +29,32 @@ class Plot[Data: DataWithAttrs](ABC):
         self._save_to_path(path)
         print(f"wrote to {path}")
 
-    def pre_init_fig[InitData](self, init_data: InitData):
+    def pre_init_fig(self, init_data: Any):
         for hook in self.hooks:
             hook.pre_init_fig(init_data)
 
-    def post_init_fig[InitData](self, init_data: InitData):
+    def post_init_fig(self, init_data: Any):
         for hook in self.hooks:
             hook.post_init_fig(init_data)
 
-    def pre_update_fig[UpdateData](self, update_data: UpdateData):
+    def pre_update_fig(self, update_data: Any):
         for hook in self.hooks:
             hook.pre_update_fig(update_data)
 
-    def post_update_fig[UpdateData](self, update_data: UpdateData):
+    def post_update_fig(self, update_data: Any):
         for hook in self.hooks:
             hook.post_update_fig(update_data)
 
 
-class Hook[InitData, UpdateData]:
-    def pre_init_fig(self, init_data: InitData):
+class Hook:
+    def pre_init_fig(self, init_data: Any):
         pass
 
-    def post_init_fig(self, init_data: InitData):
+    def post_init_fig(self, init_data: Any):
         pass
 
-    def pre_update_fig(self, update_data: UpdateData):
+    def pre_update_fig(self, update_data: Any):
         pass
 
-    def post_update_fig(self, update_data: UpdateData):
+    def post_update_fig(self, update_data: Any):
         pass

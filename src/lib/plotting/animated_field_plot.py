@@ -4,7 +4,6 @@ from dataclasses import dataclass
 
 import numpy as np
 import xarray as xr
-from matplotlib.axes import Axes
 from matplotlib.projections.polar import PolarAxes
 
 from lib.data.data_with_attrs import Field
@@ -120,18 +119,11 @@ class AnimatedPolarFieldPlot(AnimatedFieldPlot):
 
 
 class Animated1dFieldPlot(AnimatedFieldPlot):
-    @dataclass
-    class InitData(HasFieldData, HasLineType, HasAxes):
-        # TODO generate these fields automatically from the protocols
-        data: Field
-        axes: Axes
-        line_type: str
+    @dataclass(kw_only=True)
+    class InitData(HasFieldData, HasLineType, HasAxes): ...
 
-    @dataclass
-    class UpdateData(HasFieldData, HasAxes):
-        # TODO generate these fields automatically from the protocols
-        data: Field
-        axes: Axes
+    @dataclass(kw_only=True)
+    class UpdateData(HasFieldData, HasAxes): ...
 
     def __init__(
         self,
@@ -149,7 +141,7 @@ class Animated1dFieldPlot(AnimatedFieldPlot):
         xdata = data.coordss[data.dims[0]]
         ydata = data.data
 
-        init_data = self.InitData(data, self.ax, line_type="-")
+        init_data = self.InitData(data=data, axes=self.ax, line_type="-")
 
         # TODO make show_t0 a hook (that gets added before fits)
         if self.show_t0:
@@ -180,7 +172,7 @@ class Animated1dFieldPlot(AnimatedFieldPlot):
         data = self._get_data_at_frame(frame)
         ydata = data.data
 
-        update_data = self.UpdateData(data, self.ax)
+        update_data = self.UpdateData(data=data, axes=self.ax)
 
         self.pre_update_fig(update_data)
 
