@@ -1,10 +1,13 @@
 import xarray as xr
 
 from lib.data.adaptor import BareAdaptor
+from lib.data.adaptors.registry import const_adaptor
 
-from ..registry import register_const_adaptor
 
-
+@const_adaptor(
+    "--real",
+    help="take the real part",
+)
 class Real(BareAdaptor):
     def apply_bare(self, da: xr.DataArray) -> xr.DataArray:
         return da.real
@@ -14,10 +17,3 @@ class Real(BareAdaptor):
 
     def get_modified_var_latex(self, var_latex: str) -> str:
         return f"\\text{{Re}}[{var_latex}]"
-
-
-register_const_adaptor(
-    "--real",
-    help="take the real part",
-    const=Real(),
-)

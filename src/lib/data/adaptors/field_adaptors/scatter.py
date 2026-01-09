@@ -2,10 +2,14 @@ import numpy as np
 import pandas as pd
 
 from lib.data.adaptor import CheckedAdaptor
-from lib.data.adaptors.registry import register_const_adaptor
+from lib.data.adaptors.registry import const_adaptor
 from lib.data.data_with_attrs import Field, FullList, ListMetadata
 
 
+@const_adaptor(
+    "--scatter",
+    help="convert to list of values and coordinates",
+)
 class Scatter(CheckedAdaptor):
     def apply_checked(self, data: Field) -> FullList:
         # note:  dims and coords are not necessarily in the same order. Data dimensions follow the order of dims.
@@ -23,10 +27,3 @@ class Scatter(CheckedAdaptor):
         )
 
         return FullList(df, metadata)
-
-
-register_const_adaptor(
-    "--scatter",
-    help="convert to list of values and coordinates",
-    const=Scatter(),
-)

@@ -4,17 +4,8 @@ from functools import partial
 
 from lib.parsing.args_registry import arg_parser, const_arg
 
-from ..adaptor import Adaptor
-
-__all__ = ["adaptor_parser"]
+__all__ = ["const_adaptor", "adaptor_parser"]
 
 
 adaptor_parser = partial(arg_parser, dest="adaptors")
-
-
-def register_const_adaptor(
-    *name_or_flags: str,
-    help: str | None,
-    const: Adaptor,
-):
-    const_arg(*name_or_flags, help=help, dest="adaptors")(const)
+const_adaptor = partial(const_arg, dest="adaptors")

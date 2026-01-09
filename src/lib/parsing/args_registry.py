@@ -94,8 +94,8 @@ def const_arg(
     help: str | None,
     dest: str,
 ):
-    def const_inner[ArgType](const: ArgType):
-        CUSTOM_ARGS.append(ArgparseArgAdder(name_or_flags, help, dest, const=const))
-        return const
+    def const_inner[ArgType](const_type: typing.Callable[[], ArgType]):
+        CUSTOM_ARGS.append(ArgparseArgAdder(name_or_flags, help, dest, const=const_type()))
+        return const_type
 
     return const_inner
