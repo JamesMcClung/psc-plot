@@ -3,9 +3,9 @@ from typing import Callable
 import xarray as xr
 
 from lib.data.adaptor import BareAdaptor
+from lib.parsing.args_registry import arg_parser
 
 from .. import parse_util
-from ..registry import adaptor_parser
 
 
 class MathOp(BareAdaptor):
@@ -41,7 +41,8 @@ op_params = [
 
 for name_abbrev, metavar, help, symbol, func in op_params:
 
-    @adaptor_parser(
+    @arg_parser(
+        dest="adaptors",
         flags=f"--{name_abbrev}",
         metavar=metavar,
         help=help,

@@ -1,9 +1,9 @@
 from lib.data.adaptor import CheckedAdaptor
 from lib.data.data_with_attrs import Field, List
+from lib.parsing.args_registry import arg_parser
 
 from ....dimension import DIMENSIONS
 from .. import parse_util
-from ..registry import adaptor_parser
 from .fourier import Fourier
 from .reduce import Reduce
 
@@ -83,7 +83,8 @@ _COLOR_PREFIX = "color="
 _VERSUS_FORMAT = f"dim_name | {_TIME_PREFIX}[dim_name] | {_COLOR_PREFIX}dim_name"
 
 
-@adaptor_parser(
+@arg_parser(
+    dest="adaptors",
     flags=["--versus", "-v"],
     metavar=_VERSUS_FORMAT,
     help=f"Specifies the independent axes to plot against (automatically performs necessary Fourier and coordinate transforms, and reduces other dimensions via arithmetic mean). The optional `{_TIME_PREFIX}[dim_name]` specifies an additional dimension to use as the time axis. If unspecified, defaults to `{_TIME_PREFIX}t` unless t is used as a spatial axis. Alternatively, disable time by passing `{_TIME_PREFIX}` (with no dim_name).",

@@ -1,10 +1,11 @@
 import xarray as xr
 
 from lib.data.adaptor import BareAdaptor
-from lib.data.adaptors.registry import const_adaptor
+from lib.parsing.args_registry import const_arg
 
 
-@const_adaptor(
+@const_arg(
+    dest="adaptors",
     flags="--real",
     help="take the real part",
 )

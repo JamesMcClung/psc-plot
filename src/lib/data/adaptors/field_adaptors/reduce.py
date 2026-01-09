@@ -4,10 +4,9 @@ import numpy as np
 import xarray as xr
 
 from lib.data.adaptor import BareAdaptor
+from lib.parsing.args_registry import arg_parser
 
-from ....dimension import DIMENSIONS
 from .. import parse_util
-from ..registry import adaptor_parser
 
 
 class ReduceFunc(typing.Protocol):
@@ -56,7 +55,8 @@ class Reduce(BareAdaptor):
 REDUCE_FORMAT = "dim_name[,dim_name ...]=reduce_func"
 
 
-@adaptor_parser(
+@arg_parser(
+    dest="adaptors",
     flags="--reduce",
     metavar=REDUCE_FORMAT,
     help="reduce the given dimension(s) via the given method",

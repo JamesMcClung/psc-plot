@@ -4,14 +4,13 @@ import warnings
 import dask.array as da
 import dask.dataframe as dd
 import numpy as np
-import pandas as pd
 import xarray as xr
 
 from lib.data.data_with_attrs import Field, FieldMetadata, List
+from lib.parsing.args_registry import arg_parser
 
 from ...adaptor import CheckedAdaptor
 from .. import parse_util
-from ..registry import adaptor_parser
 
 
 def _guess_bin_edgess(data: List, varname_to_nbins: dict[str, int | None]) -> list:
@@ -117,7 +116,8 @@ class Bin(CheckedAdaptor):
 _BIN_FORMAT = "var_name[=nbins]"
 
 
-@adaptor_parser(
+@arg_parser(
+    dest="adaptors",
     flags=["--bin", "-b"],
     metavar=_BIN_FORMAT,
     help="Bin the data along these variables, which serve as axes. If nbins is unspecified, it is guessed. Note that t is implicitly binned; disable by passing t= (with no nbins).",

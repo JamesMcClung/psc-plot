@@ -2,8 +2,8 @@ from lib.data import data_util
 from lib.data.adaptor import CheckedAdaptor
 from lib.data.adaptors import parse_util
 from lib.data.adaptors.field_adaptors.pos import Pos
-from lib.data.adaptors.registry import adaptor_parser
 from lib.data.data_with_attrs import List
+from lib.parsing.args_registry import arg_parser
 
 
 class Quantile(CheckedAdaptor):
@@ -37,7 +37,8 @@ class Quantile(CheckedAdaptor):
 QUANTILE_FORMAT = "dim_name=lower?:upper?"
 
 
-@adaptor_parser(
+@arg_parser(
+    dest="adaptors",
     flags="--quantile",
     metavar=QUANTILE_FORMAT,
     help="select data within the given quantiles (both bounds are inclusive), specified between 0 and 1",

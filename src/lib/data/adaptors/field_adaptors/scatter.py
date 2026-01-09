@@ -2,11 +2,12 @@ import numpy as np
 import pandas as pd
 
 from lib.data.adaptor import CheckedAdaptor
-from lib.data.adaptors.registry import const_adaptor
 from lib.data.data_with_attrs import Field, FullList, ListMetadata
+from lib.parsing.args_registry import const_arg
 
 
-@const_adaptor(
+@const_arg(
+    dest="adaptors",
     flags="--scatter",
     help="convert to list of values and coordinates",
 )

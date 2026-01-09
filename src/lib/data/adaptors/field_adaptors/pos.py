@@ -3,8 +3,8 @@ import numpy as np
 from lib.data import data_util
 from lib.data.adaptor import CheckedAdaptor
 from lib.data.adaptors import parse_util
-from lib.data.adaptors.registry import adaptor_parser
 from lib.data.data_with_attrs import Field, List
+from lib.parsing.args_registry import arg_parser
 
 
 class Pos(CheckedAdaptor):
@@ -75,7 +75,8 @@ class Pos(CheckedAdaptor):
 POS_FORMAT = "dim_name=[pos | lower?:upper?]"
 
 
-@adaptor_parser(
+@arg_parser(
+    dest="adaptors",
     flags="--pos",
     metavar=POS_FORMAT,
     help="select data nearest to the given position, or between the lower position (inclusive) and upper position (exclusive)",

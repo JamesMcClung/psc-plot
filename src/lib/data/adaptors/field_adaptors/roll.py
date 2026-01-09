@@ -1,10 +1,10 @@
 import xarray as xr
 
 from lib.data.adaptor import BareAdaptor
+from lib.parsing.args_registry import arg_parser
 
 from ....dimension import DIMENSIONS
 from .. import parse_util
-from ..registry import adaptor_parser
 
 
 class Roll(BareAdaptor):
@@ -22,7 +22,8 @@ class Roll(BareAdaptor):
 ROLL_FORMAT = "dim_name=window_size"
 
 
-@adaptor_parser(
+@arg_parser(
+    dest="adaptors",
     flags="--roll",
     metavar=ROLL_FORMAT,
     help="plot the rolling average against the given dimension with the given window size",
