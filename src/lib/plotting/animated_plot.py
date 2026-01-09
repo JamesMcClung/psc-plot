@@ -7,7 +7,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-from lib.data.adaptors.field_adaptors.idx import Idx
+from lib.data.adaptors.idx import Idx
 from lib.plotting import plt_util
 from lib.plotting.plot import DataWithAttrs, Plot
 

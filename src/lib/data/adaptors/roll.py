@@ -1,10 +1,9 @@
 import xarray as xr
 
 from lib.data.adaptor import BareAdaptor
+from lib.dimension import DIMENSIONS
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
-
-from ....dimension import DIMENSIONS
 
 
 class Roll(BareAdaptor):

@@ -1,12 +1,12 @@
 import argparse
 import typing
 
+from lib.data.adaptor import Adaptor
 from lib.data.compile import compile_source
 from lib.parsing.args_registry import CUSTOM_ARGS
 from lib.plotting.get_plot import get_plot
 
 from .. import field_util
-from ..data.adaptors import Adaptor
 from ..data.field_loader import FieldLoader
 from ..file_util import FIELD_PREFIXES
 from ..plotting import plt_util

@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.stats as stats
 
-from lib.data.adaptors.field_adaptors.pos import Pos
+from lib.data.adaptors.pos import Pos
 from lib.data.data_with_attrs import DataWithAttrs, Field, List
 from lib.plotting.frame_data_traits import (
     HasAxes,

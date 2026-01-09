@@ -2,9 +2,9 @@ import numpy as np
 import pscpy
 from xarray import DataArray, Dataset
 
-from ..data.adaptors.field_adaptors.fourier import Fourier
-from ..data.adaptors.field_adaptors.mag import Magnitude
-from ..data.pipeline import Pipeline
+from lib.data.adaptors.fourier import Fourier
+from lib.data.adaptors.mag import Magnitude
+
 from ..dimension import DIMENSIONS
 from .derived_field_variable import derived_field_variable
 

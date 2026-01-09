@@ -3,12 +3,11 @@ import argparse
 import numpy as np
 import xarray as xr
 
+from lib.data.adaptor import CheckedAdaptor
 from lib.data.data_with_attrs import Field, FullList
+from lib.dimension import DIMENSIONS, CartesianToPolar
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
-
-from ....dimension import DIMENSIONS, CartesianToPolar
-from ...adaptor import CheckedAdaptor
 
 
 class TransformPolar(CheckedAdaptor):

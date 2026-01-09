@@ -1,11 +1,11 @@
 import argparse
 
+from lib.data.adaptor import Adaptor
 from lib.data.compile import compile_source
 from lib.parsing.args_registry import CUSTOM_ARGS
 from lib.plotting.get_plot import get_plot
 
 from .. import particle_util
-from ..data.adaptors import Adaptor
 from ..data.particle_loader import ParticleLoader
 from ..derived_particle_variables import DERIVED_PARTICLE_VARIABLES
 from ..particle_util import PRT_VARIABLES, PrtVariable

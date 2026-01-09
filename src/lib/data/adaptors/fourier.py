@@ -3,10 +3,9 @@ import xarray as xr
 import xrft
 
 from lib.data.adaptor import BareAdaptor
+from lib.dimension import DIMENSIONS, Dimension
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
-
-from ....dimension import DIMENSIONS, Dimension
 
 
 def toggle_fourier(da: xr.DataArray, dim: Dimension) -> xr.DataArray:

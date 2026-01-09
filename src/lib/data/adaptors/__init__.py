@@ -1,6 +1,9 @@
-from ..adaptor import Adaptor
-from ..pipeline import Pipeline
-from . import field_adaptors as _
-from . import particle_adaptors as _
+import importlib
+from pathlib import Path
 
-__all__ = ["Adaptor", "Pipeline", "FIELD_ADAPTORS", "PARTICLE_ADAPTORS"]
+this_file = Path(__file__)
+module_paths = [path for path in this_file.parent.glob("*.py") if path != this_file]
+modules = [path.stem for path in module_paths]
+
+for module in modules:
+    importlib.import_module(f"lib.data.adaptors.{module}")

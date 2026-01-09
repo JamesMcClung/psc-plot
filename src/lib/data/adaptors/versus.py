@@ -1,11 +1,10 @@
 from lib.data.adaptor import CheckedAdaptor
+from lib.data.adaptors.fourier import Fourier
+from lib.data.adaptors.reduce import Reduce
 from lib.data.data_with_attrs import Field, List
+from lib.dimension import DIMENSIONS
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
-
-from ....dimension import DIMENSIONS
-from .fourier import Fourier
-from .reduce import Reduce
 
 
 class Versus(CheckedAdaptor):
