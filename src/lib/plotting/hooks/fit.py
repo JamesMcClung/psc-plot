@@ -15,13 +15,11 @@ from lib.plotting.frame_data_traits import (
 from lib.plotting.plot import Hook
 
 
-class HookInitData(HasData, HasAxes): ...
-
-
-class HookUpdateData(HasData, HasAxes): ...
-
-
 class Fit(Hook):
+    class InitData(HasData, HasAxes): ...
+
+    class UpdateData(HasData, HasAxes): ...
+
     def __init__(self, arg: str):
         # TODO proper error handling
         # TODO actually parse different options for fits
@@ -35,12 +33,12 @@ class Fit(Hook):
             init_data.line_type = "."
 
     def post_init_fig(self, init_data):
-        init_data = assert_impl(init_data, HookInitData)
+        init_data = assert_impl(init_data, Fit.InitData)
         self.line = self.plot_fit(init_data.axes, init_data.data)
         init_data.axes.legend()
 
     def post_update_fig(self, update_data):
-        update_data = assert_impl(update_data, HookUpdateData)
+        update_data = assert_impl(update_data, Fit.UpdateData)
         self.update_fit(update_data.data, self.line)
         update_data.axes.legend()  # in case label changed
 
