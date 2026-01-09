@@ -1,10 +1,9 @@
 import dask.dataframe as dd
 
 from lib.data.adaptor import BareAdaptor
-
-from ....particle_util import SPECIES, Species
-from .. import parse_util
-from ..registry import adaptor_parser
+from lib.parsing import parse_util
+from lib.parsing.args_registry import arg_parser
+from lib.particle_util import SPECIES, Species
 
 
 class SpeciesFilter(BareAdaptor):
@@ -29,8 +28,9 @@ class SpeciesFilter(BareAdaptor):
 _SPECIES_FILTER_FORMAT = "species"
 
 
-@adaptor_parser(
-    "--species",
+@arg_parser(
+    dest="adaptors",
+    flags="--species",
     metavar=_SPECIES_FILTER_FORMAT,
     help="include only particles of this species",
 )

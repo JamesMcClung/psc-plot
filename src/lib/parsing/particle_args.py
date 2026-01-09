@@ -1,10 +1,12 @@
 import argparse
 
+from lib.data.adaptor import Adaptor
 from lib.data.compile import compile_source
+from lib.parsing.args_registry import CUSTOM_ARGS
 from lib.plotting.get_plot import get_plot
+from lib.plotting.plot import Hook
 
 from .. import particle_util
-from ..data.adaptors import ADAPTORS, Adaptor
 from ..data.particle_loader import ParticleLoader
 from ..derived_particle_variables import DERIVED_PARTICLE_VARIABLES
 from ..particle_util import PRT_VARIABLES, PrtVariable
@@ -18,6 +20,7 @@ __all__ = ["add_particle_subparsers", "ParticleArgs"]
 class ParticleArgs(args_base.ArgsTyped):
     axis_variables: tuple[PrtVariable, PrtVariable]
     adaptors: list[Adaptor]
+    hooks: list[Hook]
     scales: list[plt_util.Scale]
 
     def get_animation(self) -> AnimatedFieldPlot:
@@ -27,7 +30,12 @@ class ParticleArgs(args_base.ArgsTyped):
         source = compile_source(loader, self.adaptors)
         data = source.get_data()
 
-        return get_plot(data, scales=self.scales)
+        anim = get_plot(data, scales=self.scales)
+
+        for hook in self.hooks:
+            anim.add_hook(hook)
+
+        return anim
 
 
 def add_particle_subparsers(subparsers: argparse._SubParsersAction):
@@ -52,7 +60,7 @@ def add_particle_subparsers(subparsers: argparse._SubParsersAction):
         help="linear or logarithmic scale for dependent variable and axes, in that order",
     )
 
-    for adaptor_adder in ADAPTORS:
-        adaptor_adder.add_to(parent)
+    for custom_arg in CUSTOM_ARGS:
+        custom_arg.add_to(parent)
 
     subparsers.add_parser("prt", parents=[parent])

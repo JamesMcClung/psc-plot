@@ -1,8 +1,8 @@
 from lib.data import data_util
 from lib.data.adaptor import CheckedAdaptor
-from lib.data.adaptors import parse_util
-from lib.data.adaptors.registry import adaptor_parser
 from lib.data.data_with_attrs import Field, FullList
+from lib.parsing import parse_util
+from lib.parsing.args_registry import arg_parser
 
 
 class Idx(CheckedAdaptor):
@@ -45,9 +45,9 @@ class Idx(CheckedAdaptor):
 IDX_FORMAT = "dim_name=[idx | lower?:upper?]"
 
 
-@adaptor_parser(
-    "--idx",
-    "-i",
+@arg_parser(
+    dest="adaptors",
+    flags=["--idx", "-i"],
     metavar=IDX_FORMAT,
     help="select data at the given index, or between the lower index (inclusive) and upper index (exclusive)",
     nargs="+",

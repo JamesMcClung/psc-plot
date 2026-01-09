@@ -1,17 +1,17 @@
 import argparse
 import typing
 
+from lib.data.adaptor import Adaptor
 from lib.data.compile import compile_source
-from lib.plotting.animated_scatter_plot import AnimatedScatterPlot
+from lib.parsing.args_registry import CUSTOM_ARGS
 from lib.plotting.get_plot import get_plot
+from lib.plotting.plot import Hook
 
 from .. import field_util
-from ..data.adaptors import ADAPTORS, Adaptor
 from ..data.field_loader import FieldLoader
 from ..file_util import FIELD_PREFIXES
 from ..plotting import plt_util
 from ..plotting.animated_field_plot import Animated1dFieldPlot, AnimatedFieldPlot
-from ..plotting.hooks.fit import Fit
 from . import args_base
 
 __all__ = ["add_field_subparsers", "FieldArgs"]
@@ -24,8 +24,7 @@ class FieldArgs(args_base.ArgsTyped):
     variable: str
     scales: list[plt_util.Scale]
     adaptors: list[Adaptor]
-    # TODO have a list of hooks instead of fits, show_t0, even scales
-    fits: list[Fit]  # 1d only
+    hooks: list[Hook]
     show_t0: bool  # 1d only
 
     def get_animation(self) -> AnimatedFieldPlot:
@@ -37,8 +36,8 @@ class FieldArgs(args_base.ArgsTyped):
 
         anim = get_plot(data, scales=self.scales)
 
-        for fit in self.fits:
-            anim.add_hook(fit)
+        for hook in self.hooks:
+            anim.add_hook(hook)
 
         if isinstance(anim, Animated1dFieldPlot):
             anim.show_t0 = self.show_t0
@@ -53,8 +52,8 @@ def add_field_subparsers(subparsers: argparse._SubParsersAction):
     parent = args_base.get_subparser_parent(FieldArgs)
     parent.add_argument("variable", type=str, help="the variable to plot")
 
-    for adaptor_adder in ADAPTORS:
-        adaptor_adder.add_to(parent)
+    for custom_arg in CUSTOM_ARGS:
+        custom_arg.add_to(parent)
 
     parent.add_argument(
         "--scale",
@@ -63,17 +62,6 @@ def add_field_subparsers(subparsers: argparse._SubParsersAction):
         default=[],
         dest="scales",
         help="linear or logarithmic scale for dependent variable and axes, in that order (default: linear)",
-    )
-
-    parent.add_argument(
-        "--fit",
-        action="extend",
-        dest="fits",
-        default=[],
-        nargs="+",
-        type=Fit,
-        help="fit the data",  # TODO decide what fit should be able to do
-        metavar="fit",  # TODO decide a string format to be parsed
     )
 
     parent.add_argument(

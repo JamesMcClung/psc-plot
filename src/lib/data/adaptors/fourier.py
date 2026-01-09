@@ -3,10 +3,9 @@ import xarray as xr
 import xrft
 
 from lib.data.adaptor import BareAdaptor
-
-from ....dimension import DIMENSIONS, Dimension
-from .. import parse_util
-from ..registry import adaptor_parser
+from lib.dimension import DIMENSIONS, Dimension
+from lib.parsing import parse_util
+from lib.parsing.args_registry import arg_parser
 
 
 def toggle_fourier(da: xr.DataArray, dim: Dimension) -> xr.DataArray:
@@ -51,9 +50,9 @@ class Fourier(BareAdaptor):
 FOURIER_FORMAT = "dim_name"
 
 
-@adaptor_parser(
-    "--fourier",
-    "-f",
+@arg_parser(
+    dest="adaptors",
+    flags=["--fourier", "-f"],
     metavar=FOURIER_FORMAT,
     help="perform a Fourier transform along the given dimensions",
     nargs="+",

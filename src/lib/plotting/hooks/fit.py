@@ -1,8 +1,10 @@
 import numpy as np
 import scipy.stats as stats
 
-from lib.data.adaptors.field_adaptors.pos import Pos
+from lib.data.adaptors.pos import Pos
 from lib.data.data_with_attrs import DataWithAttrs, Field, List
+from lib.parsing import parse_util
+from lib.parsing.args_registry import arg_parser
 from lib.plotting.frame_data_traits import (
     HasAxes,
     HasData,
@@ -18,13 +20,8 @@ class Fit(Hook):
 
     class UpdateData(HasData, HasAxes): ...
 
-    def __init__(self, arg: str):
-        # TODO proper error handling
-        # TODO actually parse different options for fits
-
-        [min_x, max_x] = arg.split(":")
-        self.min_x = float(min_x)
-        self.max_x = float(max_x)
+    def __init__(self, subdomain: slice):
+        self.subdomain = subdomain
 
     def pre_init_fig(self, init_data):
         if check_impl(init_data, HasLineType):
@@ -64,9 +61,20 @@ class Fit(Hook):
 
     def _get_xy_data(self, data: DataWithAttrs) -> tuple[np.ndarray, np.ndarray]:
         spatial_dim = data.metadata.spatial_dims[0]
-        slicer = Pos({spatial_dim: slice(self.min_x, self.max_x)})
+        slicer = Pos({spatial_dim: self.subdomain})
         data = slicer.apply(data)
         if isinstance(data, Field):
             return (data.coordss[spatial_dim], data.data)
         elif isinstance(data, List):
             return (data.data[spatial_dim], data.data[data.metadata.dependent_var])
+
+
+@arg_parser(
+    flags="--fit",
+    metavar="lower:upper",
+    help="(1d only) fit the data to a power law on the given subdomain",
+    dest="hooks",
+)
+def parse_fit(arg: str) -> Fit:
+    subdomain = parse_util.parse_slice(arg, float)
+    return Fit(subdomain)
