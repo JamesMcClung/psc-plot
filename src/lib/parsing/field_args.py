@@ -2,11 +2,11 @@ import argparse
 import typing
 
 from lib.data.compile import compile_source
-from lib.plotting.animated_scatter_plot import AnimatedScatterPlot
+from lib.parsing.args_registry import CUSTOM_ARGS
 from lib.plotting.get_plot import get_plot
 
 from .. import field_util
-from ..data.adaptors import ADAPTORS, Adaptor
+from ..data.adaptors import Adaptor
 from ..data.field_loader import FieldLoader
 from ..file_util import FIELD_PREFIXES
 from ..plotting import plt_util
@@ -53,8 +53,8 @@ def add_field_subparsers(subparsers: argparse._SubParsersAction):
     parent = args_base.get_subparser_parent(FieldArgs)
     parent.add_argument("variable", type=str, help="the variable to plot")
 
-    for adaptor_adder in ADAPTORS:
-        adaptor_adder.add_to(parent)
+    for custom_arg in CUSTOM_ARGS:
+        custom_arg.add_to(parent)
 
     parent.add_argument(
         "--scale",

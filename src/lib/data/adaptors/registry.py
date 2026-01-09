@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from functools import partial
 
-from lib.parsing.args_registry import CUSTOM_ARGS, arg_parser, const_arg
+from lib.parsing.args_registry import arg_parser, const_arg
 
 from ..adaptor import Adaptor
 
-__all__ = ["ADAPTORS", "adaptor_parser"]
+__all__ = ["adaptor_parser"]
 
-ADAPTORS = CUSTOM_ARGS
 
 adaptor_parser = partial(arg_parser, dest="adaptors")
 
