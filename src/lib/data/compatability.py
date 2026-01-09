@@ -1,5 +1,5 @@
-import types
-import typing
+from types import UnionType
+from typing import TypeVar
 
 
 class DataError(Exception): ...
@@ -15,9 +15,9 @@ def ensure_type[Data](consumer_name: str, data: Data, *allowed_types: type):
 def get_allowed_types(type_annotation) -> list[type]:
     if isinstance(type_annotation, type):
         return [type_annotation]
-    elif isinstance(type_annotation, types.UnionType):
+    elif isinstance(type_annotation, UnionType):
         return type_annotation.__args__
-    elif isinstance(type_annotation, typing.TypeVar):
+    elif isinstance(type_annotation, TypeVar):
         return get_allowed_types(type_annotation.__bound__)
     else:
         message = f"not sure how to find allowed types for the following type annotation: {type_annotation}"
