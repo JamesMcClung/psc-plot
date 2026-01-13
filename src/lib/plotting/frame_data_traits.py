@@ -3,6 +3,7 @@ from typing import Any, TypeGuard
 
 from matplotlib.axes import Axes
 
+from lib.data.compatability import isinstance2
 from lib.data.data_with_attrs import Field, FullList, List
 from lib.plotting.hook import Hook
 
@@ -16,7 +17,7 @@ def check_impl[T](data: Any, data_type: type[T]) -> TypeGuard[T]:
             if not hasattr(data, field_name):
                 return False
 
-            if not isinstance(getattr(data, field_name), field_type):
+            if not isinstance2(getattr(data, field_name), field_type):
                 return False
 
     return True
