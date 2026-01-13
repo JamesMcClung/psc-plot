@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 import xarray as xr
 from matplotlib.projections.polar import PolarAxes
 
 from lib.data.data_with_attrs import Field
 from lib.dimension import DIMENSIONS
-from lib.parsing.fit import Fit
 from lib.plotting import plt_util
 from lib.plotting.animated_plot import AnimatedPlot
+from lib.plotting.frame_data_traits import HasAxes, HasFieldData, HasLineType
 
 
 class AnimatedFieldPlot(AnimatedPlot[Field]):
@@ -117,34 +119,22 @@ class AnimatedPolarFieldPlot(AnimatedFieldPlot):
 
 
 class Animated1dFieldPlot(AnimatedFieldPlot):
-    def __init__(
-        self,
-        data: Field,
-        *,
-        scales: list[plt_util.Scale] = [],
-        fits: list[Fit] = [],
-        show_t0: bool = False,
-    ):
-        super().__init__(data, scales=scales)
+    @dataclass(kw_only=True)
+    class InitData(HasFieldData, HasLineType, HasAxes): ...
 
-        self.fits = fits
-        self.show_t0 = show_t0
+    @dataclass(kw_only=True)
+    class UpdateData(HasFieldData, HasAxes): ...
 
     def _init_fig(self):
         data = self._get_data_at_frame(0)
         xdata = data.coordss[data.dims[0]]
         ydata = data.data
 
-        line_type = "-"
+        init_data = self.InitData(data=data, axes=self.ax, line_type="-")
 
-        if self.show_t0:
-            self.ax.plot(xdata, ydata, "-", label=DIMENSIONS[self.time_dim].get_coordinate_label(self.data.coordss[self.time_dim][0]))
-            line_type = "--"
+        self.pre_init_fig(init_data)
 
-        if self.fits:
-            line_type = "."
-
-        [self.line] = self.ax.plot(xdata, ydata, line_type)
+        [self.line] = self.ax.plot(xdata, ydata, init_data.line_type)
 
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
@@ -153,29 +143,26 @@ class Animated1dFieldPlot(AnimatedFieldPlot):
         self.ax.set_xscale(self.scales[1])
         self.ax.set_yscale(self.scales[0])
 
-        self.fit_lines = [fit.plot_fit(self.ax, data) for fit in self.fits]
-
-        if self.fits or self.show_t0:
-            self.ax.legend()
-
         self._update_ybounds()
+
+        self.post_init_fig(init_data)
+
         self.fig.tight_layout()
 
     def _update_fig(self, frame: int):
         data = self._get_data_at_frame(frame)
         ydata = data.data
 
+        update_data = self.UpdateData(data=data, axes=self.ax)
+
+        self.pre_update_fig(update_data)
+
         self.line.set_ydata(ydata)
 
-        for fit, line in zip(self.fits, self.fit_lines):
-            # TODO properly add and remove lines from fits
-            fit.update_fit(data, line)
-
-        if self.fits:
-            # updates legend in case fit labels changed (e.g. to show different fit params)
-            self.ax.legend()
-
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
+
+        self.post_update_fig(update_data)
+
         return [self.line, self.ax.yaxis, self.ax.title]
 
     def _update_ybounds(self):

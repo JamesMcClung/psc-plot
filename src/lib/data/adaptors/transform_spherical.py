@@ -3,12 +3,11 @@ import argparse
 import numpy as np
 import xarray as xr
 
+from lib.data.adaptor import CheckedAdaptor
 from lib.data.data_with_attrs import Field, FullList
-
-from ....dimension import DIMENSIONS, CartesianToSpherical
-from ...adaptor import CheckedAdaptor
-from .. import parse_util
-from ..registry import adaptor_parser
+from lib.dimension import DIMENSIONS, CartesianToSpherical
+from lib.parsing import parse_util
+from lib.parsing.args_registry import arg_parser
 
 
 class TransformSpherical(CheckedAdaptor):
@@ -78,8 +77,9 @@ class TransformSpherical(CheckedAdaptor):
 _SPHERICAL_FORMAT = ("dim_1", "dim_2", "dim_3")
 
 
-@adaptor_parser(
-    "--transform-spherical",
+@arg_parser(
+    dest="adaptors",
+    flags="--transform-spherical",
     metavar=_SPHERICAL_FORMAT,
     help="perform a coordinate transform from cartesian (dim_1, dim_2) to polar (r, theta)",
     nargs=3,

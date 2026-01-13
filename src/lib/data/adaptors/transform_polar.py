@@ -3,12 +3,11 @@ import argparse
 import numpy as np
 import xarray as xr
 
+from lib.data.adaptor import CheckedAdaptor
 from lib.data.data_with_attrs import Field, FullList
-
-from ....dimension import DIMENSIONS, CartesianToPolar
-from ...adaptor import CheckedAdaptor
-from .. import parse_util
-from ..registry import adaptor_parser
+from lib.dimension import DIMENSIONS, CartesianToPolar
+from lib.parsing import parse_util
+from lib.parsing.args_registry import arg_parser
 
 
 class TransformPolar(CheckedAdaptor):
@@ -69,8 +68,9 @@ class TransformPolar(CheckedAdaptor):
 _POLAR_FORMAT = ("dim_1", "dim_2")
 
 
-@adaptor_parser(
-    "--transform-polar",
+@arg_parser(
+    dest="adaptors",
+    flags="--transform-polar",
     metavar=_POLAR_FORMAT,
     help="perform a coordinate transform from cartesian (dim_1, dim_2) to polar (r, theta)",
     nargs=2,

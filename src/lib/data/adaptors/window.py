@@ -5,10 +5,9 @@ import xarray as xr
 from scipy.signal import windows
 
 from lib.data.adaptor import BareAdaptor
-
-from ....dimension import DIMENSIONS
-from .. import parse_util
-from ..registry import adaptor_parser
+from lib.dimension import DIMENSIONS
+from lib.parsing import parse_util
+from lib.parsing.args_registry import arg_parser
 
 
 class Window(BareAdaptor):
@@ -54,8 +53,9 @@ class Kaiser(Window):
 KAISER_FORMAT = "dim_name=beta"
 
 
-@adaptor_parser(
-    "--window-kaiser",
+@arg_parser(
+    dest="adaptors",
+    flags="--window-kaiser",
     metavar=KAISER_FORMAT,
     help="apply the Kaiser window of the given beta along the given dimension",
 )

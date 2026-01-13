@@ -1,10 +1,14 @@
 import xarray as xr
 
 from lib.data.adaptor import BareAdaptor
+from lib.parsing.args_registry import const_arg
 
-from ..registry import register_const_adaptor
 
-
+@const_arg(
+    dest="adaptors",
+    flags="--image",
+    help="take the imaginary part",
+)
 class Imaginary(BareAdaptor):
     def apply_bare(self, da: xr.DataArray) -> xr.DataArray:
         return da.imag
@@ -14,10 +18,3 @@ class Imaginary(BareAdaptor):
 
     def get_modified_var_latex(self, var_latex: str) -> str:
         return f"\\text{{Im}}[{var_latex}]"
-
-
-register_const_adaptor(
-    "--imag",
-    help="take the imaginary part",
-    const=Imaginary(),
-)
