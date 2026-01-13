@@ -125,28 +125,12 @@ class Animated1dFieldPlot(AnimatedFieldPlot):
     @dataclass(kw_only=True)
     class UpdateData(HasFieldData, HasAxes): ...
 
-    def __init__(
-        self,
-        data: Field,
-        *,
-        scales: list[plt_util.Scale] = [],
-        show_t0: bool = False,
-    ):
-        super().__init__(data, scales=scales)
-
-        self.show_t0 = show_t0
-
     def _init_fig(self):
         data = self._get_data_at_frame(0)
         xdata = data.coordss[data.dims[0]]
         ydata = data.data
 
         init_data = self.InitData(data=data, axes=self.ax, line_type="-")
-
-        # TODO make show_t0 a hook (that gets added before fits)
-        if self.show_t0:
-            self.ax.plot(xdata, ydata, "-", label=DIMENSIONS[self.time_dim].get_coordinate_label(self.data.coordss[self.time_dim][0]))
-            init_data.line_type = "--"
 
         self.pre_init_fig(init_data)
 
@@ -158,9 +142,6 @@ class Animated1dFieldPlot(AnimatedFieldPlot):
 
         self.ax.set_xscale(self.scales[1])
         self.ax.set_yscale(self.scales[0])
-
-        if self.show_t0:
-            self.ax.legend()
 
         self._update_ybounds()
 
