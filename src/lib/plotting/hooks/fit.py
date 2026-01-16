@@ -24,7 +24,7 @@ class Fit(Hook):
         self.subdomain = subdomain
 
     def pre_init_fig(self, init_data):
-        if check_impl(init_data, HasLineType):
+        if check_impl(init_data, HasLineType) and init_data.line_type == "-":
             init_data.line_type = "."
 
     def post_init_fig(self, init_data):
