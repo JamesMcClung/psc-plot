@@ -37,10 +37,9 @@ class Versus(CheckedAdaptor):
                 # TODO
 
             # 2. reduce remaining dimensions via arithmetic mean
-            for dim_name in data.dims:
-                if dim_name not in self.all_dims:
-                    reduce = Reduce(dim_name, "mean")
-                    data = reduce.apply(data)
+            reduce_dims = [dim for dim in data.dims if dim not in self.all_dims]
+            reduce = Reduce(reduce_dims, "mean")
+            data = reduce.apply(data)
 
         elif isinstance(data, List):
             # 1. coordinate transform
