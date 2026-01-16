@@ -1,27 +1,10 @@
 from lib.dimension import DIMENSIONS
 from lib.parsing.args_registry import const_arg
-from lib.plotting.frame_data_traits import (
-    HasAxes,
-    HasData,
-    HasHookList,
-    HasLineType,
-    assert_impl,
-)
+from lib.plotting.frame_data_traits import HasAxes, HasData, HasLineType, assert_impl
 from lib.plotting.hook import Hook
 
 
 class ShowInitial(Hook):
-    class PostAddHookData(HasHookList): ...
-
-    def post_add_hook(self, add_data):
-        hooks = assert_impl(add_data, ShowInitial.PostAddHookData).hooks
-
-        # put self after any Fits, since Fit also affects line type
-        for i, hook in enumerate(hooks):
-            if hook is self:
-                hooks[i], hooks[-1] = hooks[-1], hooks[i]
-                break
-
     class PreInitData(HasData, HasAxes, HasLineType): ...
 
     def pre_init_fig(self, init_data):
