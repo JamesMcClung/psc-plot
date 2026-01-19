@@ -81,7 +81,7 @@ class Bin(CheckedAdaptor):
 
         df = data.data
         if isinstance(df, dd.DataFrame):
-            binned_data, _ = da.histogramdd(
+            binned_data, _ = df.histogramdd(
                 [df[var_name].to_dask_array() for var_name in self.varname_to_nbins],
                 bin_edgess,
                 density=False,
