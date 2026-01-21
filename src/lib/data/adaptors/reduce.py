@@ -19,7 +19,7 @@ class ModifyVarLatex(typing.Protocol):
 REDUCE_FUNCS: dict[str, tuple[ReduceFunc, ModifyVarLatex]] = {
     "mean": (
         lambda da, dim_names: da.reduce(np.nanmean, dim_names),
-        lambda var_latex, dim_names: f"\\langle{var_latex}\\rangle_{{{','.join(dim_names)}}}",
+        lambda var_latex, dim_names: f"\\langle {var_latex}\\rangle_{{{','.join(dim_names)}}}",
     ),
     "integrate": (
         lambda da, dim_names: da.integrate(dim_names),
