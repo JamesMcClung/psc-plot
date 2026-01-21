@@ -1,7 +1,7 @@
 import math
 import warnings
 
-import dask.array as da
+import dask.array
 import dask.dataframe as dd
 import numpy as np
 import xarray as xr
@@ -49,7 +49,7 @@ def _guess_bin_edgess(data: List, varname_to_nbins: dict[str, int | None]) -> li
 
     if compute_varnames:
         if isinstance(df, dd.DataFrame):
-            computed_mins, computed_maxs = da.compute(mins_to_compute, maxs_to_compute)
+            computed_mins, computed_maxs = dask.array.compute(mins_to_compute, maxs_to_compute)
         else:
             computed_mins, computed_maxs = mins_to_compute, maxs_to_compute
 
@@ -81,7 +81,7 @@ class Bin(CheckedAdaptor):
 
         df = data.data
         if isinstance(df, dd.DataFrame):
-            binned_data, _ = df.histogramdd(
+            binned_data, _ = dask.array.histogramdd(
                 [df[var_name].to_dask_array() for var_name in self.varname_to_nbins],
                 bin_edgess,
                 density=False,
