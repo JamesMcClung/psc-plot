@@ -42,12 +42,18 @@ class Reduce(BareAdaptor):
         self.func_name = func_name
 
     def apply_bare(self, da: xr.DataArray) -> xr.DataArray:
+        if not self.dim_names:
+            return da
         return REDUCE_FUNCS[self.func_name][0](da, self.dim_names)
 
     def get_modified_var_latex(self, var_latex: str) -> str:
+        if not self.dim_names:
+            return var_latex
         return REDUCE_FUNCS[self.func_name][1](var_latex, self.dim_names)
 
     def get_name_fragments(self) -> list[str]:
+        if not self.dim_names:
+            return []
         return [f"reduce_{','.join(self.dim_names)}={self.func_name}"]
 
 
