@@ -35,22 +35,17 @@ def load_df_at_step(prefix: file_util.ParticlePrefix, step: int) -> pd.DataFrame
 
 
 def load_df(prefix: file_util.ParticlePrefix, steps: list[int]) -> LazyList:
-    data_paths = [get_path_at_step(prefix, step) for step in steps]
-    df: dd.DataFrame = dd.read_hdf(data_paths, key=PRT_PARTICLES_KEY)
-
     attrss = [load_attrs_at_step(prefix, step) for step in steps]
     times = np.array([attrs["time"] for attrs in attrss])
 
-    def assign_t(partition: pd.DataFrame, partition_info: dict) -> pd.DataFrame:
-        # assume each step is divided into the same number of partitions
-        # TODO this is probably violated if there is significant variation in the number of particles per step
-        partitions_per_step = df.npartitions / len(steps)
-        assert partitions_per_step == int(partitions_per_step), "varying n partitions per step; see todo"
-        time = times[partition_info["number"] // int(partitions_per_step)]
-        return partition.assign(t=time)
+    data_paths = [get_path_at_step(prefix, step) for step in steps]
+    dfs_of_steps = []
+    for time, data_path in zip(times, data_paths):
+        df_of_step: dd.DataFrame = dd.read_hdf(data_path, key=PRT_PARTICLES_KEY)
+        df_of_step = df_of_step.assign(t=time)
+        dfs_of_steps.append(df_of_step)
 
-    meta = dict(zip(df.columns, df.dtypes)) | {"t": times.dtype}
-    df = df.map_partitions(assign_t, meta=meta)
+    df = dd.concat(dfs_of_steps)
 
     corners = np.array(attrss[0]["corner"])
     lengths = np.array(attrss[0]["length"])
