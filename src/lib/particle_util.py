@@ -4,7 +4,6 @@ import typing
 import dask.dataframe as dd
 import h5py
 import numpy as np
-import pandas as pd
 
 from lib.data.data_with_attrs import LazyList, ListMetadata
 
@@ -25,13 +24,6 @@ def get_available_particle_steps(prefix: file_util.ParticlePrefix) -> list[int]:
 
 def get_path_at_step(prefix: file_util.ParticlePrefix, step: int) -> pathlib.Path:
     return file_util.ROOT_DIR / f"{prefix}.{step:09}.h5"
-
-
-def load_df_at_step(prefix: file_util.ParticlePrefix, step: int) -> pd.DataFrame:
-    data_path = get_path_at_step(prefix, step)
-    df = pd.read_hdf(data_path, key=PRT_PARTICLES_KEY)  # using h5py.File not yet supported
-    df.attrs = load_attrs_at_step(step)
-    return df
 
 
 def load_df(prefix: file_util.ParticlePrefix, steps: list[int]) -> LazyList:
