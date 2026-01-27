@@ -85,6 +85,13 @@ def parse_assignment(arg: str, arg_format: str) -> tuple[str, str]:
     return tuple(split_arg)
 
 
+def parse_optional_assignment(arg: str, arg_format: str) -> tuple[str, str | None]:
+    if "=" not in arg:
+        return (arg, None)
+
+    return parse_assignment(arg, arg_format)
+
+
 def parse_comma_separated_list(arg: str) -> list[str]:
     args = arg.split(",")
     args = [arg.strip() for arg in args]
