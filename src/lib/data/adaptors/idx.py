@@ -1,6 +1,6 @@
 from lib.data import data_util
 from lib.data.adaptor import CheckedAdaptor
-from lib.data.data_with_attrs import Field, FullList
+from lib.data.data_with_attrs import Field, List
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
@@ -9,11 +9,11 @@ class Idx(CheckedAdaptor):
     def __init__(self, dim_names_to_isel: dict[str, int | slice]):
         self.dim_names_to_isel = dim_names_to_isel
 
-    def apply_checked[D: Field | FullList](self, data: D) -> D:
+    def apply_checked[D: Field | List](self, data: D) -> D:
         if isinstance(data, Field):
             return data.assign_data(data.data.isel(self.dim_names_to_isel))
 
-        elif isinstance(data, FullList):
+        elif isinstance(data, List):
             coordss = data.coordss.copy()
             df = data.data
             for dim, isel in self.dim_names_to_isel.items():
