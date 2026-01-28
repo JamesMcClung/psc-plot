@@ -50,9 +50,13 @@ def parse_number[T](num_arg: str, num_name: str, num_parser: typing.Callable[[st
         raise argparse.ArgumentTypeError(f"Expected {num_name} to be {num_type_desc}; got '{num_arg}'")
 
 
-def parse_optional_number[T](num_arg: str, num_name: str, num_parser: typing.Callable[[str], T]) -> T | None:
-    if num_arg == "":
-        return None
+@typing.overload
+def parse_optional_number[T](num_arg: str | None, num_name: str, num_parser: typing.Callable[[str], T]) -> T | None: ...
+@typing.overload
+def parse_optional_number[T](num_arg: str | None, num_name: str, num_parser: typing.Callable[[str], T], default: T) -> T: ...
+def parse_optional_number[T](num_arg: str | None, num_name: str, num_parser: typing.Callable[[str], T], default: T | None = None) -> T | None:
+    if not num_arg:
+        return default
 
     return parse_number(num_arg, num_name, num_parser)
 
@@ -83,6 +87,13 @@ def parse_assignment(arg: str, arg_format: str) -> tuple[str, str]:
         fail_format(arg, arg_format)
 
     return tuple(split_arg)
+
+
+def parse_optional_assignment(arg: str, arg_format: str) -> tuple[str, str | None]:
+    if "=" not in arg:
+        return (arg, None)
+
+    return parse_assignment(arg, arg_format)
 
 
 def parse_comma_separated_list(arg: str) -> list[str]:

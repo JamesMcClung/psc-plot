@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, fields
-from functools import cached_property
+from functools import cache, cached_property
 from typing import Any, Self
 
+import dask.array
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
@@ -60,10 +61,12 @@ class DataWithAttrs[D: xr.DataArray | pd.DataFrame | dd.DataFrame, MD: Metadata]
     # And with all this, other methods still don't get type hints :(
     data: xr.DataArray | pd.DataFrame | dd.DataFrame
     metadata: Metadata
+    _caches: dict[str, dict[str, Any]]
 
     def __init__(self, data: D, metadata: MD):
         object.__setattr__(self, "data", data)
         object.__setattr__(self, "metadata", metadata)
+        object.__setattr__(self, "_caches", {})
 
     @property
     @abstractmethod
@@ -84,6 +87,15 @@ class DataWithAttrs[D: xr.DataArray | pd.DataFrame | dd.DataFrame, MD: Metadata]
     def assign(self, data: D, metadata: MD | None = None, /, **metadata_vals: Any) -> Self:
         return self.assign_data(data).assign_metadata(metadata, **metadata_vals)
 
+    @abstractmethod
+    def bounds(self, dim_name: str) -> tuple[float, float]: ...
+
+    @abstractmethod
+    def lower_bound(self, dim_name: str) -> float: ...
+
+    @abstractmethod
+    def upper_bound(self, dim_name: str) -> float: ...
+
 
 @dataclass(kw_only=True, frozen=True)
 class FieldMetadata(Metadata):
@@ -101,6 +113,17 @@ class Field(DataWithAttrs[xr.DataArray, FieldMetadata]):
     @cached_property
     def dims(self) -> list[str]:
         return list(self.data.dims)
+
+    def bounds(self, dim_name):
+        return (self.lower_bound(dim_name), self.upper_bound(dim_name))
+
+    def lower_bound(self, dim_name):
+        return self.coordss[dim_name][0]
+
+    def upper_bound(self, dim_name):
+        coords = self.coordss[dim_name]
+        delta = coords[1] - coords[0]
+        return coords[-1] + delta
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -126,9 +149,51 @@ class List[D: pd.DataFrame | dd.DataFrame](DataWithAttrs[D, ListMetadata]):
 class FullList(List[pd.DataFrame]):
     data: pd.DataFrame
 
+    def bounds(self, dim_name):
+        return (self.lower_bound(dim_name), self.upper_bound(dim_name))
+
+    def lower_bound(self, dim_name):
+        cache = self._caches.setdefault("lower_bound", {})
+        if dim_name not in cache:
+            if dim_name in self.coordss:
+                cache[dim_name] = self.coordss[dim_name][0]
+            else:
+                cache[dim_name] = self.data[dim_name].min()
+        return cache[dim_name]
+
+    def upper_bound(self, dim_name):
+        cache = self._caches.setdefault("upper_bound", {})
+        if dim_name not in cache:
+            if dim_name in self.coordss:
+                coords = self.coordss[dim_name]
+                delta = coords[1] - coords[0]
+                cache[dim_name] = coords[-1] + delta
+            else:
+                cache[dim_name] = self.data[dim_name].max()
+        return cache[dim_name]
+
 
 class LazyList(List[dd.DataFrame]):
     data: dd.DataFrame
 
     def compute(self) -> FullList:
         return FullList(self.data.compute(), self.metadata)
+
+    def bounds(self, dim_name):
+        cache = self._caches.setdefault("bounds", {})
+        if dim_name not in cache:
+            if dim_name in self.coordss:
+                coords = self.coordss[dim_name]
+                lower = coords[0]
+                delta = coords[1] - coords[0]
+                upper = coords[-1] + delta
+                cache[dim_name] = (lower, upper)
+            else:
+                cache[dim_name] = dask.array.compute(self.data[dim_name].min(), self.data[dim_name].max())
+        return cache[dim_name]
+
+    def lower_bound(self, dim_name):
+        return self.bounds(dim_name)[0]
+
+    def upper_bound(self, dim_name):
+        return self.bounds(dim_name)[1]
