@@ -5,7 +5,7 @@ from matplotlib.axes import Axes
 from matplotlib.colorizer import _ScalarMappable
 from matplotlib.scale import ScaleBase
 
-type Scale = typing.Literal["linear", "log", "symlog"]
+type Scale = typing.Literal["linear", "log"]
 SCALES: list[Scale] = list(Scale.__value__.__args__)
 type SetScaleArg = Scale | ScaleBase
 
