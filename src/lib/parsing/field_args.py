@@ -1,5 +1,4 @@
 import argparse
-import typing
 
 from lib.data.adaptor import Adaptor
 from lib.data.compile import compile_source
@@ -14,9 +13,6 @@ from ..file_util import FIELD_PREFIXES
 from . import args_base
 
 __all__ = ["add_field_subparsers", "FieldArgs"]
-
-type Scale = typing.Literal["linear", "log", "loglog"]
-SCALES: list[Scale] = list(Scale.__value__.__args__)
 
 
 class FieldArgs(args_base.ArgsTyped):
