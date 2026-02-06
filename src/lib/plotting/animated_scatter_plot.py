@@ -7,12 +7,17 @@ from lib.data.data_with_attrs import FullList
 from lib.dimension import DIMENSIONS
 from lib.plotting import plt_util
 from lib.plotting.animated_plot import AnimatedPlot
-from lib.plotting.frame_data_traits import HasAxes, HasFullListData, HasSpatialScales
+from lib.plotting.frame_data_traits import (
+    HasAxes,
+    HasColorNorm,
+    HasFullListData,
+    HasSpatialScales,
+)
 
 
 class AnimatedScatterPlot(AnimatedPlot[FullList]):
     @dataclass(kw_only=True)
-    class InitData(HasFullListData, HasAxes, HasSpatialScales): ...
+    class InitData(HasFullListData, HasAxes, HasSpatialScales, HasColorNorm): ...
 
     @dataclass(kw_only=True)
     class UpdateData(HasFullListData, HasAxes): ...
@@ -40,13 +45,13 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
             axes=self.ax,
             spatial_scales=["linear", "linear"],
             last_spatial_dim_is_dependent=True,
+            color_norm="linear",
         )
 
         self.pre_init_fig(init_data)
 
         self.ax.set_xscale(init_data.spatial_scales[0])
         self.ax.set_yscale(init_data.spatial_scales[1])
-        # TODO support color scale
 
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
         self.ax.set_ylabel(f"${data.metadata.var_latex}$" if self.dependent_var == data.metadata.var_name else DIMENSIONS[self.dependent_var].to_axis_label())
@@ -55,7 +60,13 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
         self.ax.set_ylim(*self.data.bounds(self.dependent_var))
 
         if data.metadata.color_dim:
-            self.scatter = self.ax.scatter(df[self.spatial_dims[0]], df[self.dependent_var], c=df[data.metadata.color_dim], s=1)
+            self.scatter = self.ax.scatter(
+                df[self.spatial_dims[0]],
+                df[self.dependent_var],
+                c=df[data.metadata.color_dim],
+                norm=init_data.color_norm,
+                s=1,
+            )
         else:
             color = self.ax._get_lines.get_next_color()  # scatter() uses a different color cycler than plot(); this uses the plot() cycler manually
             self.scatter = self.ax.scatter(df[self.spatial_dims[0]], df[self.dependent_var], s=0.5, color=color)
