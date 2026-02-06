@@ -7,12 +7,12 @@ from lib.data.data_with_attrs import FullList
 from lib.dimension import DIMENSIONS
 from lib.plotting import plt_util
 from lib.plotting.animated_plot import AnimatedPlot
-from lib.plotting.frame_data_traits import HasAxes, HasFullListData
+from lib.plotting.frame_data_traits import HasAxes, HasFullListData, HasSpatialScales
 
 
 class AnimatedScatterPlot(AnimatedPlot[FullList]):
     @dataclass(kw_only=True)
-    class InitData(HasFullListData, HasAxes): ...
+    class InitData(HasFullListData, HasAxes, HasSpatialScales): ...
 
     @dataclass(kw_only=True)
     class UpdateData(HasFullListData, HasAxes): ...
@@ -21,11 +21,10 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
         self,
         data: FullList,
         *,
-        scales: list[plt_util.Scale] = [],
         subplot_kw: dict[str, typing.Any] = {},
     ):
         self.times = np.array(data.coordss[data.metadata.time_dim])
-        super().__init__(data, scales=scales, subplot_kw=subplot_kw)
+        super().__init__(data, subplot_kw=subplot_kw)
 
         self.dependent_var = data.metadata.dependent_var
 
@@ -36,12 +35,18 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
         data = self._get_data_at_frame(0)
         df = data.data
 
-        init_data = self.InitData(data=data, axes=self.ax)
+        init_data = self.InitData(
+            data=data,
+            axes=self.ax,
+            spatial_scales=["linear", "linear"],
+            last_spatial_dim_is_dependent=True,
+        )
 
         self.pre_init_fig(init_data)
 
-        self.ax.set_xscale(self.scales[1])
-        self.ax.set_yscale(self.scales[0])
+        self.ax.set_xscale(init_data.spatial_scales[0])
+        self.ax.set_yscale(init_data.spatial_scales[1])
+        # TODO support color scale
 
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
         self.ax.set_ylabel(f"${data.metadata.var_latex}$" if self.dependent_var == data.metadata.var_name else DIMENSIONS[self.dependent_var].to_axis_label())
