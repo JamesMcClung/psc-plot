@@ -67,6 +67,10 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
                 norm=init_data.color_norm,
                 s=1,
             )
+
+            self.fig.colorbar(self.scatter, label=DIMENSIONS[data.metadata.color_dim].to_axis_label())
+            data_lower, data_upper = self.data.bounds(data.metadata.color_dim)
+            plt_util.update_cbar(self.scatter, data_min_override=data_lower, data_max_override=data_upper)
         else:
             self.scatter = self.ax.scatter(
                 df[self.spatial_dims[0]],
@@ -76,10 +80,6 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
             )
 
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if isinstance(pos, float)])
-
-        if data.metadata.color_dim:
-            # TODO update cbar
-            self.fig.colorbar(self.scatter, label=DIMENSIONS[data.metadata.color_dim].to_axis_label())
 
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
 
@@ -97,6 +97,9 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
 
         self.scatter.set_offsets(np.array([df[self.spatial_dims[0]], df[self.dependent_var]]).T)
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if isinstance(pos, float)])
+
+        if data.metadata.color_dim:
+            self.scatter.set_array(df[data.metadata.color_dim])
 
         self.post_update_fig(update_data)
 
