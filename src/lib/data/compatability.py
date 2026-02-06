@@ -1,5 +1,12 @@
 from types import GenericAlias, UnionType
-from typing import Any, TypeVar, get_args, get_origin
+from typing import (
+    Any,
+    TypeAliasType,
+    TypeVar,
+    _LiteralGenericAlias,
+    get_args,
+    get_origin,
+)
 
 
 class DataError(Exception): ...
@@ -44,6 +51,9 @@ def isinstance2(val: Any, typelike: Any) -> bool:
 
     elif isinstance(typelike, TypeAliasType):
         return isinstance2(val, typelike.__value__)
+
+    elif isinstance(typelike, _LiteralGenericAlias):
+        return val in get_args(typelike)
 
     else:
         message = f"Unsupported type expression: {typelike!r}, of class {typelike.__class__!r}"
