@@ -42,6 +42,9 @@ def isinstance2(val: Any, typelike: Any) -> bool:
 
         raise NotImplementedError(f"Unsupported generic: {typelike!r}")
 
+    elif isinstance(typelike, TypeAliasType):
+        return isinstance2(val, typelike.__value__)
+
     else:
         message = f"Unsupported type expression: {typelike!r}, of class {typelike.__class__!r}"
         raise NotImplementedError(message)
