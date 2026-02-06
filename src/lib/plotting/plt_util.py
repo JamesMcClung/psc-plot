@@ -3,11 +3,16 @@ import typing
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.colorizer import _ScalarMappable
+from matplotlib.colors import Normalize
 from matplotlib.scale import ScaleBase
 
 type Scale = typing.Literal["linear", "log"]
 SCALES: list[Scale] = list(Scale.__value__.__args__)
 type SetScaleArg = Scale | ScaleBase
+
+type BuiltinColorNormKey = typing.Literal["linear", "log"]
+BUILTIN_COLOR_NORM_KEYS: tuple[BuiltinColorNormKey, ...] = BuiltinColorNormKey.__value__.__args__
+type ColorNormArg = BuiltinColorNormKey | Normalize
 
 
 def symmetrize_bounds(lower: float, upper: float) -> tuple[float, float]:
