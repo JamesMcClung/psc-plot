@@ -13,18 +13,26 @@ from lib.plotting.frame_data_traits import (
 )
 from lib.plotting.hook import Hook
 
-type ScaleKey = Literal["linear", "log"]
+type ScaleKey = Literal["linear", "log", "symlog"]
 SCALE_KEYS: tuple[ScaleKey, ...] = ScaleKey.__value__.__args__
 
 
 def scale_key_to_axis_scale(key: ScaleKey, data: DataWithAttrs) -> plt_util.AxisScaleArg:
-    # TODO more scales
-    return key
+    if key in ["linear", "log"]:
+        return key
+    elif key == "symlog":
+        raise NotImplementedError()
+    else:
+        raise ValueError(f"unknown scale key: {key}")
 
 
 def scale_key_to_color_norm(key: ScaleKey, data: DataWithAttrs) -> plt_util.ColorNormArg:
-    # TODO more scales
-    return key
+    if key in ["linear", "log"]:
+        return key
+    elif key == "symlog":
+        raise NotImplementedError()
+    else:
+        raise ValueError(f"unknown scale key: {key}")
 
 
 class Scale(Hook):
