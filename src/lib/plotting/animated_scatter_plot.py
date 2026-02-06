@@ -68,8 +68,12 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
                 s=1,
             )
         else:
-            color = self.ax._get_lines.get_next_color()  # scatter() uses a different color cycler than plot(); this uses the plot() cycler manually
-            self.scatter = self.ax.scatter(df[self.spatial_dims[0]], df[self.dependent_var], s=0.5, color=color)
+            self.scatter = self.ax.scatter(
+                df[self.spatial_dims[0]],
+                df[self.dependent_var],
+                color=self.ax._get_lines.get_next_color(),  # scatter() uses a different color cycler than plot(); this uses the plot() cycler manually
+                s=0.5,
+            )
 
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if isinstance(pos, float)])
 
