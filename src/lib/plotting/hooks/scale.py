@@ -17,7 +17,7 @@ type ScaleKey = Literal["linear", "log"]
 SCALE_KEYS: tuple[ScaleKey, ...] = ScaleKey.__value__.__args__
 
 
-def scale_key_to_axis_scale(key: ScaleKey, data: DataWithAttrs) -> plt_util.SetScaleArg:
+def scale_key_to_axis_scale(key: ScaleKey, data: DataWithAttrs) -> plt_util.AxisScaleArg:
     # TODO more scales
     return key
 

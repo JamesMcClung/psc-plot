@@ -62,7 +62,7 @@ class HasAxes:
 
 @dataclass(kw_only=True)
 class HasSpatialScales:
-    spatial_scales: list[plt_util.SetScaleArg]
+    spatial_scales: list[plt_util.AxisScaleArg]
     last_spatial_dim_is_dependent: bool = False
 
 

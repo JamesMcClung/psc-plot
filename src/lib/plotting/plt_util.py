@@ -6,9 +6,9 @@ from matplotlib.colorizer import _ScalarMappable
 from matplotlib.colors import Normalize
 from matplotlib.scale import ScaleBase
 
-type Scale = typing.Literal["linear", "log"]
-SCALES: list[Scale] = list(Scale.__value__.__args__)
-type SetScaleArg = Scale | ScaleBase
+type BuiltinAxisScaleKey = typing.Literal["linear", "log"]
+SCALES: list[BuiltinAxisScaleKey] = list(BuiltinAxisScaleKey.__value__.__args__)
+type AxisScaleArg = BuiltinAxisScaleKey | ScaleBase
 
 type BuiltinColorNormKey = typing.Literal["linear", "log"]
 BUILTIN_COLOR_NORM_KEYS: tuple[BuiltinColorNormKey, ...] = BuiltinColorNormKey.__value__.__args__
