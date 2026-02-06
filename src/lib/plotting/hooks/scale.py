@@ -1,6 +1,6 @@
 from typing import Literal
 
-from lib.data.data_with_attrs import DataWithAttrs
+from lib.data.data_with_attrs import DataWithAttrs, List
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 from lib.plotting import plt_util
@@ -37,7 +37,7 @@ class Scale(Hook):
 
         data = init_data.data
 
-        if self.dim_name is None:
+        if self.dim_name is None or isinstance(data, List) and self.dim_name == data.metadata.dependent_var:
             # find and set the dependent scale/norm
             if check_impl(init_data, HasSpatialScales) and init_data.last_spatial_dim_is_dependent:
                 init_data.spatial_scales[-1] = scale_key_to_axis_scale(self.scale_key, data)
