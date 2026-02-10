@@ -25,7 +25,7 @@ def _toggle_unit_fourier(unit: Latex) -> Latex:
         return unit.append(inverse_suffix)
 
 
-type DimensionGeometry = Literal["cartesian", "temporal", "polar:r", "polar:theta", "spherical:r", "spherical:theta", "spherical:phi"]
+type DimensionGeometry = Literal["linear", "polar:r", "polar:theta", "spherical:r", "spherical:theta", "spherical:phi"]
 
 
 @dataclass(frozen=True)
@@ -122,13 +122,13 @@ class CartesianToSpherical(Transform3D):
 DIMENSIONS: dict[str, Dimension] = {}
 
 
-Dimension(Latex("x"), ELECTRON_SKIN_DEPTH, "cartesian").register()
-Dimension(Latex("y"), ELECTRON_SKIN_DEPTH, "cartesian").register()
-Dimension(Latex("z"), ELECTRON_SKIN_DEPTH, "cartesian").register()
-Dimension(Latex("t"), INVERSE_ELECTRON_PLASMA_FREQUENCY, "temporal").register()
-Dimension(Latex("\\gamma v_x"), SPEED_OF_LIGHT, "cartesian").register("px")
-Dimension(Latex("\\gamma v_y"), SPEED_OF_LIGHT, "cartesian").register("py")
-Dimension(Latex("\\gamma v_z"), SPEED_OF_LIGHT, "cartesian").register("pz")
+Dimension(Latex("x"), ELECTRON_SKIN_DEPTH, "linear").register()
+Dimension(Latex("y"), ELECTRON_SKIN_DEPTH, "linear").register()
+Dimension(Latex("z"), ELECTRON_SKIN_DEPTH, "linear").register()
+Dimension(Latex("t"), INVERSE_ELECTRON_PLASMA_FREQUENCY, "linear").register()
+Dimension(Latex("\\gamma v_x"), SPEED_OF_LIGHT, "linear").register("px")
+Dimension(Latex("\\gamma v_y"), SPEED_OF_LIGHT, "linear").register("py")
+Dimension(Latex("\\gamma v_z"), SPEED_OF_LIGHT, "linear").register("pz")
 
 for dim in ["x", "y", "z"]:
     DIMENSIONS[dim].toggle_fourier().register()
