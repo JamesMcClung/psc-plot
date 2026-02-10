@@ -5,6 +5,7 @@ from matplotlib.axes import Axes
 
 from lib.data.compatability import isinstance2
 from lib.data.data_with_attrs import Field, FullList, List
+from lib.plotting import plt_util
 from lib.plotting.hook import Hook
 
 
@@ -57,6 +58,18 @@ class HasLineType:
 @dataclass(kw_only=True)
 class HasAxes:
     axes: Axes
+
+
+@dataclass(kw_only=True)
+class HasSpatialScales:
+    spatial_scales: list[plt_util.AxisScaleArg]
+    last_spatial_dim_is_dependent: bool = False
+
+
+@dataclass(kw_only=True)
+class HasColorNorm:
+    color_norm: plt_util.ColorNormArg
+    color_is_dependent: bool = False
 
 
 @dataclass(kw_only=True)

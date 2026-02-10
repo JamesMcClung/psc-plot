@@ -1,5 +1,4 @@
 import argparse
-import typing
 
 from lib.data.adaptor import Adaptor
 from lib.data.compile import compile_source
@@ -11,18 +10,13 @@ from lib.plotting.plot import Plot
 from .. import field_util
 from ..data.field_loader import FieldLoader
 from ..file_util import FIELD_PREFIXES
-from ..plotting import plt_util
 from . import args_base
 
 __all__ = ["add_field_subparsers", "FieldArgs"]
 
-type Scale = typing.Literal["linear", "log", "loglog"]
-SCALES: list[Scale] = list(Scale.__value__.__args__)
-
 
 class FieldArgs(args_base.ArgsTyped):
     variable: str
-    scales: list[plt_util.Scale]
     adaptors: list[Adaptor]
     hooks: list[Hook]
 
@@ -33,7 +27,7 @@ class FieldArgs(args_base.ArgsTyped):
         source = compile_source(loader, self.adaptors)
         data = source.get_data()
 
-        anim = get_plot(data, scales=self.scales)
+        anim = get_plot(data)
 
         for hook in self.hooks:
             anim.add_hook(hook)
@@ -47,15 +41,6 @@ def add_field_subparsers(subparsers: argparse._SubParsersAction):
 
     for custom_arg in CUSTOM_ARGS:
         custom_arg.add_to(parent)
-
-    parent.add_argument(
-        "--scale",
-        choices=plt_util.SCALES,
-        nargs="+",
-        default=[],
-        dest="scales",
-        help="linear or logarithmic scale for dependent variable and axes, in that order (default: linear)",
-    )
 
     # may have to unroll this loop later when e.g. different prefixes have different derived variables
     for field_prefix in FIELD_PREFIXES:

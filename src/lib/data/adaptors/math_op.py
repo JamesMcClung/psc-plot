@@ -7,6 +7,18 @@ from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
 
+def float_to_latex_str(f: float) -> str:
+    fs = str(f).lower()
+
+    if "e" not in fs:
+        return fs
+
+    coefficient, exponent = fs.split("e")
+    if coefficient == "1":
+        return f"10^{{{exponent}}}"
+    return f"{coefficient}\\times10^{{{exponent}}}"
+
+
 class MathOp(BareAdaptor):
     def __init__(
         self,
@@ -27,7 +39,7 @@ class MathOp(BareAdaptor):
         return [f"{self.name_abbrev}_{self.rhs}"]
 
     def get_modified_var_latex(self, var_latex: str) -> str:
-        return f"({var_latex}){self.symbol}{{{self.rhs}}}"
+        return f"({var_latex}){self.symbol}{{{float_to_latex_str(self.rhs)}}}"
 
 
 op_params = [

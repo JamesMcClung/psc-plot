@@ -10,7 +10,13 @@ from lib.data.data_with_attrs import Field
 from lib.dimension import DIMENSIONS
 from lib.plotting import plt_util
 from lib.plotting.animated_plot import AnimatedPlot
-from lib.plotting.frame_data_traits import HasAxes, HasFieldData, HasLineType
+from lib.plotting.frame_data_traits import (
+    HasAxes,
+    HasColorNorm,
+    HasFieldData,
+    HasLineType,
+    HasSpatialScales,
+)
 
 
 class AnimatedFieldPlot(AnimatedPlot[Field]):
@@ -29,19 +35,33 @@ def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
 
 
 class Animated2dFieldPlot(AnimatedFieldPlot):
+    @dataclass(kw_only=True)
+    class InitData(HasFieldData, HasSpatialScales, HasColorNorm): ...
+
+    @dataclass(kw_only=True)
+    class UpdateData(HasFieldData): ...
+
     def _init_fig(self):
         data = self._get_data_at_frame(0)
         da = data.data
 
+        init_data = self.InitData(
+            data=data,
+            spatial_scales=["linear", "linear"],
+            color_norm="linear",
+            color_is_dependent=True,
+        )
+        self.pre_init_fig(init_data)
+
         # must set scale (log, linear) before making image
-        self.ax.set_xscale(self.scales[1])
-        self.ax.set_yscale(self.scales[2])
+        self.ax.set_xscale(init_data.spatial_scales[0])
+        self.ax.set_yscale(init_data.spatial_scales[1])
 
         self.im = self.ax.imshow(
             da,
             origin="lower",
             extent=(*get_extent(da, self.spatial_dims[0]), *get_extent(da, self.spatial_dims[1])),
-            norm=self.scales[0],
+            norm=init_data.color_norm,
         )
 
         self.fig.colorbar(self.im)
@@ -54,14 +74,20 @@ class Animated2dFieldPlot(AnimatedFieldPlot):
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
         self.ax.set_ylabel(DIMENSIONS[self.spatial_dims[1]].to_axis_label())
 
+        self.post_init_fig(init_data)
         self.fig.tight_layout()
 
     def _update_fig(self, frame: int):
         data = self._get_data_at_frame(frame)
 
+        update_data = self.UpdateData(data=data)
+        self.pre_update_fig(update_data)
+
         self.im.set_data(data.data)
 
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
+
+        self.post_update_fig(update_data)
         return [self.im, self.ax.title]
 
     def _get_data_at_frame(self, frame: int) -> Field:
@@ -75,15 +101,28 @@ class AnimatedPolarFieldPlot(AnimatedFieldPlot):
     def __init__(
         self,
         data: Field,
-        scales: list[plt_util.Scale],
     ):
-        super().__init__(data, scales=scales, subplot_kw={"projection": "polar"})
+        super().__init__(data, subplot_kw={"projection": "polar"})
+
+    @dataclass(kw_only=True)
+    class InitData(HasFieldData, HasSpatialScales, HasColorNorm): ...
+
+    @dataclass(kw_only=True)
+    class UpdateData(HasFieldData): ...
 
     def _init_fig(self):
         data = self._get_data_at_frame(0)
 
+        init_data = self.InitData(
+            data=data,
+            spatial_scales=["linear", "linear"],
+            color_norm="linear",
+            color_is_dependent=True,
+        )
+        self.pre_init_fig(init_data)
+
         # must set scale before making image
-        self.ax.set_rscale(self.scales[1])
+        self.ax.set_rscale(init_data.spatial_scales[0])
 
         vertices_theta = np.concat((data.coordss[self.spatial_dims[1]].data, [2 * np.pi]))
         vertices_theta -= vertices_theta[1] / 2
@@ -94,7 +133,7 @@ class AnimatedPolarFieldPlot(AnimatedFieldPlot):
             *np.meshgrid(vertices_theta, vertices_r),
             data,
             shading="flat",
-            norm=self.scales[0],
+            norm=init_data.color_norm,
         )
 
         self.fig.colorbar(self.im)
@@ -107,20 +146,26 @@ class AnimatedPolarFieldPlot(AnimatedFieldPlot):
         # self.ax.set_xlabel(DIMENSIONS[self.dims[1]].to_axis_label())
         # self.ax.set_ylabel(DIMENSIONS[self.dims[0]].to_axis_label())
 
+        self.post_init_fig(init_data)
         self.fig.tight_layout()
 
     def _update_fig(self, frame: int):
         data = self._get_data_at_frame(frame)
 
+        update_data = self.UpdateData(data=data)
+        self.pre_update_fig(update_data)
+
         self.im.set_array(data)
 
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
+
+        self.post_update_fig(update_data)
         return [self.im, self.ax.title]
 
 
 class Animated1dFieldPlot(AnimatedFieldPlot):
     @dataclass(kw_only=True)
-    class InitData(HasFieldData, HasLineType, HasAxes): ...
+    class InitData(HasFieldData, HasLineType, HasAxes, HasSpatialScales): ...
 
     @dataclass(kw_only=True)
     class UpdateData(HasFieldData, HasAxes): ...
@@ -130,7 +175,13 @@ class Animated1dFieldPlot(AnimatedFieldPlot):
         xdata = data.coordss[data.dims[0]]
         ydata = data.data
 
-        init_data = self.InitData(data=data, axes=self.ax, line_type="-")
+        init_data = self.InitData(
+            data=data,
+            axes=self.ax,
+            line_type="-",
+            spatial_scales=["linear", "linear"],
+            last_spatial_dim_is_dependent=True,
+        )
 
         self.pre_init_fig(init_data)
 
@@ -140,8 +191,8 @@ class Animated1dFieldPlot(AnimatedFieldPlot):
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
         self.ax.set_ylabel(f"${data.metadata.var_latex}$")
 
-        self.ax.set_xscale(self.scales[1])
-        self.ax.set_yscale(self.scales[0])
+        self.ax.set_xscale(init_data.spatial_scales[0])
+        self.ax.set_yscale(init_data.spatial_scales[1])
 
         self._update_ybounds()
 

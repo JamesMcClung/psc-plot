@@ -7,12 +7,17 @@ from lib.data.data_with_attrs import FullList
 from lib.dimension import DIMENSIONS
 from lib.plotting import plt_util
 from lib.plotting.animated_plot import AnimatedPlot
-from lib.plotting.frame_data_traits import HasAxes, HasFullListData
+from lib.plotting.frame_data_traits import (
+    HasAxes,
+    HasColorNorm,
+    HasFullListData,
+    HasSpatialScales,
+)
 
 
 class AnimatedScatterPlot(AnimatedPlot[FullList]):
     @dataclass(kw_only=True)
-    class InitData(HasFullListData, HasAxes): ...
+    class InitData(HasFullListData, HasAxes, HasSpatialScales, HasColorNorm): ...
 
     @dataclass(kw_only=True)
     class UpdateData(HasFullListData, HasAxes): ...
@@ -21,11 +26,10 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
         self,
         data: FullList,
         *,
-        scales: list[plt_util.Scale] = [],
         subplot_kw: dict[str, typing.Any] = {},
     ):
         self.times = np.array(data.coordss[data.metadata.time_dim])
-        super().__init__(data, scales=scales, subplot_kw=subplot_kw)
+        super().__init__(data, subplot_kw=subplot_kw)
 
         self.dependent_var = data.metadata.dependent_var
 
@@ -36,12 +40,18 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
         data = self._get_data_at_frame(0)
         df = data.data
 
-        init_data = self.InitData(data=data, axes=self.ax)
+        init_data = self.InitData(
+            data=data,
+            axes=self.ax,
+            spatial_scales=["linear", "linear"],
+            last_spatial_dim_is_dependent=True,
+            color_norm="linear",
+        )
 
         self.pre_init_fig(init_data)
 
-        self.ax.set_xscale(self.scales[1])
-        self.ax.set_yscale(self.scales[0])
+        self.ax.set_xscale(init_data.spatial_scales[0])
+        self.ax.set_yscale(init_data.spatial_scales[1])
 
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
         self.ax.set_ylabel(f"${data.metadata.var_latex}$" if self.dependent_var == data.metadata.var_name else DIMENSIONS[self.dependent_var].to_axis_label())
@@ -50,16 +60,26 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
         self.ax.set_ylim(*self.data.bounds(self.dependent_var))
 
         if data.metadata.color_dim:
-            self.scatter = self.ax.scatter(df[self.spatial_dims[0]], df[self.dependent_var], c=df[data.metadata.color_dim], s=1)
+            self.scatter = self.ax.scatter(
+                df[self.spatial_dims[0]],
+                df[self.dependent_var],
+                c=df[data.metadata.color_dim],
+                norm=init_data.color_norm,
+                s=1,
+            )
+
+            self.fig.colorbar(self.scatter, label=DIMENSIONS[data.metadata.color_dim].to_axis_label())
+            data_lower, data_upper = self.data.bounds(data.metadata.color_dim)
+            plt_util.update_cbar(self.scatter, data_min_override=data_lower, data_max_override=data_upper)
         else:
-            color = self.ax._get_lines.get_next_color()  # scatter() uses a different color cycler than plot(); this uses the plot() cycler manually
-            self.scatter = self.ax.scatter(df[self.spatial_dims[0]], df[self.dependent_var], s=0.5, color=color)
+            self.scatter = self.ax.scatter(
+                df[self.spatial_dims[0]],
+                df[self.dependent_var],
+                color=self.ax._get_lines.get_next_color(),  # scatter() uses a different color cycler than plot(); this uses the plot() cycler manually
+                s=0.5,
+            )
 
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if isinstance(pos, float)])
-
-        if data.metadata.color_dim:
-            # TODO update cbar
-            self.fig.colorbar(self.scatter, label=DIMENSIONS[data.metadata.color_dim].to_axis_label())
 
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
 
@@ -77,6 +97,9 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
 
         self.scatter.set_offsets(np.array([df[self.spatial_dims[0]], df[self.dependent_var]]).T)
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if isinstance(pos, float)])
+
+        if data.metadata.color_dim:
+            self.scatter.set_array(df[data.metadata.color_dim])
 
         self.post_update_fig(update_data)
 

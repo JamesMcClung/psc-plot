@@ -1,8 +1,16 @@
+from dataclasses import dataclass
+
 import numpy as np
 
 from lib.data.data_with_attrs import Field
 from lib.dimension import DIMENSIONS
 from lib.plotting import plt_util
+from lib.plotting.frame_data_traits import (
+    HasAxes,
+    HasFieldData,
+    HasLineType,
+    HasSpatialScales,
+)
 from lib.plotting.static_plot import StaticPlot
 
 
@@ -13,31 +21,34 @@ class StaticFieldPlot(StaticPlot[Field]):
 
 
 class Static1dFieldPlot(StaticFieldPlot):
-    def __init__(
-        self,
-        data: Field,
-        *,
-        scales: list[plt_util.Scale] = [],
-    ):
-        super().__init__(data, scales=scales)
+    @dataclass(kw_only=True)
+    class InitData(HasFieldData, HasAxes, HasSpatialScales, HasLineType): ...
 
     def _init_fig(self):
         data = self.data
         xdata = data.coordss[data.dims[0]]
         ydata = data.data
 
-        line_type = "-"
+        init_data = self.InitData(
+            data=data,
+            axes=self.ax,
+            line_type="-",
+            spatial_scales=["linear", "linear"],
+            last_spatial_dim_is_dependent=True,
+        )
+        self.pre_init_fig(init_data)
 
-        [self.line] = self.ax.plot(xdata, ydata, line_type)
+        [self.line] = self.ax.plot(xdata, ydata, init_data.line_type)
 
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
         self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
         self.ax.set_ylabel(f"${data.metadata.var_latex}$")
 
-        self.ax.set_xscale(self.scales[1])
-        self.ax.set_yscale(self.scales[0])
+        self.ax.set_xscale(init_data.spatial_scales[0])
+        self.ax.set_yscale(init_data.spatial_scales[1])
 
         ymin, ymax = plt_util.symmetrize_bounds(*self._get_var_bounds())
         self.ax.set_ybound(ymin, ymax)
 
+        self.post_init_fig(init_data)
         self.fig.tight_layout()

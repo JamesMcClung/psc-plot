@@ -158,7 +158,7 @@ class FullList(List[pd.DataFrame]):
             if dim_name in self.coordss:
                 cache[dim_name] = self.coordss[dim_name][0]
             else:
-                cache[dim_name] = self.data[dim_name].min()
+                cache[dim_name] = self.data[dim_name].min(skipna=True)
         return cache[dim_name]
 
     def upper_bound(self, dim_name):
@@ -169,7 +169,7 @@ class FullList(List[pd.DataFrame]):
                 delta = coords[1] - coords[0]
                 cache[dim_name] = coords[-1] + delta
             else:
-                cache[dim_name] = self.data[dim_name].max()
+                cache[dim_name] = self.data[dim_name].max(skipna=True)
         return cache[dim_name]
 
 
@@ -189,7 +189,7 @@ class LazyList(List[dd.DataFrame]):
                 upper = coords[-1] + delta
                 cache[dim_name] = (lower, upper)
             else:
-                cache[dim_name] = dask.array.compute(self.data[dim_name].min(), self.data[dim_name].max())
+                cache[dim_name] = dask.array.compute(self.data[dim_name].min(skipna=True), self.data[dim_name].max(skipna=True))
         return cache[dim_name]
 
     def lower_bound(self, dim_name):

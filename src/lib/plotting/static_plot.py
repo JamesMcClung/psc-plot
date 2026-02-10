@@ -14,13 +14,11 @@ class StaticPlot[Data: DataWithAttrs](Plot[Data]):
         self,
         data: Data,
         *,
-        scales: list[plt_util.Scale] = [],
         subplot_kw: dict[str, typing.Any] = {},
     ):
         super().__init__(data)
         # TODO don't bother setting this?
         self.spatial_dims = self.data.metadata.spatial_dims
-        self.scales = scales + ["linear"] * (1 + len(self.spatial_dims) - len(scales))
 
         self.fig, self.ax = plt.subplots(subplot_kw=subplot_kw)
         self._initialized = False
