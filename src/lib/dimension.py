@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import typing
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Literal, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -29,7 +29,7 @@ def _toggle_unit_fourier(unit: Latex) -> Latex:
 class Dimension:
     name: Latex
     unit: Latex
-    geometry: typing.Literal["cartesian", "temporal", "polar:r", "polar:theta", "spherical:r", "spherical:theta", "spherical:phi"]
+    geometry: Literal["cartesian", "temporal", "polar:r", "polar:theta", "spherical:r", "spherical:theta", "spherical:phi"]
 
     def to_axis_label(self) -> str:
         return f"${self.name.latex}\\ [{self.unit.latex}]$"
@@ -48,7 +48,7 @@ class Dimension:
     def is_fourier(self) -> bool:
         return self.name.starts_with(FOURIER_NAME_PREFIX)
 
-    def register(self, id: str | None = None) -> typing.Self:
+    def register(self, id: str | None = None) -> Self:
         DIMENSIONS[id or self.name.plain] = self
         return self
 
