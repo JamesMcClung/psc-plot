@@ -25,11 +25,14 @@ def _toggle_unit_fourier(unit: Latex) -> Latex:
         return unit.append(inverse_suffix)
 
 
+type DimensionGeometry = Literal["cartesian", "temporal", "polar:r", "polar:theta", "spherical:r", "spherical:theta", "spherical:phi"]
+
+
 @dataclass(frozen=True)
 class Dimension:
     name: Latex
     unit: Latex
-    geometry: Literal["cartesian", "temporal", "polar:r", "polar:theta", "spherical:r", "spherical:theta", "spherical:phi"]
+    geometry: DimensionGeometry
 
     def to_axis_label(self) -> str:
         return f"${self.name.latex}\\ [{self.unit.latex}]$"
