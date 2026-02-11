@@ -15,17 +15,17 @@ class TransformSpherical(CheckedAdaptor):
         self.transform = transform
 
     def apply_checked[D: Field | FullList](self, data: D) -> D:
-        name_x = self.transform.dim_x.name.plain
-        name_y = self.transform.dim_y.name.plain
-        name_z = self.transform.dim_z.name.plain
-        name_r = self.transform.dim_r.name.plain
-        name_theta = self.transform.dim_theta.name.plain
-        name_phi = self.transform.dim_phi.name.plain
+        key_x = self.transform.dim_x.key
+        key_y = self.transform.dim_y.key
+        key_z = self.transform.dim_z.key
+        key_r = self.transform.dim_r.key
+        key_theta = self.transform.dim_theta.key
+        key_phi = self.transform.dim_phi.key
 
         if isinstance(data, Field):
-            coords_x = data.coordss[name_x]
-            coords_y = data.coordss[name_y]
-            coords_z = data.coordss[name_z]
+            coords_x = data.coordss[key_x]
+            coords_y = data.coordss[key_y]
+            coords_z = data.coordss[key_z]
 
             max_x = float(abs(coords_x).max())
             max_y = float(abs(coords_y).max())
@@ -54,24 +54,24 @@ class TransformSpherical(CheckedAdaptor):
             phis = np.linspace(0.0, max_phi, nphi, endpoint=False)
 
             xgrid, ygrid, zgrid = self.transform.inverse(*np.meshgrid(rs, thetas, phis, indexing="ij"))
-            xgrid = xr.Variable([name_r, name_theta, name_phi], xgrid)
-            ygrid = xr.Variable([name_r, name_theta, name_phi], ygrid)
-            zgrid = xr.Variable([name_r, name_theta, name_phi], zgrid)
+            xgrid = xr.Variable([key_r, key_theta, key_phi], xgrid)
+            ygrid = xr.Variable([key_r, key_theta, key_phi], ygrid)
+            zgrid = xr.Variable([key_r, key_theta, key_phi], zgrid)
 
             da = data.data
-            da = da.interp({name_x: xgrid, name_y: ygrid, name_z: zgrid}, assume_sorted=True)
-            da = da.drop_vars([name_x, name_y, name_z])
-            da = da.assign_coords({name_r: rs, name_theta: thetas, name_phi: phis})
+            da = da.interp({key_x: xgrid, key_y: ygrid, key_z: zgrid}, assume_sorted=True)
+            da = da.drop_vars([key_x, key_y, key_z])
+            da = da.assign_coords({key_r: rs, key_theta: thetas, key_phi: phis})
             return data.assign_data(da)
 
         else:
             df = data.data
-            rs, thetas, phis = self.transform.apply(df[name_x], df[name_y], df[name_z])
-            df = df.assign(**{name_r: rs, name_theta: thetas, name_phi: phis})
+            rs, thetas, phis = self.transform.apply(df[key_x], df[key_y], df[key_z])
+            df = df.assign(**{key_r: rs, key_theta: thetas, key_phi: phis})
             return data.assign_data(df)
 
-    def get_name_fragments(self) -> list[str]:
-        return [f"spherical_{self.transform.dim_x.name.plain},{self.transform.dim_y.name.plain},{self.transform.dim_z.name.plain}"]
+    def get_key_fragments(self) -> list[str]:
+        return [f"spherical_{self.transform.dim_x.key},{self.transform.dim_y.key},{self.transform.dim_z.key}"]
 
 
 _SPHERICAL_FORMAT = ("dim_1", "dim_2", "dim_3")

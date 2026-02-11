@@ -15,14 +15,14 @@ class TransformPolar(CheckedAdaptor):
         self.transform = transform
 
     def apply_checked[D: Field | FullList](self, data: D) -> D:
-        name_x = self.transform.dim_x.name.plain
-        name_y = self.transform.dim_y.name.plain
-        name_r = self.transform.dim_r.name.plain
-        name_theta = self.transform.dim_theta.name.plain
+        key_x = self.transform.dim_x.key
+        key_y = self.transform.dim_y.key
+        key_r = self.transform.dim_r.key
+        key_theta = self.transform.dim_theta.key
 
         if isinstance(data, Field):
-            coords_x = data.coordss[name_x]
-            coords_y = data.coordss[name_y]
+            coords_x = data.coordss[key_x]
+            coords_y = data.coordss[key_y]
 
             max_x = float(abs(coords_x).max())
             max_y = float(abs(coords_y).max())
@@ -44,25 +44,25 @@ class TransformPolar(CheckedAdaptor):
             thetas = np.linspace(0.0, max_theta, ntheta, endpoint=False)
 
             xgrid, ygrid = self.transform.inverse(*np.meshgrid(rs, thetas, indexing="ij"))
-            xgrid = xr.Variable([name_r, name_theta], xgrid)
-            ygrid = xr.Variable([name_r, name_theta], ygrid)
+            xgrid = xr.Variable([key_r, key_theta], xgrid)
+            ygrid = xr.Variable([key_r, key_theta], ygrid)
 
             da = data.data
-            da = da.interp({name_x: xgrid, name_y: ygrid}, assume_sorted=True)
-            da = da.drop_vars([name_x, name_y])
-            da = da.assign_coords({name_r: rs, name_theta: thetas})
+            da = da.interp({key_x: xgrid, key_y: ygrid}, assume_sorted=True)
+            da = da.drop_vars([key_x, key_y])
+            da = da.assign_coords({key_r: rs, key_theta: thetas})
             data = data.assign_data(da)
 
         else:
             df = data.data
-            rs, thetas = self.transform.apply(df[name_x], df[name_y])
-            df = df.assign(**{name_r: rs, name_theta: thetas})
+            rs, thetas = self.transform.apply(df[key_x], df[key_y])
+            df = df.assign(**{key_r: rs, key_theta: thetas})
             data = data.assign_data(df)
 
         return data
 
-    def get_name_fragments(self) -> list[str]:
-        return [f"polar_{self.transform.dim_x.name.plain},{self.transform.dim_y.name.plain}"]
+    def get_key_fragments(self) -> list[str]:
+        return [f"polar_{self.transform.dim_x.key},{self.transform.dim_y.key}"]
 
 
 _POLAR_FORMAT = ("dim_1", "dim_2")
