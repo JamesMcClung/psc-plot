@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import KW_ONLY, dataclass
 from typing import Literal, Self
 
 import numpy as np
@@ -33,6 +33,12 @@ class Dimension:
     name: Latex
     unit: Latex
     geometry: DimensionGeometry
+    _: KW_ONLY
+    key: str = None
+
+    def __post_init__(self):
+        if self.key is None:
+            object.__setattr__(self, "key", self.name.plain)
 
     def to_axis_label(self) -> str:
         return f"${self.name.latex}\\ [{self.unit.latex}]$"
@@ -51,8 +57,8 @@ class Dimension:
     def is_fourier(self) -> bool:
         return self.name.starts_with(FOURIER_NAME_PREFIX)
 
-    def register(self, id: str | None = None) -> Self:
-        DIMENSIONS[id or self.name.plain] = self
+    def register(self) -> Self:
+        DIMENSIONS[self.key] = self
         return self
 
 
@@ -78,7 +84,7 @@ class CartesianToPolar(Transform2D):
         self.dim_x = dim_x
         self.dim_y = dim_y
         r_symbol = "k" if dim_x.is_fourier() else "r"
-        self.dim_r = Dimension(Latex(f"{r_symbol}_\\text{{polar}}"), dim_x.unit, "polar:r").register(f"{r_symbol}p")
+        self.dim_r = Dimension(Latex(f"{r_symbol}_\\text{{polar}}"), dim_x.unit, "polar:r", key=f"{r_symbol}p").register()
         self.dim_theta = Dimension(Latex("\\theta"), RADIAN, "polar:theta").register()
 
     def apply[T: float | npt.NDArray[np.float64]](self, x: T, y: T) -> tuple[T, T]:
@@ -101,7 +107,7 @@ class CartesianToSpherical(Transform3D):
         self.dim_y = dim_y
         self.dim_z = dim_z
         r_symbol = "k" if dim_x.is_fourier() else "r"
-        self.dim_r = Dimension(Latex(f"{r_symbol}_\\text{{spherical}}"), dim_x.unit, "spherical:r").register(f"{r_symbol}s")
+        self.dim_r = Dimension(Latex(f"{r_symbol}_\\text{{spherical}}"), dim_x.unit, "spherical:r", key=f"{r_symbol}s").register()
         self.dim_theta = Dimension(Latex("\\theta"), RADIAN, "spherical:theta").register()
         self.dim_phi = Dimension(Latex("\\phi"), RADIAN, "spherical:phi").register()
 
@@ -126,9 +132,9 @@ Dimension(Latex("x"), ELECTRON_SKIN_DEPTH, "linear").register()
 Dimension(Latex("y"), ELECTRON_SKIN_DEPTH, "linear").register()
 Dimension(Latex("z"), ELECTRON_SKIN_DEPTH, "linear").register()
 Dimension(Latex("t"), INVERSE_ELECTRON_PLASMA_FREQUENCY, "linear").register()
-Dimension(Latex("\\gamma v_x"), SPEED_OF_LIGHT, "linear").register("px")
-Dimension(Latex("\\gamma v_y"), SPEED_OF_LIGHT, "linear").register("py")
-Dimension(Latex("\\gamma v_z"), SPEED_OF_LIGHT, "linear").register("pz")
+Dimension(Latex("\\gamma v_x"), SPEED_OF_LIGHT, "linear", key="px").register()
+Dimension(Latex("\\gamma v_y"), SPEED_OF_LIGHT, "linear", key="py").register()
+Dimension(Latex("\\gamma v_z"), SPEED_OF_LIGHT, "linear", key="pz").register()
 
 for dim in ["x", "y", "z"]:
     DIMENSIONS[dim].toggle_fourier().register()
