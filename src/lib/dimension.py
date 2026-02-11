@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import typing
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import KW_ONLY, dataclass
+from typing import Literal, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -13,6 +13,7 @@ INVERSE_ELECTRON_PLASMA_FREQUENCY = Latex("\\omega_\\text{pe}^{-1}")
 ELECTRON_SKIN_DEPTH = Latex("d_\\text{e}")
 RADIAN = Latex("\\text{rad}")
 SPEED_OF_LIGHT = Latex("c")
+ELEMENTARY_CHARGE = Latex("e")
 
 FOURIER_NAME_PREFIX = "k_"
 
@@ -25,11 +26,20 @@ def _toggle_unit_fourier(unit: Latex) -> Latex:
         return unit.append(inverse_suffix)
 
 
+type DimensionGeometry = Literal["linear", "polar:r", "polar:theta", "spherical:r", "spherical:theta", "spherical:phi"]
+
+
 @dataclass(frozen=True)
 class Dimension:
     name: Latex
     unit: Latex
-    geometry: typing.Literal["cartesian", "temporal", "polar:r", "polar:theta", "spherical:r", "spherical:theta", "spherical:phi"]
+    geometry: DimensionGeometry
+    _: KW_ONLY
+    key: str = None
+
+    def __post_init__(self):
+        if self.key is None:
+            object.__setattr__(self, "key", self.name.plain)
 
     def to_axis_label(self) -> str:
         return f"${self.name.latex}\\ [{self.unit.latex}]$"
@@ -48,8 +58,8 @@ class Dimension:
     def is_fourier(self) -> bool:
         return self.name.starts_with(FOURIER_NAME_PREFIX)
 
-    def register(self, id: str | None = None) -> typing.Self:
-        DIMENSIONS[id or self.name.plain] = self
+    def register(self) -> Self:
+        DIMENSIONS[self.key] = self
         return self
 
 
@@ -74,8 +84,8 @@ class CartesianToPolar(Transform2D):
 
         self.dim_x = dim_x
         self.dim_y = dim_y
-        r_name = "kp" if dim_x.is_fourier() else "rp"
-        self.dim_r = Dimension(Latex(r_name), dim_x.unit, "polar:r").register()
+        r_symbol = "k" if dim_x.is_fourier() else "r"
+        self.dim_r = Dimension(Latex(f"{r_symbol}_\\text{{polar}}"), dim_x.unit, "polar:r", key=f"{r_symbol}p").register()
         self.dim_theta = Dimension(Latex("\\theta"), RADIAN, "polar:theta").register()
 
     def apply[T: float | npt.NDArray[np.float64]](self, x: T, y: T) -> tuple[T, T]:
@@ -97,8 +107,8 @@ class CartesianToSpherical(Transform3D):
         self.dim_x = dim_x
         self.dim_y = dim_y
         self.dim_z = dim_z
-        r_name = "ks" if dim_x.is_fourier() else "rs"
-        self.dim_r = Dimension(Latex(r_name), dim_x.unit, "spherical:r").register()
+        r_symbol = "k" if dim_x.is_fourier() else "r"
+        self.dim_r = Dimension(Latex(f"{r_symbol}_\\text{{spherical}}"), dim_x.unit, "spherical:r", key=f"{r_symbol}s").register()
         self.dim_theta = Dimension(Latex("\\theta"), RADIAN, "spherical:theta").register()
         self.dim_phi = Dimension(Latex("\\phi"), RADIAN, "spherical:phi").register()
 
@@ -119,13 +129,14 @@ class CartesianToSpherical(Transform3D):
 DIMENSIONS: dict[str, Dimension] = {}
 
 
-Dimension(Latex("x"), ELECTRON_SKIN_DEPTH, "cartesian").register()
-Dimension(Latex("y"), ELECTRON_SKIN_DEPTH, "cartesian").register()
-Dimension(Latex("z"), ELECTRON_SKIN_DEPTH, "cartesian").register()
-Dimension(Latex("t"), INVERSE_ELECTRON_PLASMA_FREQUENCY, "temporal").register()
-Dimension(Latex("\\gamma v_x"), SPEED_OF_LIGHT, "cartesian").register("px")
-Dimension(Latex("\\gamma v_y"), SPEED_OF_LIGHT, "cartesian").register("py")
-Dimension(Latex("\\gamma v_z"), SPEED_OF_LIGHT, "cartesian").register("pz")
+Dimension(Latex("x"), ELECTRON_SKIN_DEPTH, "linear").register()
+Dimension(Latex("y"), ELECTRON_SKIN_DEPTH, "linear").register()
+Dimension(Latex("z"), ELECTRON_SKIN_DEPTH, "linear").register()
+Dimension(Latex("t"), INVERSE_ELECTRON_PLASMA_FREQUENCY, "linear").register()
+Dimension(Latex("\\gamma v_x"), SPEED_OF_LIGHT, "linear", key="px").register()
+Dimension(Latex("\\gamma v_y"), SPEED_OF_LIGHT, "linear", key="py").register()
+Dimension(Latex("\\gamma v_z"), SPEED_OF_LIGHT, "linear", key="pz").register()
+Dimension(Latex("q"), ELEMENTARY_CHARGE, "linear").register()
 
 for dim in ["x", "y", "z"]:
     DIMENSIONS[dim].toggle_fourier().register()

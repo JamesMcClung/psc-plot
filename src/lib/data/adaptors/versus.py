@@ -28,7 +28,7 @@ class Versus(CheckedAdaptor):
                 # 1b. need to do a Fourier transform
                 dim = DIMENSIONS[dim_name]
                 f_dim = dim.toggle_fourier()
-                if f_dim.name.plain in data.dims:
+                if f_dim.key in data.dims:
                     fourier = Fourier(f_dim)
                     data = fourier.apply(data)
                     continue

@@ -15,13 +15,13 @@ def toggle_fourier(da: xr.DataArray, dim: Dimension) -> xr.DataArray:
     # multiply/or divide coords by 2pi to go from frequency <-> angular frequency
 
     if dim.is_fourier():
-        da = da.assign_coords({dim.name.plain: da.coords[dim.name.plain] / (2 * np.pi)})
-        da = xrft.ifft(da, dim=dim.name.plain, prefix=temp_prefix, lag=0.0)
-        da = da.rename({temp_prefix + dim.name.plain: f_dim.name.plain})
+        da = da.assign_coords({dim.key: da.coords[dim.key] / (2 * np.pi)})
+        da = xrft.ifft(da, dim=dim.key, prefix=temp_prefix, lag=0.0)
+        da = da.rename({temp_prefix + dim.key: f_dim.key})
     else:
-        da = xrft.fft(da, dim=dim.name.plain, prefix=temp_prefix)
-        da = da.rename({temp_prefix + dim.name.plain: f_dim.name.plain})
-        da = da.assign_coords({f_dim.name.plain: da.coords[f_dim.name.plain] * (2 * np.pi)})
+        da = xrft.fft(da, dim=dim.key, prefix=temp_prefix)
+        da = da.rename({temp_prefix + dim.key: f_dim.key})
+        da = da.assign_coords({f_dim.key: da.coords[f_dim.key] * (2 * np.pi)})
 
     return da
 
@@ -39,7 +39,7 @@ class Fourier(BareAdaptor):
         return da
 
     def get_name_fragments(self) -> list[str]:
-        dim_names = ",".join(dim.name.plain for dim in self.dims)
+        dim_names = ",".join(dim.key for dim in self.dims)
         return [f"fourier_{dim_names}"]
 
     def get_modified_var_latex(self, var_latex: str) -> str:
