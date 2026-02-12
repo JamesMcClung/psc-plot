@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Self
 
 from lib.data.data_with_attrs import DataWithAttrs, List
 from lib.parsing import parse_util
@@ -15,6 +15,28 @@ from lib.plotting.hook import Hook
 
 type ScaleKey = Literal["linear", "log", "symlog"]
 SCALE_KEYS: tuple[ScaleKey, ...] = ScaleKey.__value__.__args__
+
+
+class ScaleArgs:
+    scale_key: ScaleKey
+
+    def __init_subclass__(cls):
+        SCALE_ARGS_TYPES.append(cls)
+
+    @classmethod
+    def to_argparse_format(cls) -> str:
+        return cls.scale_key
+
+
+SCALE_ARGS_TYPES: list[ScaleArgs] = []  # automatically populated with subclasses
+
+
+class LinearArgs(ScaleArgs):
+    scale_key = "linear"
+
+
+class LogArgs(ScaleArgs):
+    scale_key = "log"
 
 
 class Scale(Hook):
@@ -67,7 +89,7 @@ class Scale(Hook):
                 raise Exception(message)
 
 
-SCALE_FORMAT = f"[dim_name=]{{{','.join(SCALE_KEYS)}}}"
+SCALE_FORMAT = f"[dim_name=]{{{','.join(s.to_argparse_format() for s in SCALE_ARGS_TYPES)}}}"
 
 
 @arg_parser(
