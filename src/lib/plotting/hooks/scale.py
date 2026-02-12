@@ -67,7 +67,7 @@ class Scale(Hook):
                 raise Exception(message)
 
 
-SCALE_FORMAT = f"[dim_name=]({' | '.join(SCALE_KEYS)})"
+SCALE_FORMAT = f"[dim_name=]{{{','.join(SCALE_KEYS)}}}"
 
 
 @arg_parser(
