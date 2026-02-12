@@ -23,6 +23,12 @@ class ScaleArgs:
     def __init_subclass__(cls):
         SCALE_ARGS_TYPES.append(cls)
 
+    def to_axis_scale(self, data: DataWithAttrs) -> plt_util.AxisScaleArg:
+        return self.scale_key
+
+    def to_color_norm(self, data: DataWithAttrs) -> plt_util.ColorNormArg:
+        return self.scale_key
+
     @classmethod
     def to_argparse_format(cls) -> str:
         return cls.scale_key
@@ -46,25 +52,9 @@ class LogArgs(ScaleArgs):
 
 
 class Scale(Hook):
-    def __init__(self, dim_name: str | None, scale_key: ScaleKey):
+    def __init__(self, dim_name: str | None, scale_args: ScaleArgs):
         self.dim_name = dim_name
-        self.scale_key = scale_key
-
-    def _scale_key_to_axis_scale(self, data: DataWithAttrs) -> plt_util.AxisScaleArg:
-        if self.scale_key in ["linear", "log"]:
-            return self.scale_key
-        elif self.scale_key == "symlog":
-            raise NotImplementedError()
-        else:
-            raise ValueError(f"unknown scale key: {self.scale_key}")
-
-    def _scale_key_to_color_norm(self, data: DataWithAttrs) -> plt_util.ColorNormArg:
-        if self.scale_key in ["linear", "log"]:
-            return self.scale_key
-        elif self.scale_key == "symlog":
-            raise NotImplementedError()
-        else:
-            raise ValueError(f"unknown scale key: {self.scale_key}")
+        self.scale_args = scale_args
 
     def pre_init_fig(self, init_data):
         init_data = assert_impl(init_data, HasData)
@@ -74,9 +64,9 @@ class Scale(Hook):
         if self.dim_name is None or isinstance(data, List) and self.dim_name == data.metadata.dependent_var:
             # find and set the dependent scale/norm
             if check_impl(init_data, HasSpatialScales) and init_data.last_spatial_dim_is_dependent:
-                init_data.spatial_scales[-1] = self._scale_key_to_axis_scale(data)
+                init_data.spatial_scales[-1] = self.scale_args.to_axis_scale(data)
             elif check_impl(init_data, HasColorNorm) and init_data.color_is_dependent:
-                init_data.color_norm = self._scale_key_to_color_norm(data)
+                init_data.color_norm = self.scale_args.to_color_norm(data)
             else:
                 message = f"dependent scale not found"
                 raise Exception(message)
@@ -86,10 +76,10 @@ class Scale(Hook):
 
             if self.dim_name in spatial_dims:
                 init_data = assert_impl(init_data, HasSpatialScales)
-                init_data.spatial_scales[spatial_dims.index(self.dim_name)] = self._scale_key_to_axis_scale(data)
+                init_data.spatial_scales[spatial_dims.index(self.dim_name)] = self.scale_args.to_axis_scale(data)
             elif self.dim_name == color_dim:
                 init_data = assert_impl(init_data, HasColorNorm)
-                init_data.color_norm = self._scale_key_to_color_norm(data)
+                init_data.color_norm = self.scale_args.to_color_norm(data)
             else:
                 message = f"'{self.dim_name}' isn't a dimension"
                 raise Exception(message)
@@ -116,6 +106,6 @@ def parse_vline(arg: str) -> Scale:
     for scale_args_type in SCALE_ARGS_TYPES:
         maybe_scale_args = scale_args_type.try_from_argparse_format(scale)
         if maybe_scale_args:
-            return Scale(dim_name, maybe_scale_args.scale_key)
+            return Scale(dim_name, maybe_scale_args)
 
     parse_util.fail_format(scale, ANY_SCALE_ARGS_FORMAT)
