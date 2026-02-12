@@ -27,6 +27,12 @@ class ScaleArgs:
     def to_argparse_format(cls) -> str:
         return cls.scale_key
 
+    @classmethod
+    def try_from_argparse_format(cls, arg: str) -> Self | None:
+        if arg == cls.scale_key:
+            return cls()
+        return None
+
 
 SCALE_ARGS_TYPES: list[ScaleArgs] = []  # automatically populated with subclasses
 
@@ -89,7 +95,8 @@ class Scale(Hook):
                 raise Exception(message)
 
 
-SCALE_FORMAT = f"[dim_name=]{{{','.join(s.to_argparse_format() for s in SCALE_ARGS_TYPES)}}}"
+ANY_SCALE_ARGS_FORMAT = "{" + ",".join(scale_args_type.to_argparse_format() for scale_args_type in SCALE_ARGS_TYPES) + "}"
+SCALE_FORMAT = f"[dim_name=]{ANY_SCALE_ARGS_FORMAT}"
 
 
 @arg_parser(
@@ -106,6 +113,9 @@ def parse_vline(arg: str) -> Scale:
         dim_name = None
         scale = arg
 
-    parse_util.check_value(scale, "", SCALE_KEYS)
+    for scale_args_type in SCALE_ARGS_TYPES:
+        maybe_scale_args = scale_args_type.try_from_argparse_format(scale)
+        if maybe_scale_args:
+            return Scale(dim_name, maybe_scale_args.scale_key)
 
-    return Scale(dim_name, scale)
+    parse_util.fail_format(scale, ANY_SCALE_ARGS_FORMAT)
