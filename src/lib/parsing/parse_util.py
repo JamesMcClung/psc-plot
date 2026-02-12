@@ -80,8 +80,11 @@ def parse_slice[T](
     return slice(lower, upper)
 
 
-def parse_assignment(arg: str, arg_format: str) -> tuple[str, str]:
-    split_arg = arg.split("=")
+SUBARG_DELIM = "#"
+
+
+def parse_assignment(arg: str, arg_format: str, *, delim: str = "=") -> tuple[str, str]:
+    split_arg = arg.split(delim)
 
     if len(split_arg) != 2:
         fail_format(arg, arg_format)
@@ -89,11 +92,11 @@ def parse_assignment(arg: str, arg_format: str) -> tuple[str, str]:
     return tuple(split_arg)
 
 
-def parse_optional_assignment(arg: str, arg_format: str) -> tuple[str, str | None]:
-    if "=" not in arg:
+def parse_optional_assignment(arg: str, arg_format: str, *, delim: str = "=") -> tuple[str, str | None]:
+    if delim not in arg:
         return (arg, None)
 
-    return parse_assignment(arg, arg_format)
+    return parse_assignment(arg, arg_format, delim=delim)
 
 
 def parse_comma_separated_list(arg: str) -> list[str]:
