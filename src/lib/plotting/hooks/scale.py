@@ -17,11 +17,11 @@ type ScaleKey = Literal["linear", "log", "symlog"]
 SCALE_KEYS: tuple[ScaleKey, ...] = ScaleKey.__value__.__args__
 
 
-class ScaleArgs(Hook):
+class Scale(Hook):
     scale_key: ScaleKey
 
     def __init_subclass__(cls):
-        SCALE_ARGS_TYPES.append(cls)
+        SCALE_TYPES.append(cls)
 
     def __init__(self, dim_name: str | None):
         self.dim_name = dim_name
@@ -71,18 +71,18 @@ class ScaleArgs(Hook):
                 raise Exception(message)
 
 
-SCALE_ARGS_TYPES: list[ScaleArgs] = []  # automatically populated with subclasses
+SCALE_TYPES: list[Scale] = []  # automatically populated with subclasses
 
 
-class LinearArgs(ScaleArgs):
+class LinearScale(Scale):
     scale_key = "linear"
 
 
-class LogArgs(ScaleArgs):
+class LogScale(Scale):
     scale_key = "log"
 
 
-ANY_SCALE_ARGS_FORMAT = "{" + ",".join(scale_args_type.to_argparse_format() for scale_args_type in SCALE_ARGS_TYPES) + "}"
+ANY_SCALE_ARGS_FORMAT = "{" + ",".join(scale_type.to_argparse_format() for scale_type in SCALE_TYPES) + "}"
 SCALE_FORMAT = f"[dim_name=]{ANY_SCALE_ARGS_FORMAT}"
 
 
@@ -92,17 +92,17 @@ SCALE_FORMAT = f"[dim_name=]{ANY_SCALE_ARGS_FORMAT}"
     help="set the axis/color scale of the dependent variable or specified dimension (default: linear)",
     dest="hooks",
 )
-def parse_vline(arg: str) -> ScaleArgs:
+def parse_vline(arg: str) -> Scale:
     if "=" in arg:
-        dim_name, scale = parse_util.parse_assignment(arg, SCALE_FORMAT)
+        dim_name, scale_arg = parse_util.parse_assignment(arg, SCALE_FORMAT)
         parse_util.check_identifier(dim_name, "dim_name")
     else:
         dim_name = None
-        scale = arg
+        scale_arg = arg
 
-    for scale_args_type in SCALE_ARGS_TYPES:
-        maybe_scale_args = scale_args_type.try_from_argparse_format(scale, dim_name)
-        if maybe_scale_args:
-            return maybe_scale_args
+    for scale_type in SCALE_TYPES:
+        maybe_scale = scale_type.try_from_argparse_format(scale_arg, dim_name)
+        if maybe_scale:
+            return maybe_scale
 
-    parse_util.fail_format(scale, ANY_SCALE_ARGS_FORMAT)
+    parse_util.fail_format(scale_arg, ANY_SCALE_ARGS_FORMAT)
