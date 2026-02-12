@@ -20,14 +20,11 @@ type ScaleKey = Literal["linear", "log", "symlog"]
 SCALE_KEYS: tuple[ScaleKey, ...] = ScaleKey.__value__.__args__
 
 
-class Scale(Hook):
+class Scale:
     scale_key: ScaleKey
 
     def __init_subclass__(cls):
         SCALE_TYPES.append(cls)
-
-    def __init__(self, dim_name: str | None):
-        self.dim_name = dim_name
 
     def to_axis_scale(self, data: DataWithAttrs) -> plt_util.AxisScaleArg:
         return self.scale_key
@@ -40,38 +37,10 @@ class Scale(Hook):
         return cls.scale_key
 
     @classmethod
-    def try_from_argparse_format(cls, arg: str, dim_name: str | None) -> Self | None:
+    def try_from_argparse_format(cls, arg: str) -> Self | None:
         if arg == cls.scale_key:
-            return cls(dim_name)
+            return cls()
         return None
-
-    def pre_init_fig(self, init_data):
-        init_data = assert_impl(init_data, HasData)
-
-        data = init_data.data
-
-        if self.dim_name is None or isinstance(data, List) and self.dim_name == data.metadata.dependent_var:
-            # find and set the dependent scale/norm
-            if check_impl(init_data, HasSpatialScales) and init_data.last_spatial_dim_is_dependent:
-                init_data.spatial_scales[-1] = self.to_axis_scale(data)
-            elif check_impl(init_data, HasColorNorm) and init_data.color_is_dependent:
-                init_data.color_norm = self.to_color_norm(data)
-            else:
-                message = f"dependent scale not found"
-                raise Exception(message)
-        else:
-            spatial_dims = data.metadata.spatial_dims
-            color_dim = data.metadata.color_dim
-
-            if self.dim_name in spatial_dims:
-                init_data = assert_impl(init_data, HasSpatialScales)
-                init_data.spatial_scales[spatial_dims.index(self.dim_name)] = self.to_axis_scale(data)
-            elif self.dim_name == color_dim:
-                init_data = assert_impl(init_data, HasColorNorm)
-                init_data.color_norm = self.to_color_norm(data)
-            else:
-                message = f"'{self.dim_name}' isn't a dimension"
-                raise Exception(message)
 
 
 SCALE_TYPES: list[Scale] = []  # automatically populated with subclasses
@@ -89,8 +58,7 @@ class SymLogScale(Scale):
     scale_key = "symlog"
     LINEAR_THRESHOLD_ARG_FORMAT = "linear_threshold"
 
-    def __init__(self, dim_name: str | None, linear_threshold: float | None):
-        super().__init__(dim_name)
+    def __init__(self, linear_threshold: float | None):
         self.linear_threshold = linear_threshold
 
     def _choose_linear_threshold(self, data: DataWithAttrs) -> float:
@@ -110,7 +78,7 @@ class SymLogScale(Scale):
         return f"{cls.scale_key}[{parse_util.SUBARG_DELIM}{cls.LINEAR_THRESHOLD_ARG_FORMAT}]"
 
     @classmethod
-    def try_from_argparse_format(cls, arg: str, dim_name: str | None) -> Self | None:
+    def try_from_argparse_format(cls, arg: str) -> Self | None:
         scale_key_arg, linear_threshold_arg = parse_util.parse_optional_assignment(arg, cls.to_argparse_format(), delim=parse_util.SUBARG_DELIM)
 
         if scale_key_arg != cls.scale_key:
@@ -118,7 +86,41 @@ class SymLogScale(Scale):
 
         linear_threshold = parse_util.parse_optional_number(linear_threshold_arg, cls.LINEAR_THRESHOLD_ARG_FORMAT, float)
 
-        return cls(dim_name, linear_threshold)
+        return cls(linear_threshold)
+
+
+class SetScale(Hook):
+    def __init__(self, dim_name: str | None, scale: Scale):
+        self.dim_name = dim_name
+        self.scale = scale
+
+    def pre_init_fig(self, init_data):
+        init_data = assert_impl(init_data, HasData)
+
+        data = init_data.data
+
+        if self.dim_name is None or isinstance(data, List) and self.dim_name == data.metadata.dependent_var:
+            # find and set the dependent scale/norm
+            if check_impl(init_data, HasSpatialScales) and init_data.last_spatial_dim_is_dependent:
+                init_data.spatial_scales[-1] = self.scale.to_axis_scale(data)
+            elif check_impl(init_data, HasColorNorm) and init_data.color_is_dependent:
+                init_data.color_norm = self.scale.to_color_norm(data)
+            else:
+                message = f"dependent scale not found"
+                raise Exception(message)
+        else:
+            spatial_dims = data.metadata.spatial_dims
+            color_dim = data.metadata.color_dim
+
+            if self.dim_name in spatial_dims:
+                init_data = assert_impl(init_data, HasSpatialScales)
+                init_data.spatial_scales[spatial_dims.index(self.dim_name)] = self.scale.to_axis_scale(data)
+            elif self.dim_name == color_dim:
+                init_data = assert_impl(init_data, HasColorNorm)
+                init_data.color_norm = self.scale.to_color_norm(data)
+            else:
+                message = f"'{self.dim_name}' isn't a dimension"
+                raise Exception(message)
 
 
 ANY_SCALE_ARGS_FORMAT = "{" + ",".join(scale_type.to_argparse_format() for scale_type in SCALE_TYPES) + "}"
@@ -140,8 +142,8 @@ def parse_vline(arg: str) -> Scale:
         scale_arg = arg
 
     for scale_type in SCALE_TYPES:
-        maybe_scale = scale_type.try_from_argparse_format(scale_arg, dim_name)
+        maybe_scale = scale_type.try_from_argparse_format(scale_arg)
         if maybe_scale:
-            return maybe_scale
+            return SetScale(dim_name, maybe_scale)
 
     parse_util.fail_format(scale_arg, ANY_SCALE_ARGS_FORMAT)
