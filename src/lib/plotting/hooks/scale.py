@@ -1,5 +1,8 @@
 from typing import Literal, Self
 
+from matplotlib.colors import SymLogNorm
+from matplotlib.scale import SymmetricalLogScale
+
 from lib.data.data_with_attrs import DataWithAttrs, List
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
@@ -80,6 +83,42 @@ class LinearScale(Scale):
 
 class LogScale(Scale):
     scale_key = "log"
+
+
+class SymLogScale(Scale):
+    scale_key = "symlog"
+    LINEAR_THRESHOLD_ARG_FORMAT = "linear_threshold"
+
+    def __init__(self, dim_name: str | None, linear_threshold: float | None):
+        super().__init__(dim_name)
+        self.linear_threshold = linear_threshold
+
+    def _choose_linear_threshold(self, data: DataWithAttrs) -> float:
+        # TODO pipe it through Magnitude -> Reduce, but reduce via quantile... which requires refactoring Reduce to support subargs
+        return 0.0001
+
+    def to_axis_scale(self, data: DataWithAttrs) -> plt_util.AxisScaleArg:
+        linthresh = self.linear_threshold or self._choose_linear_threshold(data)
+        return SymmetricalLogScale(None, linthresh=linthresh)
+
+    def to_color_norm(self, data: DataWithAttrs) -> plt_util.ColorNormArg:
+        linthresh = self.linear_threshold or self._choose_linear_threshold(data)
+        return SymLogNorm(linthresh)
+
+    @classmethod
+    def to_argparse_format(cls) -> str:
+        return f"{cls.scale_key}[{parse_util.SUBARG_DELIM}{cls.LINEAR_THRESHOLD_ARG_FORMAT}]"
+
+    @classmethod
+    def try_from_argparse_format(cls, arg: str, dim_name: str | None) -> Self | None:
+        scale_key_arg, linear_threshold_arg = parse_util.parse_optional_assignment(arg, cls.to_argparse_format(), delim=parse_util.SUBARG_DELIM)
+
+        if scale_key_arg != cls.scale_key:
+            return None
+
+        linear_threshold = parse_util.parse_optional_number(linear_threshold_arg, cls.LINEAR_THRESHOLD_ARG_FORMAT, float)
+
+        return cls(dim_name, linear_threshold)
 
 
 ANY_SCALE_ARGS_FORMAT = "{" + ",".join(scale_type.to_argparse_format() for scale_type in SCALE_TYPES) + "}"
