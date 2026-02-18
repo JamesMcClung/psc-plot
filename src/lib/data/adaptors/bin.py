@@ -28,13 +28,12 @@ def _guess_bin_edgess(data: List, varname_to_nbins: dict[str, int | None]) -> li
     for varname, nbins in varname_to_nbins.items():
         if varname in data.coordss:
             coords = data.coordss[varname]
-            if nbins == len(coords):
-                warnings.warn(f"Number of bins in {varname} is known to be {nbins}; no need to specify nbins", stacklevel=2)
-            elif nbins:
-                raise Exception(f"Number of bins in {varname} is known to be {len(coords)}, but nbins={nbins}")
-            nbins = len(coords)
-            # note: use inf as right edge for convenience; it gets sliced out later
-            varname_to_edges[varname] = np.concat((coords, [np.inf]))
+            if nbins is None:
+                nbins = len(coords)
+                # note: use inf as right edge for convenience; it gets sliced out later
+                varname_to_edges[varname] = np.concat((coords, [np.inf]))
+            else:
+                varname_to_edges[varname] = np.linspace(coords[0], coords[-1] + coords[1] - coords[0], nbins + 1, endpoint=True)
         else:
             compute_varnames.append(varname)
             mins_to_compute.append(df[varname].min())
