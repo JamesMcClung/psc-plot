@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import argparse
+from pathlib import Path
 
 from .. import file_util
 from ..plotting.animated_field_plot import AnimatedFieldPlot
@@ -12,7 +13,7 @@ __all__ = ["add_common_arguments", "add_subparsers", "get_subparser_parent", "Ar
 class ArgsTyped(argparse.Namespace, abc.ABC):
     prefix: file_util.Prefix
     show: bool
-    save: bool
+    save: Path | None
 
     @abc.abstractmethod
     def get_animation(self) -> AnimatedFieldPlot: ...
@@ -26,7 +27,17 @@ class ArgsUntyped(argparse.Namespace):
 
 
 def add_common_arguments(parser: argparse.ArgumentParser):
-    parser.add_argument("-s", "--save", action="store_true", help="save the figure")
+    parser.add_argument(
+        "-s",
+        "--save",
+        action="store",
+        metavar="dir",
+        nargs="?",
+        default=None,
+        const=".",
+        help="save the figure (to the given dir, if present)",
+        type=Path,
+    )
     parser.add_argument("-q", "--quiet", action="store_false", dest="show", help="don't show the figure")
 
 
