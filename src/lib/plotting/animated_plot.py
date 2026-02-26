@@ -28,14 +28,10 @@ class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
 
         # FIXME get blitting to work with the title
         # note: blitting doesn't seem to affect saved animations, only ones displayed with plt.show
-        self.anim = FuncAnimation(self.fig, self._update_fig, frames=self._get_nframes(), blit=False)
+        self.anim = FuncAnimation(self.fig, self._update_fig, frames=len(data.coordss[data.metadata.time_dim]), blit=False)
 
     def _get_data_at_frame(self, frame: int) -> Data:
         return Idx({self.time_dim: frame}).apply(self.data)
-
-    @abstractmethod
-    def _get_nframes(self) -> int:
-        """Calculate the number of frames. May assume everything except self.anim is initialized."""
 
     @abstractmethod
     def _init_fig(self): ...

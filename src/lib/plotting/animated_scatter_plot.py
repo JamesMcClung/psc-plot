@@ -28,13 +28,9 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
         *,
         subplot_kw: dict[str, typing.Any] = {},
     ):
-        self.times = np.array(data.coordss[data.metadata.time_dim])
         super().__init__(data, subplot_kw=subplot_kw)
 
         self.dependent_var = data.metadata.dependent_var
-
-    def _get_nframes(self) -> int:
-        return len(self.times)
 
     def _init_fig(self):
         data = self._get_data_at_frame(0)
