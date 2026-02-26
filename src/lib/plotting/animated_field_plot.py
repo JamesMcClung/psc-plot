@@ -20,9 +20,6 @@ from lib.plotting.frame_data_traits import (
 
 
 class AnimatedFieldPlot(AnimatedPlot[Field]):
-    def _get_nframes(self) -> int:
-        return len(self.data.coordss[self.time_dim])
-
     def _get_var_bounds(self) -> tuple[float, float]:
         bounds = np.nanquantile(self.data.data, [0, 1])
         return bounds
