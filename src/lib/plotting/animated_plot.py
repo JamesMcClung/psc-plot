@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 from lib.data.adaptors.idx import Idx
-from lib.plotting.plot import DataWithAttrs, Plot
+from lib.data.data_with_attrs import DataWithAttrs
+from lib.plotting.plot import Plot
 
 
 def print_progress(current_frame: int, n_frames: int):
