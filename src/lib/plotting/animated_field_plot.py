@@ -121,14 +121,22 @@ class AnimatedPolarFieldPlot(AnimatedFieldPlot):
         # must set scale before making image
         self.ax.set_rscale(init_data.spatial_scales[0])
 
-        vertices_theta = np.concat((data.coordss[self.spatial_dims[1]].data, [2 * np.pi]))
-        vertices_theta -= vertices_theta[1] / 2
-        vertices_r = list(data.coordss[self.spatial_dims[0]].data)
-        vertices_r += [vertices_r[-1] + vertices_r[1]]
+        vertices_theta = data.coordss[self.spatial_dims[1]]
+        vertices_theta = np.concat([vertices_theta, [vertices_theta[-1] + vertices_theta[1] - vertices_theta[0]]])
+        vertices_r = list(data.coordss[self.spatial_dims[0]])
+        vertices_r = np.concat([vertices_r, [vertices_r[-1] + vertices_r[1] - vertices_r[0]]])
+
+        if vertices_theta[0] == 0.0:
+            # FIXME hacky check for interpolated values
+            # there are two different ways to go from cartesian to polar:
+            # - interpolating onto a polar grid, in which case theta coords are "cell centered" (and happen to start at 0)
+            # - scattering and binning, in which case theta coords are "node centered" (and happen to start at -pi)
+            # this does a half-cell rotation in the former case to transform to "node centered" coords, which matlotlib expects
+            vertices_theta -= vertices_theta[1] / 2.0
 
         self.im = self.ax.pcolormesh(
             *np.meshgrid(vertices_theta, vertices_r),
-            data,
+            data.data,
             shading="flat",
             norm=init_data.color_norm,
         )
@@ -152,7 +160,7 @@ class AnimatedPolarFieldPlot(AnimatedFieldPlot):
         update_data = self.UpdateData(data=data)
         self.pre_update_fig(update_data)
 
-        self.im.set_array(data)
+        self.im.set_array(data.data)
 
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
 

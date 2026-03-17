@@ -85,7 +85,7 @@ class CartesianToPolar(Transform2D):
         self.dim_x = dim_x
         self.dim_y = dim_y
         r_symbol = "k" if dim_x.is_fourier() else "r"
-        self.dim_r = Dimension(Latex(f"{r_symbol}_\\text{{polar}}"), dim_x.unit, "polar:r", key=f"{r_symbol}p").register()
+        self.dim_r = Dimension(Latex(f"{r_symbol}_\\text{{polar}}"), dim_x.unit, "polar:r", key=f"{r_symbol}_p").register()
         self.dim_theta = Dimension(Latex("\\theta"), RADIAN, "polar:theta").register()
 
     def apply[T: float | npt.NDArray[np.float64]](self, x: T, y: T) -> tuple[T, T]:
@@ -108,7 +108,7 @@ class CartesianToSpherical(Transform3D):
         self.dim_y = dim_y
         self.dim_z = dim_z
         r_symbol = "k" if dim_x.is_fourier() else "r"
-        self.dim_r = Dimension(Latex(f"{r_symbol}_\\text{{spherical}}"), dim_x.unit, "spherical:r", key=f"{r_symbol}s").register()
+        self.dim_r = Dimension(Latex(f"{r_symbol}_\\text{{spherical}}"), dim_x.unit, "spherical:r", key=f"{r_symbol}_s").register()
         self.dim_theta = Dimension(Latex("\\theta"), RADIAN, "spherical:theta").register()
         self.dim_phi = Dimension(Latex("\\phi"), RADIAN, "spherical:phi").register()
 
