@@ -128,7 +128,7 @@ class AnimatedPolarFieldPlot(AnimatedFieldPlot):
 
         self.im = self.ax.pcolormesh(
             *np.meshgrid(vertices_theta, vertices_r),
-            data,
+            data.data,
             shading="flat",
             norm=init_data.color_norm,
         )
@@ -152,7 +152,7 @@ class AnimatedPolarFieldPlot(AnimatedFieldPlot):
         update_data = self.UpdateData(data=data)
         self.pre_update_fig(update_data)
 
-        self.im.set_array(data)
+        self.im.set_array(data.data)
 
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
 
