@@ -9,7 +9,7 @@ from .source import DataSource
 
 def _load_field_variable(prefix: file_util.FieldPrefix, step: int, var_name: str) -> xr.DataArray:
     ds = field_util.load_ds(prefix, step)
-    ds = ds.assign_coords(t=ds.time)
+    ds = ds.assign_coords(t=float(ds.time))
     derive_field_variable(ds, var_name, prefix)
 
     return ds[var_name]
