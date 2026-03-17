@@ -11,7 +11,7 @@ def pxy(px: Series, py: Series) -> Series:
 
 
 @derived_particle_variable("prt")
-def pzx(py: Series, pz: Series) -> Series:
+def pyz(py: Series, pz: Series) -> Series:
     return (py**2 + pz**2) ** 0.5
 
 
