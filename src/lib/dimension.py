@@ -136,6 +136,9 @@ Dimension(Latex("t"), INVERSE_ELECTRON_PLASMA_FREQUENCY, "linear").register()
 Dimension(Latex("\\gamma v_x"), SPEED_OF_LIGHT, "linear", key="px").register()
 Dimension(Latex("\\gamma v_y"), SPEED_OF_LIGHT, "linear", key="py").register()
 Dimension(Latex("\\gamma v_z"), SPEED_OF_LIGHT, "linear", key="pz").register()
+Dimension(Latex("\\gamma v_{xy}"), SPEED_OF_LIGHT, "linear", key="pxy").register()
+Dimension(Latex("\\gamma v_{yz}"), SPEED_OF_LIGHT, "linear", key="pyz").register()
+Dimension(Latex("\\gamma v_{zx}"), SPEED_OF_LIGHT, "linear", key="pzx").register()
 Dimension(Latex("q"), ELEMENTARY_CHARGE, "linear").register()
 
 for dim in ["x", "y", "z"]:
