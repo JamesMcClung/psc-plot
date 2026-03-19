@@ -9,10 +9,6 @@ type ParticlePrefix = typing.Literal["prt"]
 PARTICLE_PREFIXES: list[ParticlePrefix] = list(ParticlePrefix.__value__.__args__)
 
 type Prefix = FieldPrefix | ParticlePrefix
-type Suffix = typing.Literal["bp", "h5"]
-
-
-PREFIX_TO_SUFFIX: dict[Prefix, Suffix] = {field_prefix: "bp" for field_prefix in FIELD_PREFIXES} | {particle_prefix: "h5" for particle_prefix in PARTICLE_PREFIXES}
 
 
 def get_available_steps(before_step: str, after_step: str) -> list[int]:
