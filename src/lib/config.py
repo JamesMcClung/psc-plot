@@ -1,4 +1,6 @@
 import os
+import shutil
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Self
@@ -25,7 +27,10 @@ class PscPlotConfig:
             message = f"Path to data not specified. Set the {_DATA_DIR_KEY} environment variable to specify."
             raise RuntimeError(message)
 
-        ffmpeg_bin = maybe_str_to_maybe_path(os.environ.get(_FFMPEG_BIN_KEY))
+        ffmpeg_bin = maybe_str_to_maybe_path(os.environ.get(_FFMPEG_BIN_KEY, shutil.which("ffmpeg")))
+        if not ffmpeg_bin:
+            message = f"Ffmpeg not found. Ffmpeg is needed to save animated figures. Install ffmpeg and add it to PATH or set {_FFMPEG_BIN_KEY}."
+            warnings.warn(message)
 
         return cls(data_dir, ffmpeg_bin)
 
