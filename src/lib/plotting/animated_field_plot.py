@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import dask
 import numpy as np
 import xarray as xr
 from matplotlib.projections.polar import PolarAxes
@@ -21,8 +22,11 @@ from lib.plotting.frame_data_traits import (
 
 class AnimatedFieldPlot(AnimatedPlot[Field]):
     def _get_var_bounds(self) -> tuple[float, float]:
-        bounds = np.nanquantile(self.data.data, [0, 1])
-        return bounds
+        data = self.data.data
+        return dask.compute(
+            np.min(data),
+            np.max(data),
+        )
 
 
 def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
