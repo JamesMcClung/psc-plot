@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Self
 
-_DATA_DIR_KEY = "PSC_PLOT_ROOT_DATA_PATH"
+_DATA_DIR_KEY = "PSC_PLOT_DATA_DIR"
 _FFMPEG_BIN_KEY = "PSC_PLOT_FFMPEG_BIN"
 
 
