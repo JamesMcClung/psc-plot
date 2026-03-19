@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Self
 
-_ROOT_DATA_PATH_ENV_VAR_NAME = "PSC_PLOT_ROOT_DATA_PATH"
-_FFMPEG_BIN_ENV_VAR_NAME = "PSC_PLOT_FFMPEG_BIN"
+_DATA_DIR_KEY = "PSC_PLOT_ROOT_DATA_PATH"
+_FFMPEG_BIN_KEY = "PSC_PLOT_FFMPEG_BIN"
 
 
 @dataclass
@@ -14,12 +14,12 @@ class PscPlotConfig:
 
     @classmethod
     def _load(cls) -> Self:
-        data_dir = os.environ.get(_ROOT_DATA_PATH_ENV_VAR_NAME)
+        data_dir = os.environ.get(_DATA_DIR_KEY)
         if not data_dir:
-            message = f"Path to data not specified. Set the {_ROOT_DATA_PATH_ENV_VAR_NAME} environment variable to specify."
+            message = f"Path to data not specified. Set the {_DATA_DIR_KEY} environment variable to specify."
             raise RuntimeError(message)
 
-        ffmpeg_bin = os.environ.get(_FFMPEG_BIN_ENV_VAR_NAME)
+        ffmpeg_bin = os.environ.get(_FFMPEG_BIN_KEY)
 
         return cls(data_dir, ffmpeg_bin)
 
