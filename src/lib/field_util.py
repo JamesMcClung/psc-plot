@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from lib.config import CONFIG
+
 from . import file_util
 
 
@@ -8,4 +10,4 @@ def get_available_field_steps(prefix: file_util.FieldPrefix) -> list[int]:
 
 
 def get_path(prefix: file_util.FieldPrefix, step: int) -> Path:
-    return file_util.ROOT_DIR / f"{prefix}.{step:09}.bp"
+    return CONFIG.data_dir / f"{prefix}.{step:09}.bp"

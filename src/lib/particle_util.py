@@ -5,9 +5,10 @@ import dask.dataframe as dd
 import h5py
 import numpy as np
 
+from lib.config import CONFIG
 from lib.data.data_with_attrs import LazyList, ListMetadata
 
-from . import field_util, file_util
+from . import file_util
 
 type PrtVariable = typing.Literal["x", "y", "z", "px", "py", "pz", "q", "m", "w", "id", "tag"]
 PRT_VARIABLES: list[PrtVariable] = list(PrtVariable.__value__.__args__)
@@ -23,7 +24,7 @@ def get_available_particle_steps(prefix: file_util.ParticlePrefix) -> list[int]:
 
 
 def get_path_at_step(prefix: file_util.ParticlePrefix, step: int) -> pathlib.Path:
-    return file_util.ROOT_DIR / f"{prefix}.{step:09}.h5"
+    return CONFIG.data_dir / f"{prefix}.{step:09}.h5"
 
 
 def load_df(prefix: file_util.ParticlePrefix, steps: list[int]) -> LazyList:
