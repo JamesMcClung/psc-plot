@@ -117,10 +117,10 @@ class Field(DataWithAttrs[xr.DataArray, FieldMetadata]):
     def bounds(self, dim_name):
         return (self.lower_bound(dim_name), self.upper_bound(dim_name))
 
-    def lower_bound(self, dim_name):
+    def lower_bound(self, dim_name) -> float:
         return self.coordss[dim_name][0]
 
-    def upper_bound(self, dim_name):
+    def upper_bound(self, dim_name) -> float:
         coords = self.coordss[dim_name]
         delta = coords[1] - coords[0]
         return coords[-1] + delta
@@ -152,7 +152,7 @@ class FullList(List[pd.DataFrame]):
     def bounds(self, dim_name):
         return (self.lower_bound(dim_name), self.upper_bound(dim_name))
 
-    def lower_bound(self, dim_name):
+    def lower_bound(self, dim_name) -> float:
         cache = self._caches.setdefault("lower_bound", {})
         if dim_name not in cache:
             if dim_name in self.coordss:
@@ -161,7 +161,7 @@ class FullList(List[pd.DataFrame]):
                 cache[dim_name] = self.data[dim_name].min(skipna=True)
         return cache[dim_name]
 
-    def upper_bound(self, dim_name):
+    def upper_bound(self, dim_name) -> float:
         cache = self._caches.setdefault("upper_bound", {})
         if dim_name not in cache:
             if dim_name in self.coordss:
@@ -192,8 +192,8 @@ class LazyList(List[dd.DataFrame]):
                 cache[dim_name] = dask.array.compute(self.data[dim_name].min(skipna=True), self.data[dim_name].max(skipna=True))
         return cache[dim_name]
 
-    def lower_bound(self, dim_name):
+    def lower_bound(self, dim_name) -> float:
         return self.bounds(dim_name)[0]
 
-    def upper_bound(self, dim_name):
+    def upper_bound(self, dim_name) -> float:
         return self.bounds(dim_name)[1]

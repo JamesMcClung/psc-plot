@@ -59,16 +59,12 @@ def load_attrs_at_step(prefix: file_util.ParticlePrefix, step: int) -> dict[str,
     data_path = get_path_at_step(prefix, step)
     attrs = {}
     with h5py.File(data_path) as file:
-        if "time" in file.keys():
-            attrs["time"] = file["time"][()]
-            attrs["corner"] = file["corner"][:]
-            attrs["length"] = file["length"][:]
-            attrs["gdims"] = file["gdims"][:]
-    if not attrs:
-        ds = field_util.load_ds("pfd", step)
-        attrs["time"] = ds.time
-        attrs["corner"] = ds.corner
-        attrs["length"] = ds.length
-        attrs["gdims"] = [len(ds.x), len(ds.y), len(ds.z)]
+        if "time" not in file.keys():
+            raise Exception("Particle data missing 'time' is no longer supported")
+
+        attrs["time"] = file["time"][()]
+        attrs["corner"] = file["corner"][:]
+        attrs["length"] = file["length"][:]
+        attrs["gdims"] = file["gdims"][:]
 
     return attrs

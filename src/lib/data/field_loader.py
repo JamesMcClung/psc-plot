@@ -1,3 +1,4 @@
+import pscpy
 import xarray as xr
 
 from lib.data.data_with_attrs import Field, FieldMetadata
@@ -7,14 +8,6 @@ from ..derived_field_variables import derive_field_variable
 from .source import DataSource
 
 
-def _load_field_variable(prefix: file_util.FieldPrefix, step: int, var_name: str) -> xr.DataArray:
-    ds = field_util.load_ds(prefix, step)
-    ds = ds.assign_coords(t=float(ds.time))
-    derive_field_variable(ds, var_name, prefix)
-
-    return ds[var_name]
-
-
 class FieldLoader(DataSource):
     def __init__(self, prefix: file_util.FieldPrefix, var_name: str, steps: list[int]):
         self.prefix = prefix
@@ -22,7 +15,16 @@ class FieldLoader(DataSource):
         self.steps = steps
 
     def get_data(self) -> Field:
-        da = xr.concat((_load_field_variable(self.prefix, step, self.var_name) for step in self.steps), "t")
+        ds = xr.open_mfdataset(
+            paths=[field_util.get_path(self.prefix, step) for step in self.steps],
+            # TODO chunk by component?
+            combine="nested",
+            concat_dim="t",
+            preprocess=lambda ds: pscpy.decode_psc(ds, ["e", "i"]),
+        )
+        derive_field_variable(ds, self.var_name, self.prefix)
+        da = ds[self.var_name]
+
         metadata = FieldMetadata(
             var_name=self.get_var_name(),
             var_latex=f"\\text{{{self.var_name}}}",
