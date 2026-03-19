@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from lib import parsing
 from lib.config import CONFIG
 
-dask.config.set(num_workers=1)
+dask.config.set(num_workers=CONFIG.dask_num_workers)
 
 args = parsing.get_parsed_args()
 
