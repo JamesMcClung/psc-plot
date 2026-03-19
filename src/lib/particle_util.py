@@ -8,7 +8,7 @@ import numpy as np
 from lib.config import CONFIG
 from lib.data.data_with_attrs import LazyList, ListMetadata
 
-from . import field_util, file_util
+from . import file_util
 
 type PrtVariable = typing.Literal["x", "y", "z", "px", "py", "pz", "q", "m", "w", "id", "tag"]
 PRT_VARIABLES: list[PrtVariable] = list(PrtVariable.__value__.__args__)
