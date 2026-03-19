@@ -14,19 +14,17 @@ class FieldLoader(DataSource):
         self.var_name = var_name
         self.steps = steps
 
-    def _preprocess(self, ds: xr.Dataset) -> xr.DataArray:
-        ds = pscpy.decode_psc(ds, ["e", "i"])
-        derive_field_variable(ds, self.var_name, self.prefix)
-        return ds[self.var_name]
-
     def get_data(self) -> Field:
-        da = xr.open_mfdataset(
+        ds = xr.open_mfdataset(
             paths=[field_util.get_path(self.prefix, step) for step in self.steps],
             # TODO chunk by component?
             combine="nested",
             concat_dim="t",
-            preprocess=self._preprocess,
+            preprocess=lambda ds: pscpy.decode_psc(ds, ["e", "i"]),
         )
+        derive_field_variable(ds, self.var_name, self.prefix)
+        da = ds[self.var_name]
+
         metadata = FieldMetadata(
             var_name=self.get_var_name(),
             var_latex=f"\\text{{{self.var_name}}}",
