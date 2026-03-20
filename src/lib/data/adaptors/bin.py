@@ -125,7 +125,7 @@ _BIN_FORMAT = "var_name[=nbins]"
     help="Bin the data along these variables, which serve as axes. If nbins is unspecified, it is guessed. Note that t is implicitly binned; disable by passing t= (with no nbins).",
     nargs="+",
 )
-def parse_slice(args: list[str]) -> Bin:
+def parse_bin(args: list[str]) -> Bin:
     varname_to_nbins = {}
     insert_bin_t = True
 
