@@ -136,6 +136,7 @@ def parse_bin(args: list[str]) -> Bin:
             # arg is "t=", i.e., disable implicit binning along t
             parse_util.check_value(split_arg[0], "var_name", ["t"])
             insert_bin_t = False
+            continue
         elif len(split_arg) > 2:
             parse_util.fail_format(arg, _BIN_FORMAT)
 
