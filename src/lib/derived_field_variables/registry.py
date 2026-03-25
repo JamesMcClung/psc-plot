@@ -27,6 +27,30 @@ def error(d_rho: DataArray, dt_divj: DataArray) -> DataArray:
 
 
 @derived_field_variable("pfd")
+def sy_p(ez_ec: DataArray, hx_fc: DataArray) -> DataArray:
+    hx = pscpy.get_recentered(hx_fc, "y", -1)
+    return (ez_ec + hx).isel(y=slice(1, None)) / 2
+
+
+@derived_field_variable("pfd")
+def py_p(ex_ec: DataArray, hz_fc: DataArray) -> DataArray:
+    hz = pscpy.get_recentered(hz_fc, "y", -1)
+    return (ex_ec - hz).isel(y=slice(1, None)) / 2
+
+
+@derived_field_variable("pfd")
+def sy_m(ez_ec: DataArray, hx_fc: DataArray) -> DataArray:
+    hx = pscpy.get_recentered(hx_fc, "y", -1)
+    return (ez_ec - hx).isel(y=slice(1, None)) / 2
+
+
+@derived_field_variable("pfd")
+def py_m(ex_ec: DataArray, hz_fc: DataArray) -> DataArray:
+    hz = pscpy.get_recentered(hz_fc, "y", -1)
+    return (ex_ec + hz).isel(y=slice(1, None)) / 2
+
+
+@derived_field_variable("pfd")
 def h2_cc(hx_fc: DataArray, hy_fc: DataArray, hz_fc: DataArray) -> DataArray:
     h = Dataset({"h2x_fc": hx_fc**2, "h2y_fc": hy_fc**2, "h2z_fc": hz_fc**2})
     pscpy.auto_recenter(h, "cc", x="periodic", y="periodic", z="periodic")
