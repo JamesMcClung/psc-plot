@@ -24,7 +24,7 @@ class ParticleArgs(args_base.ArgsTyped):
     def get_animation(self) -> AnimatedFieldPlot:
         steps = particle_util.get_available_particle_steps(self.prefix)
 
-        loader = ParticleLoader(self.prefix, list(self.axis_variables), steps)
+        loader = ParticleLoader(self.prefix, [], steps)
         source = compile_source(loader, self.adaptors)
         data = source.get_data()
 
