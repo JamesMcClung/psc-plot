@@ -27,6 +27,30 @@ def error(d_rho: DataArray, dt_divj: DataArray) -> DataArray:
 
 
 @derived_field_variable("pfd")
+def sy_p(ez_ec: DataArray, hx_fc: DataArray) -> DataArray:
+    hx = pscpy.get_recentered(hx_fc, "y", -1)
+    return (ez_ec + hx).isel(y=slice(1, None)) / 2
+
+
+@derived_field_variable("pfd")
+def py_p(ex_ec: DataArray, hz_fc: DataArray) -> DataArray:
+    hz = pscpy.get_recentered(hz_fc, "y", -1)
+    return (ex_ec - hz).isel(y=slice(1, None)) / 2
+
+
+@derived_field_variable("pfd")
+def sy_m(ez_ec: DataArray, hx_fc: DataArray) -> DataArray:
+    hx = pscpy.get_recentered(hx_fc, "y", -1)
+    return (ez_ec - hx).isel(y=slice(1, None)) / 2
+
+
+@derived_field_variable("pfd")
+def py_m(ex_ec: DataArray, hz_fc: DataArray) -> DataArray:
+    hz = pscpy.get_recentered(hz_fc, "y", -1)
+    return (ex_ec + hz).isel(y=slice(1, None)) / 2
+
+
+@derived_field_variable("pfd")
 def h2_cc(hx_fc: DataArray, hy_fc: DataArray, hz_fc: DataArray) -> DataArray:
     h = Dataset({"h2x_fc": hx_fc**2, "h2y_fc": hy_fc**2, "h2z_fc": hz_fc**2})
     pscpy.auto_recenter(h, "cc", x="periodic", y="periodic", z="periodic")
@@ -42,23 +66,27 @@ def hxz2_cc(hx_fc: DataArray, hz_fc: DataArray) -> DataArray:
 
 @derived_field_variable("pfd")
 def hxzhat2(hx_fc: DataArray, hz_fc: DataArray) -> DataArray:
-    fourier = Fourier([DIMENSIONS["x"], DIMENSIONS["y"], DIMENSIONS["z"]])
+    dims = [DIMENSIONS[dim] for dim in hx_fc.dims if dim in {"x", "y", "z"} and len(hx_fc.coords[dim]) > 1]
+    fourier = Fourier(dims)
+    cut_nyquist = {dim.toggle_fourier().key: slice(1, None) for dim in dims}
     magnitude = Magnitude()
 
-    hx_hat = magnitude.apply_bare(fourier.apply_bare(hx_fc))
-    hz_hat = magnitude.apply_bare(fourier.apply_bare(hz_fc))
+    hx_hat = magnitude.apply_bare(fourier.apply_bare(hx_fc).isel(cut_nyquist))
+    hz_hat = magnitude.apply_bare(fourier.apply_bare(hz_fc).isel(cut_nyquist))
 
     return hx_hat**2 + hz_hat**2
 
 
 @derived_field_variable("pfd")
 def hhat2(hx_fc: DataArray, hy_fc: DataArray, hz_fc: DataArray) -> DataArray:
-    fourier = Fourier([DIMENSIONS["x"], DIMENSIONS["y"], DIMENSIONS["z"]])
+    dims = [DIMENSIONS[dim] for dim in hx_fc.dims if dim in {"x", "y", "z"} and len(hx_fc.coords[dim]) > 1]
+    fourier = Fourier(dims)
+    cut_nyquist = {dim.toggle_fourier().key: slice(1, None) for dim in dims}
     magnitude = Magnitude()
 
-    hx_hat = magnitude.apply_bare(fourier.apply_bare(hx_fc))
-    hy_hat = magnitude.apply_bare(fourier.apply_bare(hy_fc))
-    hz_hat = magnitude.apply_bare(fourier.apply_bare(hz_fc))
+    hx_hat = magnitude.apply_bare(fourier.apply_bare(hx_fc).isel(cut_nyquist))
+    hy_hat = magnitude.apply_bare(fourier.apply_bare(hy_fc).isel(cut_nyquist))
+    hz_hat = magnitude.apply_bare(fourier.apply_bare(hz_fc).isel(cut_nyquist))
 
     return hx_hat**2 + hy_hat**2 + hz_hat**2
 
