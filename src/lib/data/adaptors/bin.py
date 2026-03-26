@@ -79,7 +79,30 @@ class Bin(CheckedAdaptor):
     def __init__(self, varname_to_nbins: dict[str, int | None]):
         self.varname_to_nbins = varname_to_nbins
 
-    def apply_checked(self, data: List) -> Field:
+    def apply_checked(self, data: List | Field) -> Field:
+        if isinstance(data, List):
+            return self.apply_checked_list(data)
+        return self.apply_checked_field(data)
+
+    def apply_checked_field(self, data: Field) -> Field:
+        da = data.data
+        dim_names_to_bin_size = {}
+        for dim_name, nbins in self.varname_to_nbins.items():
+            if not nbins:
+                continue
+
+            dim_len = len(data.coordss[dim_name])
+            bin_size = dim_len // nbins
+
+            if bin_size < 1:
+                raise ValueError(f"dim {dim_name} has length {dim_len}, which is too small for {nbins} bins")
+
+            dim_names_to_bin_size[dim_name] = bin_size
+
+        da = da.coarsen(dim_names_to_bin_size, boundary="pad").mean()
+        return data.assign_data(da)
+
+    def apply_checked_list(self, data: List) -> Field:
         bin_edgess = _guess_bin_edgess(data, self.varname_to_nbins)
 
         df = data.data
