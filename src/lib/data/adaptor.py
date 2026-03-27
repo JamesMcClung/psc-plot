@@ -2,14 +2,28 @@ import inspect
 from abc import abstractmethod
 from typing import Any
 
-from lib.data.data_with_attrs import DataWithAttrs
+from lib.data.data_with_attrs import DataWithAttrs, Field, List
 
 from .compatability import ensure_type, get_allowed_types
 
 
 class Adaptor:
-    @abstractmethod
-    def apply(self, data: DataWithAttrs) -> DataWithAttrs: ...
+    def apply(self, data: DataWithAttrs) -> DataWithAttrs:
+        if isinstance(data, List):
+            return self.apply_list(data)
+        elif isinstance(data, Field):
+            return self.apply_field(data)
+        else:
+            message = f"unrecognized data type: {data.__class__:r}"
+            raise Exception(message)
+
+    def apply_list(self: List) -> DataWithAttrs:
+        message = f"{self.__class__.__module__}.{self.__class__.__name__} does not accept list data. Try converting to a field with --bin."
+        raise RuntimeError(message)
+
+    def apply_field(self: Field) -> DataWithAttrs:
+        message = f"{self.__class__.__module__}.{self.__class__.__name__} does not accept field data. Try converting to a list with --scatter."
+        raise RuntimeError(message)
 
     def get_name_fragments(self) -> list[str]:
         return []
