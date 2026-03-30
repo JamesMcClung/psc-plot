@@ -108,7 +108,6 @@ class Bin(MetadataAdaptor):
                 density=False,
                 weights=df[data.metadata.weight_var].to_dask_array() if data.metadata.weight_var else None,
             )
-            binned_data = binned_data.compute()
         else:
             binned_data, _ = np.histogramdd(
                 [df[var_name] for var_name in self.varname_to_nbins],
