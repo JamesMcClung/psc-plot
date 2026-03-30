@@ -38,6 +38,8 @@ class Adaptor:
 
 
 class MetadataAdaptor(Adaptor):
+    """Wraps `apply` to perform standard metadata mutations."""
+
     def get_modified_var_latex(self, var_latex: str) -> str:
         return var_latex
 
@@ -51,6 +53,8 @@ class MetadataAdaptor(Adaptor):
 
 
 class BareAdaptor(MetadataAdaptor):
+    """An adaptor that works with the raw data, no metadata required."""
+
     def apply_field(self, data: Field) -> DataWithAttrs:
         return data.assign_data(self.apply_field_bare(data.data))
 
