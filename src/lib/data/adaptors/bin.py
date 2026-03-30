@@ -5,7 +5,7 @@ import dask.dataframe as dd
 import numpy as np
 import xarray as xr
 
-from lib.data.adaptor import CheckedAdaptor
+from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, FieldMetadata, List
 from lib.dimension import DIMENSIONS
 from lib.parsing import parse_util
@@ -75,7 +75,7 @@ def _guess_bin_edgess(data: List, varname_to_nbins: dict[str, int | None]) -> li
     return edgess
 
 
-class Bin(CheckedAdaptor):
+class Bin(MetadataAdaptor):
     def __init__(self, varname_to_nbins: dict[str, int | None]):
         self.varname_to_nbins = varname_to_nbins
 

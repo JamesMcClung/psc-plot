@@ -1,12 +1,12 @@
 from lib.data import data_util
-from lib.data.adaptor import CheckedAdaptor
+from lib.data.adaptor import MetadataAdaptor
 from lib.data.adaptors.pos import Pos
 from lib.data.data_with_attrs import List
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
 
-class Quantile(CheckedAdaptor):
+class Quantile(MetadataAdaptor):
     def __init__(self, dim_names_to_quants: dict[str, slice]):
         self.dim_names_to_quants = dim_names_to_quants
 

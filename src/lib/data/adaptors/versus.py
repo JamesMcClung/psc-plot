@@ -1,4 +1,4 @@
-from lib.data.adaptor import CheckedAdaptor
+from lib.data.adaptor import MetadataAdaptor
 from lib.data.adaptors.fourier import Fourier
 from lib.data.adaptors.reduce import Reduce
 from lib.data.data_with_attrs import Field, List
@@ -7,7 +7,7 @@ from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
 
-class Versus(CheckedAdaptor):
+class Versus(MetadataAdaptor):
     def __init__(self, spatial_dims: list[str], time_dim: str | None, color_dim: str | None):
         self.spatial_dims = spatial_dims
         self.time_dim = time_dim

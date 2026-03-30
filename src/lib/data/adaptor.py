@@ -37,7 +37,7 @@ class Adaptor:
         return []
 
 
-class CheckedAdaptor(Adaptor):
+class MetadataAdaptor(Adaptor):
     def get_modified_var_latex(self, var_latex: str) -> str:
         return var_latex
 
@@ -50,7 +50,7 @@ class CheckedAdaptor(Adaptor):
         return data.assign_metadata(name_fragments=name_fragments, var_latex=var_latex)
 
 
-class BareAdaptor(CheckedAdaptor):
+class BareAdaptor(MetadataAdaptor):
     def apply_field(self, data: Field) -> DataWithAttrs:
         return data.assign_data(self.apply_field_bare(data.data))
 

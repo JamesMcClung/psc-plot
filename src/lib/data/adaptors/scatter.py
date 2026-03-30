@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from lib.data.adaptor import CheckedAdaptor
+from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, FullList, ListMetadata
 from lib.parsing.args_registry import const_arg
 
@@ -11,7 +11,7 @@ from lib.parsing.args_registry import const_arg
     flags="--scatter",
     help="convert to list of values and coordinates",
 )
-class Scatter(CheckedAdaptor):
+class Scatter(MetadataAdaptor):
     def apply_field(self, data: Field) -> FullList:
         # note:  dims and coords are not necessarily in the same order. Data dimensions follow the order of dims.
         coordss = data.coordss
