@@ -41,7 +41,7 @@ class Reduce(BareAdaptor):
         self.dim_names = [dim_names] if isinstance(dim_names, str) else dim_names
         self.func_name = func_name
 
-    def apply_bare(self, da: xr.DataArray) -> xr.DataArray:
+    def apply_field_bare(self, da: xr.DataArray) -> xr.DataArray:
         if not self.dim_names:
             return da
         return REDUCE_FUNCS[self.func_name][0](da, self.dim_names)

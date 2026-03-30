@@ -1,41 +1,40 @@
 from lib.data import data_util
-from lib.data.adaptor import CheckedAdaptor
+from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, List
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
 
-class Idx(CheckedAdaptor):
+class Idx(MetadataAdaptor):
     def __init__(self, dim_names_to_isel: dict[str, int | slice]):
         self.dim_names_to_isel = dim_names_to_isel
 
-    def apply_checked[D: Field | List](self, data: D) -> D:
-        if isinstance(data, Field):
-            return data.assign_data(data.data.isel(self.dim_names_to_isel))
+    def apply_field(self, data: Field) -> Field:
+        return data.assign_data(data.data.isel(self.dim_names_to_isel))
 
-        elif isinstance(data, List):
-            coordss = data.coordss.copy()
-            df = data.data
-            for dim, isel in self.dim_names_to_isel.items():
-                if dim not in coordss:
-                    raise ValueError(f"Data has no coordinate information for dimension {dim}")
+    def apply_list(self, data: List) -> List:
+        coordss = data.coordss.copy()
+        df = data.data
+        for dim, isel in self.dim_names_to_isel.items():
+            if dim not in coordss:
+                raise ValueError(f"Data has no coordinate information for dimension {dim}")
 
-                if isinstance(isel, int):
-                    pos = float(coordss[dim][isel])
-                    df = df[df[dim] == pos]
-                    coordss[dim] = pos
-                else:
-                    if isel.start not in [None, 0]:
-                        pos_lower = float(coordss[dim][isel.start])
-                        df = df[df[dim] >= pos_lower]
+            if isinstance(isel, int):
+                pos = float(coordss[dim][isel])
+                df = df[df[dim] == pos]
+                coordss[dim] = pos
+            else:
+                if isel.start not in [None, 0]:
+                    pos_lower = float(coordss[dim][isel.start])
+                    df = df[df[dim] >= pos_lower]
 
-                    if isel.stop is not None:
-                        pos_upper = float(coordss[dim][isel.stop])
-                        df = df[df[dim] < pos_upper]
+                if isel.stop is not None:
+                    pos_upper = float(coordss[dim][isel.stop])
+                    df = df[df[dim] < pos_upper]
 
-                    coordss[dim] = coordss[dim][isel]
+                coordss[dim] = coordss[dim][isel]
 
-            return data.assign(df, coordss=coordss)
+        return data.assign(df, coordss=coordss)
 
     def get_name_fragments(self) -> list[str]:
         subfrags = "_".join(f"{dim_name}={data_util.sel_to_frag(isel)}" for dim_name, isel in self.dim_names_to_isel.items())

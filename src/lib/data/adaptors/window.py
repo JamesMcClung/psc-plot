@@ -18,7 +18,7 @@ class Window(BareAdaptor):
     def get_window(self, n_points: int) -> np.ndarray:
         pass
 
-    def apply_bare(self, da: xr.DataArray) -> xr.DataArray:
+    def apply_field_bare(self, da: xr.DataArray) -> xr.DataArray:
         dim_idx = da.dims.index(self.dim_name)
         dim_len = da.shape[dim_idx]
 

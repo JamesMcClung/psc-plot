@@ -1,36 +1,50 @@
-import inspect
-from abc import abstractmethod
-from typing import Any
+from __future__ import annotations
 
-from lib.data.data_with_attrs import DataWithAttrs
+import dask.dataframe as dd
+import pandas as pd
+import xarray as xr
 
-from .compatability import ensure_type, get_allowed_types
+from lib.data.data_with_attrs import DataWithAttrs, Field, List
+
+
+def _fail_apply_field(adaptor_type: type[Adaptor]):
+    message = f"{adaptor_type.__module__}.{adaptor_type.__name__} does not accept list data. Try converting to a field with --bin."
+    raise RuntimeError(message)
+
+
+def _fail_apply_list(adaptor_type: type[Adaptor]):
+    message = f"{adaptor_type.__module__}.{adaptor_type.__name__} does not accept field data. Try converting to a list with --scatter."
+    raise RuntimeError(message)
 
 
 class Adaptor:
-    @abstractmethod
-    def apply(self, data: DataWithAttrs) -> DataWithAttrs: ...
+    def apply(self, data: DataWithAttrs) -> DataWithAttrs:
+        if isinstance(data, List):
+            return self.apply_list(data)
+        elif isinstance(data, Field):
+            return self.apply_field(data)
+        else:
+            message = f"unrecognized data type: {data.__class__:r}"
+            raise Exception(message)
+
+    def apply_list(self, data: List) -> DataWithAttrs:
+        _fail_apply_field(self.__class__)
+
+    def apply_field(self, data: Field) -> DataWithAttrs:
+        _fail_apply_list(self.__class__)
 
     def get_name_fragments(self) -> list[str]:
         return []
 
 
-# TODO could make this generic to parameterize apply_atomic by input/output
-# TODO rename this and apply_atomic, since it is no longer "atomic" (ie, no longer ignores metadata)
-class CheckedAdaptor(Adaptor):
-    @abstractmethod
-    def apply_checked(self, data: DataWithAttrs) -> DataWithAttrs:
-        """Transform the data and, if appropriate, metadata."""
+class MetadataAdaptor(Adaptor):
+    """Wraps `apply` to perform standard metadata mutations."""
 
     def get_modified_var_latex(self, var_latex: str) -> str:
         return var_latex
 
     def apply(self, data: DataWithAttrs) -> DataWithAttrs:
-        *_, apply_atomic_data_param = inspect.signature(self.apply_checked).parameters.values()
-        allowed_types = get_allowed_types(apply_atomic_data_param.annotation)
-        ensure_type(self.__class__.__name__, data, *allowed_types)
-
-        data = self.apply_checked(data)
+        data = super().apply(data)
 
         name_fragments = data.metadata.name_fragments + self.get_name_fragments()
         var_latex = self.get_modified_var_latex(data.metadata.var_latex)
@@ -38,13 +52,17 @@ class CheckedAdaptor(Adaptor):
         return data.assign_metadata(name_fragments=name_fragments, var_latex=var_latex)
 
 
-class BareAdaptor(CheckedAdaptor):
-    @abstractmethod
-    def apply_bare(self, data: Any) -> Any: ...
+class BareAdaptor(MetadataAdaptor):
+    """An adaptor that works with the raw data, no metadata required."""
 
-    def apply_checked(self, data: DataWithAttrs) -> DataWithAttrs:
-        *_, apply_bare_data_param = inspect.signature(self.apply_bare).parameters.values()
-        allowed_types = get_allowed_types(apply_bare_data_param.annotation)
-        ensure_type(self.__class__.__name__, data.data, *allowed_types)
+    def apply_field(self, data: Field) -> DataWithAttrs:
+        return data.assign_data(self.apply_field_bare(data.data))
 
-        return data.assign_data(self.apply_bare(data.data))
+    def apply_list(self, data: List) -> DataWithAttrs:
+        return data.assign_data(self.apply_list_bare(data.data))
+
+    def apply_field_bare(self, da: xr.DataArray) -> xr.DataArray:
+        _fail_apply_field(self.__class__)
+
+    def apply_list_bare(self, df: dd.DataFrame | pd.DataFrame) -> dd.DataFrame | pd.DataFrame:
+        _fail_apply_list(self.__class__)

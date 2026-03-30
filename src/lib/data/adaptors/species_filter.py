@@ -1,4 +1,5 @@
 import dask.dataframe as dd
+import pandas as pd
 
 from lib.data.adaptor import BareAdaptor
 from lib.parsing import parse_util
@@ -10,7 +11,7 @@ class SpeciesFilter(BareAdaptor):
     def __init__(self, species: Species):
         self.species = species
 
-    def apply_bare(self, df: dd.DataFrame) -> dd.DataFrame:
+    def apply_list_bare(self, df: dd.DataFrame | pd.DataFrame) -> dd.DataFrame | pd.DataFrame:
         if self.species == "electron":
             df = df[df["q"] < 0]
         elif self.species == "ion":

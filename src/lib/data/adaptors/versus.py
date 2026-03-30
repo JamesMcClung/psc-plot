@@ -1,4 +1,4 @@
-from lib.data.adaptor import CheckedAdaptor
+from lib.data.adaptor import MetadataAdaptor
 from lib.data.adaptors.fourier import Fourier
 from lib.data.adaptors.reduce import Reduce
 from lib.data.data_with_attrs import Field, List
@@ -7,64 +7,72 @@ from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
 
-class Versus(CheckedAdaptor):
+class Versus(MetadataAdaptor):
     def __init__(self, spatial_dims: list[str], time_dim: str | None, color_dim: str | None):
         self.spatial_dims = spatial_dims
         self.time_dim = time_dim
         self.color_dim = color_dim
         self.all_dims = spatial_dims + ([time_dim] if time_dim else []) + ([color_dim] if color_dim else [])
 
-    def apply_checked[D: Field | List](self, data: D) -> D:
+    def apply_field(self, data: Field) -> Field:
         # going to cut out name fragments of inner adaptors, since they can be inferred
         initial_name_fragments = data.metadata.name_fragments
 
-        if isinstance(data, Field):
-            # 1. apply implicit coordinate transforms, as necessary
-            for dim_name in self.all_dims:
-                # 1a. already have the coordinate; do nothing
-                if dim_name in data.dims:
-                    continue
+        # 1. apply implicit coordinate transforms, as necessary
+        for dim_name in self.all_dims:
+            # 1a. already have the coordinate; do nothing
+            if dim_name in data.dims:
+                continue
 
-                # 1b. need to do a Fourier transform
-                dim = DIMENSIONS[dim_name]
-                f_dim = dim.toggle_fourier()
-                if f_dim.key in data.dims:
-                    fourier = Fourier(f_dim)
-                    data = fourier.apply(data)
-                    continue
+            # 1b. need to do a Fourier transform
+            dim = DIMENSIONS[dim_name]
+            f_dim = dim.toggle_fourier()
+            if f_dim.key in data.dims:
+                fourier = Fourier(f_dim)
+                data = fourier.apply(data)
+                continue
 
-                # 1c. need to do a coordinate transform
-                # TODO
-
-            # 2. reduce remaining dimensions via arithmetic mean
-            reduce_dims = [dim for dim in data.dims if dim not in self.all_dims]
-            reduce = Reduce(reduce_dims, "mean")
-            data = reduce.apply(data)
-
-        elif isinstance(data, List):
-            # 1. coordinate transform
+            # 1c. need to do a coordinate transform
             # TODO
 
-            # 2. drop unused vars
-            drop_vars = []
-            for var_name in data.dims:
-                if var_name not in self.all_dims + [data.metadata.dependent_var]:
-                    drop_vars.append(var_name)
+        # 2. reduce remaining dimensions via arithmetic mean
+        reduce_dims = [dim for dim in data.dims if dim not in self.all_dims]
+        reduce = Reduce(reduce_dims, "mean")
+        data = reduce.apply(data)
 
-            data = data.assign_data(data.data.drop(columns=drop_vars))
+        return data.assign_metadata(
+            spatial_dims=self.spatial_dims.copy(),
+            time_dim=self.time_dim,
+            color_dim=self.color_dim,
+            name_fragments=initial_name_fragments,
+        )
+
+    def apply_list(self, data: List) -> List:
+        # going to cut out name fragments of inner adaptors, since they can be inferred
+        initial_name_fragments = data.metadata.name_fragments
+
+        # 1. coordinate transform
+        # TODO
+
+        # 2. drop unused vars
+        drop_vars = []
+        for var_name in data.dims:
+            if var_name not in self.all_dims + [data.metadata.dependent_var]:
+                drop_vars.append(var_name)
+
+        data = data.assign_data(data.data.drop(columns=drop_vars))
 
         # do the main job of Versus: specify which dims are spatial, temporal, etc.
 
         spatial_dims = self.spatial_dims.copy()
-
-        if isinstance(data, List) and not data.metadata.dependent_var:
-            data = data.assign_metadata(dependent_var=spatial_dims.pop())
+        dependent_var = spatial_dims.pop()
 
         return data.assign_metadata(
             spatial_dims=spatial_dims,
             time_dim=self.time_dim,
             color_dim=self.color_dim,
             name_fragments=initial_name_fragments,
+            dependent_var=dependent_var,
         )
 
     def get_name_fragments(self) -> list[str]:

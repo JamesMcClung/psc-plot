@@ -5,7 +5,7 @@ import dask.dataframe as dd
 import numpy as np
 import xarray as xr
 
-from lib.data.adaptor import CheckedAdaptor
+from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, FieldMetadata, List
 from lib.dimension import DIMENSIONS
 from lib.parsing import parse_util
@@ -75,16 +75,11 @@ def _guess_bin_edgess(data: List, varname_to_nbins: dict[str, int | None]) -> li
     return edgess
 
 
-class Bin(CheckedAdaptor):
+class Bin(MetadataAdaptor):
     def __init__(self, varname_to_nbins: dict[str, int | None]):
         self.varname_to_nbins = varname_to_nbins
 
-    def apply_checked(self, data: List | Field) -> Field:
-        if isinstance(data, List):
-            return self.apply_checked_list(data)
-        return self.apply_checked_field(data)
-
-    def apply_checked_field(self, data: Field) -> Field:
+    def apply_field(self, data: Field) -> Field:
         da = data.data
         dim_names_to_bin_size = {}
         for dim_name, nbins in self.varname_to_nbins.items():
@@ -102,7 +97,7 @@ class Bin(CheckedAdaptor):
         da = da.coarsen(dim_names_to_bin_size, boundary="pad").mean()
         return data.assign_data(da)
 
-    def apply_checked_list(self, data: List) -> Field:
+    def apply_list(self, data: List) -> Field:
         bin_edgess = _guess_bin_edgess(data, self.varname_to_nbins)
 
         df = data.data

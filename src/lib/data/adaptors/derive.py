@@ -1,6 +1,6 @@
 import dask.dataframe as dd
 
-from lib.data.adaptor import CheckedAdaptor
+from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import List
 from lib.derived_particle_variables.derived_particle_variable import (
     DERIVED_PARTICLE_VARIABLES,
@@ -10,11 +10,11 @@ from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
 
-class Derive(CheckedAdaptor):
+class Derive(MetadataAdaptor):
     def __init__(self, var_key: str):
         self.var_key = var_key
 
-    def apply_checked(self, data: List) -> dd.DataFrame:
+    def apply_list(self, data: List) -> List:
         return derive_particle_variable(data, self.var_key, "prt")
 
 

@@ -10,7 +10,8 @@ from lib.parsing.args_registry import const_arg
     help="take the real part",
 )
 class Real(BareAdaptor):
-    def apply_bare(self, da: xr.DataArray) -> xr.DataArray:
+
+    def apply_field_bare(self, da: xr.DataArray) -> xr.DataArray:
         return da.real
 
     def get_name_fragments(self) -> list[str]:
