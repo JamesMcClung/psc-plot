@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, fields
 from functools import cache, cached_property
-from typing import Any, Self
+from typing import Any, Callable, Self
 
 import dask.array
 import dask.dataframe as dd
@@ -86,6 +86,9 @@ class DataWithAttrs[D: xr.DataArray | pd.DataFrame | dd.DataFrame, MD: Metadata]
 
     def assign(self, data: D, metadata: MD | None = None, /, **metadata_vals: Any) -> Self:
         return self.assign_data(data).assign_metadata(metadata, **metadata_vals)
+
+    def map_data(self, func: Callable[[D], D]) -> Self:
+        return self.assign_data(func(self.data))
 
     @abstractmethod
     def bounds(self, dim_name: str) -> tuple[float, float]: ...
