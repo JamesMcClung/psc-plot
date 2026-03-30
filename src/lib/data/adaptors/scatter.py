@@ -12,7 +12,7 @@ from lib.parsing.args_registry import const_arg
     help="convert to list of values and coordinates",
 )
 class Scatter(CheckedAdaptor):
-    def apply_checked(self, data: Field) -> FullList:
+    def apply_field(self, data: Field) -> FullList:
         # note:  dims and coords are not necessarily in the same order. Data dimensions follow the order of dims.
         coordss = data.coordss
         ordered_coordss = [coordss[dim] for dim in data.dims]

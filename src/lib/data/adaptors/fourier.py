@@ -32,7 +32,7 @@ class Fourier(BareAdaptor):
             dims = [dims]
         self.dims = dims
 
-    def apply_bare(self, da: xr.DataArray) -> xr.DataArray:
+    def apply_field_bare(self, da: xr.DataArray) -> xr.DataArray:
         for dim in self.dims:
             da = toggle_fourier(da, dim)
 

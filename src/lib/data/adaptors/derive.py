@@ -14,7 +14,7 @@ class Derive(CheckedAdaptor):
     def __init__(self, var_key: str):
         self.var_key = var_key
 
-    def apply_checked(self, data: List) -> dd.DataFrame:
+    def apply_list(self, data: List) -> List:
         return derive_particle_variable(data, self.var_key, "prt")
 
 

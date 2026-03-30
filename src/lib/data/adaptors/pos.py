@@ -19,51 +19,50 @@ class Pos(CheckedAdaptor):
         for dim_name in self.dim_names_to_sel:
             self.dim_names_to_include_bounds.setdefault(dim_name, (True, False))
 
-    def apply_checked[T: Field | List](self, data: T) -> T:
-        if isinstance(data, Field):
-            dim_names_to_pos = {dim_name: pos for dim_name, pos in self.dim_names_to_sel.items() if isinstance(pos, float)}
-            dim_names_to_slice = {dim_name: s for dim_name, s in self.dim_names_to_sel.items() if isinstance(s, slice)}
-            data = data.assign_data(data.data.sel(dim_names_to_pos, method="nearest").sel(dim_names_to_slice))
+    def apply_field(self, data: Field) -> Field:
+        dim_names_to_pos = {dim_name: pos for dim_name, pos in self.dim_names_to_sel.items() if isinstance(pos, float)}
+        dim_names_to_slice = {dim_name: s for dim_name, s in self.dim_names_to_sel.items() if isinstance(s, slice)}
+        return data.assign_data(data.data.sel(dim_names_to_pos, method="nearest").sel(dim_names_to_slice))
 
-        elif isinstance(data, List):
-            coordss = data.coordss.copy()
-            df = data.data
+    def apply_list(self, data: List) -> List:
+        coordss = data.coordss.copy()
+        df = data.data
 
-            for dim, sel in self.dim_names_to_sel.items():
-                if isinstance(sel, float):
-                    if dim not in coordss:
-                        raise ValueError(f"Data has no coordinate information for dimension {dim}")
+        for dim, sel in self.dim_names_to_sel.items():
+            if isinstance(sel, float):
+                if dim not in coordss:
+                    raise ValueError(f"Data has no coordinate information for dimension {dim}")
 
-                    nearest_coord = float(coordss[dim][0])
-                    for coord in coordss[dim]:
-                        if abs(coord - sel) < abs(nearest_coord - sel):
-                            nearest_coord = float(coord)
+                nearest_coord = float(coordss[dim][0])
+                for coord in coordss[dim]:
+                    if abs(coord - sel) < abs(nearest_coord - sel):
+                        nearest_coord = float(coord)
 
-                    df = df[df[dim] == nearest_coord]
-                    coordss[dim] = nearest_coord
-                else:
-                    if sel.start is not None:
-                        if self.dim_names_to_include_bounds[dim][0]:
-                            df = df[df[dim] >= sel.start]
-                        else:
-                            df = df[df[dim] > sel.start]
+                df = df[df[dim] == nearest_coord]
+                coordss[dim] = nearest_coord
+            else:
+                if sel.start is not None:
+                    if self.dim_names_to_include_bounds[dim][0]:
+                        df = df[df[dim] >= sel.start]
+                    else:
+                        df = df[df[dim] > sel.start]
 
-                    if sel.stop is not None:
-                        if self.dim_names_to_include_bounds[dim][1]:
-                            df = df[df[dim] <= sel.stop]
-                        else:
-                            df = df[df[dim] < sel.stop]
+                if sel.stop is not None:
+                    if self.dim_names_to_include_bounds[dim][1]:
+                        df = df[df[dim] <= sel.stop]
+                    else:
+                        df = df[df[dim] < sel.stop]
 
-                    if dim in coordss:
-                        coords = coordss[dim]
+                if dim in coordss:
+                    coords = coordss[dim]
 
-                        lower_idx = None if sel.start is None else np.searchsorted(coords, sel.start, side="right") - 1
-                        upper_idx = None if sel.stop is None else np.searchsorted(coords, sel.stop, side="right")
+                    lower_idx = None if sel.start is None else np.searchsorted(coords, sel.start, side="right") - 1
+                    upper_idx = None if sel.stop is None else np.searchsorted(coords, sel.stop, side="right")
 
-                        coordss[dim] = coords[lower_idx:upper_idx]
+                    coordss[dim] = coords[lower_idx:upper_idx]
 
-                data = data.assign_data(df)
-                data = data.assign_metadata(coordss=coordss)
+            data = data.assign_data(df)
+            data = data.assign_metadata(coordss=coordss)
 
         return data
 

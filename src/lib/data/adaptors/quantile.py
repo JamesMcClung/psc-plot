@@ -10,7 +10,7 @@ class Quantile(CheckedAdaptor):
     def __init__(self, dim_names_to_quants: dict[str, slice]):
         self.dim_names_to_quants = dim_names_to_quants
 
-    def apply_checked(self, data: List) -> List:
+    def apply_list(self, data: List) -> List:
         dim_names_to_slices: dict[str, slice] = {}
 
         for dim, quants in self.dim_names_to_quants.items():

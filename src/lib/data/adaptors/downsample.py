@@ -10,7 +10,7 @@ class Downsample(BareAdaptor):
     def __init__(self, dim_names_to_bin_size: dict[str, int]):
         self.dim_names_to_bin_size = dim_names_to_bin_size
 
-    def apply_bare(self, da: xr.DataArray) -> xr.DataArray:
+    def apply_field_bare(self, da: xr.DataArray) -> xr.DataArray:
         return da.coarsen(self.dim_names_to_bin_size, boundary="pad").mean()
 
     def get_name_fragments(self) -> list[str]:

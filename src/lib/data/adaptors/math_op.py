@@ -32,7 +32,7 @@ class MathOp(BareAdaptor):
         self.symbol = symbol
         self.func = func
 
-    def apply_bare(self, da: xr.DataArray) -> xr.DataArray:
+    def apply_field_bare(self, da: xr.DataArray) -> xr.DataArray:
         return self.func(da, self.rhs)
 
     def get_name_fragments(self) -> list[str]:

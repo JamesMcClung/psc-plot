@@ -11,7 +11,8 @@ from lib.parsing.args_registry import const_arg
     help="replace 0s with nans (useful for log)",
 )
 class Nan0(BareAdaptor):
-    def apply_bare(self, da: xr.DataArray) -> xr.DataArray:
+
+    def apply_field_bare(self, da: xr.DataArray) -> xr.DataArray:
         return da.where(da != 0, np.nan)
 
     def get_name_fragments(self) -> list[str]:

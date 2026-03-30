@@ -10,7 +10,7 @@ class Roll(BareAdaptor):
     def __init__(self, dim_names_to_window_size: dict[str, int]):
         self.dim_names_to_window_size = dim_names_to_window_size
 
-    def apply_bare(self, da: xr.DataArray) -> xr.DataArray:
+    def apply_field_bare(self, da: xr.DataArray) -> xr.DataArray:
         return da.rolling(self.dim_names_to_window_size).mean()
 
     def get_name_fragments(self) -> list[str]:
