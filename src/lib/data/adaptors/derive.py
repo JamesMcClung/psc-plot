@@ -1,5 +1,3 @@
-import dask.dataframe as dd
-
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import List
 from lib.derived_particle_variables.derived_particle_variable import (

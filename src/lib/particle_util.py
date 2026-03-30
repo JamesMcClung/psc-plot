@@ -33,12 +33,15 @@ def load_df(prefix: file_util.ParticlePrefix, steps: list[int]) -> LazyList:
 
     data_paths = [get_path_at_step(prefix, step) for step in steps]
     dfs_of_steps = []
+    divisions = [0]
     for time, data_path in zip(times, data_paths):
-        df_of_step: dd.DataFrame = dd.read_hdf(data_path, key=PRT_PARTICLES_KEY)
+        df_of_step: dd.DataFrame = dd.read_hdf(data_path, key=PRT_PARTICLES_KEY, lock=True)
         df_of_step = df_of_step.assign(t=time)
         dfs_of_steps.append(df_of_step)
+        divisions.append(divisions[-1] + len(df_of_step))
 
-    df = dd.concat(dfs_of_steps)
+    df: dd.DataFrame = dd.concat(dfs_of_steps)
+    df = df.set_index("t", sorted=True, divisions=divisions, drop=False)
 
     corners = np.array(attrss[0]["corner"])
     lengths = np.array(attrss[0]["length"])

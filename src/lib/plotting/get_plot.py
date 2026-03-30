@@ -1,4 +1,4 @@
-from lib.data.data_with_attrs import DataWithAttrs, Field, FullList, LazyList
+from lib.data.data_with_attrs import DataWithAttrs, Field, List
 from lib.dimension import DIMENSIONS
 from lib.plotting.animated_field_plot import (
     Animated1dFieldPlot,
@@ -19,9 +19,6 @@ def get_plot(data: DataWithAttrs, **plot_kwargs) -> Plot:
         else:
             raise Exception("non-animated 2d/scatter plots not supported yet")
     else:
-        if isinstance(data, LazyList):
-            data = data.compute()
-
         if isinstance(data, Field):
             if len(spatial_dims) == 1:
                 PlotType = Animated1dFieldPlot
@@ -33,7 +30,7 @@ def get_plot(data: DataWithAttrs, **plot_kwargs) -> Plot:
             else:
                 raise NotImplementedError("don't have 3D field animations yet")
 
-        elif isinstance(data, FullList):
+        elif isinstance(data, List):
             if len(spatial_dims) == 1:
                 PlotType = AnimatedScatterPlot
             else:

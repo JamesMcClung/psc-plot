@@ -140,6 +140,9 @@ class List[D: pd.DataFrame | dd.DataFrame](DataWithAttrs[D, ListMetadata]):
     data: pd.DataFrame | dd.DataFrame
     metadata: ListMetadata
 
+    @abstractmethod
+    def compute(self) -> FullList: ...
+
     @property
     def coordss(self) -> dict[str, np.ndarray]:
         return self.metadata.coordss
@@ -151,6 +154,9 @@ class List[D: pd.DataFrame | dd.DataFrame](DataWithAttrs[D, ListMetadata]):
 
 class FullList(List[pd.DataFrame]):
     data: pd.DataFrame
+
+    def compute(self) -> FullList:
+        return self
 
     def bounds(self, dim_name):
         return (self.lower_bound(dim_name), self.upper_bound(dim_name))
