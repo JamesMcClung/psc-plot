@@ -2,6 +2,7 @@
 __pycache__/
 .vscode/
 .DS_Store
+TODO.md
 
 # a place to put plotting scripts and generated plots:
 plots/

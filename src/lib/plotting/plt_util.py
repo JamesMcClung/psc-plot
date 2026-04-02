@@ -6,6 +6,8 @@ from matplotlib.colorizer import _ScalarMappable
 from matplotlib.colors import Normalize
 from matplotlib.scale import ScaleBase
 
+from lib.dimension import DIMENSIONS
+
 type BuiltinAxisScaleKey = typing.Literal["linear", "log"]
 SCALES: list[BuiltinAxisScaleKey] = list(BuiltinAxisScaleKey.__value__.__args__)
 type AxisScaleArg = BuiltinAxisScaleKey | ScaleBase
@@ -48,3 +50,9 @@ def update_title(ax: Axes, dep_var_name: str, cut_labels: list[str]):
     if cut_labels_str:
         cut_labels_str = f" ({cut_labels_str})"
     ax.set_title(f"${dep_var_name}${cut_labels_str}")
+
+
+def get_axis_label(var: str) -> str:
+    if var in DIMENSIONS:
+        return DIMENSIONS[var].to_axis_label()
+    return var
