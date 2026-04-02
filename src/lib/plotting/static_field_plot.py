@@ -11,6 +11,7 @@ from lib.plotting.frame_data_traits import (
     HasLineType,
     HasSpatialScales,
 )
+from lib.plotting.plt_util import get_axis_label
 from lib.plotting.static_plot import StaticPlot
 
 
@@ -41,7 +42,7 @@ class Static1dFieldPlot(StaticFieldPlot):
         [self.line] = self.ax.plot(xdata, ydata, init_data.line_type)
 
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
-        self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
+        self.ax.set_xlabel(get_axis_label(self.spatial_dims[0]))
         self.ax.set_ylabel(f"${data.metadata.var_latex}$")
 
         self.ax.set_xscale(init_data.spatial_scales[0])

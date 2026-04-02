@@ -13,6 +13,7 @@ from lib.plotting.frame_data_traits import (
     HasFullListData,
     HasSpatialScales,
 )
+from lib.plotting.plt_util import get_axis_label
 
 
 class AnimatedScatterPlot(AnimatedPlot[FullList]):
@@ -49,8 +50,8 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
         self.ax.set_xscale(init_data.spatial_scales[0])
         self.ax.set_yscale(init_data.spatial_scales[1])
 
-        self.ax.set_xlabel(DIMENSIONS[self.spatial_dims[0]].to_axis_label())
-        self.ax.set_ylabel(f"${data.metadata.var_latex}$" if self.dependent_var == data.metadata.var_name else DIMENSIONS[self.dependent_var].to_axis_label())
+        self.ax.set_xlabel(get_axis_label(self.spatial_dims[0]))
+        self.ax.set_ylabel(f"${data.metadata.var_latex}$" if self.dependent_var == data.metadata.var_name else get_axis_label(self.dependent_var))
 
         self.ax.set_xlim(*self.data.bounds(self.spatial_dims[0]))
         self.ax.set_ylim(*self.data.bounds(self.dependent_var))
@@ -64,7 +65,7 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
                 s=1,
             )
 
-            self.fig.colorbar(self.scatter, label=DIMENSIONS[data.metadata.color_dim].to_axis_label())
+            self.fig.colorbar(self.scatter, label=get_axis_label(data.metadata.color_dim))
             data_lower, data_upper = self.data.bounds(data.metadata.color_dim)
             plt_util.update_cbar(self.scatter, data_min_override=data_lower, data_max_override=data_upper)
         else:
