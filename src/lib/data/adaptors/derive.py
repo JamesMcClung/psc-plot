@@ -1,4 +1,4 @@
-from lark import Lark, Tree
+from lark import Lark
 from lark.visitors import Transformer_InPlace
 
 from lib.data.adaptor import MetadataAdaptor
@@ -10,11 +10,17 @@ from lib.parsing.args_registry import arg_parser
 
 
 class Derive(MetadataAdaptor):
-    def __init__(self, ast: Tree):
-        self.ast = ast
+    def __init__(self, expression: str):
+        self.expression = expression
+        self.ast = _DERIVE_PARSER.parse(expression)
 
     def apply_list(self, data: List) -> List:
         return AssignNewVariable(data).transform(self.ast)
+
+    def get_name_fragments(self):
+        if self.ast.data == "assign_default":
+            return []
+        return [f'derive_"{self.expression}"']
 
 
 class AssignNewVariable(Transformer_InPlace):
@@ -115,5 +121,4 @@ _EXPRESSION_DESCRIPTION = "The expression can be any mathematical expression usi
     help=f"Create a new variable with the given name. {_EXPRESSION_DESCRIPTION} If the expression is omitted, the variable name is derived via the registry of derivable variables.",
 )
 def parse_derive(arg: str) -> Derive:
-    tree = _DERIVE_PARSER.parse(arg)
-    return Derive(tree)
+    return Derive(arg)
