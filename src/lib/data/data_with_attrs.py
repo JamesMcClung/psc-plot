@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, fields
-from functools import cache, cached_property
+from functools import cached_property
 from typing import Any, Callable, Self
 
 import dask.array
