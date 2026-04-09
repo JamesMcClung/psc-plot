@@ -123,7 +123,7 @@ class Field(DataWithAttrs[xr.Dataset, FieldMetadata]):
             if sib == var_name:
                 continue
             try:
-                new_ds = xr.merge([new_ds, self.data[[sib]]], join="exact")
+                new_ds = xr.merge([new_ds, self.data[[sib]]], join="exact", compat="no_conflicts")
             except (xr.MergeError, ValueError):
                 pass
         return self.assign_data(new_ds)
