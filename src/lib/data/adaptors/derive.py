@@ -2,7 +2,11 @@ from lark import Lark
 from lark.visitors import Transformer_InPlace
 
 from lib.data.adaptor import MetadataAdaptor
-from lib.data.data_with_attrs import List
+from lib.data.data_with_attrs import Field, List
+from lib.derived_field_variables.derived_field_variable import (
+    DERIVED_FIELD_VARIABLES,
+    derive_field_variable,
+)
 from lib.derived_particle_variables.derived_particle_variable import (
     derive_particle_variable,
 )
@@ -16,6 +20,9 @@ class Derive(MetadataAdaptor):
 
     def apply_list(self, data: List) -> List:
         return AssignNewVariable(data).transform(self.ast)
+
+    def apply_field(self, data: Field) -> Field:
+        return AssignNewFieldVariable(data).transform(self.ast)
 
     def get_name_fragments(self):
         if self.ast.data == "assign_default":
@@ -69,6 +76,71 @@ class AssignNewVariable(Transformer_InPlace):
         df = self._data.data
         df = df.assign(**{new_variable: val})
         return self._data.assign_data(df)
+
+
+class AssignNewFieldVariable(Transformer_InPlace):
+    def __init__(self, data: Field):
+        self._data = data
+        super().__init__(visit_tokens=True)
+
+    def number(self, toks: list):
+        [tok] = toks
+        return float(tok)
+
+    def new_variable(self, toks: list):
+        [tok] = toks
+        return str(tok)
+
+    def variable(self, toks: list):
+        [tok] = toks
+        name = str(tok)
+        ds = self._data.data
+        if name not in ds.variables:
+            self._resolve_from_registry(name)
+        return self._data.data[name]
+
+    def addition(self, toks: list):
+        [lhs, rhs] = toks
+        return lhs + rhs
+
+    def subtraction(self, toks: list):
+        [lhs, rhs] = toks
+        return lhs - rhs
+
+    def multiplication(self, toks: list):
+        [lhs, rhs] = toks
+        return lhs * rhs
+
+    def division(self, toks: list):
+        [lhs, rhs] = toks
+        return lhs / rhs
+
+    def exponentiation(self, toks: list):
+        [lhs, rhs] = toks
+        return lhs**rhs
+
+    def assign_default(self, toks: list):
+        [new_variable] = toks
+        self._resolve_from_registry(new_variable)
+        return self._data.assign_metadata(var_name=new_variable, var_latex=f"\\text{{{new_variable}}}")
+
+    def assignment(self, toks: list):
+        [new_variable, val] = toks
+        new_ds = self._data.data.assign({new_variable: val})
+        return self._data.assign(new_ds, var_name=new_variable, var_latex=f"\\text{{{new_variable}}}")
+
+    def _resolve_from_registry(self, name: str):
+        prefix = self._data.metadata.prefix
+        if prefix is None:
+            raise ValueError(f"--derive cannot resolve '{name}': field metadata has no prefix.")
+        if name not in DERIVED_FIELD_VARIABLES.get(prefix, {}):
+            raise ValueError(
+                f"--derive: '{name}' is not in the dataset and not in the registry for prefix '{prefix}'. "
+                f"Note that earlier adaptors (e.g. --downsample) may have dropped variables that became "
+                f"incompatible with the active grid; consider moving --derive earlier in the pipeline."
+            )
+        # Mutates self._data.data in-place to add `name` (and any of its dependencies).
+        derive_field_variable(self._data.data, name, prefix)
 
 
 _DERIVE_GRAMMAR = r"""
