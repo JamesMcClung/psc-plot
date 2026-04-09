@@ -1,3 +1,4 @@
+from lib.data.data_with_attrs import Field
 from lib.dimension import DIMENSIONS
 from lib.parsing.args_registry import const_arg
 from lib.plotting.frame_data_traits import HasAxes, HasData, HasLineType, assert_impl
@@ -12,7 +13,7 @@ class ShowInitial(Hook):
 
         data = init_data.data
         xdata = data.coordss[data.dims[0]]
-        ydata = data.data
+        ydata = data.active_data if isinstance(data, Field) else data.data
         time_dim = data.metadata.time_dim
         init_data.axes.plot(xdata, ydata, "-", label=DIMENSIONS[time_dim].get_coordinate_label(data.coordss[time_dim]))
 

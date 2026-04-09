@@ -125,7 +125,7 @@ class Bin(MetadataAdaptor):
             dims=self.varname_to_nbins.keys(),
         )
 
-        return Field(da, FieldMetadata.create_from(data.metadata))
+        return Field(da.to_dataset(name=data.metadata.var_name), FieldMetadata.create_from(data.metadata))
 
     def get_name_fragments(self) -> list[str]:
         subfrags = "_".join(f"{varname}={nbins}" if nbins else varname for varname, nbins in self.varname_to_nbins.items())

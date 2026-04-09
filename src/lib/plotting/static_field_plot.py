@@ -17,7 +17,7 @@ from lib.plotting.static_plot import StaticPlot
 
 class StaticFieldPlot(StaticPlot[Field]):
     def _get_var_bounds(self) -> tuple[float, float]:
-        bounds = np.nanquantile(self.data.data, [0, 1])
+        bounds = np.nanquantile(self.data.active_data, [0, 1])
         return bounds
 
 
@@ -28,7 +28,7 @@ class Static1dFieldPlot(StaticFieldPlot):
     def _init_fig(self):
         data = self.data
         xdata = data.coordss[data.dims[0]]
-        ydata = data.data
+        ydata = data.active_data
 
         init_data = self.InitData(
             data=data,

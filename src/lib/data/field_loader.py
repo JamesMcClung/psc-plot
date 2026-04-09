@@ -23,14 +23,14 @@ class FieldLoader(DataSource):
             preprocess=lambda ds: pscpy.decode_psc(ds, ["e", "i"]),
         )
         derive_field_variable(ds, self.var_name, self.prefix)
-        da = ds[self.var_name]
 
         metadata = FieldMetadata(
             var_name=self.get_var_name(),
             var_latex=f"\\text{{{self.var_name}}}",
             name_fragments=self.get_name_fragments(),
+            prefix=self.prefix,
         )
-        return Field(da, metadata)
+        return Field(ds, metadata)
 
     def get_file_prefix(self) -> str:
         return self.prefix

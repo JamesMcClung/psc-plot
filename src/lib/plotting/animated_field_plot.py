@@ -23,7 +23,7 @@ from lib.plotting.plt_util import get_axis_label
 
 class AnimatedFieldPlot(AnimatedPlot[Field]):
     def _get_var_bounds(self) -> tuple[float, float]:
-        data = self.data.data
+        data = self.data.active_data
         return dask.compute(
             np.min(data),
             np.max(data),
@@ -45,7 +45,7 @@ class Animated2dFieldPlot(AnimatedFieldPlot):
 
     def _init_fig(self):
         data = self._get_data_at_frame(0)
-        da = data.data
+        da = data.active_data
 
         init_data = self.InitData(
             data=data,
@@ -85,7 +85,7 @@ class Animated2dFieldPlot(AnimatedFieldPlot):
         update_data = self.UpdateData(data=data)
         self.pre_update_fig(update_data)
 
-        self.im.set_data(data.data)
+        self.im.set_data(data.active_data)
 
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
 
@@ -94,7 +94,7 @@ class Animated2dFieldPlot(AnimatedFieldPlot):
 
     def _get_data_at_frame(self, frame: int) -> Field:
         data = super()._get_data_at_frame(frame)
-        return data.assign_data(data.data.transpose(*reversed(self.spatial_dims)))
+        return data.with_active_data(data.active_data.transpose(*reversed(self.spatial_dims)))
 
 
 class AnimatedPolarFieldPlot(AnimatedFieldPlot):
@@ -141,7 +141,7 @@ class AnimatedPolarFieldPlot(AnimatedFieldPlot):
 
         self.im = self.ax.pcolormesh(
             *np.meshgrid(vertices_theta, vertices_r),
-            data.data,
+            data.active_data,
             shading="flat",
             norm=init_data.color_norm,
         )
@@ -165,7 +165,7 @@ class AnimatedPolarFieldPlot(AnimatedFieldPlot):
         update_data = self.UpdateData(data=data)
         self.pre_update_fig(update_data)
 
-        self.im.set_array(data.data)
+        self.im.set_array(data.active_data)
 
         plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
 
@@ -183,7 +183,7 @@ class Animated1dFieldPlot(AnimatedFieldPlot):
     def _init_fig(self):
         data = self._get_data_at_frame(0)
         xdata = data.coordss[data.dims[0]]
-        ydata = data.data
+        ydata = data.active_data
 
         init_data = self.InitData(
             data=data,
@@ -212,7 +212,7 @@ class Animated1dFieldPlot(AnimatedFieldPlot):
 
     def _update_fig(self, frame: int):
         data = self._get_data_at_frame(frame)
-        ydata = data.data
+        ydata = data.active_data
 
         update_data = self.UpdateData(data=data, axes=self.ax)
 
