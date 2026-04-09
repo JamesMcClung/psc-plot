@@ -19,7 +19,7 @@ class Scatter(MetadataAdaptor):
         ordered_coordss = [coordss[dim] for dim in data.dims]
         coord_grids = np.meshgrid(*ordered_coordss, indexing="ij")
 
-        vars = {data.metadata.var_name: da.ravel(data.data)} | dict(zip(data.dims, (da.ravel(coord_grid) for coord_grid in coord_grids)))
+        vars = {data.metadata.var_name: da.ravel(data.active_data)} | dict(zip(data.dims, (da.ravel(coord_grid) for coord_grid in coord_grids)))
 
         df = dd.from_dask_array(da.vstack(vars.values()).T, columns=list(vars))
 

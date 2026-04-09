@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, fields
-from functools import cache, cached_property
+from functools import cached_property
 from typing import Any, Callable, Self
 
 import dask.array
@@ -102,20 +102,40 @@ class DataWithAttrs[D: xr.DataArray | pd.DataFrame | dd.DataFrame, MD: Metadata]
 
 @dataclass(kw_only=True, frozen=True)
 class FieldMetadata(Metadata):
-    pass
+    prefix: str | None = None
 
 
-class Field(DataWithAttrs[xr.DataArray, FieldMetadata]):
-    data: xr.DataArray
+class Field(DataWithAttrs[xr.Dataset, FieldMetadata]):
+    data: xr.Dataset
     metadata: FieldMetadata
+
+    @property
+    def active_data(self) -> xr.DataArray:
+        return self.data[self.metadata.var_name]
+
+    def with_active_data(self, new_da: xr.DataArray) -> Self:
+        """Returns a copy with the active variable replaced by `new_da`. Sibling variables that
+        are no longer compatible with the new active grid (e.g. share a dim name with different
+        coordinate values) are dropped."""
+        var_name = self.metadata.var_name
+        new_ds = new_da.to_dataset(name=var_name)
+        for sib in self.data.data_vars:
+            if sib == var_name:
+                continue
+            try:
+                new_ds = xr.merge([new_ds, self.data[[sib]]], join="exact", compat="no_conflicts")
+            except (xr.MergeError, ValueError):
+                pass
+        return self.assign_data(new_ds)
 
     @cached_property
     def coordss(self) -> dict[str, np.ndarray]:
-        return {dim: np.array(self.data.coords[dim]) for dim in self.data.coords.keys()}
+        active = self.active_data
+        return {dim: np.array(active.coords[dim]) for dim in active.coords.keys()}
 
     @cached_property
     def dims(self) -> list[str]:
-        return list(self.data.dims)
+        return list(self.active_data.dims)
 
     def bounds(self, dim_name):
         return (self.lower_bound(dim_name), self.upper_bound(dim_name))
