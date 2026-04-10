@@ -8,11 +8,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Running
 
-The CLI entry point is `src/main.py`. Invoke as:
+Install in editable mode (one-time):
 
 ```sh
-py src/main.py <prefix> <variable> [options]
+pip install -e .
 ```
+
+Then invoke as:
+
+```sh
+psc-plot <prefix> <variable> [options]
+```
+
+Or directly via `py src/main.py <prefix> <variable> [options]` (backward-compatible).
 
 Where `<prefix>` selects the data source: field prefixes (`pfd`, `pfd_moments`, `gauss`, `continuity`) or particle prefixes (`prt`). Examples live in `plots/check.sh` and `plots/check2.sh` and serve as the de-facto smoke tests / usage reference.
 
@@ -25,7 +33,7 @@ Required environment (see `src/lib/config.py`):
 - `PSC_PLOT_FFMPEG_BIN` — optional, falls back to `which ffmpeg`; needed for saving animations
 - `PSC_PLOT_DASK_NUM_WORKERS` — optional, defaults to 1
 
-There is no test suite, lint config, or build system in this repo — running the example commands in `plots/check*.sh` against a real data directory is how changes get validated.
+There is no test suite or lint config — running the example commands in `plots/check*.sh` against a real data directory is how changes get validated. Package management is via `pyproject.toml` (setuptools backend).
 
 ## Architecture
 
@@ -35,7 +43,7 @@ The code lives under `src/lib/` and is organized around three concepts: **source
 
 1. `parsing.get_parsed_args()` (`src/lib/parsing/parse.py`) builds an argparse parser with one subparser per file prefix, each populated with the same shared set of optional arguments. The parsed namespace is converted to a typed `FieldArgs` or particle-equivalent (`args_base.ArgsUntyped.to_typed`).
 2. The typed args' `get_animation()` constructs a `FieldLoader`/particle loader (a `DataSource`), then calls `compile_source` (`src/lib/data/compile.py`) to wrap it in a `DataSourceWithPipeline` made of the user-supplied `Adaptor` list. If no `Versus` adaptor is present, a default one is appended (`y,z` vs `t`) — this is what selects axes and time dim.
-3. `source.get_data()` loads raw data and runs the pipeline, returning a `DataWithAttrs` (a `Field` wrapping `xr.DataArray`, or a `List` wrapping `pd.DataFrame` / `dd.DataFrame`).
+3. `source.get_data()` loads raw data and runs the pipeline, returning a `DataWithAttrs` (a `Field` wrapping `xr.Dataset`, or a `List` wrapping `pd.DataFrame` / `dd.DataFrame`).
 4. `get_plot(data)` (`src/lib/plotting/get_plot.py`) dispatches on `data` type and `metadata.spatial_dims`/`time_dim` to choose a concrete `Plot` subclass (static/animated, 1D/2D, polar, scatter).
 5. Hooks (`src/lib/plotting/hooks/`) such as `--scale log`, `--grid`, `--vline`, `--fit` are appended onto the chosen plot before `show()`/`save()`.
 
@@ -56,10 +64,14 @@ The code lives under `src/lib/` and is organized around three concepts: **source
 
 ### Data wrapper
 
-`src/lib/data/data_with_attrs.py` defines `DataWithAttrs[D, MD]` and concrete `Field` (xarray-backed), `FullList` (pandas), `LazyList` (dask). Frozen dataclasses; mutate via `assign_data` / `assign_metadata` / `assign`. `Metadata` carries `var_name`, `var_latex`, `name_fragments`, `spatial_dims`, `time_dim`, `color_dim`. The unusual `**` unpacking via `__getitem__` + `keys()` is what `Metadata.create_from` and `assign` use to round-trip values between subclasses (`FieldMetadata` vs `ListMetadata`).
+`src/lib/data/data_with_attrs.py` defines `DataWithAttrs[D, MD]` and concrete `Field` (`xr.Dataset`-backed), `FullList` (pandas), `LazyList` (dask). Frozen dataclasses; mutate via `assign_data` / `assign_metadata` / `assign`. `Metadata` carries `var_name`, `var_latex`, `name_fragments`, `spatial_dims`, `time_dim`, `color_dim`. `FieldMetadata` also carries `prefix` (the file prefix, e.g. `"pfd_moments"`). The unusual `**` unpacking via `__getitem__` + `keys()` is what `Metadata.create_from` and `assign` use to round-trip values between subclasses (`FieldMetadata` vs `ListMetadata`).
+
+`Field.data` is an `xr.Dataset` containing multiple variables; `Field.active_data` returns the `xr.DataArray` for `metadata.var_name` (the variable being plotted). `Field.with_active_data(da)` replaces the active variable and drops sibling variables that are no longer grid-compatible. Most code should use `active_data` rather than `data` directly. `BareAdaptor.apply_field` handles this automatically via the shim in `adaptor.py`.
 
 The class-level `data: ...`/`metadata: ...` annotations on the subclasses look redundant but are intentional — see the comment in `DataWithAttrs.__init__`. They are needed so `isinstance`-narrowed code gets the concrete types; don't "clean them up."
 
 ### Derived variables
 
 `src/lib/derived_field_variables/registry.py` and `derived_particle_variables/registry.py` register computed variables per file prefix using `@derived_field_variable("pfd_moments")` decorators. The decorated function's parameter names declare the dependencies (raw or other derived variables); the loader resolves and computes them on demand.
+
+`--derive` works for both field and particle data. For fields, it operates on the underlying `xr.Dataset` and can reference any variable in the dataset or resolve names from the derived-variable registry (via `FieldMetadata.prefix`). It updates `metadata.var_name` to point to the newly created variable.

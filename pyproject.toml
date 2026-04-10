@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "psc-plot"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "numpy>=2.0",
+    "xarray>=2024.0",
+    "pandas>=2.0",
+    "dask>=2024.0",
+    "h5py>=3.0",
+    "scipy>=1.10",
+    "matplotlib>=3.8",
+    "lark>=1.0",
+    "pscpy @ git+https://github.com/psc-code/pscpy.git",
+]
+
+[project.scripts]
+psc-plot = "lib.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
