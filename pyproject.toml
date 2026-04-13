@@ -9,11 +9,14 @@ requires-python = ">=3.13"
 dependencies = [
     "numpy>=2.0",
     "xarray>=2024.0",
+    "xrft>=1.0",
     "pandas>=2.0",
     "dask>=2024.0",
     "h5py>=3.0",
+    "tables>=3.10",
     "scipy>=1.10",
     "matplotlib>=3.8",
+    "pyarrow>=22.0",
     "lark>=1.0",
     "pscpy @ git+https://github.com/psc-code/pscpy.git",
 ]
