@@ -29,6 +29,9 @@ psc-plot = "lib.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+filterwarnings = [
+    "ignore:Animation was deleted without rendering anything:UserWarning",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
