@@ -5,6 +5,7 @@ from pathlib import Path
 _TESTS_DIR = Path(__file__).parent
 _DATA_DIR = _TESTS_DIR / "data"
 os.environ["PSC_PLOT_DATA_DIR"] = str(_DATA_DIR / "test-2d")
+os.environ["PSC_PLOT_DASK_NUM_WORKERS"] = "1"
 
 import matplotlib
 
