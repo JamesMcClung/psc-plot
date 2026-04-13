@@ -33,7 +33,33 @@ Required environment (see `src/lib/config.py`):
 - `PSC_PLOT_FFMPEG_BIN` — optional, falls back to `which ffmpeg`; needed for saving animations
 - `PSC_PLOT_DASK_NUM_WORKERS` — optional, defaults to 1
 
-There is no test suite or lint config — running the example commands in `plots/check*.sh` against a real data directory is how changes get validated. Package management is via `pyproject.toml` (setuptools backend).
+Package management is via `pyproject.toml` (setuptools backend).
+
+## Testing
+
+Install test dependencies:
+
+```sh
+pip install -e ".[test]"
+```
+
+Run the figure consistency tests:
+
+```sh
+pytest --mpl
+```
+
+Tests live in `tests/test_plots.py` and use `pytest-mpl` for image comparison against baseline PNGs in `tests/baseline/`. Each test runs the full CLI pipeline (parsing → loading → adaptors → plotting) against small test datasets in `tests/data/` (test-2d: x=1,y=8,z=16; test-3d: x=4,y=4,z=4).
+
+To regenerate baselines after intentional visual changes:
+
+```sh
+pytest --mpl-generate-path=tests/baseline
+```
+
+The test helper `make_plot()` in `tests/conftest.py` parses CLI args, runs the pipeline, and returns the initialized matplotlib Figure. Tests can switch data directories via `data_dir="test-3d"`.
+
+Running `plots/check*.sh` against a real data directory remains useful for manual validation of more complex scenarios.
 
 ## Architecture
 
