@@ -5,7 +5,7 @@ ion_mass 1.000E+02
 v_upstream_x 0.000E+00
 v_upstream_y 5.003E-02
 v_upstream_z 0.000E+00
-b_angle_y_to_x_rad 0 1.571E+00
+b_angle_y_to_x_rad 0
 b_mag 2.400E-01
 nx 1
 ny 16
@@ -15,9 +15,9 @@ n_writes 10
 n_patches_x 1
 n_patches_y 2
 n_patches_z 1
-dx 6.256E-02
-dy 6.256E-02
-dz 6.256E-02
+dx 6.25E-02
+dy 6.25E-02
+dz 6.25E-02
 turb_dB 2.400E-02
 turb_correlation_length 1.000E+03
 nicell 10
