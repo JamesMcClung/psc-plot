@@ -1,7 +1,7 @@
 import pytest
 from conftest import make_plot
 
-MPL_KWARGS = dict(tolerance=2, savefig_kwarg={"dpi": 100})
+MPL_KWARGS = dict(tolerance=2, savefig_kwarg={"dpi": 100}, style="default")
 
 
 # --- Static 1D field ---
