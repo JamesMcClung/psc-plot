@@ -33,6 +33,12 @@ Required environment (see `src/lib/config.py`):
 - `PSC_PLOT_FFMPEG_BIN` — optional, falls back to `which ffmpeg`; needed for saving animations
 - `PSC_PLOT_DASK_NUM_WORKERS` — optional, defaults to 1
 
+`PSC_PLOT_DATA_DIR` is read at module-import time (`CONFIG = PscPlotConfig._load()` in `src/lib/config.py`), so it must be set in the environment before any `lib.*` import. In tests, `tests/conftest.py` sets it before importing `lib`.
+
+Inspect data files directly with `bpls <file.bp>` (ADIOS2) and `h5ls <file.h5>` (HDF5); pass `-l` to `bpls` or `-r` to `h5ls` for more detail.
+
+Use `.venv/bin/pytest`, `.venv/bin/pip`, etc. — system Python is 3.10 and can't install this package (requires 3.13+).
+
 Package management is via `pyproject.toml` (setuptools backend).
 
 ## Testing
@@ -58,6 +64,8 @@ pytest --mpl-generate-path=tests/baseline
 ```
 
 The test helper `make_plot()` in `tests/conftest.py` parses CLI args, runs the pipeline, and returns the initialized matplotlib Figure. Tests can switch data directories via `data_dir="test-3d"`.
+
+New `@pytest.mark.mpl_image_compare` tests must pass `style="default"` — without it, fonts and interpolation render incorrectly. The `MPL_KWARGS` dict in `tests/test_plots.py` already bundles this.
 
 Running `plots/check*.sh` against a real data directory remains useful for manual validation of more complex scenarios.
 
