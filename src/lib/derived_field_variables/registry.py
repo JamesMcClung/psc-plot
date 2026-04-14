@@ -71,8 +71,8 @@ def hxzhat2(hx_fc: DataArray, hz_fc: DataArray) -> DataArray:
     cut_nyquist = {dim.toggle_fourier().key: slice(1, None) for dim in dims}
     magnitude = Magnitude()
 
-    hx_hat = magnitude.apply_bare(fourier.apply_bare(hx_fc).isel(cut_nyquist))
-    hz_hat = magnitude.apply_bare(fourier.apply_bare(hz_fc).isel(cut_nyquist))
+    hx_hat = magnitude.apply_field_bare(fourier.apply_field_bare(hx_fc).isel(cut_nyquist))
+    hz_hat = magnitude.apply_field_bare(fourier.apply_field_bare(hz_fc).isel(cut_nyquist))
 
     return hx_hat**2 + hz_hat**2
 
@@ -84,9 +84,9 @@ def hhat2(hx_fc: DataArray, hy_fc: DataArray, hz_fc: DataArray) -> DataArray:
     cut_nyquist = {dim.toggle_fourier().key: slice(1, None) for dim in dims}
     magnitude = Magnitude()
 
-    hx_hat = magnitude.apply_bare(fourier.apply_bare(hx_fc).isel(cut_nyquist))
-    hy_hat = magnitude.apply_bare(fourier.apply_bare(hy_fc).isel(cut_nyquist))
-    hz_hat = magnitude.apply_bare(fourier.apply_bare(hz_fc).isel(cut_nyquist))
+    hx_hat = magnitude.apply_field_bare(fourier.apply_field_bare(hx_fc).isel(cut_nyquist))
+    hy_hat = magnitude.apply_field_bare(fourier.apply_field_bare(hy_fc).isel(cut_nyquist))
+    hz_hat = magnitude.apply_field_bare(fourier.apply_field_bare(hz_fc).isel(cut_nyquist))
 
     return hx_hat**2 + hy_hat**2 + hz_hat**2
 
