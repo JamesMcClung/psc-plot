@@ -1,0 +1,33 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    # macos matches the OS the baseline images were generated on. Using ubuntu
+    # tends to produce spurious diffs due to freetype/font version differences.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install package with test extras
+        run: pip install -e ".[test]"
+
+      - name: Run tests
+        run: pytest --mpl --mpl-results-path=mpl-results
+
+      - name: Upload mpl diffs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mpl-results
+          path: mpl-results/
+          if-no-files-found: ignore

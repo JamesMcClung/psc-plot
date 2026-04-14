@@ -1,0 +1,39 @@
+name: regenerate baselines
+
+# Manually triggered from the Actions tab. Regenerates pytest-mpl baseline
+# images in the CI environment and uploads them as an artifact. Download,
+# extract into tests/baseline/, and commit.
+
+on:
+  workflow_dispatch:
+    inputs:
+      os:
+        description: "Runner OS"
+        type: choice
+        default: macos-latest
+        options:
+          - macos-latest
+          - ubuntu-latest
+
+jobs:
+  regenerate:
+    runs-on: ${{ inputs.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install package with test extras
+        run: pip install -e ".[test]"
+
+      - name: Regenerate baselines
+        run: pytest --mpl-generate-path=tests/baseline
+
+      - name: Upload baselines
+        uses: actions/upload-artifact@v4
+        with:
+          name: baseline
+          path: tests/baseline/
