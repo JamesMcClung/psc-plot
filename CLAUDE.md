@@ -91,14 +91,14 @@ The code lives under `src/lib/` and is organized around three concepts: **source
 
 `src/lib/data/adaptor.py`:
 - `Adaptor` — base. Override `apply_field`/`apply_list`; the unused one raises a friendly "use `--bin`/`--scatter`" error.
-- `MetadataAdaptor` — wraps `apply` to also append name fragments and modify `var_latex` (used to derive saved filenames and axis labels).
+- `MetadataAdaptor` — wraps `apply` to also append name fragments and modify `display_latex` / `unit_latex` (used to derive saved filenames and axis labels). Override `get_modified_display_latex(display, metadata)` and/or `get_modified_unit_latex(unit, metadata)`; both receive the current `metadata` so they can inspect e.g. `var_name`.
 - `BareAdaptor` — for adaptors that operate on the raw `xr.DataArray` / DataFrame and don't touch metadata.
 
 `Pipeline` (`src/lib/data/pipeline.py`) is itself an `Adaptor` that chains a list of adaptors.
 
 ### Data wrapper
 
-`src/lib/data/data_with_attrs.py` defines `DataWithAttrs[D, MD]` and concrete `Field` (`xr.Dataset`-backed), `FullList` (pandas), `LazyList` (dask). Frozen dataclasses; mutate via `assign_data` / `assign_metadata` / `assign`. `Metadata` carries `var_name`, `var_latex`, `name_fragments`, `spatial_dims`, `time_dim`, `color_dim`. `FieldMetadata` also carries `prefix` (the file prefix, e.g. `"pfd_moments"`). The unusual `**` unpacking via `__getitem__` + `keys()` is what `Metadata.create_from` and `assign` use to round-trip values between subclasses (`FieldMetadata` vs `ListMetadata`).
+`src/lib/data/data_with_attrs.py` defines `DataWithAttrs[D, MD]` and concrete `Field` (`xr.Dataset`-backed), `FullList` (pandas), `LazyList` (dask). Frozen dataclasses; mutate via `assign_data` / `assign_metadata` / `assign`. `Metadata` carries `var_name`, `display_latex` (physics notation, e.g. `B_x`), `unit_latex` (optional, e.g. `c`), `name_fragments`, `spatial_dims`, `time_dim`, `color_dim`. `display_latex`/`unit_latex` are populated at load time from `src/lib/field_units.py` (keyed by `(prefix, var_name)` for fields, `var_name` for particles); users can override via `--display` / `--unit`. `FieldMetadata` also carries `prefix` (the file prefix, e.g. `"pfd_moments"`). The unusual `**` unpacking via `__getitem__` + `keys()` is what `Metadata.create_from` and `assign` use to round-trip values between subclasses (`FieldMetadata` vs `ListMetadata`).
 
 `Field.data` is an `xr.Dataset` containing multiple variables; `Field.active_data` returns the `xr.DataArray` for `metadata.var_name` (the variable being plotted). `Field.with_active_data(da)` replaces the active variable and drops sibling variables that are no longer grid-compatible. Most code should use `active_data` rather than `data` directly. `BareAdaptor.apply_field` handles this automatically via the shim in `adaptor.py`.
 
