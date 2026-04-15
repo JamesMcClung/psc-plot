@@ -73,8 +73,8 @@ class Animated2dFieldPlot(AnimatedFieldPlot):
         plt_util.update_title(self.ax, data.metadata, [DIM_DEFAULTS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
 
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
-        self.ax.set_xlabel(get_axis_label(self.spatial_dims[0]))
-        self.ax.set_ylabel(get_axis_label(self.spatial_dims[1]))
+        self.ax.set_xlabel(get_axis_label(self.spatial_dims[0], data.metadata))
+        self.ax.set_ylabel(get_axis_label(self.spatial_dims[1], data.metadata))
 
         self.post_init_fig(init_data)
         self.fig.tight_layout()
@@ -153,8 +153,8 @@ class AnimatedPolarFieldPlot(AnimatedFieldPlot):
         plt_util.update_title(self.ax, data.metadata, [DIM_DEFAULTS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
 
         # FIXME make the labels work
-        # self.ax.set_xlabel(get_axis_label([self.dims[1]]))
-        # self.ax.set_ylabel(get_axis_label([self.dims[0]]))
+        # self.ax.set_xlabel(get_axis_label(self.dims[1], data.metadata))
+        # self.ax.set_ylabel(get_axis_label(self.dims[0], data.metadata))
 
         self.post_init_fig(init_data)
         self.fig.tight_layout()
@@ -198,7 +198,7 @@ class Animated1dFieldPlot(AnimatedFieldPlot):
         [self.line] = self.ax.plot(xdata, ydata, init_data.line_type)
 
         plt_util.update_title(self.ax, data.metadata, [DIM_DEFAULTS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
-        self.ax.set_xlabel(get_axis_label(self.spatial_dims[0]))
+        self.ax.set_xlabel(get_axis_label(self.spatial_dims[0], data.metadata))
         self.ax.set_ylabel(plt_util.format_label(data.metadata))
 
         self.ax.set_xscale(init_data.spatial_scales[0])

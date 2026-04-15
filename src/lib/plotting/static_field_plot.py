@@ -42,7 +42,7 @@ class Static1dFieldPlot(StaticFieldPlot):
         [self.line] = self.ax.plot(xdata, ydata, init_data.line_type)
 
         plt_util.update_title(self.ax, data.metadata, [DIM_DEFAULTS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
-        self.ax.set_xlabel(get_axis_label(self.spatial_dims[0]))
+        self.ax.set_xlabel(get_axis_label(self.spatial_dims[0], data.metadata))
         self.ax.set_ylabel(plt_util.format_label(data.metadata))
 
         self.ax.set_xscale(init_data.spatial_scales[0])

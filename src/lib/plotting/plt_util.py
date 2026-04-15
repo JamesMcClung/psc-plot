@@ -60,7 +60,11 @@ def update_title(ax: Axes, metadata: Metadata, cut_labels: list[str]):
     ax.set_title(f"{format_label(metadata)}{cut_labels_str}")
 
 
-def get_axis_label(var: str) -> str:
-    if var in DIM_DEFAULTS:
-        return DIM_DEFAULTS[var].to_axis_label()
-    return var
+def get_axis_label(key: str, metadata: Metadata) -> str:
+    # FIXME transitional: adaptors (Fourier, transforms) don't yet populate metadata.dims
+    # for dims they create; fall back to DIM_DEFAULTS until Tasks 7-9 migrate them.
+    if key in metadata.dims:
+        return metadata.dims[key].to_axis_label()
+    if key in DIM_DEFAULTS:
+        return DIM_DEFAULTS[key].to_axis_label()
+    return key
