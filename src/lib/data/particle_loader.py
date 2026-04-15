@@ -1,6 +1,6 @@
 from lib.data.data_with_attrs import LazyList
 
-from .. import file_util, particle_util
+from .. import field_units, file_util, particle_util
 from .source import DataSource
 
 
@@ -12,10 +12,12 @@ class ParticleLoader(DataSource):
     def get_data(self) -> LazyList:
         df = particle_util.load_df(self.prefix, self.steps)
 
+        info = field_units.lookup_particle(self.get_var_name())
         return df.assign_metadata(
             name_fragments=self.get_name_fragments(),
             var_name=self.get_var_name(),
-            var_latex=self.get_var_name(),
+            display_latex=info.display_latex,
+            unit_latex=info.unit_latex,
         )
 
     def get_file_prefix(self) -> str:

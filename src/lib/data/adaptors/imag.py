@@ -16,5 +16,5 @@ class Imaginary(BareAdaptor):
     def get_name_fragments(self) -> list[str]:
         return ["imag"]
 
-    def get_modified_var_latex(self, var_latex: str) -> str:
-        return f"\\text{{Im}}[{var_latex}]"
+    def get_modified_display_latex(self, display_latex: str, metadata) -> str:
+        return f"\\text{{Im}}[{display_latex}]"

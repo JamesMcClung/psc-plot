@@ -12,26 +12,26 @@ class ReduceFunc(typing.Protocol):
     def __call__(self, da: xr.DataArray, dim_names: list[str]) -> xr.DataArray: ...
 
 
-class ModifyVarLatex(typing.Protocol):
-    def __call__(self, var_latex: str, dim_names: list[str]) -> str: ...
+class ModifyDisplayLatex(typing.Protocol):
+    def __call__(self, display_latex: str, dim_names: list[str]) -> str: ...
 
 
-REDUCE_FUNCS: dict[str, tuple[ReduceFunc, ModifyVarLatex]] = {
+REDUCE_FUNCS: dict[str, tuple[ReduceFunc, ModifyDisplayLatex]] = {
     "mean": (
         lambda da, dim_names: da.reduce(np.nanmean, dim_names),
-        lambda var_latex, dim_names: f"\\langle {var_latex}\\rangle_{{{','.join(dim_names)}}}",
+        lambda display_latex, dim_names: f"\\langle {display_latex}\\rangle_{{{','.join(dim_names)}}}",
     ),
     "integrate": (
         lambda da, dim_names: da.integrate(dim_names),
-        lambda var_latex, dim_names: f"\\int \\text{{d}}{'\\text{d}'.join(dim_names)}\\,({var_latex})",
+        lambda display_latex, dim_names: f"\\int \\text{{d}}{'\\text{d}'.join(dim_names)}\\,({display_latex})",
     ),
     "max": (
         lambda da, dim_names: da.max(dim_names, skipna=True),
-        lambda var_latex, dim_names: f"\\max_{{{','.join(dim_names)}}}({var_latex})",
+        lambda display_latex, dim_names: f"\\max_{{{','.join(dim_names)}}}({display_latex})",
     ),
     "min": (
         lambda da, dim_names: da.min(dim_names, skipna=True),
-        lambda var_latex, dim_names: f"\\min_{{{','.join(dim_names)}}}({var_latex})",
+        lambda display_latex, dim_names: f"\\min_{{{','.join(dim_names)}}}({display_latex})",
     ),
 }
 
@@ -46,10 +46,10 @@ class Reduce(BareAdaptor):
             return da
         return REDUCE_FUNCS[self.func_name][0](da, self.dim_names)
 
-    def get_modified_var_latex(self, var_latex: str) -> str:
+    def get_modified_display_latex(self, display_latex: str, metadata) -> str:
         if not self.dim_names:
-            return var_latex
-        return REDUCE_FUNCS[self.func_name][1](var_latex, self.dim_names)
+            return display_latex
+        return REDUCE_FUNCS[self.func_name][1](display_latex, self.dim_names)
 
     def get_name_fragments(self) -> list[str]:
         if not self.dim_names:

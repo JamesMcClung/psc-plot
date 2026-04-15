@@ -152,3 +152,36 @@ def test_scale_symlog():
 def test_polar_grid():
     """Polar plot."""
     return make_plot("pfd hx_fc --transform-polar y z -v r_p theta".split())
+
+
+# --- Display/unit overrides ---
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_display_override():
+    """`--display NAME=VALUE` overrides the LaTeX rendering of the named variable."""
+    return make_plot("pfd hx_fc -v y --display hx_fc=\\text{test}".split())
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_unit_override():
+    """`--unit NAME=VALUE` appends a unit bracket to the axis label."""
+    return make_plot("pfd hx_fc -v y --unit hx_fc=\\text{test}".split())
+
+
+def test_field_units_lookup_covers_test_data():
+    """All raw vars present in the test-2d datasets resolve via the registry (no fallback)."""
+    from lib.field_units import FIELD_VAR_INFO
+
+    expected_pfd = {"hx_fc", "hy_fc", "hz_fc", "ex_ec", "ey_ec", "ez_ec", "jx_ec", "jy_ec", "jz_ec"}
+    expected_moments = {
+        *(f"{m}_{s}" for m in ("rho", "jx", "jy", "jz", "px", "py", "pz", "txx", "tyy", "tzz", "txy", "tyz", "tzx") for s in ("e", "i")),
+    }
+    expected_gauss = {"dive", "rho"}
+
+    for v in expected_pfd:
+        assert ("pfd", v) in FIELD_VAR_INFO, v
+    for v in expected_moments:
+        assert ("pfd_moments", v) in FIELD_VAR_INFO, v
+    for v in expected_gauss:
+        assert ("gauss", v) in FIELD_VAR_INFO, v

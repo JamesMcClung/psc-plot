@@ -4,7 +4,7 @@ import dask.dataframe as dd
 import pandas as pd
 import xarray as xr
 
-from lib.data.data_with_attrs import DataWithAttrs, Field, List
+from lib.data.data_with_attrs import DataWithAttrs, Field, List, Metadata
 
 
 def _fail_apply_field(adaptor_type: type[Adaptor]):
@@ -40,16 +40,24 @@ class Adaptor:
 class MetadataAdaptor(Adaptor):
     """Wraps `apply` to perform standard metadata mutations."""
 
-    def get_modified_var_latex(self, var_latex: str) -> str:
-        return var_latex
+    def get_modified_display_latex(self, display_latex: str, metadata: Metadata) -> str:
+        return display_latex
+
+    def get_modified_unit_latex(self, unit_latex: str, metadata: Metadata) -> str:
+        return unit_latex
 
     def apply(self, data: DataWithAttrs) -> DataWithAttrs:
         data = super().apply(data)
 
         name_fragments = data.metadata.name_fragments + self.get_name_fragments()
-        var_latex = self.get_modified_var_latex(data.metadata.var_latex)
+        display_latex = self.get_modified_display_latex(data.metadata.display_latex, data.metadata)
+        unit_latex = self.get_modified_unit_latex(data.metadata.unit_latex, data.metadata)
 
-        return data.assign_metadata(name_fragments=name_fragments, var_latex=var_latex)
+        return data.assign_metadata(
+            name_fragments=name_fragments,
+            display_latex=display_latex,
+            unit_latex=unit_latex,
+        )
 
 
 class BareAdaptor(MetadataAdaptor):

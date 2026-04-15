@@ -8,7 +8,7 @@ import numpy as np
 from lib.config import CONFIG
 from lib.data.data_with_attrs import LazyList, ListMetadata
 
-from . import file_util
+from . import field_units, file_util
 
 type PrtVariable = typing.Literal["x", "y", "z", "px", "py", "pz", "q", "m", "w", "id", "tag"]
 PRT_VARIABLES: list[PrtVariable] = list(PrtVariable.__value__.__args__)
@@ -49,9 +49,11 @@ def load_df(prefix: file_util.ParticlePrefix, steps: list[int]) -> LazyList:
     coordss = {dim: np.linspace(corner, corner + length, ncells, endpoint=False) for dim, corner, length, ncells in zip(("x", "y", "z"), corners, lengths, gdims)}
     coordss["t"] = times
 
+    info = field_units.lookup_particle("f")
     metadata = ListMetadata(
         var_name="f",
-        var_latex="f",
+        display_latex=info.display_latex,
+        unit_latex=info.unit_latex,
         weight_var="w",
         coordss=coordss,
     )
