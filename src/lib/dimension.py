@@ -143,3 +143,10 @@ Dimension(Latex("q"), ELEMENTARY_CHARGE, "linear").register()
 
 for dim in ["x", "y", "z"]:
     DIM_DEFAULTS[dim].toggle_fourier().register()
+
+
+def get_default_dim(key: str) -> Dimension:
+    """Return the registered default `Dimension` for `key`, or a minimal fallback if unknown."""
+    if key in DIM_DEFAULTS:
+        return DIM_DEFAULTS[key]
+    return Dimension(Latex(key), Latex(""), "linear", key=key)
