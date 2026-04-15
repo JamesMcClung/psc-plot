@@ -42,9 +42,9 @@ class Fourier(BareAdaptor):
         dim_names = ",".join(dim.key for dim in self.dims)
         return [f"fourier_{dim_names}"]
 
-    def get_modified_var_latex(self, var_latex: str) -> str:
+    def get_modified_display_latex(self, display_latex: str, metadata) -> str:
         dim_latexs = ",".join(dim.name.latex for dim in self.dims)
-        return f"\\mathcal{{F}}_{{{dim_latexs}}}[{var_latex}]"
+        return f"\\mathcal{{F}}_{{{dim_latexs}}}[{display_latex}]"
 
 
 FOURIER_FORMAT = "dim_name"

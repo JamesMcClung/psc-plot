@@ -3,7 +3,7 @@ import xarray as xr
 
 from lib.data.data_with_attrs import Field, FieldMetadata
 
-from .. import field_util, file_util
+from .. import field_units, field_util, file_util
 from ..derived_field_variables import derive_field_variable
 from .source import DataSource
 
@@ -24,9 +24,11 @@ class FieldLoader(DataSource):
         )
         derive_field_variable(ds, self.var_name, self.prefix)
 
+        info = field_units.lookup_field(self.prefix, self.var_name)
         metadata = FieldMetadata(
             var_name=self.get_var_name(),
-            var_latex=f"\\text{{{self.var_name}}}",
+            display_latex=info.display_latex,
+            unit_latex=info.unit_latex,
             name_fragments=self.get_name_fragments(),
             prefix=self.prefix,
         )

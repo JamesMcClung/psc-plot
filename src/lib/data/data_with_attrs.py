@@ -15,7 +15,8 @@ import xarray as xr
 @dataclass(kw_only=True, frozen=True)
 class Metadata:
     var_name: str
-    var_latex: str
+    display_latex: str
+    unit_latex: str = ""
     name_fragments: list[str] = field(default_factory=list)
 
     spatial_dims: list[str] = field(default_factory=list)

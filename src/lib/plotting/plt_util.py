@@ -6,6 +6,7 @@ from matplotlib.colorizer import _ScalarMappable
 from matplotlib.colors import Normalize
 from matplotlib.scale import ScaleBase
 
+from lib.data.data_with_attrs import Metadata
 from lib.dimension import DIMENSIONS
 
 type BuiltinAxisScaleKey = typing.Literal["linear", "log"]
@@ -45,11 +46,18 @@ def update_cbar(mappable: _ScalarMappable, *, data_min_override: float | None = 
     mappable.set_cmap(plt.get_cmap(cmap))
 
 
-def update_title(ax: Axes, dep_var_name: str, cut_labels: list[str]):
+def format_label(metadata: Metadata) -> str:
+    """Format a label for the dependent variable: ``$display$`` or ``$display\\;[unit]$``."""
+    if metadata.unit_latex:
+        return f"${metadata.display_latex}\\;[{metadata.unit_latex}]$"
+    return f"${metadata.display_latex}$"
+
+
+def update_title(ax: Axes, metadata: Metadata, cut_labels: list[str]):
     cut_labels_str = ", ".join(cut_labels)
     if cut_labels_str:
         cut_labels_str = f" ({cut_labels_str})"
-    ax.set_title(f"${dep_var_name}${cut_labels_str}")
+    ax.set_title(f"{format_label(metadata)}{cut_labels_str}")
 
 
 def get_axis_label(var: str) -> str:

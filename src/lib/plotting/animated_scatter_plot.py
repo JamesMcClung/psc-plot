@@ -51,7 +51,7 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
         self.ax.set_yscale(init_data.spatial_scales[1])
 
         self.ax.set_xlabel(get_axis_label(self.spatial_dims[0]))
-        self.ax.set_ylabel(f"${data.metadata.var_latex}$" if self.dependent_var == data.metadata.var_name else get_axis_label(self.dependent_var))
+        self.ax.set_ylabel(plt_util.format_label(data.metadata) if self.dependent_var == data.metadata.var_name else get_axis_label(self.dependent_var))
 
         self.ax.set_xlim(*self.data.bounds(self.spatial_dims[0]))
         self.ax.set_ylim(*self.data.bounds(self.dependent_var))
@@ -76,7 +76,7 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
                 s=0.5,
             )
 
-        plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if isinstance(pos, float)])
+        plt_util.update_title(self.ax, data.metadata, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if isinstance(pos, float)])
 
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
 
@@ -93,7 +93,7 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
         self.pre_update_fig(update_data)
 
         self.scatter.set_offsets(np.array([df[self.spatial_dims[0]], df[self.dependent_var]]).T)
-        plt_util.update_title(self.ax, data.metadata.var_latex, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if isinstance(pos, float)])
+        plt_util.update_title(self.ax, data.metadata, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if isinstance(pos, float)])
 
         if data.metadata.color_dim:
             self.scatter.set_array(df[data.metadata.color_dim])

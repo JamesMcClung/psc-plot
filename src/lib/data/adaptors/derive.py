@@ -1,6 +1,7 @@
 from lark import Lark
 from lark.visitors import Transformer_InPlace
 
+from lib import field_units
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, List
 from lib.derived_field_variables.derived_field_variable import (
@@ -122,12 +123,14 @@ class AssignNewFieldVariable(Transformer_InPlace):
     def assign_default(self, toks: list):
         [new_variable] = toks
         self._resolve_from_registry(new_variable)
-        return self._data.assign_metadata(var_name=new_variable, var_latex=f"\\text{{{new_variable}}}")
+        info = field_units.lookup_field(self._data.metadata.prefix, new_variable)
+        return self._data.assign_metadata(var_name=new_variable, display_latex=info.display_latex, unit_latex=info.unit_latex)
 
     def assignment(self, toks: list):
         [new_variable, val] = toks
         new_ds = self._data.data.assign({new_variable: val})
-        return self._data.assign(new_ds, var_name=new_variable, var_latex=f"\\text{{{new_variable}}}")
+        info = field_units.lookup_field(self._data.metadata.prefix, new_variable)
+        return self._data.assign(new_ds, var_name=new_variable, display_latex=info.display_latex, unit_latex=info.unit_latex)
 
     def _resolve_from_registry(self, name: str):
         prefix = self._data.metadata.prefix
