@@ -1,5 +1,5 @@
 from lib.data.data_with_attrs import DataWithAttrs, Field, List
-from lib.dimension import DIM_DEFAULTS
+from lib.plotting import plt_util
 from lib.plotting.animated_field_plot import (
     Animated1dFieldPlot,
     Animated2dFieldPlot,
@@ -23,7 +23,7 @@ def get_plot(data: DataWithAttrs, **plot_kwargs) -> Plot:
             if len(spatial_dims) == 1:
                 PlotType = Animated1dFieldPlot
             elif len(spatial_dims) == 2:
-                if DIM_DEFAULTS[spatial_dims[0]].geometry == "polar:r" and DIM_DEFAULTS[spatial_dims[1]].geometry == "polar:theta":
+                if plt_util.get_dim(spatial_dims[0], data.metadata).geometry == "polar:r" and plt_util.get_dim(spatial_dims[1], data.metadata).geometry == "polar:theta":
                     PlotType = AnimatedPolarFieldPlot
                 else:
                     PlotType = Animated2dFieldPlot

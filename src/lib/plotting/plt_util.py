@@ -60,11 +60,17 @@ def update_title(ax: Axes, metadata: Metadata, cut_labels: list[str]):
     ax.set_title(f"{format_label(metadata)}{cut_labels_str}")
 
 
-def get_axis_label(key: str, metadata: Metadata) -> str:
-    # FIXME transitional: adaptors (Fourier, transforms) don't yet populate metadata.dims
-    # for dims they create; fall back to DIM_DEFAULTS until Tasks 7-9 migrate them.
+def get_dim(key: str, metadata: Metadata):
+    """Look up a Dimension for `key`, preferring metadata.dims and falling back to DIM_DEFAULTS.
+
+    FIXME transitional: adaptors (Fourier, transforms) don't yet populate metadata.dims
+    for dims they create; the DIM_DEFAULTS fallback compensates until Tasks 7-9 migrate
+    them, at which point this should be replaced with a plain `metadata.dims[key]`.
+    """
     if key in metadata.dims:
-        return metadata.dims[key].to_axis_label()
-    if key in DIM_DEFAULTS:
-        return DIM_DEFAULTS[key].to_axis_label()
-    return key
+        return metadata.dims[key]
+    return DIM_DEFAULTS[key]
+
+
+def get_axis_label(key: str, metadata: Metadata) -> str:
+    return get_dim(key, metadata).to_axis_label()

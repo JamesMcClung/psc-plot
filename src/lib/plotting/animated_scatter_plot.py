@@ -4,7 +4,6 @@ from dataclasses import dataclass
 import numpy as np
 
 from lib.data.data_with_attrs import FullList
-from lib.dimension import DIM_DEFAULTS
 from lib.plotting import plt_util
 from lib.plotting.animated_plot import AnimatedPlot
 from lib.plotting.frame_data_traits import (
@@ -76,7 +75,7 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
                 s=0.5,
             )
 
-        plt_util.update_title(self.ax, data.metadata, [DIM_DEFAULTS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if isinstance(pos, float)])
+        plt_util.update_title(self.ax, data.metadata, [plt_util.get_dim(dim, data.metadata).get_coordinate_label(pos) for dim, pos in data.coordss.items() if isinstance(pos, float)])
 
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
 
@@ -93,7 +92,7 @@ class AnimatedScatterPlot(AnimatedPlot[FullList]):
         self.pre_update_fig(update_data)
 
         self.scatter.set_offsets(np.array([df[self.spatial_dims[0]], df[self.dependent_var]]).T)
-        plt_util.update_title(self.ax, data.metadata, [DIM_DEFAULTS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if isinstance(pos, float)])
+        plt_util.update_title(self.ax, data.metadata, [plt_util.get_dim(dim, data.metadata).get_coordinate_label(pos) for dim, pos in data.coordss.items() if isinstance(pos, float)])
 
         if data.metadata.color_dim:
             self.scatter.set_array(df[data.metadata.color_dim])
