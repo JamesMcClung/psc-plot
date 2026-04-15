@@ -7,7 +7,7 @@ from matplotlib.colors import Normalize
 from matplotlib.scale import ScaleBase
 
 from lib.data.data_with_attrs import Metadata
-from lib.dimension import DIMENSIONS
+from lib.dimension import DIM_DEFAULTS
 
 type BuiltinAxisScaleKey = typing.Literal["linear", "log"]
 SCALES: list[BuiltinAxisScaleKey] = list(BuiltinAxisScaleKey.__value__.__args__)
@@ -61,6 +61,6 @@ def update_title(ax: Axes, metadata: Metadata, cut_labels: list[str]):
 
 
 def get_axis_label(var: str) -> str:
-    if var in DIMENSIONS:
-        return DIMENSIONS[var].to_axis_label()
+    if var in DIM_DEFAULTS:
+        return DIM_DEFAULTS[var].to_axis_label()
     return var

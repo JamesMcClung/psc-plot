@@ -5,7 +5,7 @@ import xarray as xr
 
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, List
-from lib.dimension import DIMENSIONS, CartesianToSpherical
+from lib.dimension import DIM_DEFAULTS, CartesianToSpherical
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
@@ -92,11 +92,11 @@ _SPHERICAL_FORMAT = ("dim_1", "dim_2", "dim_3")
 )
 def parse_transform_spherical(args: list[str]) -> TransformSpherical:
     # nargs=3 guarantees len(args) == 3 by this point
-    parse_util.check_value(args[0], "dim_1", DIMENSIONS)
-    parse_util.check_value(args[1], "dim_2", DIMENSIONS)
-    parse_util.check_value(args[2], "dim_3", DIMENSIONS)
+    parse_util.check_value(args[0], "dim_1", DIM_DEFAULTS)
+    parse_util.check_value(args[1], "dim_2", DIM_DEFAULTS)
+    parse_util.check_value(args[2], "dim_3", DIM_DEFAULTS)
 
-    dims = [DIMENSIONS[dim_name] for dim_name in args]
+    dims = [DIM_DEFAULTS[dim_name] for dim_name in args]
 
     try:
         transform = CartesianToSpherical(*dims)

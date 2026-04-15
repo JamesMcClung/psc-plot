@@ -2,7 +2,7 @@ from lib.data.adaptor import MetadataAdaptor
 from lib.data.adaptors.fourier import Fourier
 from lib.data.adaptors.reduce import Reduce
 from lib.data.data_with_attrs import Field, List
-from lib.dimension import DIMENSIONS
+from lib.dimension import DIM_DEFAULTS
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
@@ -25,7 +25,7 @@ class Versus(MetadataAdaptor):
                 continue
 
             # 1b. need to do a Fourier transform
-            dim = DIMENSIONS[dim_name]
+            dim = DIM_DEFAULTS[dim_name]
             f_dim = dim.toggle_fourier()
             if f_dim.key in data.dims:
                 fourier = Fourier(f_dim)

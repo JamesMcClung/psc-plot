@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from lib.data.data_with_attrs import Field
-from lib.dimension import DIMENSIONS
+from lib.dimension import DIM_DEFAULTS
 from lib.plotting import plt_util
 from lib.plotting.frame_data_traits import (
     HasAxes,
@@ -41,7 +41,7 @@ class Static1dFieldPlot(StaticFieldPlot):
 
         [self.line] = self.ax.plot(xdata, ydata, init_data.line_type)
 
-        plt_util.update_title(self.ax, data.metadata, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
+        plt_util.update_title(self.ax, data.metadata, [DIM_DEFAULTS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
         self.ax.set_xlabel(get_axis_label(self.spatial_dims[0]))
         self.ax.set_ylabel(plt_util.format_label(data.metadata))
 

@@ -3,7 +3,7 @@ import xarray as xr
 import xrft
 
 from lib.data.adaptor import BareAdaptor
-from lib.dimension import DIMENSIONS, Dimension
+from lib.dimension import DIM_DEFAULTS, Dimension
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
@@ -59,8 +59,8 @@ FOURIER_FORMAT = "dim_name"
 )
 def parse_fourier(args: list[str]) -> Fourier:
     for dim_name in args:
-        parse_util.check_value(dim_name, "dim_name", DIMENSIONS)
+        parse_util.check_value(dim_name, "dim_name", DIM_DEFAULTS)
 
-    dims = [DIMENSIONS[dim_name] for dim_name in args]
+    dims = [DIM_DEFAULTS[dim_name] for dim_name in args]
 
     return Fourier(dims)

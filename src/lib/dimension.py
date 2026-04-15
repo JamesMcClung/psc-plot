@@ -59,7 +59,7 @@ class Dimension:
         return self.name.starts_with(FOURIER_NAME_PREFIX)
 
     def register(self) -> Self:
-        DIMENSIONS[self.key] = self
+        DIM_DEFAULTS[self.key] = self
         return self
 
 
@@ -126,7 +126,7 @@ class CartesianToSpherical(Transform3D):
         return (x, y, z)
 
 
-DIMENSIONS: dict[str, Dimension] = {}
+DIM_DEFAULTS: dict[str, Dimension] = {}
 
 
 Dimension(Latex("x"), ELECTRON_SKIN_DEPTH, "linear").register()
@@ -142,4 +142,4 @@ Dimension(Latex("\\gamma v_{zx}"), SPEED_OF_LIGHT, "linear", key="pzx").register
 Dimension(Latex("q"), ELEMENTARY_CHARGE, "linear").register()
 
 for dim in ["x", "y", "z"]:
-    DIMENSIONS[dim].toggle_fourier().register()
+    DIM_DEFAULTS[dim].toggle_fourier().register()

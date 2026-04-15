@@ -1,7 +1,7 @@
 import xarray as xr
 
 from lib.data.adaptor import BareAdaptor
-from lib.dimension import DIMENSIONS
+from lib.dimension import DIM_DEFAULTS
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
@@ -33,7 +33,7 @@ def parse(args: list[str]) -> Roll:
     for arg in args:
         [dim_name, window_size_arg] = parse_util.parse_assignment(arg, ROLL_FORMAT)
 
-        parse_util.check_value(dim_name, "dim_name", DIMENSIONS)
+        parse_util.check_value(dim_name, "dim_name", DIM_DEFAULTS)
         window_size = parse_util.parse_number(window_size_arg, "window_size", int)
 
         dim_names_to_window_size[dim_name] = window_size
