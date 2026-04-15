@@ -2,7 +2,7 @@ import numpy as np
 import pscpy
 from xarray import DataArray, Dataset
 
-from lib.data.adaptors.fourier import Fourier
+from lib.data.adaptors.fourier import toggle_fourier
 from lib.data.adaptors.mag import Magnitude
 
 from ..dimension import DIM_DEFAULTS
@@ -64,15 +64,20 @@ def hxz2_cc(hx_fc: DataArray, hz_fc: DataArray) -> DataArray:
     return h["h2x_cc"] + h["h2z_cc"]
 
 
+def _fourier_transform(da: DataArray, dims: list) -> DataArray:
+    for dim in dims:
+        da = toggle_fourier(da, dim)
+    return da
+
+
 @derived_field_variable("pfd")
 def hxzhat2(hx_fc: DataArray, hz_fc: DataArray) -> DataArray:
     dims = [DIM_DEFAULTS[dim] for dim in hx_fc.dims if dim in {"x", "y", "z"} and len(hx_fc.coords[dim]) > 1]
-    fourier = Fourier(dims)
     cut_nyquist = {dim.toggle_fourier().key: slice(1, None) for dim in dims}
     magnitude = Magnitude()
 
-    hx_hat = magnitude.apply_field_bare(fourier.apply_field_bare(hx_fc).isel(cut_nyquist))
-    hz_hat = magnitude.apply_field_bare(fourier.apply_field_bare(hz_fc).isel(cut_nyquist))
+    hx_hat = magnitude.apply_field_bare(_fourier_transform(hx_fc, dims).isel(cut_nyquist))
+    hz_hat = magnitude.apply_field_bare(_fourier_transform(hz_fc, dims).isel(cut_nyquist))
 
     return hx_hat**2 + hz_hat**2
 
@@ -80,13 +85,12 @@ def hxzhat2(hx_fc: DataArray, hz_fc: DataArray) -> DataArray:
 @derived_field_variable("pfd")
 def hhat2(hx_fc: DataArray, hy_fc: DataArray, hz_fc: DataArray) -> DataArray:
     dims = [DIM_DEFAULTS[dim] for dim in hx_fc.dims if dim in {"x", "y", "z"} and len(hx_fc.coords[dim]) > 1]
-    fourier = Fourier(dims)
     cut_nyquist = {dim.toggle_fourier().key: slice(1, None) for dim in dims}
     magnitude = Magnitude()
 
-    hx_hat = magnitude.apply_field_bare(fourier.apply_field_bare(hx_fc).isel(cut_nyquist))
-    hy_hat = magnitude.apply_field_bare(fourier.apply_field_bare(hy_fc).isel(cut_nyquist))
-    hz_hat = magnitude.apply_field_bare(fourier.apply_field_bare(hz_fc).isel(cut_nyquist))
+    hx_hat = magnitude.apply_field_bare(_fourier_transform(hx_fc, dims).isel(cut_nyquist))
+    hy_hat = magnitude.apply_field_bare(_fourier_transform(hy_fc, dims).isel(cut_nyquist))
+    hz_hat = magnitude.apply_field_bare(_fourier_transform(hz_fc, dims).isel(cut_nyquist))
 
     return hx_hat**2 + hy_hat**2 + hz_hat**2
 

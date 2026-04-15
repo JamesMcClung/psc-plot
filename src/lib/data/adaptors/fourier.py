@@ -2,8 +2,9 @@ import numpy as np
 import xarray as xr
 import xrft
 
-from lib.data.adaptor import BareAdaptor
-from lib.dimension import DIM_DEFAULTS, Dimension
+from lib.data.adaptor import MetadataAdaptor
+from lib.data.data_with_attrs import Field
+from lib.dimension import Dimension
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
@@ -26,25 +27,30 @@ def toggle_fourier(da: xr.DataArray, dim: Dimension) -> xr.DataArray:
     return da
 
 
-class Fourier(BareAdaptor):
-    def __init__(self, dims: Dimension | list[Dimension]):
-        if isinstance(dims, Dimension):
-            dims = [dims]
-        self.dims = dims
+class Fourier(MetadataAdaptor):
+    def __init__(self, dim_keys: str | list[str]):
+        if isinstance(dim_keys, str):
+            dim_keys = [dim_keys]
+        self.dim_keys = dim_keys
 
-    def apply_field_bare(self, da: xr.DataArray) -> xr.DataArray:
-        for dim in self.dims:
+    def apply_field(self, data: Field) -> Field:
+        # Capture pre-transform dim latex so the display reflects any upstream --display override.
+        pre_dim_latexs = [data.metadata.dims[key].name.latex for key in self.dim_keys]
+
+        da = data.active_data
+        new_dims = dict(data.metadata.dims)
+        for key in self.dim_keys:
+            dim = new_dims[key]
+            f_dim = dim.toggle_fourier()
             da = toggle_fourier(da, dim)
+            del new_dims[key]
+            new_dims[f_dim.key] = f_dim
 
-        return da
+        new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{data.metadata.display_latex}]"
+        return data.with_active_data(da).assign_metadata(dims=new_dims, display_latex=new_display)
 
     def get_name_fragments(self) -> list[str]:
-        dim_names = ",".join(dim.key for dim in self.dims)
-        return [f"fourier_{dim_names}"]
-
-    def get_modified_display_latex(self, display_latex: str, metadata) -> str:
-        dim_latexs = ",".join(dim.name.latex for dim in self.dims)
-        return f"\\mathcal{{F}}_{{{dim_latexs}}}[{display_latex}]"
+        return [f"fourier_{','.join(self.dim_keys)}"]
 
 
 FOURIER_FORMAT = "dim_name"
@@ -59,8 +65,6 @@ FOURIER_FORMAT = "dim_name"
 )
 def parse_fourier(args: list[str]) -> Fourier:
     for dim_name in args:
-        parse_util.check_value(dim_name, "dim_name", DIM_DEFAULTS)
+        parse_util.check_identifier(dim_name, "dim_name")
 
-    dims = [DIM_DEFAULTS[dim_name] for dim_name in args]
-
-    return Fourier(dims)
+    return Fourier(args)
