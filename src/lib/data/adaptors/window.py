@@ -5,7 +5,6 @@ import xarray as xr
 from scipy.signal import windows
 
 from lib.data.adaptor import BareAdaptor
-from lib.dimension import DIM_DEFAULTS
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
@@ -62,7 +61,7 @@ KAISER_FORMAT = "dim_name=beta"
 def parse_window(arg: str) -> Window:
     [dim_name, beta] = parse_util.parse_assignment(arg, KAISER_FORMAT)
 
-    parse_util.check_value(dim_name, "dim_name", DIM_DEFAULTS)
+    parse_util.check_identifier(dim_name, "dim_name")
     beta = parse_util.parse_number(beta, "beta", float)
 
     return Kaiser(dim_name, beta)
