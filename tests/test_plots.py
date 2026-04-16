@@ -164,6 +164,12 @@ def test_display_override():
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_display_override_dim():
+    """`--display DIM=VALUE` overrides the LaTeX rendering of a dimension's axis label."""
+    return make_plot("pfd hx_fc -v y --display y=\\chi".split())
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_unit_override():
     """`--unit NAME=VALUE` appends a unit bracket to the axis label."""
     return make_plot("pfd hx_fc -v y --unit hx_fc=\\text{test}".split())
