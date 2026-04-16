@@ -175,6 +175,12 @@ def test_unit_override():
     return make_plot("pfd hx_fc -v y --unit hx_fc=\\text{test}".split())
 
 
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_unit_override_dim():
+    """`--unit DIM=VALUE` overrides the unit shown in a dimension's axis label."""
+    return make_plot("pfd hx_fc -v y --unit y=\\text{test}".split())
+
+
 def test_field_units_lookup_covers_test_data():
     """All raw vars present in the test-2d datasets resolve via the registry (no fallback)."""
     from lib.field_units import FIELD_VAR_INFO

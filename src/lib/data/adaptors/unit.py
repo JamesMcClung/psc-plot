@@ -1,42 +1,48 @@
-from lib.data.adaptor import MetadataAdaptor
-from lib.data.data_with_attrs import Field, List, Metadata
+from dataclasses import replace
+
+from lib.data.adaptor import Adaptor
+from lib.data.data_with_attrs import DataWithAttrs
+from lib.latex import Latex
 from lib.parsing.args_registry import arg_parser
 
 
-class Unit(MetadataAdaptor):
-    """Override the unit-LaTeX of the active variable."""
+class Unit(Adaptor):
+    """Override the unit-LaTeX of the active variable or of a dimension."""
 
-    def __init__(self, var_name: str | None, unit_latex: str):
-        self.var_name = var_name
-        self.unit_latex = unit_latex
+    def __init__(self, target: str | None, value: str):
+        self.target = target
+        self.value = value
 
-    def apply_field(self, data: Field) -> Field:
-        return data
+    def apply(self, data: DataWithAttrs) -> DataWithAttrs:
+        metadata = data.metadata
+        name_fragments = metadata.name_fragments + self.get_name_fragments()
 
-    def apply_list(self, data: List) -> List:
-        return data
+        if self.target is None or self.target == metadata.var_name:
+            return data.assign_metadata(name_fragments=name_fragments, unit_latex=self.value)
 
-    def get_modified_unit_latex(self, unit_latex: str, metadata: Metadata) -> str:
-        if self.var_name is None or self.var_name == metadata.var_name:
-            return self.unit_latex
-        return unit_latex
+        if self.target in metadata.dims:
+            old_dim = metadata.dims[self.target]
+            new_dim = replace(old_dim, unit=Latex(self.value))
+            new_dims = {**metadata.dims, self.target: new_dim}
+            return data.assign_metadata(name_fragments=name_fragments, dims=new_dims)
+
+        raise ValueError(f"--unit target {self.target!r} is neither the active variable ({metadata.var_name!r}) nor a known dimension ({sorted(metadata.dims)})")
 
     def get_name_fragments(self) -> list[str]:
-        maybe_eq = "=" if self.var_name else ""
-        return [f"unit_{self.var_name}{maybe_eq}{self.unit_latex}"]
+        return [f"unit_{self.target or 'active'}={self.value}"]
 
 
-_UNIT_FORMAT = "[var_name=]unit_latex"
+_UNIT_FORMAT = "[name=]unit_latex"
 
 
 @arg_parser(
     dest="adaptors",
     flags="--unit",
     metavar=_UNIT_FORMAT,
-    help=("Override the LaTeX used to render the given quantity's unit. If omitted, defaults to the active variable."),
+    help=("Override the LaTeX used to render the given quantity's unit. The name may be the active variable (default) or a dimension name."),
 )
 def parse_unit(arg: str) -> Unit:
     if "=" in arg:
         name, value = arg.split("=", 1)
-        return Unit(var_name=name, unit_latex=value)
-    return Unit(var_name=None, unit_latex=arg)
+        return Unit(target=name, value=value)
+    return Unit(target=None, value=arg)
