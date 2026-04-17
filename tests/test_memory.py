@@ -27,14 +27,14 @@ def _run_pipeline(data_dir: str, chunksize: int, result_queue: mp.Queue) -> None
 
     matplotlib.use("Agg")
 
-    from lib.parsing.args_base import ArgsUntyped
+    from lib.parsing.args import Args
     from lib.parsing.parse import _get_parser
 
     parser = _get_parser()
     args = parser.parse_args(
         "prt --species ion --bin y py=16 -v y py".split(),
-        namespace=ArgsUntyped(),
-    ).to_typed()
+        namespace=Args(),
+    )
     plot = args.get_animation()
     plot._initialize()
 
