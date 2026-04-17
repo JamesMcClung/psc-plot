@@ -16,5 +16,5 @@ class Magnitude(BareAdaptor):
     def get_name_fragments(self) -> list[str]:
         return ["mag"]
 
-    def get_modified_display_latex(self, display_latex: str, metadata) -> str:
-        return f"|{display_latex}|"
+    def get_modified_display_latex(self, metadata) -> str:
+        return f"|{metadata.display_latex}|"

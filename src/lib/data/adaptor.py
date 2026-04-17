@@ -40,18 +40,18 @@ class Adaptor:
 class MetadataAdaptor(Adaptor):
     """Wraps `apply` to perform standard metadata mutations."""
 
-    def get_modified_display_latex(self, display_latex: str, metadata: Metadata) -> str:
-        return display_latex
+    def get_modified_display_latex(self, metadata: Metadata) -> str:
+        return metadata.display_latex
 
-    def get_modified_unit_latex(self, unit_latex: str, metadata: Metadata) -> str:
-        return unit_latex
+    def get_modified_unit_latex(self, metadata: Metadata) -> str:
+        return metadata.unit_latex
 
     def apply(self, data: DataWithAttrs) -> DataWithAttrs:
         data = super().apply(data)
 
         name_fragments = data.metadata.name_fragments + self.get_name_fragments()
-        display_latex = self.get_modified_display_latex(data.metadata.display_latex, data.metadata)
-        unit_latex = self.get_modified_unit_latex(data.metadata.unit_latex, data.metadata)
+        display_latex = self.get_modified_display_latex(data.metadata)
+        unit_latex = self.get_modified_unit_latex(data.metadata)
 
         return data.assign_metadata(
             name_fragments=name_fragments,

@@ -18,9 +18,9 @@ class SpeciesFilter(BareAdaptor):
             df = df[df["q"] > 0]
         return df
 
-    def get_modified_display_latex(self, display_latex: str, metadata) -> str:
+    def get_modified_display_latex(self, metadata) -> str:
         subscript = self.species[0]
-        return f"{{{display_latex}}}_{subscript}"
+        return f"{{{metadata.display_latex}}}_{subscript}"
 
     def get_name_fragments(self) -> list[str]:
         return [self.species]
