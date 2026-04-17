@@ -11,7 +11,7 @@ def _get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="psc-plot")
 
     parser.add_argument("prefix", choices=FIELD_PREFIXES + PARTICLE_PREFIXES, help="data file prefix")
-    parser.add_argument("variable", nargs="?", default=None, help="variable to plot")
+    parser.add_argument("variable", nargs="?", default=None, help="field variable to work with")
     parser.add_argument(
         "-s",
         "--save",
