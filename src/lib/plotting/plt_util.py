@@ -7,7 +7,7 @@ from matplotlib.colors import Normalize
 from matplotlib.scale import ScaleBase
 
 from lib.data.data_with_attrs import Metadata
-from lib.dimension import DIMENSIONS
+from lib.dimension import DIM_DEFAULTS
 
 type BuiltinAxisScaleKey = typing.Literal["linear", "log"]
 SCALES: list[BuiltinAxisScaleKey] = list(BuiltinAxisScaleKey.__value__.__args__)
@@ -60,7 +60,17 @@ def update_title(ax: Axes, metadata: Metadata, cut_labels: list[str]):
     ax.set_title(f"{format_label(metadata)}{cut_labels_str}")
 
 
-def get_axis_label(var: str) -> str:
-    if var in DIMENSIONS:
-        return DIMENSIONS[var].to_axis_label()
-    return var
+def get_dim(key: str, metadata: Metadata):
+    """Look up a Dimension for `key`, preferring metadata.dims and falling back to DIM_DEFAULTS.
+
+    FIXME transitional: adaptors (Fourier, transforms) don't yet populate metadata.dims
+    for dims they create; the DIM_DEFAULTS fallback compensates until Tasks 7-9 migrate
+    them, at which point this should be replaced with a plain `metadata.dims[key]`.
+    """
+    if key in metadata.dims:
+        return metadata.dims[key]
+    return DIM_DEFAULTS[key]
+
+
+def get_axis_label(key: str, metadata: Metadata) -> str:
+    return get_dim(key, metadata).to_axis_label()

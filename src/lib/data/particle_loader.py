@@ -1,4 +1,5 @@
 from lib.data.data_with_attrs import LazyList
+from lib.dimension import get_default_dim
 
 from .. import field_units, file_util, particle_util
 from .source import DataSource
@@ -13,11 +14,13 @@ class ParticleLoader(DataSource):
         df = particle_util.load_df(self.prefix, self.steps)
 
         info = field_units.lookup_particle(self.get_var_name())
+        dims = {key: get_default_dim(key) for key in df.dims}
         return df.assign_metadata(
             name_fragments=self.get_name_fragments(),
             var_name=self.get_var_name(),
             display_latex=info.display_latex,
             unit_latex=info.unit_latex,
+            dims=dims,
         )
 
     def get_file_prefix(self) -> str:

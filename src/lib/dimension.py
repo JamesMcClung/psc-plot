@@ -1,11 +1,7 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 from dataclasses import KW_ONLY, dataclass
-from typing import Literal, Self
-
-import numpy as np
-import numpy.typing as npt
+from typing import Literal
 
 from .latex import Latex
 
@@ -58,88 +54,43 @@ class Dimension:
     def is_fourier(self) -> bool:
         return self.name.starts_with(FOURIER_NAME_PREFIX)
 
-    def register(self) -> Self:
-        DIMENSIONS[self.key] = self
-        return self
-
-
-class Transform2D(ABC):
-    @abstractmethod
-    def apply[T: float | npt.NDArray[np.float64]](self, c1: T, c2: T) -> tuple[T, T]: ...
-
-
-class Transform3D(ABC):
-    @abstractmethod
-    def apply[T: float | npt.NDArray[np.float64]](self, c1: T, c2: T, c3: T) -> tuple[T, T, T]: ...
-
 
 def check_unit_compatability(dim_1: Dimension, dim_2: Dimension, dest_geometry: str):
     if dim_1.unit != dim_2.unit:
         raise ValueError(f"Dimensions {dim_1.name} and {dim_2.name} have incompatible units for transforming to {dest_geometry} coordinates ({dim_1.unit} and {dim_2.unit})")
 
 
-class CartesianToPolar(Transform2D):
-    def __init__(self, dim_x: Dimension, dim_y: Dimension):
-        check_unit_compatability(dim_x, dim_y, "polar")
-
-        self.dim_x = dim_x
-        self.dim_y = dim_y
-        r_symbol = "k" if dim_x.is_fourier() else "r"
-        self.dim_r = Dimension(Latex(f"{r_symbol}_\\text{{polar}}"), dim_x.unit, "polar:r", key=f"{r_symbol}_p").register()
-        self.dim_theta = Dimension(Latex("\\theta"), RADIAN, "polar:theta").register()
-
-    def apply[T: float | npt.NDArray[np.float64]](self, x: T, y: T) -> tuple[T, T]:
-        r = (x**2 + y**2) ** 0.5
-        theta = np.arctan2(y, x)
-        return (r, theta)
-
-    def inverse[T: float | npt.NDArray[np.float64]](self, r: T, theta: T) -> tuple[T, T]:
-        x = r * np.cos(theta)
-        y = r * np.sin(theta)
-        return (x, y)
+DIM_DEFAULTS: dict[str, Dimension] = {}
 
 
-class CartesianToSpherical(Transform3D):
-    def __init__(self, dim_x: Dimension, dim_y: Dimension, dim_z: Dimension):
-        check_unit_compatability(dim_x, dim_y, "spherical")
-        check_unit_compatability(dim_x, dim_z, "spherical")
-
-        self.dim_x = dim_x
-        self.dim_y = dim_y
-        self.dim_z = dim_z
-        r_symbol = "k" if dim_x.is_fourier() else "r"
-        self.dim_r = Dimension(Latex(f"{r_symbol}_\\text{{spherical}}"), dim_x.unit, "spherical:r", key=f"{r_symbol}_s").register()
-        self.dim_theta = Dimension(Latex("\\theta"), RADIAN, "spherical:theta").register()
-        self.dim_phi = Dimension(Latex("\\phi"), RADIAN, "spherical:phi").register()
-
-    def apply[T: float | npt.NDArray[np.float64]](self, x: T, y: T, z: T) -> tuple[T, T, T]:
-        rho2 = x**2 + y**2
-        r = (rho2 + z**2) ** 0.5
-        theta = np.arctan2(rho2**0.5, z)
-        phi = np.arctan2(y, x)
-        return (r, theta, phi)
-
-    def inverse[T: float | npt.NDArray[np.float64]](self, r: T, theta: T, phi: T) -> tuple[T, T, T]:
-        x = r * np.sin(theta) * np.cos(phi)
-        y = r * np.sin(theta) * np.sin(phi)
-        z = r * np.cos(theta)
-        return (x, y, z)
+def _register_default(dim: Dimension) -> None:
+    DIM_DEFAULTS[dim.key] = dim
 
 
-DIMENSIONS: dict[str, Dimension] = {}
+_register_default(Dimension(Latex("x"), ELECTRON_SKIN_DEPTH, "linear"))
+_register_default(Dimension(Latex("y"), ELECTRON_SKIN_DEPTH, "linear"))
+_register_default(Dimension(Latex("z"), ELECTRON_SKIN_DEPTH, "linear"))
+_register_default(Dimension(Latex("t"), INVERSE_ELECTRON_PLASMA_FREQUENCY, "linear"))
+_register_default(Dimension(Latex("\\gamma v_x"), SPEED_OF_LIGHT, "linear", key="px"))
+_register_default(Dimension(Latex("\\gamma v_y"), SPEED_OF_LIGHT, "linear", key="py"))
+_register_default(Dimension(Latex("\\gamma v_z"), SPEED_OF_LIGHT, "linear", key="pz"))
+_register_default(Dimension(Latex("\\gamma v_{xy}"), SPEED_OF_LIGHT, "linear", key="pxy"))
+_register_default(Dimension(Latex("\\gamma v_{yz}"), SPEED_OF_LIGHT, "linear", key="pyz"))
+_register_default(Dimension(Latex("\\gamma v_{zx}"), SPEED_OF_LIGHT, "linear", key="pzx"))
+_register_default(Dimension(Latex("q"), ELEMENTARY_CHARGE, "linear"))
 
 
-Dimension(Latex("x"), ELECTRON_SKIN_DEPTH, "linear").register()
-Dimension(Latex("y"), ELECTRON_SKIN_DEPTH, "linear").register()
-Dimension(Latex("z"), ELECTRON_SKIN_DEPTH, "linear").register()
-Dimension(Latex("t"), INVERSE_ELECTRON_PLASMA_FREQUENCY, "linear").register()
-Dimension(Latex("\\gamma v_x"), SPEED_OF_LIGHT, "linear", key="px").register()
-Dimension(Latex("\\gamma v_y"), SPEED_OF_LIGHT, "linear", key="py").register()
-Dimension(Latex("\\gamma v_z"), SPEED_OF_LIGHT, "linear", key="pz").register()
-Dimension(Latex("\\gamma v_{xy}"), SPEED_OF_LIGHT, "linear", key="pxy").register()
-Dimension(Latex("\\gamma v_{yz}"), SPEED_OF_LIGHT, "linear", key="pyz").register()
-Dimension(Latex("\\gamma v_{zx}"), SPEED_OF_LIGHT, "linear", key="pzx").register()
-Dimension(Latex("q"), ELEMENTARY_CHARGE, "linear").register()
+def get_default_dim(key: str) -> Dimension:
+    """Return the registered default `Dimension` for `key`, or a minimal fallback if unknown.
 
-for dim in ["x", "y", "z"]:
-    DIMENSIONS[dim].toggle_fourier().register()
+    If `key` looks like a Fourier-space key (prefix ``k_``) whose base is registered,
+    return the Fourier toggle of the base dim so Fourier-space coords loaded directly
+    from data inherit the correct unit/geometry.
+    """
+    if key in DIM_DEFAULTS:
+        return DIM_DEFAULTS[key]
+    if key.startswith(FOURIER_NAME_PREFIX):
+        base_key = key[len(FOURIER_NAME_PREFIX):]
+        if base_key in DIM_DEFAULTS:
+            return DIM_DEFAULTS[base_key].toggle_fourier()
+    return Dimension(Latex(key), Latex(""), "linear", key=key)

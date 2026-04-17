@@ -7,7 +7,6 @@ import xarray as xr
 
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, FieldMetadata, List
-from lib.dimension import DIMENSIONS
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
@@ -34,9 +33,9 @@ def _guess_bin_edgess(data: List, varname_to_nbins: dict[str, int | None]) -> li
                 varname_to_edges[varname] = np.concat((coords, [np.inf]))
             else:
                 varname_to_edges[varname] = np.linspace(coords[0], coords[-1] + coords[1] - coords[0], nbins + 1, endpoint=True)
-        elif varname in DIMENSIONS and (DIMENSIONS[varname].geometry == "polar:theta" or DIMENSIONS[varname].geometry == "spherical:phi"):
+        elif varname in data.metadata.dims and (data.metadata.dims[varname].geometry == "polar:theta" or data.metadata.dims[varname].geometry == "spherical:phi"):
             varname_to_edges[varname] = np.linspace(-np.pi, np.pi, nbins + 1, endpoint=True)
-        elif varname in DIMENSIONS and DIMENSIONS[varname].geometry == "spherical:theta":
+        elif varname in data.metadata.dims and data.metadata.dims[varname].geometry == "spherical:theta":
             varname_to_edges[varname] = np.linspace(0.0, np.pi, nbins + 1, endpoint=True)
         else:
             compute_varnames.append(varname)

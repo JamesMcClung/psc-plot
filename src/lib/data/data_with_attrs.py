@@ -11,6 +11,8 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from lib.dimension import Dimension
+
 
 @dataclass(kw_only=True, frozen=True)
 class Metadata:
@@ -22,6 +24,8 @@ class Metadata:
     spatial_dims: list[str] = field(default_factory=list)
     time_dim: str | None = None
     color_dim: str | None = None
+
+    dims: dict[str, Dimension] = field(default_factory=dict)
 
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)

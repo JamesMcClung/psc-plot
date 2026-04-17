@@ -1,7 +1,6 @@
 import xarray as xr
 
 from lib.data.adaptor import BareAdaptor
-from lib.dimension import DIMENSIONS
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
@@ -34,7 +33,7 @@ def parse(args: list[str]) -> Downsample:
     for arg in args:
         [dim_name, bin_size_arg] = parse_util.parse_assignment(arg, DOWNSAMPLE_FORMAT)
 
-        parse_util.check_value(dim_name, "dim_name", DIMENSIONS)
+        parse_util.check_identifier(dim_name, "dim_name")
         bin_size = parse_util.parse_number(bin_size_arg, BIN_SIZE, int)
 
         dim_names_to_bin_size[dim_name] = bin_size

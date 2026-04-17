@@ -38,8 +38,8 @@ class MathOp(BareAdaptor):
     def get_name_fragments(self) -> list[str]:
         return [f"{self.name_abbrev}_{self.rhs}"]
 
-    def get_modified_display_latex(self, display_latex: str, metadata) -> str:
-        return f"({display_latex}){self.symbol}{{{float_to_latex_str(self.rhs)}}}"
+    def get_modified_display_latex(self, metadata) -> str:
+        return f"({metadata.display_latex}){self.symbol}{{{float_to_latex_str(self.rhs)}}}"
 
 
 op_params = [

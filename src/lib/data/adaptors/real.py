@@ -17,5 +17,5 @@ class Real(BareAdaptor):
     def get_name_fragments(self) -> list[str]:
         return ["real"]
 
-    def get_modified_display_latex(self, display_latex: str, metadata) -> str:
-        return f"\\text{{Re}}[{display_latex}]"
+    def get_modified_display_latex(self, metadata) -> str:
+        return f"\\text{{Re}}[{metadata.display_latex}]"

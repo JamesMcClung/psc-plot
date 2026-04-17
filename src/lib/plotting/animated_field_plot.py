@@ -8,7 +8,6 @@ import xarray as xr
 from matplotlib.projections.polar import PolarAxes
 
 from lib.data.data_with_attrs import Field
-from lib.dimension import DIMENSIONS
 from lib.plotting import plt_util
 from lib.plotting.animated_plot import AnimatedPlot
 from lib.plotting.frame_data_traits import (
@@ -70,11 +69,11 @@ class Animated2dFieldPlot(AnimatedFieldPlot):
         data_lower, data_upper = self._get_var_bounds()
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
-        plt_util.update_title(self.ax, data.metadata, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
+        plt_util.update_title(self.ax, data.metadata, [plt_util.get_dim(dim, data.metadata).get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
 
         self.ax.set_aspect(1 / self.ax.get_data_ratio())
-        self.ax.set_xlabel(get_axis_label(self.spatial_dims[0]))
-        self.ax.set_ylabel(get_axis_label(self.spatial_dims[1]))
+        self.ax.set_xlabel(get_axis_label(self.spatial_dims[0], data.metadata))
+        self.ax.set_ylabel(get_axis_label(self.spatial_dims[1], data.metadata))
 
         self.post_init_fig(init_data)
         self.fig.tight_layout()
@@ -87,7 +86,7 @@ class Animated2dFieldPlot(AnimatedFieldPlot):
 
         self.im.set_data(data.active_data)
 
-        plt_util.update_title(self.ax, data.metadata, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
+        plt_util.update_title(self.ax, data.metadata, [plt_util.get_dim(dim, data.metadata).get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
 
         self.post_update_fig(update_data)
         return [self.im, self.ax.title]
@@ -150,11 +149,11 @@ class AnimatedPolarFieldPlot(AnimatedFieldPlot):
         data_lower, data_upper = self._get_var_bounds()
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
-        plt_util.update_title(self.ax, data.metadata, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
+        plt_util.update_title(self.ax, data.metadata, [plt_util.get_dim(dim, data.metadata).get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
 
         # FIXME make the labels work
-        # self.ax.set_xlabel(get_axis_label([self.dims[1]]))
-        # self.ax.set_ylabel(get_axis_label([self.dims[0]]))
+        # self.ax.set_xlabel(get_axis_label(self.dims[1], data.metadata))
+        # self.ax.set_ylabel(get_axis_label(self.dims[0], data.metadata))
 
         self.post_init_fig(init_data)
         self.fig.tight_layout()
@@ -167,7 +166,7 @@ class AnimatedPolarFieldPlot(AnimatedFieldPlot):
 
         self.im.set_array(data.active_data)
 
-        plt_util.update_title(self.ax, data.metadata, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
+        plt_util.update_title(self.ax, data.metadata, [plt_util.get_dim(dim, data.metadata).get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
 
         self.post_update_fig(update_data)
         return [self.im, self.ax.title]
@@ -197,8 +196,8 @@ class Animated1dFieldPlot(AnimatedFieldPlot):
 
         [self.line] = self.ax.plot(xdata, ydata, init_data.line_type)
 
-        plt_util.update_title(self.ax, data.metadata, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
-        self.ax.set_xlabel(get_axis_label(self.spatial_dims[0]))
+        plt_util.update_title(self.ax, data.metadata, [plt_util.get_dim(dim, data.metadata).get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
+        self.ax.set_xlabel(get_axis_label(self.spatial_dims[0], data.metadata))
         self.ax.set_ylabel(plt_util.format_label(data.metadata))
 
         self.ax.set_xscale(init_data.spatial_scales[0])
@@ -220,7 +219,7 @@ class Animated1dFieldPlot(AnimatedFieldPlot):
 
         self.line.set_ydata(ydata)
 
-        plt_util.update_title(self.ax, data.metadata, [DIMENSIONS[dim].get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
+        plt_util.update_title(self.ax, data.metadata, [plt_util.get_dim(dim, data.metadata).get_coordinate_label(pos) for dim, pos in data.coordss.items() if pos.shape == ()])
 
         self.post_update_fig(update_data)
 

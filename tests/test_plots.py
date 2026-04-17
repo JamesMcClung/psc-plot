@@ -61,6 +61,12 @@ def test_animated_1d_rolling():
     return make_plot("pfd hx_fc --roll y=3 -v y".split())
 
 
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_static_2d_spectogram():
+    """Spectrogram of wavenumber vs. time. Note time=x (with x having length 1) is a hack, since static 2d plots aren't yet supported."""
+    return make_plot("pfd ey_ec -f y --mag --pow 2 --pos k_y=0: -v t k_y time=x --nan0 --scale log".split())
+
+
 # --- Turbulence power spectrum ---
 
 
@@ -164,9 +170,21 @@ def test_display_override():
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_display_override_dim():
+    """`--display DIM=VALUE` overrides the LaTeX rendering of a dimension's axis label."""
+    return make_plot("pfd hx_fc -v y --display y=\\chi".split())
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_unit_override():
     """`--unit NAME=VALUE` appends a unit bracket to the axis label."""
     return make_plot("pfd hx_fc -v y --unit hx_fc=\\text{test}".split())
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_unit_override_dim():
+    """`--unit DIM=VALUE` overrides the unit shown in a dimension's axis label."""
+    return make_plot("pfd hx_fc -v y --unit y=\\text{test}".split())
 
 
 def test_field_units_lookup_covers_test_data():

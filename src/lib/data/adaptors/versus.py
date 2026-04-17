@@ -2,7 +2,6 @@ from lib.data.adaptor import MetadataAdaptor
 from lib.data.adaptors.fourier import Fourier
 from lib.data.adaptors.reduce import Reduce
 from lib.data.data_with_attrs import Field, List
-from lib.dimension import DIMENSIONS
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
@@ -25,10 +24,15 @@ class Versus(MetadataAdaptor):
                 continue
 
             # 1b. need to do a Fourier transform
-            dim = DIMENSIONS[dim_name]
+            dim = data.metadata.dims[dim_name]
             f_dim = dim.toggle_fourier()
             if f_dim.key in data.dims:
-                fourier = Fourier(f_dim)
+                # Ensure metadata knows about the Fourier-space dim before the adaptor looks it up.
+                # (The loader may have synthesized a minimal "linear" dim for f_dim.key via
+                # get_default_dim; overwriting it here with the correct toggled dim is required
+                # for Fourier.apply_field to do the right thing.)
+                data = data.assign_metadata(dims={**data.metadata.dims, f_dim.key: f_dim})
+                fourier = Fourier(f_dim.key)
                 data = fourier.apply(data)
                 continue
 
