@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 
 from lib import parsing
 from lib.config import CONFIG
+from lib.plotting.animated_plot import AnimatedPlot
 
 
 def _resolve_save_ext(args) -> str | None:
@@ -38,13 +39,14 @@ def main():
     args = parsing.get_parsed_args()
     save_ext = _resolve_save_ext(args)
 
-    if save_ext == ".mp4" and CONFIG.ffmpeg_bin:
+    if save_ext == ".mp4":
         plt.rcParams["animation.ffmpeg_path"] = str(CONFIG.ffmpeg_bin)
 
-    anim = args.get_animation()
+    plot = args.get_animation()
 
     if args.show:
-        anim.show()
+        plot.show()
     if args.save is not None:
         args.save.mkdir(exist_ok=True)
-        anim.save(args.save, ext=save_ext)
+        ext = save_ext if isinstance(plot, AnimatedPlot) else None
+        plot.save(args.save, ext=ext)
