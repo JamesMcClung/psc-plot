@@ -17,10 +17,10 @@ pip install -e .
 Then invoke as:
 
 ```sh
-psc-plot <prefix> <variable> [options]
+psc-plot <prefix> [variable] [options]
 ```
 
-Or directly via `py src/main.py <prefix> <variable> [options]` (backward-compatible).
+Or directly via `py src/main.py <prefix> [variable] [options]` (backward-compatible).
 
 Where `<prefix>` selects the data source: field prefixes (`pfd`, `pfd_moments`, `gauss`, `continuity`) or particle prefixes (`prt`). Examples live in `plots/check.sh` and `plots/check2.sh` and serve as the de-facto smoke tests / usage reference.
 
@@ -76,15 +76,15 @@ The code lives under `src/lib/` and is organized around three concepts: **source
 
 ### Data flow
 
-1. `parsing.get_parsed_args()` (`src/lib/parsing/parse.py`) builds an argparse parser with one subparser per file prefix, each populated with the same shared set of optional arguments. The parsed namespace is converted to a typed `FieldArgs` or particle-equivalent (`args_base.ArgsUntyped.to_typed`).
-2. The typed args' `get_animation()` constructs a `FieldLoader`/particle loader (a `DataSource`), then calls `compile_source` (`src/lib/data/compile.py`) to wrap it in a `DataSourceWithPipeline` made of the user-supplied `Adaptor` list. If no `Versus` adaptor is present, a default one is appended (`y,z` vs `t`) — this is what selects axes and time dim.
+1. `parsing.get_parsed_args()` (`src/lib/parsing/parse.py`) builds a flat argparse parser with positional `prefix` (choices-constrained to known prefixes) and optional `variable`, plus all registered adaptor/hook flags. Returns an `Args` namespace (`src/lib/parsing/args.py`) directly.
+2. `args.get_animation()` checks whether `prefix` is a field or particle prefix and constructs the corresponding loader (`FieldLoader` or `ParticleLoader`). It then calls `compile_source` (`src/lib/data/compile.py`) to wrap it in a `DataSourceWithPipeline` made of the user-supplied `Adaptor` list. If no `Versus` adaptor is present, a default one is appended (`y,z` vs `t`) — this is what selects axes and time dim.
 3. `source.get_data()` loads raw data and runs the pipeline, returning a `DataWithAttrs` (a `Field` wrapping `xr.Dataset`, or a `List` wrapping `pd.DataFrame` / `dd.DataFrame`).
 4. `get_plot(data)` (`src/lib/plotting/get_plot.py`) dispatches on `data` type and `metadata.spatial_dims`/`time_dim` to choose a concrete `Plot` subclass (static/animated, 1D/2D, polar, scatter).
 5. Hooks (`src/lib/plotting/hooks/`) such as `--scale log`, `--grid`, `--vline`, `--fit` are appended onto the chosen plot before `show()`/`save()`.
 
 ### Auto-registration of adaptors and hooks
 
-`src/lib/__init__.py` imports `lib.data.adaptors` and `lib.plotting.hooks`, whose `__init__.py` files glob and `importlib.import_module` every sibling `*.py`. Each module in those directories is responsible for registering itself with argparse via the `@arg_parser(...)` / `@const_arg(...)` decorators in `src/lib/parsing/args_registry.py`, which append to the module-level `CUSTOM_ARGS` list. `field_args.add_field_subparsers` then iterates `CUSTOM_ARGS` and adds them to every prefix's parser.
+`src/lib/__init__.py` imports `lib.data.adaptors` and `lib.plotting.hooks`, whose `__init__.py` files glob and `importlib.import_module` every sibling `*.py`. Each module in those directories is responsible for registering itself with argparse via the `@arg_parser(...)` / `@const_arg(...)` decorators in `src/lib/parsing/args_registry.py`, which append to the module-level `CUSTOM_ARGS` list. `parse._get_parser()` then iterates `CUSTOM_ARGS` and adds them to the parser.
 
 **Consequence:** to add a new adaptor or hook, drop a new file into `src/lib/data/adaptors/` (or `src/lib/plotting/hooks/`) and decorate its parse function — no central registry edit needed. Conversely, an adaptor that fails to register (e.g. import error in that file) will silently disappear from the CLI; suspect the auto-import if a flag goes missing.
 
