@@ -33,8 +33,10 @@ class Plot[Data: DataWithAttrs](ABC):
     @abstractmethod
     def _get_save_ext(self) -> str: ...
 
-    def save(self, dir: Path):
-        name = "-".join(self.data.metadata.name_fragments) + self._get_save_ext()
+    def save(self, dir: Path, ext: str | None = None):
+        if ext is None:
+            ext = self._get_save_ext()
+        name = "-".join(self.data.metadata.name_fragments) + ext
         path = dir / name
         self._save_to_path(path)
         print(f"wrote to {path}")

@@ -5,7 +5,7 @@ from abc import abstractmethod
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
+from matplotlib.animation import FFMpegWriter, FuncAnimation, PillowWriter
 
 from lib.data.adaptors.idx import Idx
 from lib.data.data_with_attrs import DataWithAttrs
@@ -64,4 +64,5 @@ class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
 
     def _save_to_path(self, path: Path):
         self._initialize()
-        self.anim.save(path)
+        writer = PillowWriter() if path.suffix == ".gif" else FFMpegWriter()
+        self.anim.save(path, writer=writer)
