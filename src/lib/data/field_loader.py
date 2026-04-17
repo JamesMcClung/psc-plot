@@ -11,7 +11,7 @@ from .source import DataSource
 
 
 class FieldLoader(DataSource):
-    def __init__(self, prefix: file_util.FieldPrefix, var_name: str, steps: list[int]):
+    def __init__(self, prefix: file_util.FieldPrefix, var_name: str | None, steps: list[int]):
         self.prefix = prefix
         self.var_name = var_name
         self.steps = steps
@@ -24,14 +24,19 @@ class FieldLoader(DataSource):
             concat_dim="t",
             preprocess=lambda ds: pscpy.decode_psc(ds, ["e", "i"]),
         )
-        derive_field_variable(ds, self.var_name, self.prefix)
-
-        info = field_units.lookup_field(self.prefix, self.var_name)
+        if self.var_name is not None:
+            derive_field_variable(ds, self.var_name, self.prefix)
+            info = field_units.lookup_field(self.prefix, self.var_name)
+            display_latex = info.display_latex
+            unit_latex = info.unit_latex
+        else:
+            display_latex = None
+            unit_latex = None
         dims = {key: get_default_dim(key) for key in ds.coords.keys()}
         metadata = FieldMetadata(
             var_name=self.get_var_name(),
-            display_latex=info.display_latex,
-            unit_latex=info.unit_latex,
+            display_latex=display_latex,
+            unit_latex=unit_latex,
             name_fragments=self.get_name_fragments(),
             prefix=self.prefix,
             dims=dims,
@@ -41,8 +46,11 @@ class FieldLoader(DataSource):
     def get_file_prefix(self) -> str:
         return self.prefix
 
-    def get_var_name(self) -> str:
+    def get_var_name(self) -> str | None:
         return self.var_name
 
     def get_name_fragments(self) -> list[str]:
-        return [self.prefix, self.var_name]
+        fragments = [self.prefix]
+        if self.var_name is not None:
+            fragments.append(self.var_name)
+        return fragments

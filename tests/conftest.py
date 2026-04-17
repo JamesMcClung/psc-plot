@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import pytest
 
 from lib.config import CONFIG
-from lib.parsing.args_base import ArgsUntyped
+from lib.parsing.args import Args
 from lib.parsing.parse import _get_parser
 
 
@@ -27,7 +27,7 @@ def make_plot(args_list: list[str], data_dir: str | None = None):
 
     try:
         parser = _get_parser()
-        args = parser.parse_args(args_list, namespace=ArgsUntyped()).to_typed()
+        args = parser.parse_args(args_list, namespace=Args())
         plot = args.get_animation()
         plot._initialize()
         return plot.fig

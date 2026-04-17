@@ -15,7 +15,7 @@ class DataSource:
         """The prefix of the data files that ultimately source the fields, e.g. 'pfd'"""
 
     @abstractmethod
-    def get_var_name(self) -> str:
+    def get_var_name(self) -> str | None:
         """The plain-text name of the original, dependent variable"""
 
     @abstractmethod
@@ -36,7 +36,7 @@ class DataSourceWithPipeline(DataSource):
     def get_file_prefix(self) -> str:
         return self.source.get_file_prefix()
 
-    def get_var_name(self) -> str:
+    def get_var_name(self) -> str | None:
         return self.source.get_var_name()
 
     def get_name_fragments(self) -> list[str]:
