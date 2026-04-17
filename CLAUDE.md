@@ -32,6 +32,7 @@ Required environment (see `src/lib/config.py`):
 - `PSC_PLOT_DATA_DIR` — directory containing the data files (must be set; `set_data_dir.sh <dir>` is a convenience script that exports it)
 - `PSC_PLOT_FFMPEG_BIN` — optional, falls back to `which ffmpeg`; needed for saving animations
 - `PSC_PLOT_DASK_NUM_WORKERS` — optional, defaults to 1
+- `PSC_PLOT_DASK_CHUNK_SIZE` — optional, rows per dask partition for particle loads (default 1_000_000); reduce to bound peak memory on large files                         
 
 `PSC_PLOT_DATA_DIR` is read at module-import time (`CONFIG = PscPlotConfig._load()` in `src/lib/config.py`), so it must be set in the environment before any `lib.*` import. In tests, `tests/conftest.py` sets it before importing `lib`.
 

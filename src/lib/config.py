@@ -8,6 +8,7 @@ from typing import Callable, Self
 _DATA_DIR_KEY = "PSC_PLOT_DATA_DIR"
 _FFMPEG_BIN_KEY = "PSC_PLOT_FFMPEG_BIN"
 _DASK_NUM_WORKERS_KEY = "PSC_PLOT_DASK_NUM_WORKERS"
+_DASK_CHUNK_SIZE_KEY = "PSC_PLOT_DASK_CHUNK_SIZE"
 
 
 def parse_optional[T](s: str | None, parser: Callable[[str], T]) -> T | None:
@@ -21,6 +22,7 @@ class PscPlotConfig:
     data_dir: Path
     ffmpeg_bin: Path | None
     dask_num_workers: int
+    dask_chunk_size: int
 
     @classmethod
     def _load(cls) -> Self:
@@ -40,7 +42,11 @@ class PscPlotConfig:
             message = f"Number of dask workers not specified; defaulting to {dask_num_workers}. Set {_DASK_NUM_WORKERS_KEY} to specify."
             warnings.warn(message)
 
-        return cls(data_dir, ffmpeg_bin, dask_num_workers)
+        dask_chunk_size = parse_optional(os.environ.get(_DASK_CHUNK_SIZE_KEY), int)
+        if not dask_chunk_size:
+            dask_chunk_size = 1_000_000
+
+        return cls(data_dir, ffmpeg_bin, dask_num_workers, dask_chunk_size)
 
 
 CONFIG = PscPlotConfig._load()
