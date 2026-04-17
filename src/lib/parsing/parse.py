@@ -1,21 +1,36 @@
 import argparse
+from pathlib import Path
 
-from . import args_base, field_args, particle_args
+from lib.parsing.args import Args
+from lib.parsing.args_registry import CUSTOM_ARGS
 
-__all__ = ["get_parsed_args"]
+from ..file_util import FIELD_PREFIXES, PARTICLE_PREFIXES
 
 
 def _get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="psc-plot")
-    subparsers = args_base.add_subparsers(parser)
 
-    field_args.add_field_subparsers(subparsers)
-    particle_args.add_particle_subparsers(subparsers)
+    parser.add_argument("prefix", choices=FIELD_PREFIXES + PARTICLE_PREFIXES, help="data file prefix")
+    parser.add_argument("variable", nargs="?", default=None, help="variable to plot")
+    parser.add_argument(
+        "-s",
+        "--save",
+        action="store",
+        metavar="dir",
+        nargs="?",
+        default=None,
+        const=".",
+        help="save the figure (to the given dir, if present)",
+        type=Path,
+    )
+    parser.add_argument("-q", "--quiet", action="store_false", dest="show", help="don't show the figure")
+
+    for custom_arg in CUSTOM_ARGS:
+        custom_arg.add_to(parser)
 
     return parser
 
 
-def get_parsed_args() -> args_base.ArgsTyped:
+def get_parsed_args() -> Args:
     parser = _get_parser()
-    args = parser.parse_args(namespace=args_base.ArgsUntyped()).to_typed()
-    return args
+    return parser.parse_args(namespace=Args())
