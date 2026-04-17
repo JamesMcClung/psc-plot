@@ -1,5 +1,5 @@
 import pytest
-from conftest import make_plot
+from conftest import make_plot, make_save
 
 MPL_KWARGS = dict(tolerance=2, savefig_kwarg={"dpi": 100}, style="default")
 
@@ -203,3 +203,22 @@ def test_field_units_lookup_covers_test_data():
         assert ("pfd_moments", v) in FIELD_VAR_INFO, v
     for v in expected_gauss:
         assert ("gauss", v) in FIELD_VAR_INFO, v
+
+
+def test_save_static_png(tmp_path):
+    """Saving a static plot produces a .png file."""
+    path = make_save("pfd hx_fc -i t=-1 -v y time=".split(), tmp_path, ".png")
+    assert path.exists()
+    assert path.suffix == ".png"
+
+
+def test_save_animated_gif(tmp_path):
+    """Saving an animated plot as gif produces a file with the correct number of frames."""
+    from PIL import Image
+
+    path = make_save("pfd hx_fc -v y".split(), tmp_path, ".gif")
+    assert path.exists()
+    assert path.suffix == ".gif"
+
+    with Image.open(path) as img:
+        assert img.n_frames == 11

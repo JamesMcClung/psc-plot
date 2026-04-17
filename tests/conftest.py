@@ -36,6 +36,27 @@ def make_plot(args_list: list[str], data_dir: str | None = None):
             CONFIG.data_dir = original_dir
 
 
+def make_save(args_list: list[str], save_dir: Path, ext: str, data_dir: str | None = None):
+    """Parse CLI args, run the full pipeline, and save to save_dir. Returns the output file path."""
+    if data_dir is not None:
+        original_dir = CONFIG.data_dir
+        CONFIG.data_dir = _DATA_DIR / data_dir
+
+    try:
+        parser = _get_parser()
+        args = parser.parse_args(args_list, namespace=Args())
+        plot = args.get_animation()
+        plot._initialize()
+        save_dir.mkdir(exist_ok=True)
+        plot.save(save_dir, ext=ext)
+
+        name = "-".join(plot.data.metadata.name_fragments) + ext
+        return save_dir / name
+    finally:
+        if data_dir is not None:
+            CONFIG.data_dir = original_dir
+
+
 @pytest.fixture(autouse=True)
 def _close_figures():
     yield
