@@ -74,3 +74,14 @@ def get_dim(key: str, metadata: Metadata):
 
 def get_axis_label(key: str, metadata: Metadata) -> str:
     return get_dim(key, metadata).to_axis_label()
+
+
+def get_var_bounds(data: "Field") -> tuple[float, float]:
+    from lib.data.data_with_attrs import Field as FieldType
+    import dask
+    import numpy as np
+    active = data.active_data
+    if hasattr(active, "data") and hasattr(active.data, "dask"):
+        return dask.compute(np.min(active), np.max(active))
+    bounds = np.nanquantile(active, [0, 1])
+    return (float(bounds[0]), float(bounds[1]))
