@@ -1,39 +1,41 @@
 from lib.data.data_with_attrs import DataWithAttrs, Field, List
 from lib.plotting import plt_util
-from lib.plotting.animated_field_plot import (
-    Animated1dFieldPlot,
-    Animated2dFieldPlot,
-    AnimatedPolarFieldPlot,
-)
-from lib.plotting.animated_scatter_plot import AnimatedScatterPlot
+from lib.plotting.animated_plot import AnimatedPlot
 from lib.plotting.plot import Plot
-from lib.plotting.static_field_plot import Static1dFieldPlot
+from lib.plotting.renderer import Renderer
+from lib.plotting.renderers.field_1d import Field1dRenderer
+from lib.plotting.renderers.field_2d import Field2dRenderer
+from lib.plotting.renderers.polar_field import PolarFieldRenderer
+from lib.plotting.renderers.scatter import ScatterRenderer
+from lib.plotting.static_plot import StaticPlot
 
 
-def get_plot(data: DataWithAttrs, **plot_kwargs) -> Plot:
+def _get_renderer(data: DataWithAttrs) -> Renderer:
     spatial_dims = data.metadata.spatial_dims
 
-    if not data.metadata.time_dim:
-        if isinstance(data, Field) and len(spatial_dims) == 1:
-            PlotType = Static1dFieldPlot
+    if isinstance(data, Field):
+        if len(spatial_dims) == 1:
+            return Field1dRenderer()
+        elif len(spatial_dims) == 2:
+            if plt_util.get_dim(spatial_dims[0], data.metadata).geometry == "polar:r" and plt_util.get_dim(spatial_dims[1], data.metadata).geometry == "polar:theta":
+                return PolarFieldRenderer()
+            return Field2dRenderer()
         else:
-            raise Exception("non-animated 2d/scatter plots not supported yet")
+            raise NotImplementedError("don't have 3D field plots yet")
+
+    elif isinstance(data, List):
+        if len(spatial_dims) == 1:
+            return ScatterRenderer()
+        else:
+            raise NotImplementedError("don't have 2D or 3D scatter plots yet")
+
+    raise TypeError(f"unexpected data type: {type(data)}")
+
+
+def get_plot(data: DataWithAttrs) -> Plot:
+    renderer = _get_renderer(data)
+
+    if data.metadata.time_dim:
+        return AnimatedPlot(renderer, data)
     else:
-        if isinstance(data, Field):
-            if len(spatial_dims) == 1:
-                PlotType = Animated1dFieldPlot
-            elif len(spatial_dims) == 2:
-                if plt_util.get_dim(spatial_dims[0], data.metadata).geometry == "polar:r" and plt_util.get_dim(spatial_dims[1], data.metadata).geometry == "polar:theta":
-                    PlotType = AnimatedPolarFieldPlot
-                else:
-                    PlotType = Animated2dFieldPlot
-            else:
-                raise NotImplementedError("don't have 3D field animations yet")
-
-        elif isinstance(data, List):
-            if len(spatial_dims) == 1:
-                PlotType = AnimatedScatterPlot
-            else:
-                raise NotImplementedError("don't have 2D or 3D scatter animations yet")
-
-    return PlotType(data, **plot_kwargs)
+        return StaticPlot(renderer, data)
