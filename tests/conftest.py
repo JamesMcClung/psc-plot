@@ -46,7 +46,6 @@ def make_save(args_list: list[str], save_dir: Path, ext: str, data_dir: str | No
         parser = _get_parser()
         args = parser.parse_args(args_list, namespace=Args())
         plot = args.get_animation()
-        plot._initialize()
         save_dir.mkdir(exist_ok=True)
         plot.save(save_dir, ext=ext)
 
