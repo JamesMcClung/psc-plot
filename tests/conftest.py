@@ -1,8 +1,6 @@
 import os
 from pathlib import Path
 
-from lib.plotting.plot import SaveFormat
-
 # Must set env var and backend before any lib imports
 _TESTS_DIR = Path(__file__).parent
 _DATA_DIR = _TESTS_DIR / "data"
@@ -19,6 +17,7 @@ import pytest
 from lib.config import CONFIG
 from lib.parsing.args import Args
 from lib.parsing.parse import _get_parser
+from lib.plotting.plot import SaveFormat
 
 
 def make_plot(args_list: list[str], data_dir: str | None = None):
