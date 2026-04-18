@@ -32,9 +32,6 @@ class PscPlotConfig:
             raise RuntimeError(message)
 
         ffmpeg_bin = parse_optional(os.environ.get(_FFMPEG_BIN_KEY, shutil.which("ffmpeg")), Path)
-        if not ffmpeg_bin:
-            message = f"Ffmpeg not found. Ffmpeg is needed to save animated figures. Install ffmpeg and add it to PATH or set {_FFMPEG_BIN_KEY}."
-            warnings.warn(message)
 
         dask_num_workers = parse_optional(os.environ.get(_DASK_NUM_WORKERS_KEY), int)
         if not dask_num_workers:

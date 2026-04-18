@@ -5,8 +5,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 from lib.data.data_with_attrs import DataWithAttrs
-from lib.plotting import plt_util
-from lib.plotting.plot import Plot
+from lib.plotting.plot import Plot, SaveFormat
 
 
 class StaticPlot[Data: DataWithAttrs](Plot[Data]):
@@ -35,8 +34,8 @@ class StaticPlot[Data: DataWithAttrs](Plot[Data]):
         self._initialize()
         plt.show()
 
-    def _get_save_ext(self):
-        return ".png"
+    def allowed_save_formats(self) -> list[SaveFormat]:
+        return ["png"]
 
     def _save_to_path(self, path: Path):
         self._initialize()

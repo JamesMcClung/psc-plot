@@ -24,6 +24,12 @@ def _get_parser() -> argparse.ArgumentParser:
         type=Path,
     )
     parser.add_argument("-q", "--quiet", action="store_false", dest="show", help="don't show the figure")
+    parser.add_argument(
+        "--save-format",
+        choices=["mp4", "gif"],
+        default=None,
+        help="format for saved animations (default: mp4, falls back to gif if ffmpeg unavailable)",
+    )
 
     for custom_arg in CUSTOM_ARGS:
         custom_arg.add_to(parser)

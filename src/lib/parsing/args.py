@@ -20,6 +20,7 @@ class Args(argparse.Namespace):
     hooks: list[Hook]
     show: bool
     save: Path | None
+    save_format: str | None
 
     def get_animation(self) -> Plot:
         if self.prefix in FIELD_PREFIXES:
