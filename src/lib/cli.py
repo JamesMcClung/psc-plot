@@ -6,10 +6,11 @@ import matplotlib.pyplot as plt
 
 from lib import parsing
 from lib.config import CONFIG
+from lib.parsing.args import Args
 from lib.plotting.animated_plot import AnimatedPlot
 
 
-def _resolve_save_ext(args) -> str | None:
+def _resolve_save_ext(args: Args) -> str | None:
     if args.save is None:
         if args.save_format is not None:
             print("error: --save-format requires --save", file=sys.stderr)
