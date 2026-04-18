@@ -59,9 +59,6 @@ class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
         self._initialize()
         plt.show()
 
-    def _get_save_ext(self):
-        return ".mp4"
-
     def allowed_save_formats(self) -> list[SaveFormat]:
         return ["mp4", "gif"]
 

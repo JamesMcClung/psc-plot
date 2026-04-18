@@ -34,9 +34,6 @@ class StaticPlot[Data: DataWithAttrs](Plot[Data]):
         self._initialize()
         plt.show()
 
-    def _get_save_ext(self):
-        return ".png"
-
     def allowed_save_formats(self) -> list[SaveFormat]:
         return ["png"]
 

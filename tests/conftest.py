@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from lib.plotting.plot import SaveFormat
+
 # Must set env var and backend before any lib imports
 _TESTS_DIR = Path(__file__).parent
 _DATA_DIR = _TESTS_DIR / "data"
@@ -36,7 +38,7 @@ def make_plot(args_list: list[str], data_dir: str | None = None):
             CONFIG.data_dir = original_dir
 
 
-def make_save(args_list: list[str], save_dir: Path, ext: str, data_dir: str | None = None):
+def make_save(args_list: list[str], save_dir: Path, format: SaveFormat, data_dir: str | None = None):
     """Parse CLI args, run the full pipeline, and save to save_dir. Returns the output file path."""
     if data_dir is not None:
         original_dir = CONFIG.data_dir
@@ -47,9 +49,9 @@ def make_save(args_list: list[str], save_dir: Path, ext: str, data_dir: str | No
         args = parser.parse_args(args_list, namespace=Args())
         plot = args.get_animation()
         save_dir.mkdir(exist_ok=True)
-        plot.save(save_dir, ext=ext)
+        plot.save(save_dir, format=format)
 
-        name = "-".join(plot.data.metadata.name_fragments) + ext
+        name = "-".join(plot.data.metadata.name_fragments) + "." + format
         return save_dir / name
     finally:
         if data_dir is not None:

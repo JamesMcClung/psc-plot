@@ -35,13 +35,10 @@ class Plot[Data: DataWithAttrs](ABC):
     @abstractmethod
     def allowed_save_formats(self) -> list[SaveFormat]: ...
 
-    @abstractmethod
-    def _get_save_ext(self) -> str: ...
-
-    def save(self, dir: Path, ext: str | None = None):
-        if ext is None:
-            ext = self._get_save_ext()
-        name = "-".join(self.data.metadata.name_fragments) + ext
+    def save(self, dir: Path, format: SaveFormat | None = None):
+        if format is None:
+            format = self.allowed_save_formats()[0]
+        name = "-".join(self.data.metadata.name_fragments) + "." + format
         path = dir / name
         self._save_to_path(path)
         print(f"wrote to {path}")
