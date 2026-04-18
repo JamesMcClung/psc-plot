@@ -1,0 +1,57 @@
+from dataclasses import dataclass
+
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+
+from lib.data.data_with_attrs import Field
+from lib.plotting import plt_util
+from lib.plotting.frame_data_traits import (
+    HasAxes,
+    HasFieldData,
+    HasLineType,
+    HasSpatialScales,
+)
+from lib.plotting.plt_util import get_axis_label
+from lib.plotting.renderer import Renderer
+
+
+class Field1dRenderer(Renderer[Field]):
+    @dataclass(kw_only=True)
+    class InitData(HasFieldData, HasLineType, HasAxes, HasSpatialScales): ...
+
+    @dataclass(kw_only=True)
+    class UpdateData(HasFieldData, HasAxes): ...
+
+    def make_init_data(self, fig, ax, frame_data):
+        return self.InitData(
+            data=frame_data,
+            axes=ax,
+            line_type="-",
+            spatial_scales=["linear", "linear"],
+            last_spatial_dim_is_dependent=True,
+        )
+
+    def init(self, fig, ax, full_data, frame_data, init_data):
+        spatial_dims = frame_data.metadata.spatial_dims
+        xdata = frame_data.coordss[frame_data.dims[0]]
+        ydata = frame_data.active_data
+
+        [self.line] = ax.plot(xdata, ydata, init_data.line_type)
+
+        plt_util.update_title(ax, frame_data.metadata, [plt_util.get_dim(dim, frame_data.metadata).get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
+        ax.set_xlabel(get_axis_label(spatial_dims[0], frame_data.metadata))
+        ax.set_ylabel(plt_util.format_label(frame_data.metadata))
+
+        ax.set_xscale(init_data.spatial_scales[0])
+        ax.set_yscale(init_data.spatial_scales[1])
+
+        ymin, ymax = plt_util.symmetrize_bounds(*plt_util.get_var_bounds(full_data))
+        ax.set_ybound(ymin, ymax)
+
+    def make_update_data(self, ax, frame_data):
+        return self.UpdateData(data=frame_data, axes=ax)
+
+    def draw(self, ax, frame_data, update_data):
+        self.line.set_ydata(frame_data.active_data)
+
+        plt_util.update_title(ax, frame_data.metadata, [plt_util.get_dim(dim, frame_data.metadata).get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
