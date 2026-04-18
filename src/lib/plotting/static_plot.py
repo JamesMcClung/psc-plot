@@ -5,7 +5,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 from lib.data.data_with_attrs import DataWithAttrs
-from lib.plotting import plt_util
 from lib.plotting.plot import Plot
 
 
