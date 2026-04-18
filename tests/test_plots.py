@@ -26,6 +26,12 @@ def test_animated_2d():
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_static_2d():
+    """2D view of x-component of magnetic field at the last time step."""
+    return make_plot("pfd hx_fc -i t=-1 -v y z time=".split())
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_animated_2d_derived():
     """2D view of magnetic field square-amplitude. Since each component of H is centered differently, and `--derive` doesn't currently support recentering, use the builtin derived field `h2_cc`."""
     return make_plot("pfd h2_cc -v y z".split())
@@ -63,8 +69,8 @@ def test_animated_1d_rolling():
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_static_2d_spectogram():
-    """Spectrogram of wavenumber vs. time. Note time=x (with x having length 1) is a hack, since static 2d plots aren't yet supported."""
-    return make_plot("pfd ey_ec -f y --mag --pow 2 --pos k_y=0: -v t k_y time=x --nan0 --scale log".split())
+    """Spectrogram of wavenumber vs. time."""
+    return make_plot("pfd ey_ec -f y --mag --pow 2 --pos k_y=0: -v t k_y time= --nan0 --scale log".split())
 
 
 # --- Turbulence power spectrum ---
@@ -101,6 +107,12 @@ def test_animated_scatter_ion_phase():
 def test_animated_2d_binned_phase():
     """A clearer way to see phase space distributions for many particles. Since y is a dimension with coordinates, those coordinates are automatically used as bin edges. The combination of `--nan0` and `--scale log` makes faint phase-space structures very easy to see."""
     return make_plot("prt --species ion --bin y py=16 -v y py --nan0 --scale log".split())
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_static_scatter():
+    """Static scatter plot of electron positions at the last time step."""
+    return make_plot("prt --species electron -i t=-1 -v y z time= --grid y=0.0625 z=0.0625".split(), data_dir="test-3d")
 
 
 # --- Particle moments ---
@@ -158,6 +170,12 @@ def test_scale_symlog():
 def test_polar_grid():
     """Polar plot."""
     return make_plot("pfd hx_fc --transform-polar y z -v r_p theta".split())
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_static_polar():
+    """Static polar plot at the last time step."""
+    return make_plot("pfd hx_fc -i t=-1 --transform-polar y z -v r_p theta time=".split())
 
 
 # --- Display/unit overrides ---
