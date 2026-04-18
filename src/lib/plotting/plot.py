@@ -35,9 +35,11 @@ class Plot[Data: DataWithAttrs](ABC):
     @abstractmethod
     def allowed_save_formats(self) -> list[SaveFormat]: ...
 
+    def default_save_format(self) -> SaveFormat:
+        return self.allowed_save_formats()[0]
+
     def save(self, dir: Path, format: SaveFormat | None = None):
-        if format is None:
-            format = self.allowed_save_formats()[0]
+        format = format or self.default_save_format()
         name = "-".join(self.data.metadata.name_fragments) + "." + format
         path = dir / name
         self._save_to_path(path)
