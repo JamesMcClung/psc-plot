@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from lib.data.data_with_attrs import DataWithAttrs
 from lib.plotting.frame_data_traits import HasHookList
 from lib.plotting.hook import Hook
+
+type SaveFormat = Literal["mp4", "gif", "png"]
 
 
 class Plot[Data: DataWithAttrs](ABC):
@@ -29,6 +31,9 @@ class Plot[Data: DataWithAttrs](ABC):
 
     @abstractmethod
     def _save_to_path(self, path: Path): ...
+
+    @abstractmethod
+    def allowed_save_formats(self) -> list[SaveFormat]: ...
 
     @abstractmethod
     def _get_save_ext(self) -> str: ...

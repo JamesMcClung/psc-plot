@@ -9,7 +9,7 @@ from matplotlib.animation import FFMpegWriter, FuncAnimation, PillowWriter
 
 from lib.data.adaptors.idx import Idx
 from lib.data.data_with_attrs import DataWithAttrs
-from lib.plotting.plot import Plot
+from lib.plotting.plot import Plot, SaveFormat
 
 
 def print_progress(current_frame: int, n_frames: int):
@@ -61,6 +61,9 @@ class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
 
     def _get_save_ext(self):
         return ".mp4"
+
+    def allowed_save_formats(self) -> list[SaveFormat]:
+        return ["mp4", "gif"]
 
     def _save_to_path(self, path: Path):
         self._initialize()
