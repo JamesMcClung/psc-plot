@@ -59,13 +59,8 @@ def update_title(ax: Axes, metadata: Metadata, cut_labels: list[str]):
     ax.set_title(f"{format_label(metadata)}{cut_labels_str}")
 
 
-def get_dim(key: str, metadata: Metadata):
-    """Look up a Dimension for `key`, preferring metadata.dims and falling back to DIM_DEFAULTS."""
-    return metadata.dims[key]
-
-
 def get_axis_label(key: str, metadata: Metadata) -> str:
-    return get_dim(key, metadata).to_axis_label()
+    return metadata.dims[key].to_axis_label()
 
 
 def get_var_bounds(data: "Field") -> tuple[float, float]:

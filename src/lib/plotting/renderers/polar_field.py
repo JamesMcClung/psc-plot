@@ -58,7 +58,7 @@ class PolarFieldRenderer(Renderer[Field]):
         data_lower, data_upper = plt_util.get_var_bounds(full_data)
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
-        plt_util.update_title(ax, frame_data.metadata, [plt_util.get_dim(dim, frame_data.metadata).get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
+        plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.dims[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
 
         # FIXME make the labels work
         # ax.set_xlabel(get_axis_label(spatial_dims[1], frame_data.metadata))
@@ -70,4 +70,4 @@ class PolarFieldRenderer(Renderer[Field]):
     def draw(self, ax, frame_data, update_data):
         self.im.set_array(frame_data.active_data)
 
-        plt_util.update_title(ax, frame_data.metadata, [plt_util.get_dim(dim, frame_data.metadata).get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
+        plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.dims[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])

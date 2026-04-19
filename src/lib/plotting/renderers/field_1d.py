@@ -38,7 +38,7 @@ class Field1dRenderer(Renderer[Field]):
 
         [self.line] = ax.plot(xdata, ydata, init_data.line_type)
 
-        plt_util.update_title(ax, frame_data.metadata, [plt_util.get_dim(dim, frame_data.metadata).get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
+        plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.dims[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
         ax.set_xlabel(get_axis_label(spatial_dims[0], frame_data.metadata))
         ax.set_ylabel(plt_util.format_label(frame_data.metadata))
 
@@ -54,4 +54,4 @@ class Field1dRenderer(Renderer[Field]):
     def draw(self, ax, frame_data, update_data):
         self.line.set_ydata(frame_data.active_data)
 
-        plt_util.update_title(ax, frame_data.metadata, [plt_util.get_dim(dim, frame_data.metadata).get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
+        plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.dims[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])

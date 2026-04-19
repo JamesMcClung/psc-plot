@@ -66,7 +66,7 @@ class ScatterRenderer(Renderer[FullList]):
                 s=0.5,
             )
 
-        plt_util.update_title(ax, frame_data.metadata, [plt_util.get_dim(dim, frame_data.metadata).get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if isinstance(pos, float)])
+        plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.dims[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if isinstance(pos, float)])
 
         ax.set_aspect(1 / ax.get_data_ratio())
 
@@ -79,7 +79,7 @@ class ScatterRenderer(Renderer[FullList]):
         df = frame_data.data
 
         self.scatter.set_offsets(np.array([df[spatial_dims[0]], df[dependent_var]]).T)
-        plt_util.update_title(ax, frame_data.metadata, [plt_util.get_dim(dim, frame_data.metadata).get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if isinstance(pos, float)])
+        plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.dims[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if isinstance(pos, float)])
 
         if frame_data.metadata.color_dim:
             self.scatter.set_array(df[frame_data.metadata.color_dim])

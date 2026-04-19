@@ -1,5 +1,4 @@
 from lib.data.data_with_attrs import DataWithAttrs, Field, List
-from lib.plotting import plt_util
 from lib.plotting.animated_plot import AnimatedPlot
 from lib.plotting.plot import Plot
 from lib.plotting.renderer import Renderer
@@ -17,7 +16,7 @@ def _get_renderer(data: DataWithAttrs) -> Renderer:
         if len(spatial_dims) == 1:
             return Field1dRenderer()
         elif len(spatial_dims) == 2:
-            if plt_util.get_dim(spatial_dims[0], data.metadata).geometry == "polar:r" and plt_util.get_dim(spatial_dims[1], data.metadata).geometry == "polar:theta":
+            if data.metadata.dims[spatial_dims[0]].geometry == "polar:r" and data.metadata.dims[spatial_dims[1]].geometry == "polar:theta":
                 return PolarFieldRenderer()
             return Field2dRenderer()
         else:
