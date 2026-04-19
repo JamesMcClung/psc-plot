@@ -57,7 +57,3 @@ def update_title(ax: Axes, metadata: Metadata, cut_labels: list[str]):
     if cut_labels_str:
         cut_labels_str = f" ({cut_labels_str})"
     ax.set_title(f"{format_label(metadata)}{cut_labels_str}")
-
-
-def get_axis_label(key: str, metadata: Metadata) -> str:
-    return metadata.dims[key].to_axis_label()

@@ -7,7 +7,6 @@ from matplotlib.figure import Figure
 from lib.data.data_with_attrs import Field
 from lib.plotting import plt_util
 from lib.plotting.frame_data_traits import HasColorNorm, HasFieldData, HasSpatialScales
-from lib.plotting.plt_util import get_axis_label
 from lib.plotting.renderer import Renderer
 
 
@@ -59,8 +58,8 @@ class Field2dRenderer(Renderer[Field]):
         plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.dims[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
 
         ax.set_aspect(1 / ax.get_data_ratio())
-        ax.set_xlabel(get_axis_label(spatial_dims[0], frame_data.metadata))
-        ax.set_ylabel(get_axis_label(spatial_dims[1], frame_data.metadata))
+        ax.set_xlabel(frame_data.metadata.dims[spatial_dims[0]].to_axis_label())
+        ax.set_ylabel(frame_data.metadata.dims[spatial_dims[1]].to_axis_label())
 
     def make_update_data(self, ax, frame_data):
         return self.UpdateData(data=frame_data)

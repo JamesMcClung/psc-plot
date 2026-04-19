@@ -12,7 +12,6 @@ from lib.plotting.frame_data_traits import (
     HasFullListData,
     HasSpatialScales,
 )
-from lib.plotting.plt_util import get_axis_label
 from lib.plotting.renderer import Renderer
 
 
@@ -40,8 +39,8 @@ class ScatterRenderer(Renderer[FullList]):
         ax.set_xscale(init_data.spatial_scales[0])
         ax.set_yscale(init_data.spatial_scales[1])
 
-        ax.set_xlabel(get_axis_label(spatial_dims[0], frame_data.metadata))
-        ax.set_ylabel(plt_util.format_label(frame_data.metadata) if dependent_var == frame_data.metadata.var_name else get_axis_label(dependent_var, frame_data.metadata))
+        ax.set_xlabel(frame_data.metadata.dims[spatial_dims[0]].to_axis_label())
+        ax.set_ylabel(plt_util.format_label(frame_data.metadata) if dependent_var == frame_data.metadata.var_name else frame_data.metadata.dims[dependent_var].to_axis_label())
 
         ax.set_xlim(*full_data.bounds(spatial_dims[0]))
         ax.set_ylim(*full_data.bounds(dependent_var))
@@ -55,7 +54,7 @@ class ScatterRenderer(Renderer[FullList]):
                 s=1,
             )
 
-            fig.colorbar(self.scatter, label=get_axis_label(frame_data.metadata.color_dim, frame_data.metadata))
+            fig.colorbar(self.scatter, label=frame_data.metadata.dims[frame_data.metadata.color_dim].to_axis_label())
             data_lower, data_upper = full_data.bounds(frame_data.metadata.color_dim)
             plt_util.update_cbar(self.scatter, data_min_override=data_lower, data_max_override=data_upper)
         else:

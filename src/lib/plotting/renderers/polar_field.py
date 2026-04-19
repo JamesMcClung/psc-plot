@@ -61,8 +61,8 @@ class PolarFieldRenderer(Renderer[Field]):
         plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.dims[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
 
         # FIXME make the labels work
-        # ax.set_xlabel(get_axis_label(spatial_dims[1], frame_data.metadata))
-        # ax.set_ylabel(get_axis_label(spatial_dims[0], frame_data.metadata))
+        # ax.set_xlabel(frame_data.metadata.dims[spatial_dims[1]].to_axis_label())
+        # ax.set_ylabel(frame_data.metadata.dims[spatial_dims[0]].to_axis_label())
 
     def make_update_data(self, ax, frame_data):
         return self.UpdateData(data=frame_data)

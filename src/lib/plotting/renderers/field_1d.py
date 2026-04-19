@@ -11,7 +11,6 @@ from lib.plotting.frame_data_traits import (
     HasLineType,
     HasSpatialScales,
 )
-from lib.plotting.plt_util import get_axis_label
 from lib.plotting.renderer import Renderer
 
 
@@ -39,7 +38,7 @@ class Field1dRenderer(Renderer[Field]):
         [self.line] = ax.plot(xdata, ydata, init_data.line_type)
 
         plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.dims[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
-        ax.set_xlabel(get_axis_label(spatial_dims[0], frame_data.metadata))
+        ax.set_xlabel(frame_data.metadata.dims[spatial_dims[0]].to_axis_label())
         ax.set_ylabel(plt_util.format_label(frame_data.metadata))
 
         ax.set_xscale(init_data.spatial_scales[0])
