@@ -55,7 +55,7 @@ class PolarFieldRenderer(Renderer[Field]):
         )
 
         fig.colorbar(self.im)
-        data_lower, data_upper = plt_util.get_var_bounds(full_data)
+        data_lower, data_upper = full_data.var_bounds
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
         plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.dims[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])

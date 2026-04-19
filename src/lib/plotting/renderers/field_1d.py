@@ -45,7 +45,7 @@ class Field1dRenderer(Renderer[Field]):
         ax.set_xscale(init_data.spatial_scales[0])
         ax.set_yscale(init_data.spatial_scales[1])
 
-        ymin, ymax = plt_util.symmetrize_bounds(*plt_util.get_var_bounds(full_data))
+        ymin, ymax = plt_util.symmetrize_bounds(*full_data.var_bounds)
         ax.set_ybound(ymin, ymax)
 
     def make_update_data(self, ax, frame_data):
