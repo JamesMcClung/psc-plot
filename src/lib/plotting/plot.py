@@ -7,6 +7,7 @@ from typing import Any, Literal
 from lib.data.data_with_attrs import DataWithAttrs
 from lib.plotting.frame_data_traits import HasHookList
 from lib.plotting.hook import Hook
+from lib.plotting.renderer import Renderer
 
 type SaveFormat = Literal["mp4", "gif", "png"]
 
@@ -14,7 +15,8 @@ type SaveFormat = Literal["mp4", "gif", "png"]
 class Plot[Data: DataWithAttrs](ABC):
     class AddHookData(HasHookList): ...
 
-    def __init__(self, data: Data):
+    def __init__(self, renderer: Renderer[Data], data: Data):
+        self.renderer = renderer
         self.data = data
         self.hooks: list[Hook] = []
 

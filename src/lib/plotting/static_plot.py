@@ -1,34 +1,29 @@
-import typing
-from abc import abstractmethod
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 
 from lib.data.data_with_attrs import DataWithAttrs
 from lib.plotting.plot import Plot, SaveFormat
+from lib.plotting.renderer import Renderer
 
 
 class StaticPlot[Data: DataWithAttrs](Plot[Data]):
-    def __init__(
-        self,
-        data: Data,
-        *,
-        subplot_kw: dict[str, typing.Any] = {},
-    ):
-        super().__init__(data)
-        # TODO don't bother setting this?
-        self.spatial_dims = self.data.metadata.spatial_dims
+    def __init__(self, renderer: Renderer[Data], data: Data):
+        super().__init__(renderer, data)
 
-        self.fig, self.ax = plt.subplots(subplot_kw=subplot_kw)
+        self.fig, self.ax = plt.subplots(subplot_kw=renderer.subplot_kw())
         self._initialized = False
 
-    @abstractmethod
-    def _init_fig(self): ...
-
     def _initialize(self):
-        if not self._initialized:
-            self._init_fig()
-            self._initialized = True
+        if self._initialized:
+            return
+        self._initialized = True
+
+        init_data = self.renderer.make_init_data(self.fig, self.ax, self.data)
+        self.pre_init_fig(init_data)
+        self.renderer.init(self.fig, self.ax, self.data, self.data, init_data)
+        self.post_init_fig(init_data)
+        self.fig.tight_layout()
 
     def show(self):
         self._initialize()

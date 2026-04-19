@@ -153,6 +153,11 @@ class Field(DataWithAttrs[xr.Dataset, FieldMetadata]):
         delta = coords[1] - coords[0]
         return coords[-1] + delta
 
+    @cached_property
+    def var_bounds(self) -> tuple[float, float]:
+        active = self.active_data
+        return dask.compute(np.min(active), np.max(active))
+
 
 @dataclass(kw_only=True, frozen=True)
 class ListMetadata(Metadata):
