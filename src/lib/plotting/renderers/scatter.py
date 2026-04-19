@@ -22,7 +22,7 @@ class ScatterRenderer(Renderer[FullList]):
     @dataclass(kw_only=True)
     class UpdateData(HasFullListData, HasAxes): ...
 
-    def make_init_data(self, fig, ax, frame_data):
+    def make_init_data(self, fig: Figure, ax: Axes, frame_data: FullList) -> InitData:
         return self.InitData(
             data=frame_data,
             axes=ax,
@@ -31,7 +31,7 @@ class ScatterRenderer(Renderer[FullList]):
             color_norm="linear",
         )
 
-    def init(self, fig, ax, full_data, frame_data, init_data):
+    def init(self, fig: Figure, ax: Axes, full_data: FullList, frame_data: FullList, init_data: InitData) -> None:
         spatial_dims = frame_data.metadata.spatial_dims
         dependent_var = frame_data.metadata.dependent_var
         df = frame_data.data
@@ -69,10 +69,10 @@ class ScatterRenderer(Renderer[FullList]):
 
         ax.set_aspect(1 / ax.get_data_ratio())
 
-    def make_update_data(self, ax, frame_data):
+    def make_update_data(self, ax: Axes, frame_data: FullList) -> UpdateData:
         return self.UpdateData(data=frame_data, axes=ax)
 
-    def draw(self, ax, frame_data, update_data):
+    def draw(self, ax: Axes, frame_data: FullList, update_data: UpdateData) -> None:
         spatial_dims = frame_data.metadata.spatial_dims
         dependent_var = frame_data.metadata.dependent_var
         df = frame_data.data

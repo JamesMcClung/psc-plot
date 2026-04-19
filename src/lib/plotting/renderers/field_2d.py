@@ -27,7 +27,7 @@ class Field2dRenderer(Renderer[Field]):
         spatial_dims = data.metadata.spatial_dims
         return data.with_active_data(data.active_data.transpose(*reversed(spatial_dims)))
 
-    def make_init_data(self, fig, ax, frame_data):
+    def make_init_data(self, fig: Figure, ax: Axes, frame_data: Field) -> InitData:
         return self.InitData(
             data=frame_data,
             spatial_scales=["linear", "linear"],
@@ -35,7 +35,7 @@ class Field2dRenderer(Renderer[Field]):
             color_is_dependent=True,
         )
 
-    def init(self, fig, ax, full_data, frame_data, init_data):
+    def init(self, fig: Figure, ax: Axes, full_data: Field, frame_data: Field, init_data: InitData) -> None:
         spatial_dims = frame_data.metadata.spatial_dims
         frame_data = self._transpose(frame_data)
         da = frame_data.active_data
@@ -61,10 +61,10 @@ class Field2dRenderer(Renderer[Field]):
         ax.set_xlabel(frame_data.metadata.dims[spatial_dims[0]].to_axis_label())
         ax.set_ylabel(frame_data.metadata.dims[spatial_dims[1]].to_axis_label())
 
-    def make_update_data(self, ax, frame_data):
+    def make_update_data(self, ax: Axes, frame_data: Field) -> UpdateData:
         return self.UpdateData(data=frame_data)
 
-    def draw(self, ax, frame_data, update_data):
+    def draw(self, ax: Axes, frame_data: Field, update_data: UpdateData) -> None:
         frame_data = self._transpose(frame_data)
         self.im.set_data(frame_data.active_data)
 

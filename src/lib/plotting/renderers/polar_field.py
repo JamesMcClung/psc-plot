@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from matplotlib.axes import Axes
@@ -17,10 +18,10 @@ class PolarFieldRenderer(Renderer[Field]):
     @dataclass(kw_only=True)
     class UpdateData(HasFieldData): ...
 
-    def subplot_kw(self):
+    def subplot_kw(self) -> dict[str, Any]:
         return {"projection": "polar"}
 
-    def make_init_data(self, fig, ax, frame_data):
+    def make_init_data(self, fig: Figure, ax: Axes, frame_data: Field) -> InitData:
         return self.InitData(
             data=frame_data,
             spatial_scales=["linear", "linear"],
@@ -28,7 +29,7 @@ class PolarFieldRenderer(Renderer[Field]):
             color_is_dependent=True,
         )
 
-    def init(self, fig, ax, full_data, frame_data, init_data):
+    def init(self, fig: Figure, ax: Axes, full_data: Field, frame_data: Field, init_data: InitData) -> None:
         spatial_dims = frame_data.metadata.spatial_dims
 
         # must set scale before making image
@@ -64,10 +65,10 @@ class PolarFieldRenderer(Renderer[Field]):
         # ax.set_xlabel(frame_data.metadata.dims[spatial_dims[1]].to_axis_label())
         # ax.set_ylabel(frame_data.metadata.dims[spatial_dims[0]].to_axis_label())
 
-    def make_update_data(self, ax, frame_data):
+    def make_update_data(self, ax: Axes, frame_data: Field) -> UpdateData:
         return self.UpdateData(data=frame_data)
 
-    def draw(self, ax, frame_data, update_data):
+    def draw(self, ax: Axes, frame_data: Field, update_data: UpdateData) -> None:
         self.im.set_array(frame_data.active_data)
 
         plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.dims[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
