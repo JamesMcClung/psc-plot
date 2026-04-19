@@ -1,12 +1,14 @@
 import typing
 
+import dask
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.colorizer import _ScalarMappable
 from matplotlib.colors import Normalize
 from matplotlib.scale import ScaleBase
 
-from lib.data.data_with_attrs import Metadata
+from lib.data.data_with_attrs import Field, Metadata
 
 type BuiltinAxisScaleKey = typing.Literal["linear", "log"]
 SCALES: list[BuiltinAxisScaleKey] = list(BuiltinAxisScaleKey.__value__.__args__)
@@ -63,12 +65,6 @@ def get_axis_label(key: str, metadata: Metadata) -> str:
     return metadata.dims[key].to_axis_label()
 
 
-def get_var_bounds(data: "Field") -> tuple[float, float]:
-    from lib.data.data_with_attrs import Field as FieldType
-    import dask
-    import numpy as np
+def get_var_bounds(data: Field) -> tuple[float, float]:
     active = data.active_data
-    if hasattr(active, "data") and hasattr(active.data, "dask"):
-        return dask.compute(np.min(active), np.max(active))
-    bounds = np.nanquantile(active, [0, 1])
-    return (float(bounds[0]), float(bounds[1]))
+    return dask.compute(np.min(active), np.max(active))
