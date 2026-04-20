@@ -26,6 +26,13 @@ class Metadata:
     color_dim: str | None = None
 
     dims: dict[str, Dimension] = field(default_factory=dict)
+    var_info: dict[str, Dimension] = field(default_factory=dict)
+
+    @property
+    def active_var_info(self) -> Dimension:
+        if self.var_name is None:
+            raise ValueError("no active variable; specify one as a positional argument")
+        return self.var_info[self.var_name]
 
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)
