@@ -28,7 +28,7 @@ class Args(argparse.Namespace):
             loader = FieldLoader(self.prefix, self.variable, steps)
         elif self.prefix in PARTICLE_PREFIXES:
             steps = particle_util.get_available_particle_steps(self.prefix)
-            loader = ParticleLoader(self.prefix, steps)
+            loader = ParticleLoader(self.prefix, self.variable, steps)
         else:
             raise ValueError(f"Unknown prefix: {self.prefix}")
 

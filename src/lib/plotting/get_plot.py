@@ -23,10 +23,10 @@ def _get_renderer(data: DataWithAttrs) -> Renderer:
             raise NotImplementedError("don't have 3D field plots yet")
 
     elif isinstance(data, List):
-        if len(spatial_dims) == 1:
+        if len(spatial_dims) == 2:
             return ScatterRenderer()
         else:
-            raise NotImplementedError("don't have 2D or 3D scatter plots yet")
+            raise NotImplementedError(f"don't have {len(spatial_dims)}D scatter plots yet")
 
     raise TypeError(f"unexpected data type: {type(data)}")
 

@@ -1,24 +1,25 @@
-import dask.dataframe as dd
-import pandas as pd
-
-from lib.data.adaptor import BareAdaptor
+from lib.data.adaptor import MetadataAdaptor
+from lib.data.data_with_attrs import List
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 from lib.particle_util import SPECIES, Species
 
 
-class SpeciesFilter(BareAdaptor):
+class SpeciesFilter(MetadataAdaptor):
     def __init__(self, species: Species):
         self.species = species
 
-    def apply_list_bare(self, df: dd.DataFrame | pd.DataFrame) -> dd.DataFrame | pd.DataFrame:
+    def apply_list(self, data: List) -> List:
+        df = data.data
         if self.species == "electron":
             df = df[df["q"] < 0]
         elif self.species == "ion":
             df = df[df["q"] > 0]
-        return df
+        return data.assign_data(df)
 
     def get_modified_display_latex(self, metadata) -> str:
+        if metadata.display_latex is None:
+            return f"\\text{{{self.species}s}}"
         subscript = self.species[0]
         return f"{{{metadata.display_latex}}}_{subscript}"
 

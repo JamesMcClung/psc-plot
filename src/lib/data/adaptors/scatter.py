@@ -26,7 +26,6 @@ class Scatter(MetadataAdaptor):
         metadata = ListMetadata.create_from(
             data.metadata,
             coordss=coordss,
-            dependent_var=data.metadata.var_name,
             weight_var=data.metadata.var_name,
         )
 

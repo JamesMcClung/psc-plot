@@ -1,3 +1,5 @@
+import dask.dataframe as dd
+import pandas as pd
 import xarray as xr
 
 from lib.data.adaptor import BareAdaptor
@@ -13,6 +15,9 @@ class Real(BareAdaptor):
 
     def apply_field_bare(self, da: xr.DataArray) -> xr.DataArray:
         return da.real
+
+    def apply_list_bare(self, series: pd.Series | dd.Series) -> pd.Series | dd.Series:
+        return series.real
 
     def get_name_fragments(self) -> list[str]:
         return ["real"]

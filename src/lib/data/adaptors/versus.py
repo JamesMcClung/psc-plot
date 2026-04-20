@@ -59,24 +59,19 @@ class Versus(MetadataAdaptor):
         # TODO
 
         # 2. drop unused vars
-        drop_vars = []
-        for var_name in data.dims:
-            if var_name not in self.all_dims + [data.metadata.dependent_var]:
-                drop_vars.append(var_name)
-
+        keep_vars = self.all_dims + ([data.metadata.var_name] if data.metadata.var_name else [])
+        drop_vars = [var_name for var_name in data.dims if var_name not in keep_vars]
         data = data.assign_data(data.data.drop(columns=drop_vars))
 
-        # do the main job of Versus: specify which dims are spatial, temporal, etc.
-
         spatial_dims = self.spatial_dims.copy()
-        dependent_var = spatial_dims.pop()
+        if len(spatial_dims) == 1 and data.metadata.var_name is not None and data.metadata.var_name not in spatial_dims:
+            spatial_dims.append(data.metadata.var_name)
 
         return data.assign_metadata(
             spatial_dims=spatial_dims,
             time_dim=self.time_dim,
             color_dim=self.color_dim,
             name_fragments=initial_name_fragments,
-            dependent_var=dependent_var,
         )
 
     def get_name_fragments(self) -> list[str]:

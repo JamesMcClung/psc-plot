@@ -67,10 +67,10 @@ class BareAdaptor(MetadataAdaptor):
         return data.with_active_data(self.apply_field_bare(data.active_data))
 
     def apply_list(self, data: List) -> DataWithAttrs:
-        return data.assign_data(self.apply_list_bare(data.data))
+        return data.with_active_data(self.apply_list_bare(data.active_data))
 
     def apply_field_bare(self, da: xr.DataArray) -> xr.DataArray:
         _fail_apply_field(self.__class__)
 
-    def apply_list_bare(self, df: dd.DataFrame | pd.DataFrame) -> dd.DataFrame | pd.DataFrame:
+    def apply_list_bare(self, series: pd.Series | dd.Series) -> pd.Series | dd.Series:
         _fail_apply_list(self.__class__)

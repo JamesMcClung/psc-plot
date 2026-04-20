@@ -99,7 +99,7 @@ class SetScale(Hook):
 
         data = init_data.data
 
-        if self.dim_name is None or isinstance(data, List) and self.dim_name == data.metadata.dependent_var:
+        if self.dim_name is None:
             # find and set the dependent scale/norm
             if check_impl(init_data, HasSpatialScales) and init_data.last_spatial_dim_is_dependent:
                 init_data.spatial_scales[-1] = self.scale.to_axis_scale(data)

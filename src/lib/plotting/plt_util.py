@@ -54,6 +54,10 @@ def format_label(metadata: Metadata) -> str:
 
 def update_title(ax: Axes, metadata: Metadata, cut_labels: list[str]):
     cut_labels_str = ", ".join(cut_labels)
+
+    if metadata.display_latex is None:
+        return ax.set_title(cut_labels_str)  # empty str is fine
+
     if cut_labels_str:
         cut_labels_str = f" ({cut_labels_str})"
-    ax.set_title(f"{format_label(metadata)}{cut_labels_str}")
+    return ax.set_title(f"{format_label(metadata)}{cut_labels_str}")

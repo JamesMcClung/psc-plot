@@ -5,6 +5,7 @@ import dask.dataframe as dd
 import numpy as np
 import xarray as xr
 
+from lib import field_units
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, FieldMetadata, List
 from lib.parsing import parse_util
@@ -124,7 +125,15 @@ class Bin(MetadataAdaptor):
             dims=self.varname_to_nbins.keys(),
         )
 
-        return Field(da.to_dataset(name=data.metadata.var_name), FieldMetadata.create_from(data.metadata))
+        info = field_units.lookup_particle("f")
+        # FIXME hack to get species subscripts that depends on species_filter behavior
+        display_latex = info.display_latex
+        if data.metadata.display_latex is not None:
+            if "ion" in data.metadata.display_latex:
+                display_latex += "_\\text{i}"
+            elif "electron" in data.metadata.display_latex:
+                display_latex += "_\\text{e}"
+        return Field(da.to_dataset(name="f"), FieldMetadata.create_from(data.metadata, var_name="f", display_latex=display_latex, unit_latex=info.unit_latex))
 
     def get_name_fragments(self) -> list[str]:
         subfrags = "_".join(f"{varname}={nbins}" if nbins else varname for varname, nbins in self.varname_to_nbins.items())

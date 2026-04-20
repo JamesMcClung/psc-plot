@@ -92,7 +92,7 @@ def test_spectrum_3d():
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
-def test_animated_scatter_ion_positions():
+def test_animated_scatter_electron_positions():
     """A real-space scatter plot of electron positions, with cell edges shown via `--grid`. Grid line positions aren't coordinate-informed, so the spacing is manually specified."""
     return make_plot("prt --species electron -v y z --grid y=0.0625 z=0.0625".split(), data_dir="test-3d")
 
@@ -113,6 +113,18 @@ def test_animated_2d_binned_phase():
 def test_static_scatter():
     """Static scatter plot of electron positions at the last time step."""
     return make_plot("prt --species electron -i t=-1 -v y z time= --grid y=0.0625 z=0.0625".split(), data_dir="test-3d")
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_animated_scatter_with_variable():
+    """Scatter plot with explicit variable: py on y-axis, y on x-axis."""
+    return make_plot("prt py --species ion -v y".split())
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_animated_scatter_mul():
+    """Scatter plot with --mul applied to the active variable."""
+    return make_plot("prt py --species ion --mul 2 -v y".split())
 
 
 # --- Particle moments ---
