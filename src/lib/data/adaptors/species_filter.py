@@ -18,10 +18,10 @@ class SpeciesFilter(MetadataAdaptor):
         return data.assign_data(df)
 
     def get_modified_display_latex(self, metadata) -> str:
-        if metadata.display_latex is None:
+        if metadata.var_name is None:
             return f"\\text{{{self.species}s}}"
         subscript = self.species[0]
-        return f"{{{metadata.display_latex}}}_{subscript}"
+        return f"{{{metadata.active_var_info.name.latex}}}_{subscript}"
 
     def get_name_fragments(self) -> list[str]:
         return [self.species]

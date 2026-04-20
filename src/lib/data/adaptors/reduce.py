@@ -48,8 +48,8 @@ class Reduce(BareAdaptor):
 
     def get_modified_display_latex(self, metadata) -> str:
         if not self.dim_names:
-            return metadata.display_latex
-        return REDUCE_FUNCS[self.func_name][1](metadata.display_latex, self.dim_names)
+            return metadata.active_var_info.name.latex
+        return REDUCE_FUNCS[self.func_name][1](metadata.active_var_info.name.latex, self.dim_names)
 
     def get_name_fragments(self) -> list[str]:
         if not self.dim_names:

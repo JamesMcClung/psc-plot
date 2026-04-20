@@ -22,4 +22,4 @@ class Magnitude(BareAdaptor):
         return ["mag"]
 
     def get_modified_display_latex(self, metadata) -> str:
-        return f"|{metadata.display_latex}|"
+        return f"|{metadata.active_var_info.name.latex}|"
