@@ -92,7 +92,7 @@ def test_spectrum_3d():
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
-def test_animated_scatter_ion_positions():
+def test_animated_scatter_electron_positions():
     """A real-space scatter plot of electron positions, with cell edges shown via `--grid`. Grid line positions aren't coordinate-informed, so the spacing is manually specified."""
     return make_plot("prt --species electron -v y z --grid y=0.0625 z=0.0625".split(), data_dir="test-3d")
 
