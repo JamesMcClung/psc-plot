@@ -39,6 +39,7 @@ class ScatterRenderer(Renderer[FullList]):
         ax.set_yscale(init_data.spatial_scales[1])
 
         ax.set_xlabel(frame_data.metadata.dims[x_dim].to_axis_label())
+        # FIXME there should be a single source of truth for how to format a label
         ax.set_ylabel(frame_data.metadata.dims[y_dim].to_axis_label() if y_dim in frame_data.metadata.dims else plt_util.format_label(frame_data.metadata))
 
         ax.set_xlim(*full_data.bounds(x_dim))
