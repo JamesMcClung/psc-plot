@@ -21,6 +21,8 @@ class SpeciesFilter(MetadataAdaptor):
         return data.assign_data(df)
 
     def get_modified_display_latex(self, metadata) -> str:
+        if metadata.display_latex is None:
+            return f"\\text{{{self.species}s}}"
         subscript = self.species[0]
         return f"{{{metadata.display_latex}}}_{subscript}"
 
