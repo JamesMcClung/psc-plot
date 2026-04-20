@@ -53,10 +53,20 @@ class MetadataAdaptor(Adaptor):
         display_latex = self.get_modified_display_latex(data.metadata)
         unit_latex = self.get_modified_unit_latex(data.metadata)
 
+        var_info = data.metadata.var_info
+        if data.metadata.var_name is not None and var_info:
+            from dataclasses import replace as _replace
+            from lib.latex import Latex
+            old_dim = var_info.get(data.metadata.var_name)
+            if old_dim is not None:
+                new_dim = _replace(old_dim, name=Latex(display_latex), unit=Latex(unit_latex))
+                var_info = {**var_info, data.metadata.var_name: new_dim}
+
         return data.assign_metadata(
             name_fragments=name_fragments,
             display_latex=display_latex,
             unit_latex=unit_latex,
+            var_info=var_info,
         )
 
 
