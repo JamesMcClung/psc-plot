@@ -71,13 +71,11 @@ class Grid(Hook):
 
 
 def get_axis_id(data: DataWithAttrs, dim_name: str) -> Literal["x", "y"]:
-    dims_on_axes = data.metadata.spatial_dims.copy()
-
-    if dim_name not in dims_on_axes:
-        message = f"Dimension '{dim_name}' isn't being shown on an axis. Axis dimensions are: {dims_on_axes}"
+    if dim_name not in data.metadata.spatial_dims:
+        message = f"Dimension '{dim_name}' isn't being shown on an axis. Axis dimensions are: {data.metadata.spatial_dims}"
         raise ValueError(message)
 
-    return ["x", "y"][dims_on_axes.index(dim_name)]
+    return ["x", "y"][data.metadata.spatial_dims.index(dim_name)]
 
 
 MAJOR_MARKER = "major"
