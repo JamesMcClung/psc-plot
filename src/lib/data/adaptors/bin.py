@@ -126,7 +126,14 @@ class Bin(MetadataAdaptor):
         )
 
         info = field_units.lookup_particle("f")
-        return Field(da.to_dataset(name="f"), FieldMetadata.create_from(data.metadata, var_name="f", display_latex=info.display_latex, unit_latex=info.unit_latex))
+        # FIXME hack to get species subscripts that depends on species_filter behavior
+        display_latex = info.display_latex
+        if data.metadata.display_latex is not None:
+            if "ion" in data.metadata.display_latex:
+                display_latex += "_\\text{i}"
+            elif "electron" in data.metadata.display_latex:
+                display_latex += "_\\text{e}"
+        return Field(da.to_dataset(name="f"), FieldMetadata.create_from(data.metadata, var_name="f", display_latex=display_latex, unit_latex=info.unit_latex))
 
     def get_name_fragments(self) -> list[str]:
         subfrags = "_".join(f"{varname}={nbins}" if nbins else varname for varname, nbins in self.varname_to_nbins.items())
