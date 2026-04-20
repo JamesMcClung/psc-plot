@@ -66,7 +66,7 @@ class Fit(Hook):
         if isinstance(data, Field):
             return (data.coordss[spatial_dim], data.active_data)
         elif isinstance(data, List):
-            return (data.data[spatial_dim], data.data[data.metadata.dependent_var])
+            return (data.data[spatial_dim], data.data[data.metadata.spatial_dims[1]])
 
 
 @arg_parser(

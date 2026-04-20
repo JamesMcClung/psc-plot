@@ -164,7 +164,6 @@ class Field(DataWithAttrs[xr.Dataset, FieldMetadata]):
 @dataclass(kw_only=True, frozen=True)
 class ListMetadata(Metadata):
     coordss: dict[str, np.ndarray] = field(default_factory=dict)
-    dependent_var: str | None = None
     weight_var: str | None = None
 
 

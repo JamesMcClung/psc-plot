@@ -72,8 +72,6 @@ class Grid(Hook):
 
 def get_axis_id(data: DataWithAttrs, dim_name: str) -> Literal["x", "y"]:
     dims_on_axes = data.metadata.spatial_dims.copy()
-    if len(dims_on_axes) < 2 and isinstance(data, List) and data.metadata.dependent_var:
-        dims_on_axes.append(data.metadata.dependent_var)
 
     if dim_name not in dims_on_axes:
         message = f"Dimension '{dim_name}' isn't being shown on an axis. Axis dimensions are: {dims_on_axes}"
