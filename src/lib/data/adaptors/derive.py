@@ -123,14 +123,16 @@ class AssignNewFieldVariable(Transformer_InPlace):
     def assign_default(self, toks: list):
         [new_variable] = toks
         self._resolve_from_registry(new_variable)
-        info = field_units.lookup_field(self._data.metadata.prefix, new_variable)
-        return self._data.assign_metadata(var_name=new_variable, display_latex=info.display_latex, unit_latex=info.unit_latex)
+        dim = field_units.lookup(self._data.metadata.prefix, new_variable)
+        new_var_info = {**self._data.metadata.var_info, new_variable: dim}
+        return self._data.assign_metadata(var_name=new_variable, display_latex=dim.name.latex, unit_latex=dim.unit.latex, var_info=new_var_info)
 
     def assignment(self, toks: list):
         [new_variable, val] = toks
         new_ds = self._data.data.assign({new_variable: val})
-        info = field_units.lookup_field(self._data.metadata.prefix, new_variable)
-        return self._data.assign(new_ds, var_name=new_variable, display_latex=info.display_latex, unit_latex=info.unit_latex)
+        dim = field_units.lookup(self._data.metadata.prefix, new_variable)
+        new_var_info = {**self._data.metadata.var_info, new_variable: dim}
+        return self._data.assign(new_ds, var_name=new_variable, display_latex=dim.name.latex, unit_latex=dim.unit.latex, var_info=new_var_info)
 
     def _resolve_from_registry(self, name: str):
         prefix = self._data.metadata.prefix
