@@ -38,7 +38,9 @@ class Dimension:
             object.__setattr__(self, "key", self.name.plain)
 
     def to_axis_label(self) -> str:
-        return f"${self.name.latex}\\ [{self.unit.latex}]$"
+        if self.unit.latex:
+            return f"${self.name.latex}\\ [{self.unit.latex}]$"
+        return f"${self.name.latex}$"
 
     def get_coordinate_label(self, coord_val: float) -> str:
         return f"${self.name.latex} = {coord_val:.3f}\\ {self.unit.latex}$"
