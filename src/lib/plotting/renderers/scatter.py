@@ -32,23 +32,23 @@ class ScatterRenderer(Renderer[FullList]):
         )
 
     def init(self, fig: Figure, ax: Axes, full_data: FullList, frame_data: FullList, init_data: InitData) -> None:
-        [x_dim, y_dim] = frame_data.metadata.spatial_dims
+        [dim_x, dim_y] = frame_data.metadata.spatial_dims
         df = frame_data.data
 
         ax.set_xscale(init_data.spatial_scales[0])
         ax.set_yscale(init_data.spatial_scales[1])
 
-        ax.set_xlabel(frame_data.metadata.dims[x_dim].to_axis_label())
+        ax.set_xlabel(frame_data.metadata.dims[dim_x].to_axis_label())
         # FIXME there should be a single source of truth for how to format a label
-        ax.set_ylabel(frame_data.metadata.dims[y_dim].to_axis_label() if y_dim in frame_data.metadata.dims else plt_util.format_label(frame_data.metadata))
+        ax.set_ylabel(frame_data.metadata.dims[dim_y].to_axis_label() if dim_y in frame_data.metadata.dims else plt_util.format_label(frame_data.metadata))
 
-        ax.set_xlim(*full_data.bounds(x_dim))
-        ax.set_ylim(*full_data.bounds(y_dim))
+        ax.set_xlim(*full_data.bounds(dim_x))
+        ax.set_ylim(*full_data.bounds(dim_y))
 
         if frame_data.metadata.color_dim:
             self.scatter = ax.scatter(
-                df[x_dim],
-                df[y_dim],
+                df[dim_x],
+                df[dim_y],
                 c=df[frame_data.metadata.color_dim],
                 norm=init_data.color_norm,
                 s=1,
@@ -59,8 +59,8 @@ class ScatterRenderer(Renderer[FullList]):
             plt_util.update_cbar(self.scatter, data_min_override=data_lower, data_max_override=data_upper)
         else:
             self.scatter = ax.scatter(
-                df[x_dim],
-                df[y_dim],
+                df[dim_x],
+                df[dim_y],
                 color=ax._get_lines.get_next_color(),
                 s=0.5,
             )
