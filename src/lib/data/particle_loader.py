@@ -2,6 +2,7 @@ from lib.data.data_with_attrs import LazyList
 from lib.dimension import get_default_dim
 
 from .. import field_units, file_util, particle_util
+from ..field_units import lookup
 from .source import DataSource
 
 
@@ -23,12 +24,14 @@ class ParticleLoader(DataSource):
             unit_latex = None
 
         dims = {key: get_default_dim(key) for key in df.dims}
+        var_info = {key: lookup(self.prefix, key) for key in df.dims}
         return df.assign_metadata(
             name_fragments=self.get_name_fragments(),
             var_name=self.var_name,
             display_latex=display_latex,
             unit_latex=unit_latex,
             dims=dims,
+            var_info=var_info,
         )
 
     def get_name_fragments(self) -> list[str]:

@@ -5,6 +5,7 @@ from lib.data.data_with_attrs import Field, FieldMetadata
 from lib.dimension import get_default_dim
 
 from .. import field_units, field_util, file_util
+from ..field_units import lookup
 from ..derived_field_variables import derive_field_variable
 from .source import DataSource
 
@@ -32,6 +33,7 @@ class FieldLoader(DataSource):
             display_latex = None
             unit_latex = None
         dims = {key: get_default_dim(key) for key in ds.coords.keys()}
+        var_info = {key: lookup(self.prefix, key) for key in ds.variables}
         metadata = FieldMetadata(
             var_name=self.var_name,
             display_latex=display_latex,
@@ -39,6 +41,7 @@ class FieldLoader(DataSource):
             name_fragments=self.get_name_fragments(),
             prefix=self.prefix,
             dims=dims,
+            var_info=var_info,
         )
         return Field(ds, metadata)
 
