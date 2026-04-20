@@ -146,3 +146,64 @@ def lookup_particle(var_name: str) -> VarInfo:
     if info is not None:
         return info
     return _fallback(var_name)
+
+
+# --- Unified dimension registry -----------------------------------------------
+
+from lib.dimension import (
+    Dimension,
+    DimensionGeometry,
+    ELECTRON_SKIN_DEPTH,
+    ELEMENTARY_CHARGE,
+    FOURIER_NAME_PREFIX,
+    INVERSE_ELECTRON_PLASMA_FREQUENCY,
+    SPEED_OF_LIGHT,
+)
+from lib.latex import Latex
+
+DIM_REGISTRY: dict[str, Dimension] = {}
+
+
+def _register_dim(dim: Dimension) -> None:
+    DIM_REGISTRY[dim.key] = dim
+
+
+_register_dim(Dimension(Latex("x"), ELECTRON_SKIN_DEPTH, "linear"))
+_register_dim(Dimension(Latex("y"), ELECTRON_SKIN_DEPTH, "linear"))
+_register_dim(Dimension(Latex("z"), ELECTRON_SKIN_DEPTH, "linear"))
+_register_dim(Dimension(Latex("t"), INVERSE_ELECTRON_PLASMA_FREQUENCY, "linear"))
+
+
+# --- Unified prefixed registry ------------------------------------------------
+
+def _varinfo_to_dim(key: str, info: VarInfo) -> Dimension:
+    return Dimension(Latex(info.display_latex), Latex(info.unit_latex), "linear", key=key)
+
+
+PREFIXED_REGISTRY: dict[tuple[str, str], Dimension] = {}
+
+for (prefix, var_name), info in FIELD_VAR_INFO.items():
+    PREFIXED_REGISTRY[(prefix, var_name)] = _varinfo_to_dim(var_name, info)
+
+for var_name, info in PARTICLE_VAR_INFO.items():
+    PREFIXED_REGISTRY[("prt", var_name)] = _varinfo_to_dim(var_name, info)
+
+
+def lookup(prefix: str | None, key: str) -> Dimension:
+    """Look up display/unit info for a key, checking prefixed registry then dim registry."""
+    if prefix is not None:
+        info = PREFIXED_REGISTRY.get((prefix, key))
+        if info is not None:
+            return info
+    if key in DIM_REGISTRY:
+        return DIM_REGISTRY[key]
+    if key.startswith(FOURIER_NAME_PREFIX):
+        base_key = key[len(FOURIER_NAME_PREFIX):]
+        base = None
+        if prefix is not None:
+            base = PREFIXED_REGISTRY.get((prefix, base_key))
+        if base is None:
+            base = DIM_REGISTRY.get(base_key)
+        if base is not None:
+            return base.toggle_fourier()
+    return Dimension(Latex(key), Latex(""), "linear", key=key)
