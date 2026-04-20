@@ -115,6 +115,18 @@ def test_static_scatter():
     return make_plot("prt --species electron -i t=-1 -v y z time= --grid y=0.0625 z=0.0625".split(), data_dir="test-3d")
 
 
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_animated_scatter_with_variable():
+    """Scatter plot with explicit variable: py on y-axis, y on x-axis."""
+    return make_plot("prt py --species ion -v y".split())
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_animated_scatter_mul():
+    """Scatter plot with --mul applied to the active variable."""
+    return make_plot("prt py --species ion --mul 2 -v y".split())
+
+
 # --- Particle moments ---
 
 
