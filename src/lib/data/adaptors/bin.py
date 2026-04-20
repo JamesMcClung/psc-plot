@@ -5,6 +5,7 @@ import dask.dataframe as dd
 import numpy as np
 import xarray as xr
 
+from lib import field_units
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, FieldMetadata, List
 from lib.parsing import parse_util
@@ -124,8 +125,8 @@ class Bin(MetadataAdaptor):
             dims=self.varname_to_nbins.keys(),
         )
 
-        var_name = data.metadata.var_name if data.metadata.var_name is not None else "f"
-        return Field(da.to_dataset(name=var_name), FieldMetadata.create_from(data.metadata, var_name=var_name))
+        info = field_units.lookup_particle("f")
+        return Field(da.to_dataset(name="f"), FieldMetadata.create_from(data.metadata, var_name="f", display_latex=info.display_latex, unit_latex=info.unit_latex))
 
     def get_name_fragments(self) -> list[str]:
         subfrags = "_".join(f"{varname}={nbins}" if nbins else varname for varname, nbins in self.varname_to_nbins.items())
