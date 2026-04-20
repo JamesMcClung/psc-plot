@@ -2,7 +2,6 @@ import pscpy
 import xarray as xr
 
 from lib.data.data_with_attrs import Field, FieldMetadata
-
 from lib.dimension import get_default_dim
 
 from .. import field_units, field_util, file_util
@@ -34,7 +33,7 @@ class FieldLoader(DataSource):
             unit_latex = None
         dims = {key: get_default_dim(key) for key in ds.coords.keys()}
         metadata = FieldMetadata(
-            var_name=self.get_var_name(),
+            var_name=self.var_name,
             display_latex=display_latex,
             unit_latex=unit_latex,
             name_fragments=self.get_name_fragments(),
@@ -42,12 +41,6 @@ class FieldLoader(DataSource):
             dims=dims,
         )
         return Field(ds, metadata)
-
-    def get_file_prefix(self) -> str:
-        return self.prefix
-
-    def get_var_name(self) -> str | None:
-        return self.var_name
 
     def get_name_fragments(self) -> list[str]:
         fragments = [self.prefix]

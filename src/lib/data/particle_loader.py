@@ -31,9 +31,6 @@ class ParticleLoader(DataSource):
             dims=dims,
         )
 
-    def get_file_prefix(self) -> str:
-        return self.prefix
-
     def get_name_fragments(self) -> list[str]:
         fragments = [self.prefix]
         if self.var_name is not None:
