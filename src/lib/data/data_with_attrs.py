@@ -34,6 +34,12 @@ class Metadata:
             raise ValueError("no active variable; specify one as a positional argument")
         return self.var_info[self.var_name]
 
+    def get_var_info(self, key: str) -> Dimension:
+        """Look up a key in dims first (adaptors still write there), falling back to var_info."""
+        if key in self.dims:
+            return self.dims[key]
+        return self.var_info[key]
+
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)
 
