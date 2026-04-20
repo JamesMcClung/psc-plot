@@ -1,12 +1,12 @@
 import typing
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 
 from lib.data.data_with_attrs import DataWithAttrs
 
 from .pipeline import Pipeline
 
 
-class DataSource:
+class DataSource(ABC):
     @abstractmethod
     def get_data(self) -> DataWithAttrs: ...
 
