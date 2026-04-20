@@ -16,8 +16,8 @@ from lib.dimension import Dimension
 
 @dataclass(kw_only=True, frozen=True)
 class Metadata:
-    var_name: str
-    display_latex: str
+    var_name: str | None = None
+    display_latex: str | None = None
     unit_latex: str = ""
     name_fragments: list[str] = field(default_factory=list)
 
@@ -116,6 +116,8 @@ class Field(DataWithAttrs[xr.Dataset, FieldMetadata]):
 
     @property
     def active_data(self) -> xr.DataArray:
+        if self.metadata.var_name is None:
+            raise ValueError("no active variable; specify one as a positional argument")
         return self.data[self.metadata.var_name]
 
     def with_active_data(self, new_da: xr.DataArray) -> Self:
@@ -169,6 +171,15 @@ class ListMetadata(Metadata):
 class List[D: pd.DataFrame | dd.DataFrame](DataWithAttrs[D, ListMetadata]):
     data: pd.DataFrame | dd.DataFrame
     metadata: ListMetadata
+
+    @property
+    def active_data(self) -> pd.Series | dd.Series:
+        if self.metadata.var_name is None:
+            raise ValueError("no active variable; specify one as a positional argument")
+        return self.data[self.metadata.var_name]
+
+    def with_active_data(self, series: pd.Series | dd.Series) -> Self:
+        return self.assign_data(self.data.assign(**{self.metadata.var_name: series}))
 
     @abstractmethod
     def compute(self) -> FullList: ...
