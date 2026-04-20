@@ -17,16 +17,21 @@ class Display(Adaptor):
         metadata = data.metadata
         name_fragments = metadata.name_fragments + self.get_name_fragments()
 
-        if self.target is None or self.target == metadata.var_name:
-            return data.assign_metadata(name_fragments=name_fragments, display_latex=self.value)
+        target = self.target or metadata.var_name
+        if target is None:
+            raise ValueError("--display requires a target; specify a variable as a positional argument or use --display TARGET=VALUE")
 
-        if self.target in metadata.dims:
-            old_dim = metadata.dims[self.target]
-            new_dim = replace(old_dim, name=Latex(self.value))
-            new_dims = {**metadata.dims, self.target: new_dim}
-            return data.assign_metadata(name_fragments=name_fragments, dims=new_dims)
+        if target not in metadata.var_info and target not in metadata.dims:
+            raise ValueError(f"--display target {target!r} is not a known key ({sorted(set(metadata.var_info) | set(metadata.dims))})")
 
-        raise ValueError(f"--display target {self.target!r} is neither the active variable ({metadata.var_name!r}) nor a known dimension ({sorted(metadata.dims)})")
+        old_dim = metadata.get_var_info(target)
+        new_dim = replace(old_dim, name=Latex(self.value))
+        new_dims = {**metadata.dims, target: new_dim} if target in metadata.dims else metadata.dims
+        new_var_info = {**metadata.var_info, target: new_dim}
+
+        if target == metadata.var_name:
+            return data.assign_metadata(name_fragments=name_fragments, display_latex=self.value, dims=new_dims, var_info=new_var_info)
+        return data.assign_metadata(name_fragments=name_fragments, dims=new_dims, var_info=new_var_info)
 
     def get_name_fragments(self) -> list[str]:
         return [f"display_{self.target or 'active'}={self.value}"]

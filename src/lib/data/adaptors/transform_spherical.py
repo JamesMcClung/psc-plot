@@ -43,9 +43,9 @@ class TransformSpherical(MetadataAdaptor):
         self.dim3_key = dim3_key
 
     def apply_field(self, data: Field) -> Field:
-        dim_x = data.metadata.dims[self.dim1_key]
-        dim_y = data.metadata.dims[self.dim2_key]
-        dim_z = data.metadata.dims[self.dim3_key]
+        dim_x = data.metadata.get_var_info(self.dim1_key)
+        dim_y = data.metadata.get_var_info(self.dim2_key)
+        dim_z = data.metadata.get_var_info(self.dim3_key)
         dim_r, dim_theta, dim_phi = _build_spherical_dims(dim_x, dim_y, dim_z)
 
         key_x, key_y, key_z = dim_x.key, dim_y.key, dim_z.key
@@ -95,12 +95,16 @@ class TransformSpherical(MetadataAdaptor):
         new_dims[key_r] = dim_r
         new_dims[key_theta] = dim_theta
         new_dims[key_phi] = dim_phi
-        return data.with_active_data(da).assign_metadata(dims=new_dims)
+        new_var_info = {k: v for k, v in data.metadata.var_info.items() if k not in {key_x, key_y, key_z}}
+        new_var_info[key_r] = dim_r
+        new_var_info[key_theta] = dim_theta
+        new_var_info[key_phi] = dim_phi
+        return data.with_active_data(da).assign_metadata(dims=new_dims, var_info=new_var_info)
 
     def apply_list(self, data: List) -> List:
-        dim_x = data.metadata.dims[self.dim1_key]
-        dim_y = data.metadata.dims[self.dim2_key]
-        dim_z = data.metadata.dims[self.dim3_key]
+        dim_x = data.metadata.get_var_info(self.dim1_key)
+        dim_y = data.metadata.get_var_info(self.dim2_key)
+        dim_z = data.metadata.get_var_info(self.dim3_key)
         dim_r, dim_theta, dim_phi = _build_spherical_dims(dim_x, dim_y, dim_z)
 
         key_x, key_y, key_z = dim_x.key, dim_y.key, dim_z.key
@@ -114,7 +118,11 @@ class TransformSpherical(MetadataAdaptor):
         new_dims[key_r] = dim_r
         new_dims[key_theta] = dim_theta
         new_dims[key_phi] = dim_phi
-        return data.assign_data(df).assign_metadata(dims=new_dims)
+        new_var_info = dict(data.metadata.var_info)
+        new_var_info[key_r] = dim_r
+        new_var_info[key_theta] = dim_theta
+        new_var_info[key_phi] = dim_phi
+        return data.assign_data(df).assign_metadata(dims=new_dims, var_info=new_var_info)
 
     def get_name_fragments(self) -> list[str]:
         return [f"spherical_{self.dim1_key},{self.dim2_key},{self.dim3_key}"]

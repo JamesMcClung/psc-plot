@@ -55,11 +55,11 @@ class Field2dRenderer(Renderer[Field]):
         data_lower, data_upper = full_data.var_bounds
         plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
 
-        plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.dims[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
+        plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.get_var_info(dim).get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
 
         ax.set_aspect(1 / ax.get_data_ratio())
-        ax.set_xlabel(frame_data.metadata.dims[spatial_dims[0]].to_axis_label())
-        ax.set_ylabel(frame_data.metadata.dims[spatial_dims[1]].to_axis_label())
+        ax.set_xlabel(frame_data.metadata.get_var_info(spatial_dims[0]).to_axis_label())
+        ax.set_ylabel(frame_data.metadata.get_var_info(spatial_dims[1]).to_axis_label())
 
     def make_update_data(self, ax: Axes, frame_data: Field) -> UpdateData:
         return self.UpdateData(data=frame_data)
@@ -68,4 +68,4 @@ class Field2dRenderer(Renderer[Field]):
         frame_data = self._transpose(frame_data)
         self.im.set_data(frame_data.active_data)
 
-        plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.dims[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
+        plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.get_var_info(dim).get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])

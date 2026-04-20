@@ -35,19 +35,24 @@ class Fourier(MetadataAdaptor):
 
     def apply_field(self, data: Field) -> Field:
         # Capture pre-transform dim latex so the display reflects any upstream --display override.
-        pre_dim_latexs = [data.metadata.dims[key].name.latex for key in self.dim_keys]
+        pre_dim_latexs = [data.metadata.get_var_info(key).name.latex for key in self.dim_keys]
 
         da = data.active_data
         new_dims = dict(data.metadata.dims)
+        new_var_info = dict(data.metadata.var_info)
         for key in self.dim_keys:
-            dim = new_dims[key]
+            dim = new_dims.get(key) or new_var_info[key]
             f_dim = dim.toggle_fourier()
             da = toggle_fourier(da, dim)
-            del new_dims[key]
+            if key in new_dims:
+                del new_dims[key]
             new_dims[f_dim.key] = f_dim
+            if key in new_var_info:
+                del new_var_info[key]
+            new_var_info[f_dim.key] = f_dim
 
         new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{data.metadata.display_latex}]"
-        return data.with_active_data(da).assign_metadata(dims=new_dims, display_latex=new_display)
+        return data.with_active_data(da).assign_metadata(dims=new_dims, var_info=new_var_info, display_latex=new_display)
 
     def get_name_fragments(self) -> list[str]:
         return [f"fourier_{','.join(self.dim_keys)}"]
