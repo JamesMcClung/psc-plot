@@ -41,9 +41,13 @@ class MetadataAdaptor(Adaptor):
     """Wraps `apply` to perform standard metadata mutations."""
 
     def get_modified_display_latex(self, metadata: Metadata) -> str:
+        if metadata.var_name is not None and metadata.var_name in metadata.var_info:
+            return metadata.active_var_info.name.latex
         return metadata.display_latex
 
     def get_modified_unit_latex(self, metadata: Metadata) -> str:
+        if metadata.var_name is not None and metadata.var_name in metadata.var_info:
+            return metadata.active_var_info.unit.latex
         return metadata.unit_latex
 
     def apply(self, data: DataWithAttrs) -> DataWithAttrs:
