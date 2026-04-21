@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from lib.latex import Latex
 from lib.var_info import VarInfo
 
 
@@ -169,6 +170,7 @@ class Field(DataWithAttrs[xr.Dataset, FieldMetadata]):
 class ListMetadata(Metadata):
     coordss: dict[str, np.ndarray] = field(default_factory=dict)
     weight_var: str | None = None
+    subject: Latex | None = None
 
 
 class List[D: pd.DataFrame | dd.DataFrame](DataWithAttrs[D, ListMetadata]):
