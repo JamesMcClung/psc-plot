@@ -92,24 +92,27 @@ The code lives under `src/lib/` and is organized around three concepts: **source
 
 `src/lib/data/adaptor.py`:
 - `Adaptor` — base. Override `apply_field`/`apply_list`; the unused one raises a friendly "use `--bin`/`--scatter`" error.
-- `MetadataAdaptor` — wraps `apply` to also append name fragments and modify `display_latex` / `unit_latex` (used to derive saved filenames and axis labels). Override `get_modified_display_latex(display, metadata)` and/or `get_modified_unit_latex(unit, metadata)`; both receive the current `metadata` so they can inspect e.g. `var_name`.
+- `MetadataAdaptor` — wraps `apply` to also append name fragments and modify the active variable's `Dimension` in `var_info` (used to derive saved filenames and axis labels). Override `get_modified_display_latex(metadata)` and/or `get_modified_unit_latex(metadata)`; both receive the current `metadata` so they can inspect e.g. `var_name` and `active_var_info`.
 - `BareAdaptor` — for adaptors that operate on the active variable (a single `xr.DataArray` for fields, a single `pd.Series`/`dd.Series` for lists) and don't touch metadata.
 
 `Pipeline` (`src/lib/data/pipeline.py`) is itself an `Adaptor` that chains a list of adaptors.
 
 ### Data wrapper
 
-`src/lib/data/data_with_attrs.py` defines `DataWithAttrs[D, MD]` and concrete `Field` (`xr.Dataset`-backed), `FullList` (pandas), `LazyList` (dask). Frozen dataclasses; mutate via `assign_data` / `assign_metadata` / `assign`. `Metadata` carries `var_name` (`str | None`), `display_latex` (`str | None`, physics notation, e.g. `B_x`), `unit_latex` (optional, e.g. `c`), `name_fragments`, `spatial_dims`, `time_dim`, `color_dim`, and `dims` (a `dict[str, Dimension]` of per-dimension display info — see below). Both `var_name` and `display_latex` default to `None` — particle data may have no active variable (e.g. pure scatter of positions). `display_latex`/`unit_latex` are populated at load time from `src/lib/field_units.py` (keyed by `(prefix, var_name)` for fields, `var_name` for particles) when `var_name` is set; users can override either the active variable (default) or any dimension via `--display NAME=VALUE` / `--unit NAME=VALUE`. `FieldMetadata` also carries `prefix` (the file prefix, e.g. `"pfd_moments"`). The unusual `**` unpacking via `__getitem__` + `keys()` is what `Metadata.create_from` and `assign` use to round-trip values between subclasses (`FieldMetadata` vs `ListMetadata`).
+`src/lib/data/data_with_attrs.py` defines `DataWithAttrs[D, MD]` and concrete `Field` (`xr.Dataset`-backed), `FullList` (pandas), `LazyList` (dask). Frozen dataclasses; mutate via `assign_data` / `assign_metadata` / `assign`. `Metadata` carries `var_name` (`str | None`), `var_info` (`dict[str, Dimension]` — maps all known variable/dimension keys to `Dimension` objects), `name_fragments`, `spatial_dims`, `time_dim`, and `color_dim`. `var_name` defaults to `None` — particle data may have no active variable (e.g. pure scatter of positions). The convenience property `active_var_info` returns `var_info[var_name]`. `var_info` is populated at load time from `src/lib/field_units.py` via `lookup(prefix, key)` for every coordinate and the active variable. `FieldMetadata` also carries `prefix` (the file prefix, e.g. `"pfd_moments"`). The unusual `**` unpacking via `__getitem__` + `keys()` is what `Metadata.create_from` and `assign` use to round-trip values between subclasses (`FieldMetadata` vs `ListMetadata`).
 
 Both `Field` and `List` expose an `active_data` property and `with_active_data()` method. For `Field`, `active_data` returns the `xr.DataArray` for `metadata.var_name`; `with_active_data(da)` replaces it and drops grid-incompatible siblings. For `List`, `active_data` returns the `pd.Series`/`dd.Series` column for `metadata.var_name`; `with_active_data(series)` replaces that column. Both raise `ValueError` if `var_name` is `None`. Most code should use `active_data` rather than `data` directly. `BareAdaptor` handles this automatically via the shims in `adaptor.py`.
 
 The class-level `data: ...`/`metadata: ...` annotations on the subclasses look redundant but are intentional — see the comment in `DataWithAttrs.__init__`. They are needed so `isinstance`-narrowed code gets the concrete types; don't "clean them up."
 
-### Dimensions
+### Dimensions and var_info
 
-`src/lib/dimension.py` defines `Dimension` as a frozen value (`name: Latex`, `unit: Latex`, `geometry`, `key`). It is no longer a module-mutable singleton — `DIM_DEFAULTS` is just a starter table consulted by `get_default_dim(key)`, which loaders call when seeding `metadata.dims` from the loaded coords. For an unknown key with the Fourier `k_` prefix whose base is registered, `get_default_dim` returns the base's `toggle_fourier()` so coords already in Fourier space inherit the right unit.
+`src/lib/dimension.py` defines `Dimension` as a frozen value (`name: Latex`, `unit: Latex`, `geometry`, `key`). `src/lib/field_units.py` provides the unified registries:
+- `DIM_REGISTRY` — coordinate dimensions (x, y, z, t) with standard units.
+- `PREFIXED_REGISTRY` — keyed by `(prefix, var_name)` for field and particle variables (e.g. `("pfd", "hx_fc")` → `Dimension(name="B_x", ...)`).
+- `lookup(prefix, key)` — checks prefixed registry, then dim registry, then Fourier toggle of the base key; falls back to a plain `Dimension(name=key)`.
 
-**Per-instance invariant:** `metadata.dims` is the source of truth for axis labels, coord-value labels, and Fourier/transform geometry checks during the pipeline. Adaptors that rename, add, or remove a dimension key (Fourier, TransformPolar, TransformSpherical, etc.) MUST update `metadata.dims` accordingly inside `apply_field` / `apply_list`. The `MetadataAdaptor` hooks (`get_modified_display_latex`/`unit_latex`) only see post-apply metadata and only target the active variable's labels, so dim-key swaps must be handled in `apply` itself, not via the hooks.
+**Per-instance invariant:** `metadata.var_info` is the single source of truth for axis labels, coord-value labels, and Fourier/transform geometry checks during the pipeline. Adaptors that rename, add, or remove a dimension key (Fourier, TransformPolar, TransformSpherical, etc.) MUST update `var_info` accordingly inside `apply_field` / `apply_list`. The `MetadataAdaptor` hooks (`get_modified_display_latex`/`get_modified_unit_latex`) only see post-apply metadata and only target the active variable's `Dimension`, so dim-key swaps must be handled in `apply` itself, not via the hooks.
 
 ### Derived variables
 
