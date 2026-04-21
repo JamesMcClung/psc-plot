@@ -17,15 +17,12 @@ from lib.dimension import Dimension
 @dataclass(kw_only=True, frozen=True)
 class Metadata:
     var_name: str | None = None
-    display_latex: str | None = None
-    unit_latex: str = ""
     name_fragments: list[str] = field(default_factory=list)
 
     spatial_dims: list[str] = field(default_factory=list)
     time_dim: str | None = None
     color_dim: str | None = None
 
-    dims: dict[str, Dimension] = field(default_factory=dict)
     var_info: dict[str, Dimension] = field(default_factory=dict)
 
     @property
@@ -33,12 +30,6 @@ class Metadata:
         if self.var_name is None:
             raise ValueError("no active variable; specify one as a positional argument")
         return self.var_info[self.var_name]
-
-    def get_var_info(self, key: str) -> Dimension:
-        """Look up a key in dims first (adaptors still write there), falling back to var_info."""
-        if key in self.dims:
-            return self.dims[key]
-        return self.var_info[key]
 
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)

@@ -41,35 +41,29 @@ class MetadataAdaptor(Adaptor):
     """Wraps `apply` to perform standard metadata mutations."""
 
     def get_modified_display_latex(self, metadata: Metadata) -> str:
-        if metadata.var_name is not None and metadata.var_name in metadata.var_info:
-            return metadata.active_var_info.name.latex
-        return metadata.display_latex
+        return metadata.active_var_info.name.latex
 
     def get_modified_unit_latex(self, metadata: Metadata) -> str:
-        if metadata.var_name is not None and metadata.var_name in metadata.var_info:
-            return metadata.active_var_info.unit.latex
-        return metadata.unit_latex
+        return metadata.active_var_info.unit.latex
 
     def apply(self, data: DataWithAttrs) -> DataWithAttrs:
+        from dataclasses import replace
+        from lib.latex import Latex
+
         data = super().apply(data)
 
         name_fragments = data.metadata.name_fragments + self.get_name_fragments()
-        display_latex = self.get_modified_display_latex(data.metadata)
-        unit_latex = self.get_modified_unit_latex(data.metadata)
 
         var_info = data.metadata.var_info
-        if data.metadata.var_name is not None and var_info:
-            from dataclasses import replace as _replace
-            from lib.latex import Latex
-            old_dim = var_info.get(data.metadata.var_name)
-            if old_dim is not None:
-                new_dim = _replace(old_dim, name=Latex(display_latex), unit=Latex(unit_latex))
-                var_info = {**var_info, data.metadata.var_name: new_dim}
+        if data.metadata.var_name is not None and data.metadata.var_name in var_info:
+            display_latex = self.get_modified_display_latex(data.metadata)
+            unit_latex = self.get_modified_unit_latex(data.metadata)
+            old_dim = var_info[data.metadata.var_name]
+            new_dim = replace(old_dim, name=Latex(display_latex), unit=Latex(unit_latex))
+            var_info = {**var_info, data.metadata.var_name: new_dim}
 
         return data.assign_metadata(
             name_fragments=name_fragments,
-            display_latex=display_latex,
-            unit_latex=unit_latex,
             var_info=var_info,
         )
 
