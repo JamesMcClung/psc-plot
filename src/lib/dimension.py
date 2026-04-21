@@ -29,7 +29,7 @@ type Geometry = Literal["linear", "polar:r", "polar:theta", "spherical:r", "sphe
 class Dimension:
     name: Latex
     unit: Latex
-    geometry: Geometry
+    geometry: Geometry | None = None
     _: KW_ONLY
     key: str = None
 
