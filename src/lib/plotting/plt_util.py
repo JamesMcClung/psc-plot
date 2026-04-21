@@ -48,7 +48,7 @@ def update_cbar(mappable: _ScalarMappable, *, data_min_override: float | None = 
 def format_label(metadata: Metadata) -> str:
     """Format a label for the dependent variable: ``$display$`` or ``$display\\;[unit]$``."""
     dim = metadata.active_var_info
-    if dim.unit.latex:
+    if dim.unit:
         return f"${dim.display}\\;[{dim.unit}]$"
     return f"${dim.display}$"
 

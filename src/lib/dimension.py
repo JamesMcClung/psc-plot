@@ -50,7 +50,7 @@ class Dimension:
         return Dimension(display or self.display, unit or self.unit, self.geometry, key=self.key)
 
     def to_axis_label(self) -> str:
-        if self.unit.latex:
+        if self.unit:
             return f"${self.display}\\ [{self.unit}]$"
         return f"${self.display}$"
 

@@ -43,3 +43,6 @@ class Latex:
 
     def __str__(self) -> str:
         return self.latex
+
+    def __bool__(self) -> bool:
+        return bool(self.latex)
