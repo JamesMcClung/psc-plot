@@ -37,7 +37,7 @@ class Fourier(MetadataAdaptor):
         from dataclasses import replace
         from lib.latex import Latex
 
-        pre_dim_latexs = [data.metadata.var_info[key].name.latex for key in self.dim_keys]
+        pre_dim_latexs = [data.metadata.var_info[key].display.latex for key in self.dim_keys]
 
         da = data.active_data
         new_var_info = dict(data.metadata.var_info)
@@ -50,13 +50,13 @@ class Fourier(MetadataAdaptor):
 
         if data.metadata.var_name is not None and data.metadata.var_name in new_var_info:
             old_active = new_var_info[data.metadata.var_name]
-            new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{old_active.name.latex}]"
-            new_var_info[data.metadata.var_name] = replace(old_active, name=Latex(new_display))
+            new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{old_active.display.latex}]"
+            new_var_info[data.metadata.var_name] = replace(old_active, display=Latex(new_display))
 
         return data.with_active_data(da).assign_metadata(var_info=new_var_info)
 
     def get_modified_display_latex(self, metadata) -> str:
-        return metadata.active_var_info.name.latex
+        return metadata.active_var_info.display.latex
 
     def get_modified_unit_latex(self, metadata) -> str:
         return metadata.active_var_info.unit.latex

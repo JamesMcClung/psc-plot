@@ -41,7 +41,7 @@ class MetadataAdaptor(Adaptor):
     """Wraps `apply` to perform standard metadata mutations."""
 
     def get_modified_display_latex(self, metadata: Metadata) -> str:
-        return metadata.active_var_info.name.latex
+        return metadata.active_var_info.display.latex
 
     def get_modified_unit_latex(self, metadata: Metadata) -> str:
         return metadata.active_var_info.unit.latex
@@ -59,7 +59,7 @@ class MetadataAdaptor(Adaptor):
             display_latex = self.get_modified_display_latex(data.metadata)
             unit_latex = self.get_modified_unit_latex(data.metadata)
             old_dim = var_info[data.metadata.var_name]
-            new_dim = replace(old_dim, name=Latex(display_latex), unit=Latex(unit_latex))
+            new_dim = replace(old_dim, display=Latex(display_latex), unit=Latex(unit_latex))
             var_info = {**var_info, data.metadata.var_name: new_dim}
 
         return data.assign_metadata(

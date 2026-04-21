@@ -127,9 +127,9 @@ class Bin(MetadataAdaptor):
 
         f_dim = field_units.lookup("prt", "f")
         # FIXME hack to get species subscripts that depends on species_filter behavior
-        display_latex = f_dim.name.latex
+        display_latex = f_dim.display.latex
         if data.metadata.var_name is not None and data.metadata.var_name in data.metadata.var_info:
-            active_display = data.metadata.active_var_info.name.latex
+            active_display = data.metadata.active_var_info.display.latex
             if "ion" in active_display:
                 display_latex += "_\\text{i}"
             elif "electron" in active_display:
@@ -137,7 +137,7 @@ class Bin(MetadataAdaptor):
 
         from dataclasses import replace
         from lib.latex import Latex
-        f_dim = replace(f_dim, name=Latex(display_latex))
+        f_dim = replace(f_dim, display=Latex(display_latex))
         new_var_info = {key: data.metadata.var_info[key] for key in da.coords if key in data.metadata.var_info}
         new_var_info["f"] = f_dim
         return Field(da.to_dataset(name="f"), FieldMetadata.create_from(data.metadata, var_name="f", var_info=new_var_info))

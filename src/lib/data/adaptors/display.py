@@ -25,7 +25,7 @@ class Display(Adaptor):
             raise ValueError(f"--display target {target!r} is not a known key ({sorted(metadata.var_info)})")
 
         old_dim = metadata.var_info[target]
-        new_dim = replace(old_dim, name=Latex(self.value))
+        new_dim = replace(old_dim, display=Latex(self.value))
         new_var_info = {**metadata.var_info, target: new_dim}
         return data.assign_metadata(name_fragments=name_fragments, var_info=new_var_info)
 
