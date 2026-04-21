@@ -11,7 +11,7 @@ RADIAN = Latex("\\text{rad}")
 SPEED_OF_LIGHT = Latex("c")
 ELEMENTARY_CHARGE = Latex("e")
 
-FOURIER_NAME_PREFIX = "k_"
+FOURIER_KEY_PREFIX = "k_"
 
 
 def _toggle_unit_fourier(unit: Latex) -> Latex:
@@ -61,12 +61,12 @@ class Dimension:
         # TODO make t <-> omega
         toggled_unit = _toggle_unit_fourier(self.unit)
         if self.is_fourier():
-            return Dimension(self.display.remove_prefix(FOURIER_NAME_PREFIX), toggled_unit, self.geometry)
+            return Dimension(self.display.remove_prefix(FOURIER_KEY_PREFIX), toggled_unit, self.geometry)
         else:
-            return Dimension(self.display.prepend(FOURIER_NAME_PREFIX), toggled_unit, self.geometry)
+            return Dimension(self.display.prepend(FOURIER_KEY_PREFIX), toggled_unit, self.geometry)
 
     def is_fourier(self) -> bool:
-        return self.display.starts_with(FOURIER_NAME_PREFIX)
+        return self.display.starts_with(FOURIER_KEY_PREFIX)
 
 
 def check_unit_compatability(dim_1: Dimension, dim_2: Dimension, dest_geometry: str):

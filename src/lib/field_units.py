@@ -8,7 +8,7 @@ from __future__ import annotations
 from lib.dimension import (
     ELECTRON_SKIN_DEPTH,
     ELEMENTARY_CHARGE,
-    FOURIER_NAME_PREFIX,
+    FOURIER_KEY_PREFIX,
     INVERSE_ELECTRON_PLASMA_FREQUENCY,
     SPEED_OF_LIGHT,
     Dimension,
@@ -141,9 +141,9 @@ def lookup(prefix: str | None, key: str) -> Dimension:
             return info
     if key in DIM_REGISTRY:
         return DIM_REGISTRY[key]
-    if key.startswith(FOURIER_NAME_PREFIX):
+    if key.startswith(FOURIER_KEY_PREFIX):
         # TODO: remove this (can't until registered derived field vars can use Fourier adaptor again)
-        base_key = key[len(FOURIER_NAME_PREFIX) :]
+        base_key = key[len(FOURIER_KEY_PREFIX) :]
         base = None
         if prefix is not None:
             base = PREFIXED_REGISTRY.get((prefix, base_key))
