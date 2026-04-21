@@ -170,7 +170,9 @@ class Field(DataWithAttrs[xr.Dataset, FieldMetadata]):
 class ListMetadata(Metadata):
     coordss: dict[str, np.ndarray] = field(default_factory=dict)
     weight_var: str | None = None
+
     subject: Latex | None = None
+    """The `subject` is essentially the (display) name of the list's implicit index dimension."""
 
 
 class List[D: pd.DataFrame | dd.DataFrame](DataWithAttrs[D, ListMetadata]):
