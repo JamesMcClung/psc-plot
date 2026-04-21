@@ -6,7 +6,7 @@ from matplotlib.colorizer import _ScalarMappable
 from matplotlib.colors import Normalize
 from matplotlib.scale import ScaleBase
 
-from lib.data.data_with_attrs import Metadata
+from lib.data.data_with_attrs import ListMetadata, Metadata
 
 type BuiltinAxisScaleKey = typing.Literal["linear", "log"]
 SCALES: list[BuiltinAxisScaleKey] = list(BuiltinAxisScaleKey.__value__.__args__)
@@ -46,17 +46,16 @@ def update_cbar(mappable: _ScalarMappable, *, data_min_override: float | None = 
 
 
 def update_title(ax: Axes, metadata: Metadata, cut_labels: list[str]):
+    title_base = ""
     cut_labels_str = ", ".join(cut_labels)
 
-    subject = getattr(metadata, "subject", None)
-    if subject is not None:
-        if cut_labels_str:
-            cut_labels_str = f" ({cut_labels_str})"
-        return ax.set_title(f"${subject}$" + cut_labels_str)
+    if isinstance(metadata, ListMetadata):
+        if metadata.subject:
+            title_base = f"${metadata.subject}$"
+    elif metadata.active_key:
+        title_base = metadata.active_var_info.to_axis_label()
 
-    if metadata.active_key is None:
-        return ax.set_title(cut_labels_str)
-
-    if cut_labels_str:
+    if title_base and cut_labels_str:
         cut_labels_str = f" ({cut_labels_str})"
-    return ax.set_title(metadata.active_var_info.to_axis_label() + cut_labels_str)
+
+    ax.set_title(title_base + cut_labels_str)
