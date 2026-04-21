@@ -106,14 +106,14 @@ class Bin(MetadataAdaptor):
                 [df[active_key].to_dask_array() for active_key in self.varname_to_nbins],
                 bin_edgess,
                 density=False,
-                weights=df[data.metadata.weight_var].to_dask_array() if data.metadata.weight_var else None,
+                weights=df[data.metadata.weight_key].to_dask_array() if data.metadata.weight_key else None,
             )
         else:
             binned_data, _ = np.histogramdd(
                 [df[active_key] for active_key in self.varname_to_nbins],
                 bin_edgess,
                 density=False,
-                weights=df[data.metadata.weight_var] if data.metadata.weight_var else None,
+                weights=df[data.metadata.weight_key] if data.metadata.weight_key else None,
             )
 
         # note: the slice removes any infs
@@ -126,16 +126,12 @@ class Bin(MetadataAdaptor):
         )
 
         f_dim = var_info_registry.lookup("prt", "f")
-        # FIXME hack to get species subscripts that depends on species_filter behavior
-        display_latex = f_dim.display.latex
-        if data.metadata.active_key is not None and data.metadata.active_key in data.metadata.var_infos:
-            active_display = data.metadata.active_var_info.display.latex
-            if "ion" in active_display:
-                display_latex += "_\\text{i}"
-            elif "electron" in active_display:
-                display_latex += "_\\text{e}"
 
-        f_dim = f_dim.assign(display=display_latex)
+        subject = data.metadata.subject
+        if subject is not None and subject.latex == r"\text{Ions}":
+            f_dim = f_dim.assign(display=f_dim.display.latex + r"_\text{i}")
+        elif subject is not None and subject.latex == r"\text{Electrons}":
+            f_dim = f_dim.assign(display=f_dim.display.latex + r"_\text{e}")
         new_var_infos = {key: data.metadata.var_infos[key] for key in da.coords if key in data.metadata.var_infos}
         new_var_infos["f"] = f_dim
         return Field(da.to_dataset(name="f"), FieldMetadata.create_from(data.metadata, active_key="f", var_infos=new_var_infos))

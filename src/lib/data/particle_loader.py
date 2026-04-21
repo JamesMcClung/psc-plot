@@ -1,4 +1,5 @@
 from lib.data.data_with_attrs import LazyList
+from lib.latex import Latex
 
 from .. import file_util, particle_util
 from ..var_info_registry import lookup
@@ -19,6 +20,7 @@ class ParticleLoader(DataSource):
             name_fragments=self.get_name_fragments(),
             active_key=self.active_key,
             var_infos=var_infos,
+            subject=Latex(r"\text{Particles}"),
         )
 
     def get_name_fragments(self) -> list[str]:

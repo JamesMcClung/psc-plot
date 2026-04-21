@@ -26,7 +26,7 @@ Where `<prefix>` selects the data source: field prefixes (`pfd`, `pfd_moments`, 
 
 Common flags:
 - `-q` quiet (don't show interactively), `-s [dir]` save output (defaults to `.` if dir omitted)
-- Adaptor flags such as `--roll`, `--reduce`, `--bin`, `--scatter`, `--mag`, `--nan0`, `--scale`, `--fourier`/`-f`, `--pos`, `--species`, `--transform-spherical`, `-v` (versus, sets axes), `-b` (bin)
+- Adaptor flags such as `--roll`, `--reduce`, `--bin`, `--scatter [name]`, `--mag`, `--nan0`, `--scale`, `--fourier`/`-f`, `--pos`, `--species`, `--transform-spherical`, `-v` (versus, sets axes), `-b` (bin)
 
 Required environment (see `src/lib/config.py`):
 - `PSC_PLOT_DATA_DIR` — directory containing the data files (must be set; `set_data_dir.sh <dir>` is a convenience script that exports it)
@@ -99,7 +99,7 @@ The code lives under `src/lib/` and is organized around three concepts: **source
 
 ### Data wrapper
 
-`src/lib/data/data_with_attrs.py` defines `DataWithAttrs[D, MD]` and concrete `Field` (`xr.Dataset`-backed), `FullList` (pandas), `LazyList` (dask). Frozen dataclasses; mutate via `assign_data` / `assign_metadata` / `assign`. `Metadata` carries `active_key` (`str | None`), `var_infos` (`dict[str, VarInfo]` — maps all known variable/dimension keys to `VarInfo` objects), `name_fragments`, `spatial_dims`, `time_dim`, and `color_dim`. `active_key` defaults to `None` — particle data may have no active variable (e.g. pure scatter of positions). The convenience property `active_var_info` returns `var_infos[active_key]`. `var_infos` is populated at load time from `src/lib/field_units.py` via `lookup(prefix, key)` for every coordinate and the active variable. `FieldMetadata` also carries `prefix` (the file prefix, e.g. `"pfd_moments"`). The unusual `**` unpacking via `__getitem__` + `keys()` is what `Metadata.create_from` and `assign` use to round-trip values between subclasses (`FieldMetadata` vs `ListMetadata`).
+`src/lib/data/data_with_attrs.py` defines `DataWithAttrs[D, MD]` and concrete `Field` (`xr.Dataset`-backed), `FullList` (pandas), `LazyList` (dask). Frozen dataclasses; mutate via `assign_data` / `assign_metadata` / `assign`. `Metadata` carries `active_key` (`str | None`), `var_infos` (`dict[str, VarInfo]` — maps all known variable/dimension keys to `VarInfo` objects), `name_fragments`, `spatial_dims`, `time_dim`, and `color_dim`. `active_key` defaults to `None` — particle data may have no active variable (e.g. pure scatter of positions). The convenience property `active_var_info` returns `var_infos[active_key]`. `var_infos` is populated at load time from `src/lib/var_info_registry.py` via `lookup(prefix, key)` for every coordinate and the active variable. `FieldMetadata` also carries `prefix` (the file prefix, e.g. `"pfd_moments"`). `ListMetadata` also carries `subject: Latex | None` — describes what the list contains (e.g. "Particles", "Ions", "Electrons"); set by `ParticleLoader`, refined by `SpeciesFilter`, and used by `Bin` (for distribution function subscripts) and `ScatterRenderer` (for plot titles). The unusual `**` unpacking via `__getitem__` + `keys()` is what `Metadata.create_from` and `assign` use to round-trip values between subclasses (`FieldMetadata` vs `ListMetadata`).
 
 Both `Field` and `List` expose an `active_data` property and `with_active_data()` method. For `Field`, `active_data` returns the `xr.DataArray` for `metadata.active_key`; `with_active_data(da)` replaces it and drops grid-incompatible siblings. For `List`, `active_data` returns the `pd.Series`/`dd.Series` column for `metadata.active_key`; `with_active_data(series)` replaces that column. Both raise `ValueError` if `active_key` is `None`. Most code should use `active_data` rather than `data` directly. `BareAdaptor` handles this automatically via the shims in `adaptor.py`.
 
@@ -107,10 +107,8 @@ The class-level `data: ...`/`metadata: ...` annotations on the subclasses look r
 
 ### Dimensions and var_infos
 
-`src/lib/dimension.py` defines `VarInfo` as a frozen value (`name: Latex`, `unit: Latex`, `geometry`, `key`). `src/lib/field_units.py` provides the unified registries:
-- `DIM_REGISTRY` — coordinate dimensions (x, y, z, t) with standard units.
-- `PREFIXED_REGISTRY` — keyed by `(prefix, active_key)` for field and particle variables (e.g. `("pfd", "hx_fc")` → `VarInfo(name="B_x", ...)`).
-- `lookup(prefix, key)` — checks prefixed registry, then dim registry, then Fourier toggle of the base key; falls back to a plain `VarInfo(name=key)`.
+`src/lib/var_info.py` defines `VarInfo` as a frozen value (`display: Latex`, `unit: Latex`, `geometry`, `key`). `src/lib/var_info_registry.py` provides a single `_REGISTRY` dict keyed by `(prefix | None, key)` — `None`-prefix entries are shared dimensions (x, y, z, t); string-prefix entries are per-file-type variables (e.g. `("pfd", "hx_fc")` → `VarInfo(display="B_x", ...)`).
+- `lookup(prefix, key)` — checks prefixed registry, then `None`-prefix registry, then Fourier toggle of the base key; falls back to a plain `VarInfo(display=key)`.
 
 **Per-instance invariant:** `metadata.var_infos` is the single source of truth for axis labels, coord-value labels, and Fourier/transform geometry checks during the pipeline. Adaptors that rename, add, or remove a dimension key (Fourier, TransformPolar, TransformSpherical, etc.) MUST update `var_infos` accordingly inside `apply_field` / `apply_list`. The `MetadataAdaptor` hooks (`get_modified_display_latex`/`get_modified_unit_latex`) only see post-apply metadata and only target the active variable's `VarInfo`, so dim-key swaps must be handled in `apply` itself, not via the hooks.
 

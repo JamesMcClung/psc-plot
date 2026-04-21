@@ -4,17 +4,15 @@ import numpy as np
 
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, LazyList, ListMetadata
-from lib.parsing.args_registry import const_arg
+from lib.latex import Latex
+from lib.parsing.args_registry import arg_parser
 
 
-@const_arg(
-    dest="adaptors",
-    flags="--scatter",
-    help="convert to list of values and coordinates",
-)
 class Scatter(MetadataAdaptor):
+    def __init__(self, subject: Latex | None):
+        self.subject = subject
+
     def apply_field(self, data: Field) -> LazyList:
-        # note:  dims and coords are not necessarily in the same order. Data dimensions follow the order of dims.
         coordss = data.coordss
         ordered_coordss = [coordss[dim] for dim in data.dims]
         coord_grids = np.meshgrid(*ordered_coordss, indexing="ij")
@@ -26,7 +24,21 @@ class Scatter(MetadataAdaptor):
         metadata = ListMetadata.create_from(
             data.metadata,
             coordss=coordss,
-            weight_var=data.metadata.active_key,
+            weight_key=data.metadata.active_key,
+            subject=self.subject,
         )
 
         return LazyList(df, metadata)
+
+
+@arg_parser(
+    dest="adaptors",
+    flags="--scatter",
+    metavar="name",
+    help="convert to list of values and coordinates, optionally naming the result",
+    nargs="?",
+)
+def parse_scatter(arg: str | None) -> Scatter:
+    if isinstance(arg, str):
+        arg = Latex(arg)
+    return Scatter(arg)

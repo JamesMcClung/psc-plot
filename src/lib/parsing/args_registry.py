@@ -27,7 +27,7 @@ def get_combine_args_action(combiner: typing.Callable[[list[Any]], Any]) -> Acti
     return CombineArgs
 
 
-type ArgparseNArgs = int | typing.Literal["+", "*"] | None
+type ArgparseNArgs = int | typing.Literal["+", "*", "?"] | None
 type NArgs = ArgparseNArgs | typing.Literal["just one"]
 
 
@@ -54,7 +54,7 @@ class ArgparseArgAdder[ArgType]:
             if self.nargs is None:
                 # In argparse, nargs=None usually means "consume one command-line argument"
                 # (and type-convert it with the given type, then pass that to the given action).
-                # When a parser specifies nargs=None, it means the parser maps a single
+                # When one of my parsers specifies nargs=None, it means the parser maps one
                 # command-line argument to a single arg instance. However, since it is common
                 # to chain multiple instances of an arg together, it is convenient to be able
                 # to write e.g. "--fourier x y" as a shorthand for "--fourier x --fourier y".
@@ -63,8 +63,11 @@ class ArgparseArgAdder[ArgType]:
             elif self.nargs == "just one":
                 # Don't allow the above shorthand
                 parser.add_argument(*self.flags, dest=self.dest, help=self.help, action="append", type=self.type, metavar=self.metavar, nargs=None)
+            elif self.nargs == "?":
+                # special handling for const
+                parser.add_argument(*self.flags, dest=self.dest, help=self.help, action="append", type=self.type, metavar=self.metavar, nargs="?", const=self.type(None))
             else:
-                # On the other hand, if an parser specifies a non-None nargs, it means the
+                # On the other hand, if a parser specifies a non-None nargs, it means the
                 # parser maps that many command-line arguments to a single arg instance. This
                 # actually requires a custom action, as argparse only supports one-to-one mappings
                 # between command-line arguments and stored values of the given type.
