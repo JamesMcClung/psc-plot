@@ -1,6 +1,6 @@
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import DataWithAttrs, List
-from lib.dimension import Dimension
+from lib.dimension import VarInfo
 from lib.latex import Latex
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
@@ -24,7 +24,7 @@ class SpeciesFilter(MetadataAdaptor):
     def apply(self, data: DataWithAttrs) -> DataWithAttrs:
         if data.metadata.active_key is None:
             data = super().apply(data)
-            species_dim = Dimension(Latex(f"\\text{{{self.species}s}}"), Latex(""), "linear", key=_SPECIES_VAR_KEY)
+            species_dim = VarInfo(Latex(f"\\text{{{self.species}s}}"), Latex(""), "linear", key=_SPECIES_VAR_KEY)
             new_var_info = {**data.metadata.var_info, _SPECIES_VAR_KEY: species_dim}
             return data.assign_metadata(active_key=_SPECIES_VAR_KEY, var_info=new_var_info)
         return super().apply(data)

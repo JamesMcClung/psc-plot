@@ -27,7 +27,7 @@ type Geometry = Literal["linear", "polar:r", "polar:theta", "spherical:r", "sphe
 
 
 @dataclass(frozen=True)
-class Dimension:
+class VarInfo:
     display: Latex
     unit: Latex
     geometry: Geometry | None = None
@@ -43,12 +43,12 @@ class Dimension:
         *,
         display: str | Latex | None = None,
         unit: str | Latex | None = None,
-    ) -> Dimension:
+    ) -> VarInfo:
         if isinstance(display, str):
             display = Latex(display)
         if isinstance(unit, str):
             unit = Latex(unit)
-        return Dimension(display or self.display, unit or self.unit, self.geometry, key=self.key)
+        return VarInfo(display or self.display, unit or self.unit, self.geometry, key=self.key)
 
     def to_axis_label(self) -> str:
         if self.unit:
@@ -58,18 +58,18 @@ class Dimension:
     def get_coordinate_label(self, coord_val: float) -> str:
         return f"${self.display} = {coord_val:.3f}\\ {self.unit}$"
 
-    def toggle_fourier(self) -> Dimension:
+    def toggle_fourier(self) -> VarInfo:
         # TODO make t <-> omega
         toggled_unit = _toggle_unit_fourier(self.unit)
         if self.is_fourier():
-            return Dimension(self.display.remove_prefix(FOURIER_KEY_PREFIX), toggled_unit, self.geometry)
+            return VarInfo(self.display.remove_prefix(FOURIER_KEY_PREFIX), toggled_unit, self.geometry)
         else:
-            return Dimension(self.display.prepend(FOURIER_KEY_PREFIX), toggled_unit, self.geometry)
+            return VarInfo(self.display.prepend(FOURIER_KEY_PREFIX), toggled_unit, self.geometry)
 
     def is_fourier(self) -> bool:
         return self.display.starts_with(FOURIER_KEY_PREFIX)
 
 
-def check_unit_compatability(dim_1: Dimension, dim_2: Dimension, dest_geometry: str):
+def check_unit_compatability(dim_1: VarInfo, dim_2: VarInfo, dest_geometry: str):
     if dim_1.unit != dim_2.unit:
         raise ValueError(f"Dimensions {dim_1.display} and {dim_2.display} have incompatible units for transforming to {dest_geometry} coordinates ({dim_1.unit} and {dim_2.unit})")

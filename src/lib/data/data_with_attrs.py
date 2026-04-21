@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from lib.dimension import Dimension
+from lib.dimension import VarInfo
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -23,10 +23,10 @@ class Metadata:
     time_dim: str | None = None
     color_dim: str | None = None
 
-    var_info: dict[str, Dimension] = field(default_factory=dict)
+    var_info: dict[str, VarInfo] = field(default_factory=dict)
 
     @property
-    def active_var_info(self) -> Dimension:
+    def active_var_info(self) -> VarInfo:
         if self.active_key is None:
             raise ValueError("no active variable; specify one as a positional argument")
         return self.var_info[self.active_key]

@@ -12,13 +12,13 @@ from lib.dimension import (
     FOURIER_KEY_PREFIX,
     INVERSE_ELECTRON_PLASMA_FREQUENCY,
     SPEED_OF_LIGHT,
-    Dimension,
     Geometry,
+    VarInfo,
 )
 from lib.file_util import Prefix
 from lib.latex import Latex
 
-_REGISTRY: dict[tuple[str | None, str], Dimension] = {}
+_REGISTRY: dict[tuple[str | None, str], VarInfo] = {}
 
 
 def _register(prefix: str | Prefix, key: str, display: str | Latex, *, unit: str | Latex = "", geometry: Geometry | None = None):
@@ -26,7 +26,7 @@ def _register(prefix: str | Prefix, key: str, display: str | Latex, *, unit: str
         display = Latex(display)
     if isinstance(unit, str):
         unit = Latex(unit)
-    _REGISTRY[(prefix, key)] = Dimension(display, unit, geometry, key=key)
+    _REGISTRY[(prefix, key)] = VarInfo(display, unit, geometry, key=key)
 
 
 _register(None, "x", "x", unit=ELECTRON_SKIN_DEPTH, geometry="linear")
@@ -111,7 +111,7 @@ _register("prt", "wxyz", "W")
 _register("prt", "f", "f")
 
 
-def lookup(prefix: str | None, key: str) -> Dimension:
+def lookup(prefix: str | None, key: str) -> VarInfo:
     """Look up display/unit info for a key, checking prefixed registry then dim registry."""
     if (prefix, key) in _REGISTRY:
         return _REGISTRY[(prefix, key)]
@@ -128,4 +128,4 @@ def lookup(prefix: str | None, key: str) -> Dimension:
         if base:
             return base.toggle_fourier()
 
-    return Dimension(Latex(key), Latex(""), key=key)
+    return VarInfo(Latex(key), Latex(""), key=key)

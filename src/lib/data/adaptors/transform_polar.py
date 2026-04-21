@@ -5,17 +5,17 @@ import xarray as xr
 
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, List
-from lib.dimension import RADIAN, Dimension, check_unit_compatability
+from lib.dimension import RADIAN, VarInfo, check_unit_compatability
 from lib.latex import Latex
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
 
-def _build_polar_dims(dim_x: Dimension, dim_y: Dimension) -> tuple[Dimension, Dimension]:
+def _build_polar_dims(dim_x: VarInfo, dim_y: VarInfo) -> tuple[VarInfo, VarInfo]:
     check_unit_compatability(dim_x, dim_y, "polar")
     r_symbol = "k" if dim_x.is_fourier() else "r"
-    dim_r = Dimension(Latex(f"{r_symbol}_\\text{{polar}}"), dim_x.unit, "polar:r", key=f"{r_symbol}_p")
-    dim_theta = Dimension(Latex("\\theta"), RADIAN, "polar:theta")
+    dim_r = VarInfo(Latex(f"{r_symbol}_\\text{{polar}}"), dim_x.unit, "polar:r", key=f"{r_symbol}_p")
+    dim_theta = VarInfo(Latex("\\theta"), RADIAN, "polar:theta")
     return dim_r, dim_theta
 
 

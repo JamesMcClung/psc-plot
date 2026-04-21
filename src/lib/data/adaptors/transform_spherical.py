@@ -5,19 +5,19 @@ import xarray as xr
 
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, List
-from lib.dimension import RADIAN, Dimension, check_unit_compatability
+from lib.dimension import RADIAN, VarInfo, check_unit_compatability
 from lib.latex import Latex
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
 
-def _build_spherical_dims(dim_x: Dimension, dim_y: Dimension, dim_z: Dimension) -> tuple[Dimension, Dimension, Dimension]:
+def _build_spherical_dims(dim_x: VarInfo, dim_y: VarInfo, dim_z: VarInfo) -> tuple[VarInfo, VarInfo, VarInfo]:
     check_unit_compatability(dim_x, dim_y, "spherical")
     check_unit_compatability(dim_x, dim_z, "spherical")
     r_symbol = "k" if dim_x.is_fourier() else "r"
-    dim_r = Dimension(Latex(f"{r_symbol}_\\text{{spherical}}"), dim_x.unit, "spherical:r", key=f"{r_symbol}_s")
-    dim_theta = Dimension(Latex("\\theta"), RADIAN, "spherical:theta")
-    dim_phi = Dimension(Latex("\\phi"), RADIAN, "spherical:phi")
+    dim_r = VarInfo(Latex(f"{r_symbol}_\\text{{spherical}}"), dim_x.unit, "spherical:r", key=f"{r_symbol}_s")
+    dim_theta = VarInfo(Latex("\\theta"), RADIAN, "spherical:theta")
+    dim_phi = VarInfo(Latex("\\phi"), RADIAN, "spherical:phi")
     return dim_r, dim_theta, dim_phi
 
 
