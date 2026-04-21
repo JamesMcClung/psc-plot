@@ -62,37 +62,3 @@ def check_unit_compatability(dim_1: Dimension, dim_2: Dimension, dest_geometry: 
         raise ValueError(f"Dimensions {dim_1.name} and {dim_2.name} have incompatible units for transforming to {dest_geometry} coordinates ({dim_1.unit} and {dim_2.unit})")
 
 
-DIM_DEFAULTS: dict[str, Dimension] = {}
-
-
-def _register_default(dim: Dimension) -> None:
-    DIM_DEFAULTS[dim.key] = dim
-
-
-_register_default(Dimension(Latex("x"), ELECTRON_SKIN_DEPTH, "linear"))
-_register_default(Dimension(Latex("y"), ELECTRON_SKIN_DEPTH, "linear"))
-_register_default(Dimension(Latex("z"), ELECTRON_SKIN_DEPTH, "linear"))
-_register_default(Dimension(Latex("t"), INVERSE_ELECTRON_PLASMA_FREQUENCY, "linear"))
-_register_default(Dimension(Latex("\\gamma v_x"), SPEED_OF_LIGHT, "linear", key="px"))
-_register_default(Dimension(Latex("\\gamma v_y"), SPEED_OF_LIGHT, "linear", key="py"))
-_register_default(Dimension(Latex("\\gamma v_z"), SPEED_OF_LIGHT, "linear", key="pz"))
-_register_default(Dimension(Latex("\\gamma v_{xy}"), SPEED_OF_LIGHT, "linear", key="pxy"))
-_register_default(Dimension(Latex("\\gamma v_{yz}"), SPEED_OF_LIGHT, "linear", key="pyz"))
-_register_default(Dimension(Latex("\\gamma v_{zx}"), SPEED_OF_LIGHT, "linear", key="pzx"))
-_register_default(Dimension(Latex("q"), ELEMENTARY_CHARGE, "linear"))
-
-
-def get_default_dim(key: str) -> Dimension:
-    """Return the registered default `Dimension` for `key`, or a minimal fallback if unknown.
-
-    If `key` looks like a Fourier-space key (prefix ``k_``) whose base is registered,
-    return the Fourier toggle of the base dim so Fourier-space coords loaded directly
-    from data inherit the correct unit/geometry.
-    """
-    if key in DIM_DEFAULTS:
-        return DIM_DEFAULTS[key]
-    if key.startswith(FOURIER_NAME_PREFIX):
-        base_key = key[len(FOURIER_NAME_PREFIX):]
-        if base_key in DIM_DEFAULTS:
-            return DIM_DEFAULTS[base_key].toggle_fourier()
-    return Dimension(Latex(key), Latex(""), "linear", key=key)

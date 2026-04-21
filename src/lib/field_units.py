@@ -1,158 +1,12 @@
-"""Registry mapping (prefix, var_name) to display-LaTeX and unit-LaTeX.
+"""Unified registry mapping variable/dimension keys to Dimension objects.
 
-Used by loaders (and `--derive`) to populate `Metadata.display_latex`/`unit_latex`
-at load time, so plots show e.g. ``B_x`` instead of ``hx_fc`` on axis labels.
-
-This is deliberately separate from `lib.dimension.Dimension`, which handles
-*coordinate axes* (with Fourier toggling and unit switching). `VarInfo` only
-describes the dependent variable.
+Used by loaders and adaptors to populate `Metadata.var_info`.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
-
-@dataclass(frozen=True)
-class VarInfo:
-    display_latex: str
-    unit_latex: str = ""
-
-
-# --- Field variables ---------------------------------------------------------
-# Keyed by (prefix, var_name). PSC normalized units leave `unit_latex` blank;
-# users can override with `--unit`.
-
-_PFD: dict[str, VarInfo] = {
-    # E field components (edge-centered)
-    "ex_ec": VarInfo("E_x"),
-    "ey_ec": VarInfo("E_y"),
-    "ez_ec": VarInfo("E_z"),
-    # B field components (face-centered) — PSC stores B as "h"
-    "hx_fc": VarInfo("B_x"),
-    "hy_fc": VarInfo("B_y"),
-    "hz_fc": VarInfo("B_z"),
-    # current density (edge-centered)
-    "jx_ec": VarInfo("j_x"),
-    "jy_ec": VarInfo("j_y"),
-    "jz_ec": VarInfo("j_z"),
-    # derived (see lib.derived_field_variables.registry)
-    "h2_cc": VarInfo("B^2"),
-    "hxz2_cc": VarInfo("B_x^2 + B_z^2"),
-    "hxzhat2": VarInfo(r"|\hat{B}_x|^2 + |\hat{B}_z|^2"),
-    "hhat2": VarInfo(r"|\hat{B}|^2"),
-    "h_cc": VarInfo("B"),
-    "div_h_cc": VarInfo(r"\nabla\cdot \vec B"),
-    "sy_p": VarInfo("S_y^+"),
-    "sy_m": VarInfo("S_y^-"),
-    "py_p": VarInfo("P_y^+"),
-    "py_m": VarInfo("P_y^-"),
-}
-
-_GAUSS: dict[str, VarInfo] = {
-    "dive": VarInfo(r"\nabla\cdot\vec E"),
-    "rho": VarInfo(r"\rho"),
-    "error": VarInfo(r"\rho - \nabla\cdot\vec E"),
-}
-
-_CONTINUITY: dict[str, VarInfo] = {
-    "d_rho": VarInfo(r"\partial_t \rho"),
-    "dt_divj": VarInfo(r"\partial_t \nabla\cdot\vec j"),
-    "error": VarInfo(r"\partial_t \rho + \partial_t \nabla\cdot\vec j"),
-}
-
-
-def _moments_for(species: str, subscript: str) -> dict[str, VarInfo]:
-    return {
-        f"rho_{species}": VarInfo(rf"\rho_\text{{{subscript}}}"),
-        f"jx_{species}": VarInfo(rf"j_{{x,\text{{{subscript}}}}}"),
-        f"jy_{species}": VarInfo(rf"j_{{y,\text{{{subscript}}}}}"),
-        f"jz_{species}": VarInfo(rf"j_{{z,\text{{{subscript}}}}}"),
-        f"px_{species}": VarInfo(rf"u_{{x,\text{{{subscript}}}}}"),
-        f"py_{species}": VarInfo(rf"u_{{y,\text{{{subscript}}}}}"),
-        f"pz_{species}": VarInfo(rf"u_{{z,\text{{{subscript}}}}}"),
-        f"txx_{species}": VarInfo(rf"T_{{xx,\text{{{subscript}}}}}"),
-        f"tyy_{species}": VarInfo(rf"T_{{yy,\text{{{subscript}}}}}"),
-        f"tzz_{species}": VarInfo(rf"T_{{zz,\text{{{subscript}}}}}"),
-        f"txy_{species}": VarInfo(rf"T_{{xy,\text{{{subscript}}}}}"),
-        f"tyz_{species}": VarInfo(rf"T_{{yz,\text{{{subscript}}}}}"),
-        f"tzx_{species}": VarInfo(rf"T_{{zx,\text{{{subscript}}}}}"),
-    }
-
-
-_PFD_MOMENTS: dict[str, VarInfo] = {
-    **_moments_for("e", "e"),
-    **_moments_for("i", "i"),
-    # derived
-    "rho": VarInfo(r"\rho"),
-}
-
-
-FIELD_VAR_INFO: dict[tuple[str, str], VarInfo] = {
-    **{("pfd", k): v for k, v in _PFD.items()},
-    **{("pfd_moments", k): v for k, v in _PFD_MOMENTS.items()},
-    **{("gauss", k): v for k, v in _GAUSS.items()},
-    **{("continuity", k): v for k, v in _CONTINUITY.items()},
-}
-
-
-# --- Particle variables ------------------------------------------------------
-# Keyed by var_name only; particle data has a single prefix ("prt").
-
-PARTICLE_VAR_INFO: dict[str, VarInfo] = {
-    "x": VarInfo("x", r"d_\text{e}"),
-    "y": VarInfo("y", r"d_\text{e}"),
-    "z": VarInfo("z", r"d_\text{e}"),
-    "px": VarInfo("u_x", "c"),
-    "py": VarInfo("u_y", "c"),
-    "pz": VarInfo("u_z", "c"),
-    "q": VarInfo("q", "e"),
-    "m": VarInfo("m", r"m_\text{e}"),
-    "w": VarInfo("w"),
-    "id": VarInfo(r"\text{id}"),
-    "tag": VarInfo(r"\text{tag}"),
-    # derived
-    "pxy": VarInfo(r"\sqrt{u_x^2 + u_y^2}", "c"),
-    "pyz": VarInfo(r"\sqrt{u_y^2 + u_z^2}", "c"),
-    "pzx": VarInfo(r"\sqrt{u_z^2 + u_x^2}", "c"),
-    "anisotropy_y_zx": VarInfo(r"u_y^2 / (u_z^2 + u_x^2)"),
-    "wx": VarInfo("W_x", r"m_\text{e}c^2"),
-    "wy": VarInfo("W_y", r"m_\text{e}c^2"),
-    "wz": VarInfo("W_z", r"m_\text{e}c^2"),
-    "wxy": VarInfo("W_{xy}", r"m_\text{e}c^2"),
-    "wyz": VarInfo("W_{yz}", r"m_\text{e}c^2"),
-    "wzx": VarInfo("W_{zx}", r"m_\text{e}c^2"),
-    "wxyz": VarInfo("W", r"m_\text{e}c^2"),
-    "f": VarInfo("f"),
-}
-
-
-def _fallback(var_name: str) -> VarInfo:
-    return VarInfo(rf"\text{{{var_name}}}", "")
-
-
-def lookup_field(prefix: str | None, var_name: str) -> VarInfo:
-    """Look up a field variable by prefix + var_name. Falls back to ``\\text{var_name}`` if missing."""
-    if prefix is not None:
-        info = FIELD_VAR_INFO.get((prefix, var_name))
-        if info is not None:
-            return info
-    return _fallback(var_name)
-
-
-def lookup_particle(var_name: str) -> VarInfo:
-    """Look up a particle variable. Falls back to the variable name if missing."""
-    info = PARTICLE_VAR_INFO.get(var_name)
-    if info is not None:
-        return info
-    return _fallback(var_name)
-
-
-# --- Unified dimension registry -----------------------------------------------
-
 from lib.dimension import (
     Dimension,
-    DimensionGeometry,
     ELECTRON_SKIN_DEPTH,
     ELEMENTARY_CHARGE,
     FOURIER_NAME_PREFIX,
@@ -160,6 +14,9 @@ from lib.dimension import (
     SPEED_OF_LIGHT,
 )
 from lib.latex import Latex
+
+
+# --- Coordinate dimension registry --------------------------------------------
 
 DIM_REGISTRY: dict[str, Dimension] = {}
 
@@ -174,19 +31,106 @@ _register_dim(Dimension(Latex("z"), ELECTRON_SKIN_DEPTH, "linear"))
 _register_dim(Dimension(Latex("t"), INVERSE_ELECTRON_PLASMA_FREQUENCY, "linear"))
 
 
-# --- Unified prefixed registry ------------------------------------------------
+# --- Prefixed variable registry -----------------------------------------------
 
-def _varinfo_to_dim(key: str, info: VarInfo) -> Dimension:
-    return Dimension(Latex(info.display_latex), Latex(info.unit_latex), "linear", key=key)
+def _dim(display: str, unit: str = "", *, key: str) -> Dimension:
+    return Dimension(Latex(display), Latex(unit), "linear", key=key)
 
 
-PREFIXED_REGISTRY: dict[tuple[str, str], Dimension] = {}
+_PFD: dict[str, Dimension] = {
+    "ex_ec": _dim("E_x", key="ex_ec"),
+    "ey_ec": _dim("E_y", key="ey_ec"),
+    "ez_ec": _dim("E_z", key="ez_ec"),
+    "hx_fc": _dim("B_x", key="hx_fc"),
+    "hy_fc": _dim("B_y", key="hy_fc"),
+    "hz_fc": _dim("B_z", key="hz_fc"),
+    "jx_ec": _dim("j_x", key="jx_ec"),
+    "jy_ec": _dim("j_y", key="jy_ec"),
+    "jz_ec": _dim("j_z", key="jz_ec"),
+    "h2_cc": _dim("B^2", key="h2_cc"),
+    "hxz2_cc": _dim("B_x^2 + B_z^2", key="hxz2_cc"),
+    "hxzhat2": _dim(r"|\hat{B}_x|^2 + |\hat{B}_z|^2", key="hxzhat2"),
+    "hhat2": _dim(r"|\hat{B}|^2", key="hhat2"),
+    "h_cc": _dim("B", key="h_cc"),
+    "div_h_cc": _dim(r"\nabla\cdot \vec B", key="div_h_cc"),
+    "sy_p": _dim("S_y^+", key="sy_p"),
+    "sy_m": _dim("S_y^-", key="sy_m"),
+    "py_p": _dim("P_y^+", key="py_p"),
+    "py_m": _dim("P_y^-", key="py_m"),
+}
 
-for (prefix, var_name), info in FIELD_VAR_INFO.items():
-    PREFIXED_REGISTRY[(prefix, var_name)] = _varinfo_to_dim(var_name, info)
+_GAUSS: dict[str, Dimension] = {
+    "dive": _dim(r"\nabla\cdot\vec E", key="dive"),
+    "rho": _dim(r"\rho", key="rho"),
+    "error": _dim(r"\rho - \nabla\cdot\vec E", key="error"),
+}
 
-for var_name, info in PARTICLE_VAR_INFO.items():
-    PREFIXED_REGISTRY[("prt", var_name)] = _varinfo_to_dim(var_name, info)
+_CONTINUITY: dict[str, Dimension] = {
+    "d_rho": _dim(r"\partial_t \rho", key="d_rho"),
+    "dt_divj": _dim(r"\partial_t \nabla\cdot\vec j", key="dt_divj"),
+    "error": _dim(r"\partial_t \rho + \partial_t \nabla\cdot\vec j", key="error"),
+}
+
+
+def _moments_for(species: str, subscript: str) -> dict[str, Dimension]:
+    return {
+        f"rho_{species}": _dim(rf"\rho_\text{{{subscript}}}", key=f"rho_{species}"),
+        f"jx_{species}": _dim(rf"j_{{x,\text{{{subscript}}}}}", key=f"jx_{species}"),
+        f"jy_{species}": _dim(rf"j_{{y,\text{{{subscript}}}}}", key=f"jy_{species}"),
+        f"jz_{species}": _dim(rf"j_{{z,\text{{{subscript}}}}}", key=f"jz_{species}"),
+        f"px_{species}": _dim(rf"u_{{x,\text{{{subscript}}}}}", key=f"px_{species}"),
+        f"py_{species}": _dim(rf"u_{{y,\text{{{subscript}}}}}", key=f"py_{species}"),
+        f"pz_{species}": _dim(rf"u_{{z,\text{{{subscript}}}}}", key=f"pz_{species}"),
+        f"txx_{species}": _dim(rf"T_{{xx,\text{{{subscript}}}}}", key=f"txx_{species}"),
+        f"tyy_{species}": _dim(rf"T_{{yy,\text{{{subscript}}}}}", key=f"tyy_{species}"),
+        f"tzz_{species}": _dim(rf"T_{{zz,\text{{{subscript}}}}}", key=f"tzz_{species}"),
+        f"txy_{species}": _dim(rf"T_{{xy,\text{{{subscript}}}}}", key=f"txy_{species}"),
+        f"tyz_{species}": _dim(rf"T_{{yz,\text{{{subscript}}}}}", key=f"tyz_{species}"),
+        f"tzx_{species}": _dim(rf"T_{{zx,\text{{{subscript}}}}}", key=f"tzx_{species}"),
+    }
+
+
+_PFD_MOMENTS: dict[str, Dimension] = {
+    **_moments_for("e", "e"),
+    **_moments_for("i", "i"),
+    "rho": _dim(r"\rho", key="rho"),
+}
+
+
+_PARTICLE: dict[str, Dimension] = {
+    "x": _dim("x", r"d_\text{e}", key="x"),
+    "y": _dim("y", r"d_\text{e}", key="y"),
+    "z": _dim("z", r"d_\text{e}", key="z"),
+    "px": _dim("u_x", "c", key="px"),
+    "py": _dim("u_y", "c", key="py"),
+    "pz": _dim("u_z", "c", key="pz"),
+    "q": _dim("q", "e", key="q"),
+    "m": _dim("m", r"m_\text{e}", key="m"),
+    "w": _dim("w", key="w"),
+    "id": _dim(r"\text{id}", key="id"),
+    "tag": _dim(r"\text{tag}", key="tag"),
+    "pxy": _dim(r"\sqrt{u_x^2 + u_y^2}", "c", key="pxy"),
+    "pyz": _dim(r"\sqrt{u_y^2 + u_z^2}", "c", key="pyz"),
+    "pzx": _dim(r"\sqrt{u_z^2 + u_x^2}", "c", key="pzx"),
+    "anisotropy_y_zx": _dim(r"u_y^2 / (u_z^2 + u_x^2)", key="anisotropy_y_zx"),
+    "wx": _dim("W_x", r"m_\text{e}c^2", key="wx"),
+    "wy": _dim("W_y", r"m_\text{e}c^2", key="wy"),
+    "wz": _dim("W_z", r"m_\text{e}c^2", key="wz"),
+    "wxy": _dim("W_{xy}", r"m_\text{e}c^2", key="wxy"),
+    "wyz": _dim("W_{yz}", r"m_\text{e}c^2", key="wyz"),
+    "wzx": _dim("W_{zx}", r"m_\text{e}c^2", key="wzx"),
+    "wxyz": _dim("W", r"m_\text{e}c^2", key="wxyz"),
+    "f": _dim("f", key="f"),
+}
+
+
+PREFIXED_REGISTRY: dict[tuple[str, str], Dimension] = {
+    **{("pfd", k): v for k, v in _PFD.items()},
+    **{("pfd_moments", k): v for k, v in _PFD_MOMENTS.items()},
+    **{("gauss", k): v for k, v in _GAUSS.items()},
+    **{("continuity", k): v for k, v in _CONTINUITY.items()},
+    **{("prt", k): v for k, v in _PARTICLE.items()},
+}
 
 
 def lookup(prefix: str | None, key: str) -> Dimension:
