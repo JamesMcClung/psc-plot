@@ -219,7 +219,7 @@ def test_unit_override_dim():
 
 def test_field_units_lookup_covers_test_data():
     """All raw vars present in the test-2d datasets resolve via the registry (no fallback)."""
-    from lib.field_units import _REGISTRY
+    from lib.var_info_registry import _REGISTRY
 
     expected_pfd = {"hx_fc", "hy_fc", "hz_fc", "ex_ec", "ey_ec", "ez_ec", "jx_ec", "jy_ec", "jz_ec"}
     expected_moments = {

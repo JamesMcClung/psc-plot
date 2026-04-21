@@ -5,7 +5,7 @@ import dask.dataframe as dd
 import numpy as np
 import xarray as xr
 
-from lib import field_units
+from lib import var_info_registry
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, FieldMetadata, List
 from lib.parsing import parse_util
@@ -125,7 +125,7 @@ class Bin(MetadataAdaptor):
             dims=self.varname_to_nbins.keys(),
         )
 
-        f_dim = field_units.lookup("prt", "f")
+        f_dim = var_info_registry.lookup("prt", "f")
         # FIXME hack to get species subscripts that depends on species_filter behavior
         display_latex = f_dim.display.latex
         if data.metadata.var_name is not None and data.metadata.var_name in data.metadata.var_info:

@@ -1,7 +1,7 @@
 from lib.data.data_with_attrs import LazyList
 
 from .. import file_util, particle_util
-from ..field_units import lookup
+from ..var_info_registry import lookup
 from .source import DataSource
 
 

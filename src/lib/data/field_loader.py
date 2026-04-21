@@ -4,8 +4,8 @@ import xarray as xr
 from lib.data.data_with_attrs import Field, FieldMetadata
 
 from .. import field_util, file_util
-from ..field_units import lookup
 from ..derived_field_variables import derive_field_variable
+from ..var_info_registry import lookup
 from .source import DataSource
 
 

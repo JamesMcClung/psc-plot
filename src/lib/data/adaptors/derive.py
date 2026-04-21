@@ -1,7 +1,7 @@
 from lark import Lark
 from lark.visitors import Transformer_InPlace
 
-from lib import field_units
+from lib import var_info_registry
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, List
 from lib.derived_field_variables.derived_field_variable import (
@@ -123,14 +123,14 @@ class AssignNewFieldVariable(Transformer_InPlace):
     def assign_default(self, toks: list):
         [new_variable] = toks
         self._resolve_from_registry(new_variable)
-        dim = field_units.lookup(self._data.metadata.prefix, new_variable)
+        dim = var_info_registry.lookup(self._data.metadata.prefix, new_variable)
         new_var_info = {**self._data.metadata.var_info, new_variable: dim}
         return self._data.assign_metadata(var_name=new_variable, var_info=new_var_info)
 
     def assignment(self, toks: list):
         [new_variable, val] = toks
         new_ds = self._data.data.assign({new_variable: val})
-        dim = field_units.lookup(self._data.metadata.prefix, new_variable)
+        dim = var_info_registry.lookup(self._data.metadata.prefix, new_variable)
         new_var_info = {**self._data.metadata.var_info, new_variable: dim}
         return self._data.assign(new_ds, var_name=new_variable, var_info=new_var_info)
 
@@ -139,11 +139,7 @@ class AssignNewFieldVariable(Transformer_InPlace):
         if prefix is None:
             raise ValueError(f"--derive cannot resolve '{name}': field metadata has no prefix.")
         if name not in DERIVED_FIELD_VARIABLES.get(prefix, {}):
-            raise ValueError(
-                f"--derive: '{name}' is not in the dataset and not in the registry for prefix '{prefix}'. "
-                f"Note that earlier adaptors (e.g. --downsample) may have dropped variables that became "
-                f"incompatible with the active grid; consider moving --derive earlier in the pipeline."
-            )
+            raise ValueError(f"--derive: '{name}' is not in the dataset and not in the registry for prefix '{prefix}'. " f"Note that earlier adaptors (e.g. --downsample) may have dropped variables that became " f"incompatible with the active grid; consider moving --derive earlier in the pipeline.")
         # Mutates self._data.data in-place to add `name` (and any of its dependencies).
         derive_field_variable(self._data.data, name, prefix)
 
