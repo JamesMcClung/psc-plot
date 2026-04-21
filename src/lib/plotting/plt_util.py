@@ -49,8 +49,8 @@ def format_label(metadata: Metadata) -> str:
     """Format a label for the dependent variable: ``$display$`` or ``$display\\;[unit]$``."""
     dim = metadata.active_var_info
     if dim.unit.latex:
-        return f"${dim.display.latex}\\;[{dim.unit.latex}]$"
-    return f"${dim.display.latex}$"
+        return f"${dim.display}\\;[{dim.unit}]$"
+    return f"${dim.display}$"
 
 
 def update_title(ax: Axes, metadata: Metadata, cut_labels: list[str]):

@@ -39,11 +39,11 @@ class Dimension:
 
     def to_axis_label(self) -> str:
         if self.unit.latex:
-            return f"${self.display.latex}\\ [{self.unit.latex}]$"
-        return f"${self.display.latex}$"
+            return f"${self.display}\\ [{self.unit}]$"
+        return f"${self.display}$"
 
     def get_coordinate_label(self, coord_val: float) -> str:
-        return f"${self.display.latex} = {coord_val:.3f}\\ {self.unit.latex}$"
+        return f"${self.display} = {coord_val:.3f}\\ {self.unit}$"
 
     def toggle_fourier(self) -> Dimension:
         # TODO make t <-> omega

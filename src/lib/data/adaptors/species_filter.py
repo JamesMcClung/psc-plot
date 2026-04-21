@@ -31,7 +31,7 @@ class SpeciesFilter(MetadataAdaptor):
 
     def get_modified_display_latex(self, metadata) -> str:
         subscript = self.species[0]
-        return f"{{{metadata.active_var_info.display.latex}}}_{subscript}"
+        return f"{{{metadata.active_var_info.display}}}_{subscript}"
 
     def get_name_fragments(self) -> list[str]:
         return [self.species]
