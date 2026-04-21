@@ -1,38 +1,28 @@
 from lib.data.data_with_attrs import LazyList
-from lib.dimension import get_default_dim
 
-from .. import field_units, file_util, particle_util
+from .. import file_util, particle_util
+from ..var_info_registry import lookup
 from .source import DataSource
 
 
 class ParticleLoader(DataSource):
-    def __init__(self, prefix: file_util.ParticlePrefix, var_name: str | None, steps: list[int]):
+    def __init__(self, prefix: file_util.ParticlePrefix, active_key: str | None, steps: list[int]):
         self.prefix = prefix
-        self.var_name = var_name
+        self.active_key = active_key
         self.steps = steps
 
     def get_data(self) -> LazyList:
         df = particle_util.load_df(self.prefix, self.steps)
 
-        if self.var_name is not None:
-            info = field_units.lookup_particle(self.var_name)
-            display_latex = info.display_latex
-            unit_latex = info.unit_latex
-        else:
-            display_latex = None
-            unit_latex = None
-
-        dims = {key: get_default_dim(key) for key in df.dims}
+        var_infos = {key: lookup(self.prefix, key) for key in df.dims}
         return df.assign_metadata(
             name_fragments=self.get_name_fragments(),
-            var_name=self.var_name,
-            display_latex=display_latex,
-            unit_latex=unit_latex,
-            dims=dims,
+            active_key=self.active_key,
+            var_infos=var_infos,
         )
 
     def get_name_fragments(self) -> list[str]:
         fragments = [self.prefix]
-        if self.var_name is not None:
-            fragments.append(self.var_name)
+        if self.active_key is not None:
+            fragments.append(self.active_key)
         return fragments

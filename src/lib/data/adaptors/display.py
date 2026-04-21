@@ -1,8 +1,5 @@
-from dataclasses import replace
-
 from lib.data.adaptor import Adaptor
 from lib.data.data_with_attrs import DataWithAttrs
-from lib.latex import Latex
 from lib.parsing.args_registry import arg_parser
 
 
@@ -17,16 +14,17 @@ class Display(Adaptor):
         metadata = data.metadata
         name_fragments = metadata.name_fragments + self.get_name_fragments()
 
-        if self.target is None or self.target == metadata.var_name:
-            return data.assign_metadata(name_fragments=name_fragments, display_latex=self.value)
+        target = self.target or metadata.active_key
+        if target is None:
+            raise ValueError("--display requires a target; specify a variable as a positional argument or use --display TARGET=VALUE")
 
-        if self.target in metadata.dims:
-            old_dim = metadata.dims[self.target]
-            new_dim = replace(old_dim, name=Latex(self.value))
-            new_dims = {**metadata.dims, self.target: new_dim}
-            return data.assign_metadata(name_fragments=name_fragments, dims=new_dims)
+        if target not in metadata.var_infos:
+            raise ValueError(f"--display target {target!r} is not a known key ({sorted(metadata.var_infos)})")
 
-        raise ValueError(f"--display target {self.target!r} is neither the active variable ({metadata.var_name!r}) nor a known dimension ({sorted(metadata.dims)})")
+        old_dim = metadata.var_infos[target]
+        new_dim = old_dim.assign(display=self.value)
+        new_var_infos = {**metadata.var_infos, target: new_dim}
+        return data.assign_metadata(name_fragments=name_fragments, var_infos=new_var_infos)
 
     def get_name_fragments(self) -> list[str]:
         return [f"display_{self.target or 'active'}={self.value}"]

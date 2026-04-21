@@ -16,7 +16,7 @@ def _get_renderer(data: DataWithAttrs) -> Renderer:
         if len(spatial_dims) == 1:
             return Field1dRenderer()
         elif len(spatial_dims) == 2:
-            if data.metadata.dims[spatial_dims[0]].geometry == "polar:r" and data.metadata.dims[spatial_dims[1]].geometry == "polar:theta":
+            if data.metadata.var_infos[spatial_dims[0]].geometry == "polar:r" and data.metadata.var_infos[spatial_dims[1]].geometry == "polar:theta":
                 return PolarFieldRenderer()
             return Field2dRenderer()
         else:

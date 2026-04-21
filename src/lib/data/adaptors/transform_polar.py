@@ -5,17 +5,17 @@ import xarray as xr
 
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, List
-from lib.dimension import RADIAN, Dimension, check_unit_compatability
 from lib.latex import Latex
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
+from lib.var_info import RADIAN, VarInfo, check_unit_compatability
 
 
-def _build_polar_dims(dim_x: Dimension, dim_y: Dimension) -> tuple[Dimension, Dimension]:
+def _build_polar_dims(dim_x: VarInfo, dim_y: VarInfo) -> tuple[VarInfo, VarInfo]:
     check_unit_compatability(dim_x, dim_y, "polar")
     r_symbol = "k" if dim_x.is_fourier() else "r"
-    dim_r = Dimension(Latex(f"{r_symbol}_\\text{{polar}}"), dim_x.unit, "polar:r", key=f"{r_symbol}_p")
-    dim_theta = Dimension(Latex("\\theta"), RADIAN, "polar:theta")
+    dim_r = VarInfo(Latex(f"{r_symbol}_\\text{{polar}}"), dim_x.unit, "polar:r", key=f"{r_symbol}_p")
+    dim_theta = VarInfo(Latex("\\theta"), RADIAN, "polar:theta")
     return dim_r, dim_theta
 
 
@@ -37,8 +37,8 @@ class TransformPolar(MetadataAdaptor):
         self.dim2_key = dim2_key
 
     def apply_field(self, data: Field) -> Field:
-        dim_x = data.metadata.dims[self.dim1_key]
-        dim_y = data.metadata.dims[self.dim2_key]
+        dim_x = data.metadata.var_infos[self.dim1_key]
+        dim_y = data.metadata.var_infos[self.dim2_key]
         dim_r, dim_theta = _build_polar_dims(dim_x, dim_y)
 
         key_x, key_y = dim_x.key, dim_y.key
@@ -73,14 +73,14 @@ class TransformPolar(MetadataAdaptor):
         da = da.drop_vars([key_x, key_y])
         da = da.assign_coords({key_r: rs, key_theta: thetas})
 
-        new_dims = {k: v for k, v in data.metadata.dims.items() if k not in {key_x, key_y}}
-        new_dims[key_r] = dim_r
-        new_dims[key_theta] = dim_theta
-        return data.with_active_data(da).assign_metadata(dims=new_dims)
+        new_var_infos = {k: v for k, v in data.metadata.var_infos.items() if k not in {key_x, key_y}}
+        new_var_infos[key_r] = dim_r
+        new_var_infos[key_theta] = dim_theta
+        return data.with_active_data(da).assign_metadata(var_infos=new_var_infos)
 
     def apply_list(self, data: List) -> List:
-        dim_x = data.metadata.dims[self.dim1_key]
-        dim_y = data.metadata.dims[self.dim2_key]
+        dim_x = data.metadata.var_infos[self.dim1_key]
+        dim_y = data.metadata.var_infos[self.dim2_key]
         dim_r, dim_theta = _build_polar_dims(dim_x, dim_y)
 
         key_x, key_y = dim_x.key, dim_y.key
@@ -90,10 +90,10 @@ class TransformPolar(MetadataAdaptor):
         rs, thetas = _cartesian_to_polar(df[key_x], df[key_y])
         df = df.assign(**{key_r: rs, key_theta: thetas})
 
-        new_dims = dict(data.metadata.dims)
-        new_dims[key_r] = dim_r
-        new_dims[key_theta] = dim_theta
-        return data.assign_data(df).assign_metadata(dims=new_dims)
+        new_var_infos = dict(data.metadata.var_infos)
+        new_var_infos[key_r] = dim_r
+        new_var_infos[key_theta] = dim_theta
+        return data.assign_data(df).assign_metadata(var_infos=new_var_infos)
 
     def get_name_fragments(self) -> list[str]:
         return [f"polar_{self.dim1_key},{self.dim2_key}"]

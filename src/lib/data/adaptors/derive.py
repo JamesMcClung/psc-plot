@@ -1,7 +1,7 @@
 from lark import Lark
 from lark.visitors import Transformer_InPlace
 
-from lib import field_units
+from lib import var_info_registry
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, List
 from lib.derived_field_variables.derived_field_variable import (
@@ -123,25 +123,23 @@ class AssignNewFieldVariable(Transformer_InPlace):
     def assign_default(self, toks: list):
         [new_variable] = toks
         self._resolve_from_registry(new_variable)
-        info = field_units.lookup_field(self._data.metadata.prefix, new_variable)
-        return self._data.assign_metadata(var_name=new_variable, display_latex=info.display_latex, unit_latex=info.unit_latex)
+        dim = var_info_registry.lookup(self._data.metadata.prefix, new_variable)
+        new_var_infos = {**self._data.metadata.var_infos, new_variable: dim}
+        return self._data.assign_metadata(active_key=new_variable, var_infos=new_var_infos)
 
     def assignment(self, toks: list):
         [new_variable, val] = toks
         new_ds = self._data.data.assign({new_variable: val})
-        info = field_units.lookup_field(self._data.metadata.prefix, new_variable)
-        return self._data.assign(new_ds, var_name=new_variable, display_latex=info.display_latex, unit_latex=info.unit_latex)
+        dim = var_info_registry.lookup(self._data.metadata.prefix, new_variable)
+        new_var_infos = {**self._data.metadata.var_infos, new_variable: dim}
+        return self._data.assign(new_ds, active_key=new_variable, var_infos=new_var_infos)
 
     def _resolve_from_registry(self, name: str):
         prefix = self._data.metadata.prefix
         if prefix is None:
             raise ValueError(f"--derive cannot resolve '{name}': field metadata has no prefix.")
         if name not in DERIVED_FIELD_VARIABLES.get(prefix, {}):
-            raise ValueError(
-                f"--derive: '{name}' is not in the dataset and not in the registry for prefix '{prefix}'. "
-                f"Note that earlier adaptors (e.g. --downsample) may have dropped variables that became "
-                f"incompatible with the active grid; consider moving --derive earlier in the pipeline."
-            )
+            raise ValueError(f"--derive: '{name}' is not in the dataset and not in the registry for prefix '{prefix}'. " f"Note that earlier adaptors (e.g. --downsample) may have dropped variables that became " f"incompatible with the active grid; consider moving --derive earlier in the pipeline.")
         # Mutates self._data.data in-place to add `name` (and any of its dependencies).
         derive_field_variable(self._data.data, name, prefix)
 
@@ -185,7 +183,7 @@ number   : SIGNED_NUMBER
 
 _DERIVE_PARSER = Lark(_DERIVE_GRAMMAR)
 
-_DERIVE_FORMAT = "var_name[=expression]"
+_DERIVE_FORMAT = "active_key[=expression]"
 _EXPRESSION_DESCRIPTION = "The expression can be any mathematical expression using the standard operators (+, -, *, /, ^), parentheses, signed floating point numbers, and existing variable names."
 
 

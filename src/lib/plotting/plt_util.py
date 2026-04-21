@@ -45,19 +45,12 @@ def update_cbar(mappable: _ScalarMappable, *, data_min_override: float | None = 
     mappable.set_cmap(plt.get_cmap(cmap))
 
 
-def format_label(metadata: Metadata) -> str:
-    """Format a label for the dependent variable: ``$display$`` or ``$display\\;[unit]$``."""
-    if metadata.unit_latex:
-        return f"${metadata.display_latex}\\;[{metadata.unit_latex}]$"
-    return f"${metadata.display_latex}$"
-
-
 def update_title(ax: Axes, metadata: Metadata, cut_labels: list[str]):
     cut_labels_str = ", ".join(cut_labels)
 
-    if metadata.display_latex is None:
-        return ax.set_title(cut_labels_str)  # empty str is fine
+    if metadata.active_key is None:
+        return ax.set_title(cut_labels_str)
 
     if cut_labels_str:
         cut_labels_str = f" ({cut_labels_str})"
-    return ax.set_title(f"{format_label(metadata)}{cut_labels_str}")
+    return ax.set_title(metadata.active_var_info.to_axis_label() + cut_labels_str)

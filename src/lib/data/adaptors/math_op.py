@@ -44,7 +44,7 @@ class MathOp(BareAdaptor):
         return [f"{self.name_abbrev}_{self.rhs}"]
 
     def get_modified_display_latex(self, metadata) -> str:
-        return f"({metadata.display_latex}){self.symbol}{{{float_to_latex_str(self.rhs)}}}"
+        return f"({metadata.active_var_info.display}){self.symbol}{{{float_to_latex_str(self.rhs)}}}"
 
 
 op_params = [

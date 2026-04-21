@@ -5,7 +5,7 @@ from xarray import DataArray, Dataset
 from lib.data.adaptors.fourier import toggle_fourier
 from lib.data.adaptors.mag import Magnitude
 
-from ..dimension import DIM_DEFAULTS
+from .. import var_info_registry
 from .derived_field_variable import derived_field_variable
 
 __all__ = []
@@ -72,7 +72,7 @@ def _fourier_transform(da: DataArray, dims: list) -> DataArray:
 
 @derived_field_variable("pfd")
 def hxzhat2(hx_fc: DataArray, hz_fc: DataArray) -> DataArray:
-    dims = [DIM_DEFAULTS[dim] for dim in hx_fc.dims if dim in {"x", "y", "z"} and len(hx_fc.coords[dim]) > 1]
+    dims = [var_info_registry.lookup("pfd", dim) for dim in hx_fc.dims if dim in {"x", "y", "z"} and len(hx_fc.coords[dim]) > 1]
     cut_nyquist = {dim.toggle_fourier().key: slice(1, None) for dim in dims}
     magnitude = Magnitude()
 
@@ -84,7 +84,7 @@ def hxzhat2(hx_fc: DataArray, hz_fc: DataArray) -> DataArray:
 
 @derived_field_variable("pfd")
 def hhat2(hx_fc: DataArray, hy_fc: DataArray, hz_fc: DataArray) -> DataArray:
-    dims = [DIM_DEFAULTS[dim] for dim in hx_fc.dims if dim in {"x", "y", "z"} and len(hx_fc.coords[dim]) > 1]
+    dims = [var_info_registry.lookup("pfd", dim) for dim in hx_fc.dims if dim in {"x", "y", "z"} and len(hx_fc.coords[dim]) > 1]
     cut_nyquist = {dim.toggle_fourier().key: slice(1, None) for dim in dims}
     magnitude = Magnitude()
 

@@ -5,7 +5,7 @@ import dask.dataframe as dd
 import numpy as np
 import xarray as xr
 
-from lib import field_units
+from lib import var_info_registry
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, FieldMetadata, List
 from lib.parsing import parse_util
@@ -34,9 +34,9 @@ def _guess_bin_edgess(data: List, varname_to_nbins: dict[str, int | None]) -> li
                 varname_to_edges[varname] = np.concat((coords, [np.inf]))
             else:
                 varname_to_edges[varname] = np.linspace(coords[0], coords[-1] + coords[1] - coords[0], nbins + 1, endpoint=True)
-        elif varname in data.metadata.dims and (data.metadata.dims[varname].geometry == "polar:theta" or data.metadata.dims[varname].geometry == "spherical:phi"):
+        elif varname in data.metadata.var_infos and (data.metadata.var_infos[varname].geometry == "polar:theta" or data.metadata.var_infos[varname].geometry == "spherical:phi"):
             varname_to_edges[varname] = np.linspace(-np.pi, np.pi, nbins + 1, endpoint=True)
-        elif varname in data.metadata.dims and data.metadata.dims[varname].geometry == "spherical:theta":
+        elif varname in data.metadata.var_infos and data.metadata.var_infos[varname].geometry == "spherical:theta":
             varname_to_edges[varname] = np.linspace(0.0, np.pi, nbins + 1, endpoint=True)
         else:
             compute_varnames.append(varname)
@@ -103,14 +103,14 @@ class Bin(MetadataAdaptor):
         df = data.data
         if isinstance(df, dd.DataFrame):
             binned_data, _ = dask.array.histogramdd(
-                [df[var_name].to_dask_array() for var_name in self.varname_to_nbins],
+                [df[active_key].to_dask_array() for active_key in self.varname_to_nbins],
                 bin_edgess,
                 density=False,
                 weights=df[data.metadata.weight_var].to_dask_array() if data.metadata.weight_var else None,
             )
         else:
             binned_data, _ = np.histogramdd(
-                [df[var_name] for var_name in self.varname_to_nbins],
+                [df[active_key] for active_key in self.varname_to_nbins],
                 bin_edgess,
                 density=False,
                 weights=df[data.metadata.weight_var] if data.metadata.weight_var else None,
@@ -125,22 +125,27 @@ class Bin(MetadataAdaptor):
             dims=self.varname_to_nbins.keys(),
         )
 
-        info = field_units.lookup_particle("f")
+        f_dim = var_info_registry.lookup("prt", "f")
         # FIXME hack to get species subscripts that depends on species_filter behavior
-        display_latex = info.display_latex
-        if data.metadata.display_latex is not None:
-            if "ion" in data.metadata.display_latex:
+        display_latex = f_dim.display.latex
+        if data.metadata.active_key is not None and data.metadata.active_key in data.metadata.var_infos:
+            active_display = data.metadata.active_var_info.display.latex
+            if "ion" in active_display:
                 display_latex += "_\\text{i}"
-            elif "electron" in data.metadata.display_latex:
+            elif "electron" in active_display:
                 display_latex += "_\\text{e}"
-        return Field(da.to_dataset(name="f"), FieldMetadata.create_from(data.metadata, var_name="f", display_latex=display_latex, unit_latex=info.unit_latex))
+
+        f_dim = f_dim.assign(display=display_latex)
+        new_var_infos = {key: data.metadata.var_infos[key] for key in da.coords if key in data.metadata.var_infos}
+        new_var_infos["f"] = f_dim
+        return Field(da.to_dataset(name="f"), FieldMetadata.create_from(data.metadata, active_key="f", var_infos=new_var_infos))
 
     def get_name_fragments(self) -> list[str]:
         subfrags = "_".join(f"{varname}={nbins}" if nbins else varname for varname, nbins in self.varname_to_nbins.items())
         return [f"bin_{subfrags}"]
 
 
-_BIN_FORMAT = "var_name[=nbins]"
+_BIN_FORMAT = "active_key[=nbins]"
 
 
 @arg_parser(
@@ -159,19 +164,19 @@ def parse_bin(args: list[str]) -> Bin:
 
         if len(split_arg) == 2 and not split_arg[1]:
             # arg is "t=", i.e., disable implicit binning along t
-            parse_util.check_value(split_arg[0], "var_name", ["t"])
+            parse_util.check_value(split_arg[0], "active_key", ["t"])
             insert_bin_t = False
             continue
         elif len(split_arg) > 2:
             parse_util.fail_format(arg, _BIN_FORMAT)
 
-        [var_name, nbins_arg, *_] = split_arg + [""]
+        [active_key, nbins_arg, *_] = split_arg + [""]
 
-        parse_util.check_identifier(var_name, "var_name")
+        parse_util.check_identifier(active_key, "active_key")
         nbins = parse_util.parse_optional_number(nbins_arg, "nbins", int)
 
-        varname_to_nbins[var_name] = nbins
-        if var_name == "t":
+        varname_to_nbins[active_key] = nbins
+        if active_key == "t":
             insert_bin_t = False
 
     if insert_bin_t:

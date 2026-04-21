@@ -22,4 +22,4 @@ class Imaginary(BareAdaptor):
         return ["imag"]
 
     def get_modified_display_latex(self, metadata) -> str:
-        return f"\\text{{Im}}[{metadata.display_latex}]"
+        return f"\\text{{Im}}[{metadata.active_var_info.display}]"

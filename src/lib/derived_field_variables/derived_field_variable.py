@@ -47,16 +47,16 @@ def derived_field_variable(prefix: FieldPrefix):
     return derived_field_variable_inner
 
 
-def derive_field_variable(ds: xr.Dataset, var_name: str, ds_prefix: FieldPrefix):
-    if var_name in ds.variables:
+def derive_field_variable(ds: xr.Dataset, active_key: str, ds_prefix: FieldPrefix):
+    if active_key in ds.variables:
         return
-    elif var_name in DERIVED_FIELD_VARIABLES[ds_prefix]:
-        derived_var = DERIVED_FIELD_VARIABLES[ds_prefix][var_name]
+    elif active_key in DERIVED_FIELD_VARIABLES[ds_prefix]:
+        derived_var = DERIVED_FIELD_VARIABLES[ds_prefix][active_key]
         for base_var_name in derived_var.base_var_names:
             derive_field_variable(ds, base_var_name, ds_prefix)
         derived_var.assign_to(ds)
     else:
-        message = f"""No variable named '{var_name}'.
+        message = f"""No variable named '{active_key}'.
 The following variables are defined:    {list(ds.variables)}.
 The following variables can be derived: {list(DERIVED_FIELD_VARIABLES[ds_prefix])}."""
         raise ValueError(message)

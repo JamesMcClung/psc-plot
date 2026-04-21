@@ -23,4 +23,4 @@ class Real(BareAdaptor):
         return ["real"]
 
     def get_modified_display_latex(self, metadata) -> str:
-        return f"\\text{{Re}}[{metadata.display_latex}]"
+        return f"\\text{{Re}}[{metadata.active_var_info.display}]"

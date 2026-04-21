@@ -40,3 +40,9 @@ class Latex:
 
     def append(self, latex: str) -> Latex:
         return Latex(self.latex + latex)
+
+    def __str__(self) -> str:
+        return self.latex
+
+    def __bool__(self) -> bool:
+        return bool(self.latex)

@@ -5,19 +5,19 @@ import xarray as xr
 
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, List
-from lib.dimension import RADIAN, Dimension, check_unit_compatability
 from lib.latex import Latex
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
+from lib.var_info import RADIAN, VarInfo, check_unit_compatability
 
 
-def _build_spherical_dims(dim_x: Dimension, dim_y: Dimension, dim_z: Dimension) -> tuple[Dimension, Dimension, Dimension]:
+def _build_spherical_dims(dim_x: VarInfo, dim_y: VarInfo, dim_z: VarInfo) -> tuple[VarInfo, VarInfo, VarInfo]:
     check_unit_compatability(dim_x, dim_y, "spherical")
     check_unit_compatability(dim_x, dim_z, "spherical")
     r_symbol = "k" if dim_x.is_fourier() else "r"
-    dim_r = Dimension(Latex(f"{r_symbol}_\\text{{spherical}}"), dim_x.unit, "spherical:r", key=f"{r_symbol}_s")
-    dim_theta = Dimension(Latex("\\theta"), RADIAN, "spherical:theta")
-    dim_phi = Dimension(Latex("\\phi"), RADIAN, "spherical:phi")
+    dim_r = VarInfo(Latex(f"{r_symbol}_\\text{{spherical}}"), dim_x.unit, "spherical:r", key=f"{r_symbol}_s")
+    dim_theta = VarInfo(Latex("\\theta"), RADIAN, "spherical:theta")
+    dim_phi = VarInfo(Latex("\\phi"), RADIAN, "spherical:phi")
     return dim_r, dim_theta, dim_phi
 
 
@@ -43,9 +43,9 @@ class TransformSpherical(MetadataAdaptor):
         self.dim3_key = dim3_key
 
     def apply_field(self, data: Field) -> Field:
-        dim_x = data.metadata.dims[self.dim1_key]
-        dim_y = data.metadata.dims[self.dim2_key]
-        dim_z = data.metadata.dims[self.dim3_key]
+        dim_x = data.metadata.var_infos[self.dim1_key]
+        dim_y = data.metadata.var_infos[self.dim2_key]
+        dim_z = data.metadata.var_infos[self.dim3_key]
         dim_r, dim_theta, dim_phi = _build_spherical_dims(dim_x, dim_y, dim_z)
 
         key_x, key_y, key_z = dim_x.key, dim_y.key, dim_z.key
@@ -91,16 +91,16 @@ class TransformSpherical(MetadataAdaptor):
         da = da.drop_vars([key_x, key_y, key_z])
         da = da.assign_coords({key_r: rs, key_theta: thetas, key_phi: phis})
 
-        new_dims = {k: v for k, v in data.metadata.dims.items() if k not in {key_x, key_y, key_z}}
-        new_dims[key_r] = dim_r
-        new_dims[key_theta] = dim_theta
-        new_dims[key_phi] = dim_phi
-        return data.with_active_data(da).assign_metadata(dims=new_dims)
+        new_var_infos = {k: v for k, v in data.metadata.var_infos.items() if k not in {key_x, key_y, key_z}}
+        new_var_infos[key_r] = dim_r
+        new_var_infos[key_theta] = dim_theta
+        new_var_infos[key_phi] = dim_phi
+        return data.with_active_data(da).assign_metadata(var_infos=new_var_infos)
 
     def apply_list(self, data: List) -> List:
-        dim_x = data.metadata.dims[self.dim1_key]
-        dim_y = data.metadata.dims[self.dim2_key]
-        dim_z = data.metadata.dims[self.dim3_key]
+        dim_x = data.metadata.var_infos[self.dim1_key]
+        dim_y = data.metadata.var_infos[self.dim2_key]
+        dim_z = data.metadata.var_infos[self.dim3_key]
         dim_r, dim_theta, dim_phi = _build_spherical_dims(dim_x, dim_y, dim_z)
 
         key_x, key_y, key_z = dim_x.key, dim_y.key, dim_z.key
@@ -110,11 +110,11 @@ class TransformSpherical(MetadataAdaptor):
         rs, thetas, phis = _cartesian_to_spherical(df[key_x], df[key_y], df[key_z])
         df = df.assign(**{key_r: rs, key_theta: thetas, key_phi: phis})
 
-        new_dims = dict(data.metadata.dims)
-        new_dims[key_r] = dim_r
-        new_dims[key_theta] = dim_theta
-        new_dims[key_phi] = dim_phi
-        return data.assign_data(df).assign_metadata(dims=new_dims)
+        new_var_infos = dict(data.metadata.var_infos)
+        new_var_infos[key_r] = dim_r
+        new_var_infos[key_theta] = dim_theta
+        new_var_infos[key_phi] = dim_phi
+        return data.assign_data(df).assign_metadata(var_infos=new_var_infos)
 
     def get_name_fragments(self) -> list[str]:
         return [f"spherical_{self.dim1_key},{self.dim2_key},{self.dim3_key}"]

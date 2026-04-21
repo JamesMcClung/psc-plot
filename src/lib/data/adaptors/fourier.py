@@ -4,12 +4,12 @@ import xrft
 
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field
-from lib.dimension import Dimension
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
+from lib.var_info import VarInfo
 
 
-def toggle_fourier(da: xr.DataArray, dim: Dimension) -> xr.DataArray:
+def toggle_fourier(da: xr.DataArray, dim: VarInfo) -> xr.DataArray:
     temp_prefix = "temp_"
     f_dim = dim.toggle_fourier()
 
@@ -34,20 +34,29 @@ class Fourier(MetadataAdaptor):
         self.dim_keys = dim_keys
 
     def apply_field(self, data: Field) -> Field:
-        # Capture pre-transform dim latex so the display reflects any upstream --display override.
-        pre_dim_latexs = [data.metadata.dims[key].name.latex for key in self.dim_keys]
+        pre_dim_latexs = [data.metadata.var_infos[key].display.latex for key in self.dim_keys]
 
         da = data.active_data
-        new_dims = dict(data.metadata.dims)
+        new_var_infos = dict(data.metadata.var_infos)
         for key in self.dim_keys:
-            dim = new_dims[key]
+            dim = new_var_infos[key]
             f_dim = dim.toggle_fourier()
             da = toggle_fourier(da, dim)
-            del new_dims[key]
-            new_dims[f_dim.key] = f_dim
+            del new_var_infos[key]
+            new_var_infos[f_dim.key] = f_dim
 
-        new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{data.metadata.display_latex}]"
-        return data.with_active_data(da).assign_metadata(dims=new_dims, display_latex=new_display)
+        if data.metadata.active_key is not None and data.metadata.active_key in new_var_infos:
+            old_active = new_var_infos[data.metadata.active_key]
+            new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{old_active.display}]"
+            new_var_infos[data.metadata.active_key] = old_active.assign(display=new_display)
+
+        return data.with_active_data(da).assign_metadata(var_infos=new_var_infos)
+
+    def get_modified_display_latex(self, metadata) -> str:
+        return metadata.active_var_info.display.latex
+
+    def get_modified_unit_latex(self, metadata) -> str:
+        return metadata.active_var_info.unit.latex
 
     def get_name_fragments(self) -> list[str]:
         return [f"fourier_{','.join(self.dim_keys)}"]
