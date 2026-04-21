@@ -142,6 +142,7 @@ def lookup(prefix: str | None, key: str) -> Dimension:
     if key in DIM_REGISTRY:
         return DIM_REGISTRY[key]
     if key.startswith(FOURIER_NAME_PREFIX):
+        # TODO: remove this (can't until registered derived field vars can use Fourier adaptor again)
         base_key = key[len(FOURIER_NAME_PREFIX) :]
         base = None
         if prefix is not None:
