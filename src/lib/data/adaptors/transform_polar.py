@@ -5,10 +5,10 @@ import xarray as xr
 
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, List
-from lib.dimension import RADIAN, VarInfo, check_unit_compatability
 from lib.latex import Latex
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
+from lib.var_info import RADIAN, VarInfo, check_unit_compatability
 
 
 def _build_polar_dims(dim_x: VarInfo, dim_y: VarInfo) -> tuple[VarInfo, VarInfo]:

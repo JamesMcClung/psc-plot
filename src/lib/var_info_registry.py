@@ -5,7 +5,9 @@ Used by loaders and adaptors to populate `Metadata.var_info`.
 
 from __future__ import annotations
 
-from lib.dimension import (
+from lib.file_util import Prefix
+from lib.latex import Latex
+from lib.var_info import (
     ELECTRON_MASS,
     ELECTRON_SKIN_DEPTH,
     ELEMENTARY_CHARGE,
@@ -15,8 +17,6 @@ from lib.dimension import (
     Geometry,
     VarInfo,
 )
-from lib.file_util import Prefix
-from lib.latex import Latex
 
 _REGISTRY: dict[tuple[str | None, str], VarInfo] = {}
 

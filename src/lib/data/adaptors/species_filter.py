@@ -1,10 +1,10 @@
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import DataWithAttrs, List
-from lib.dimension import VarInfo
 from lib.latex import Latex
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 from lib.particle_util import SPECIES, Species
+from lib.var_info import VarInfo
 
 _SPECIES_VAR_KEY = "__species__"
 

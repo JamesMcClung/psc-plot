@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from lib.dimension import VarInfo
+from lib.var_info import VarInfo
 
 
 @dataclass(kw_only=True, frozen=True)

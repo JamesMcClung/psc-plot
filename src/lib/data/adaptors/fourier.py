@@ -4,9 +4,9 @@ import xrft
 
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field
-from lib.dimension import VarInfo
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
+from lib.var_info import VarInfo
 
 
 def toggle_fourier(da: xr.DataArray, dim: VarInfo) -> xr.DataArray:
