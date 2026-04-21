@@ -34,7 +34,7 @@ _register_dim(Dimension(Latex("t"), INVERSE_ELECTRON_PLASMA_FREQUENCY, "linear")
 
 
 def _dim(display: str, unit: str = "", *, key: str) -> Dimension:
-    return Dimension(Latex(display), Latex(unit), "linear", key=key)
+    return Dimension(Latex(display), Latex(unit), key=key)
 
 
 _PFD: dict[str, Dimension] = {
@@ -151,4 +151,4 @@ def lookup(prefix: str | None, key: str) -> Dimension:
             base = DIM_REGISTRY.get(base_key)
         if base is not None:
             return base.toggle_fourier()
-    return Dimension(Latex(key), Latex(""), "linear", key=key)
+    return Dimension(Latex(key), Latex(""), key=key)
