@@ -38,9 +38,9 @@ class ScatterRenderer(Renderer[FullList]):
         ax.set_xscale(init_data.spatial_scales[0])
         ax.set_yscale(init_data.spatial_scales[1])
 
-        ax.set_xlabel(frame_data.metadata.get_var_info(dim_x).to_axis_label())
+        ax.set_xlabel(frame_data.metadata.var_info[dim_x].to_axis_label())
         # FIXME there should be a single source of truth for how to format a label
-        ax.set_ylabel(frame_data.metadata.get_var_info(dim_y).to_axis_label() if dim_y in frame_data.metadata.var_info or dim_y in frame_data.metadata.dims else plt_util.format_label(frame_data.metadata))
+        ax.set_ylabel(frame_data.metadata.var_info[dim_y].to_axis_label() if dim_y in frame_data.metadata.var_info else plt_util.format_label(frame_data.metadata))
 
         ax.set_xlim(*full_data.bounds(dim_x))
         ax.set_ylim(*full_data.bounds(dim_y))
@@ -54,7 +54,7 @@ class ScatterRenderer(Renderer[FullList]):
                 s=1,
             )
 
-            fig.colorbar(self.scatter, label=frame_data.metadata.get_var_info(frame_data.metadata.color_dim).to_axis_label())
+            fig.colorbar(self.scatter, label=frame_data.metadata.var_info[frame_data.metadata.color_dim].to_axis_label())
             data_lower, data_upper = full_data.bounds(frame_data.metadata.color_dim)
             plt_util.update_cbar(self.scatter, data_min_override=data_lower, data_max_override=data_upper)
         else:
@@ -65,7 +65,7 @@ class ScatterRenderer(Renderer[FullList]):
                 s=0.5,
             )
 
-        plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.get_var_info(dim).get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if isinstance(pos, float)])
+        plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.var_info[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if isinstance(pos, float)])
 
         ax.set_aspect(1 / ax.get_data_ratio())
 
@@ -77,7 +77,7 @@ class ScatterRenderer(Renderer[FullList]):
         df = frame_data.data
 
         self.scatter.set_offsets(np.array([df[spatial_dims[0]], df[spatial_dims[1]]]).T)
-        plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.get_var_info(dim).get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if isinstance(pos, float)])
+        plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.var_info[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if isinstance(pos, float)])
 
         if frame_data.metadata.color_dim:
             self.scatter.set_array(df[frame_data.metadata.color_dim])

@@ -14,7 +14,7 @@ class ShowInitial(Hook):
         xdata = data.coordss[data.dims[0]]
         ydata = data.active_data if isinstance(data, Field) else data.data
         time_dim = data.metadata.time_dim
-        init_data.axes.plot(xdata, ydata, "-", label=data.metadata.get_var_info(time_dim).get_coordinate_label(data.coordss[time_dim]))
+        init_data.axes.plot(xdata, ydata, "-", label=data.metadata.var_info[time_dim].get_coordinate_label(data.coordss[time_dim]))
 
         init_data.line_type = "--"
 
