@@ -6,15 +6,14 @@ Used by loaders and adaptors to populate `Metadata.var_info`.
 from __future__ import annotations
 
 from lib.dimension import (
-    Dimension,
     ELECTRON_SKIN_DEPTH,
     ELEMENTARY_CHARGE,
     FOURIER_NAME_PREFIX,
     INVERSE_ELECTRON_PLASMA_FREQUENCY,
     SPEED_OF_LIGHT,
+    Dimension,
 )
 from lib.latex import Latex
-
 
 # --- Coordinate dimension registry --------------------------------------------
 
@@ -32,6 +31,7 @@ _register_dim(Dimension(Latex("t"), INVERSE_ELECTRON_PLASMA_FREQUENCY, "linear")
 
 
 # --- Prefixed variable registry -----------------------------------------------
+
 
 def _dim(display: str, unit: str = "", *, key: str) -> Dimension:
     return Dimension(Latex(display), Latex(unit), "linear", key=key)
@@ -142,7 +142,7 @@ def lookup(prefix: str | None, key: str) -> Dimension:
     if key in DIM_REGISTRY:
         return DIM_REGISTRY[key]
     if key.startswith(FOURIER_NAME_PREFIX):
-        base_key = key[len(FOURIER_NAME_PREFIX):]
+        base_key = key[len(FOURIER_NAME_PREFIX) :]
         base = None
         if prefix is not None:
             base = PREFIXED_REGISTRY.get((prefix, base_key))
