@@ -106,14 +106,14 @@ class Bin(MetadataAdaptor):
                 [df[active_key].to_dask_array() for active_key in self.varname_to_nbins],
                 bin_edgess,
                 density=False,
-                weights=df[data.metadata.weight_var].to_dask_array() if data.metadata.weight_var else None,
+                weights=df[data.metadata.weight_key].to_dask_array() if data.metadata.weight_key else None,
             )
         else:
             binned_data, _ = np.histogramdd(
                 [df[active_key] for active_key in self.varname_to_nbins],
                 bin_edgess,
                 density=False,
-                weights=df[data.metadata.weight_var] if data.metadata.weight_var else None,
+                weights=df[data.metadata.weight_key] if data.metadata.weight_key else None,
             )
 
         # note: the slice removes any infs

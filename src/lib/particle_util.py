@@ -47,7 +47,7 @@ def load_df(prefix: file_util.ParticlePrefix, steps: list[int]) -> LazyList:
     coordss["t"] = times
 
     metadata = ListMetadata(
-        weight_var="w",
+        weight_key="w",
         coordss=coordss,
     )
 
