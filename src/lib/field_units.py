@@ -6,149 +6,126 @@ Used by loaders and adaptors to populate `Metadata.var_info`.
 from __future__ import annotations
 
 from lib.dimension import (
+    ELECTRON_MASS,
     ELECTRON_SKIN_DEPTH,
     ELEMENTARY_CHARGE,
     FOURIER_KEY_PREFIX,
     INVERSE_ELECTRON_PLASMA_FREQUENCY,
     SPEED_OF_LIGHT,
     Dimension,
+    Geometry,
 )
+from lib.file_util import Prefix
 from lib.latex import Latex
 
-# --- Coordinate dimension registry --------------------------------------------
-
-DIM_REGISTRY: dict[str, Dimension] = {}
+_REGISTRY: dict[tuple[str | None, str], Dimension] = {}
 
 
-def _register_dim(dim: Dimension) -> None:
-    DIM_REGISTRY[dim.key] = dim
+def _register(prefix: str | Prefix, key: str, display: str | Latex, *, unit: str | Latex = "", geometry: Geometry | None = None):
+    if isinstance(display, str):
+        display = Latex(display)
+    if isinstance(unit, str):
+        unit = Latex(unit)
+    _REGISTRY[(prefix, key)] = Dimension(display, unit, geometry, key=key)
 
 
-_register_dim(Dimension(Latex("x"), ELECTRON_SKIN_DEPTH, "linear"))
-_register_dim(Dimension(Latex("y"), ELECTRON_SKIN_DEPTH, "linear"))
-_register_dim(Dimension(Latex("z"), ELECTRON_SKIN_DEPTH, "linear"))
-_register_dim(Dimension(Latex("t"), INVERSE_ELECTRON_PLASMA_FREQUENCY, "linear"))
+_register(None, "x", "x", unit=ELECTRON_SKIN_DEPTH, geometry="linear")
+_register(None, "y", "y", unit=ELECTRON_SKIN_DEPTH, geometry="linear")
+_register(None, "z", "z", unit=ELECTRON_SKIN_DEPTH, geometry="linear")
+_register(None, "t", "t", unit=INVERSE_ELECTRON_PLASMA_FREQUENCY, geometry="linear")
 
 
-# --- Prefixed variable registry -----------------------------------------------
+_register("pfd", "ex_ec", "E_x")
+_register("pfd", "ey_ec", "E_y")
+_register("pfd", "ez_ec", "E_z")
+_register("pfd", "hx_fc", "B_x")
+_register("pfd", "hy_fc", "B_y")
+_register("pfd", "hz_fc", "B_z")
+_register("pfd", "jx_ec", "j_x")
+_register("pfd", "jy_ec", "j_y")
+_register("pfd", "jz_ec", "j_z")
+
+_register("pfd", "h2_cc", "B^2")
+_register("pfd", "hxz2_cc", "B_x^2 + B_z^2")
+_register("pfd", "hxzhat2", r"|\hat{B}_x|^2 + |\hat{B}_z|^2")
+_register("pfd", "hhat2", r"|\hat{B}|^2")
+_register("pfd", "h_cc", "B")
+_register("pfd", "div_h_cc", r"\nabla\cdot \vec B")
+_register("pfd", "sy_p", "S_y^+")
+_register("pfd", "sy_m", "S_y^-")
+_register("pfd", "py_p", "P_y^+")
+_register("pfd", "py_m", "P_y^-")
 
 
-def _dim(display: str, unit: str = "", *, key: str) -> Dimension:
-    return Dimension(Latex(display), Latex(unit), key=key)
+_register("gauss", "dive", r"\nabla\cdot\vec E")
+_register("gauss", "rho", r"\rho")
+_register("gauss", "error", r"\rho - \nabla\cdot\vec E")
 
 
-_PFD: dict[str, Dimension] = {
-    "ex_ec": _dim("E_x", key="ex_ec"),
-    "ey_ec": _dim("E_y", key="ey_ec"),
-    "ez_ec": _dim("E_z", key="ez_ec"),
-    "hx_fc": _dim("B_x", key="hx_fc"),
-    "hy_fc": _dim("B_y", key="hy_fc"),
-    "hz_fc": _dim("B_z", key="hz_fc"),
-    "jx_ec": _dim("j_x", key="jx_ec"),
-    "jy_ec": _dim("j_y", key="jy_ec"),
-    "jz_ec": _dim("j_z", key="jz_ec"),
-    "h2_cc": _dim("B^2", key="h2_cc"),
-    "hxz2_cc": _dim("B_x^2 + B_z^2", key="hxz2_cc"),
-    "hxzhat2": _dim(r"|\hat{B}_x|^2 + |\hat{B}_z|^2", key="hxzhat2"),
-    "hhat2": _dim(r"|\hat{B}|^2", key="hhat2"),
-    "h_cc": _dim("B", key="h_cc"),
-    "div_h_cc": _dim(r"\nabla\cdot \vec B", key="div_h_cc"),
-    "sy_p": _dim("S_y^+", key="sy_p"),
-    "sy_m": _dim("S_y^-", key="sy_m"),
-    "py_p": _dim("P_y^+", key="py_p"),
-    "py_m": _dim("P_y^-", key="py_m"),
-}
-
-_GAUSS: dict[str, Dimension] = {
-    "dive": _dim(r"\nabla\cdot\vec E", key="dive"),
-    "rho": _dim(r"\rho", key="rho"),
-    "error": _dim(r"\rho - \nabla\cdot\vec E", key="error"),
-}
-
-_CONTINUITY: dict[str, Dimension] = {
-    "d_rho": _dim(r"\partial_t \rho", key="d_rho"),
-    "dt_divj": _dim(r"\partial_t \nabla\cdot\vec j", key="dt_divj"),
-    "error": _dim(r"\partial_t \rho + \partial_t \nabla\cdot\vec j", key="error"),
-}
+_register("continuity", "d_rho", r"\partial_t \rho")
+_register("continuity", "dt_divj", r"\partial_t \nabla\cdot\vec j")
+_register("continuity", "error", r"\partial_t \rho + \partial_t \nabla\cdot\vec j")
 
 
-def _moments_for(species: str, subscript: str) -> dict[str, Dimension]:
-    return {
-        f"rho_{species}": _dim(rf"\rho_\text{{{subscript}}}", key=f"rho_{species}"),
-        f"jx_{species}": _dim(rf"j_{{x,\text{{{subscript}}}}}", key=f"jx_{species}"),
-        f"jy_{species}": _dim(rf"j_{{y,\text{{{subscript}}}}}", key=f"jy_{species}"),
-        f"jz_{species}": _dim(rf"j_{{z,\text{{{subscript}}}}}", key=f"jz_{species}"),
-        f"px_{species}": _dim(rf"u_{{x,\text{{{subscript}}}}}", key=f"px_{species}"),
-        f"py_{species}": _dim(rf"u_{{y,\text{{{subscript}}}}}", key=f"py_{species}"),
-        f"pz_{species}": _dim(rf"u_{{z,\text{{{subscript}}}}}", key=f"pz_{species}"),
-        f"txx_{species}": _dim(rf"T_{{xx,\text{{{subscript}}}}}", key=f"txx_{species}"),
-        f"tyy_{species}": _dim(rf"T_{{yy,\text{{{subscript}}}}}", key=f"tyy_{species}"),
-        f"tzz_{species}": _dim(rf"T_{{zz,\text{{{subscript}}}}}", key=f"tzz_{species}"),
-        f"txy_{species}": _dim(rf"T_{{xy,\text{{{subscript}}}}}", key=f"txy_{species}"),
-        f"tyz_{species}": _dim(rf"T_{{yz,\text{{{subscript}}}}}", key=f"tyz_{species}"),
-        f"tzx_{species}": _dim(rf"T_{{zx,\text{{{subscript}}}}}", key=f"tzx_{species}"),
-    }
+for species in ["e", "i"]:
+    _register("pfd_moments", f"rho_{species}", rf"\rho_\text{{{species}}}")
+    _register("pfd_moments", f"jx_{species}", rf"j_{{x,\text{{{species}}}}}")
+    _register("pfd_moments", f"jy_{species}", rf"j_{{y,\text{{{species}}}}}")
+    _register("pfd_moments", f"jz_{species}", rf"j_{{z,\text{{{species}}}}}")
+    _register("pfd_moments", f"px_{species}", rf"u_{{x,\text{{{species}}}}}", unit=SPEED_OF_LIGHT)
+    _register("pfd_moments", f"py_{species}", rf"u_{{y,\text{{{species}}}}}", unit=SPEED_OF_LIGHT)
+    _register("pfd_moments", f"pz_{species}", rf"u_{{z,\text{{{species}}}}}", unit=SPEED_OF_LIGHT)
+    _register("pfd_moments", f"txx_{species}", rf"T_{{xx,\text{{{species}}}}}")
+    _register("pfd_moments", f"tyy_{species}", rf"T_{{yy,\text{{{species}}}}}")
+    _register("pfd_moments", f"tzz_{species}", rf"T_{{zz,\text{{{species}}}}}")
+    _register("pfd_moments", f"txy_{species}", rf"T_{{xy,\text{{{species}}}}}")
+    _register("pfd_moments", f"tyz_{species}", rf"T_{{yz,\text{{{species}}}}}")
+    _register("pfd_moments", f"tzx_{species}", rf"T_{{zx,\text{{{species}}}}}")
+
+_register("pfd_moments", "rho", r"\rho")
 
 
-_PFD_MOMENTS: dict[str, Dimension] = {
-    **_moments_for("e", "e"),
-    **_moments_for("i", "i"),
-    "rho": _dim(r"\rho", key="rho"),
-}
+_register("prt", "x", "x", unit=ELECTRON_SKIN_DEPTH)
+_register("prt", "y", "y", unit=ELECTRON_SKIN_DEPTH)
+_register("prt", "z", "z", unit=ELECTRON_SKIN_DEPTH)
+_register("prt", "px", "u_x", unit=SPEED_OF_LIGHT)
+_register("prt", "py", "u_y", unit=SPEED_OF_LIGHT)
+_register("prt", "pz", "u_z", unit=SPEED_OF_LIGHT)
+_register("prt", "q", "q", unit=ELEMENTARY_CHARGE)
+_register("prt", "m", "m", unit=ELECTRON_MASS)
+_register("prt", "w", "w")
+_register("prt", "id", r"\text{id}")
+_register("prt", "tag", r"\text{tag}")
 
-
-_PARTICLE: dict[str, Dimension] = {
-    "x": _dim("x", r"d_\text{e}", key="x"),
-    "y": _dim("y", r"d_\text{e}", key="y"),
-    "z": _dim("z", r"d_\text{e}", key="z"),
-    "px": _dim("u_x", "c", key="px"),
-    "py": _dim("u_y", "c", key="py"),
-    "pz": _dim("u_z", "c", key="pz"),
-    "q": _dim("q", "e", key="q"),
-    "m": _dim("m", r"m_\text{e}", key="m"),
-    "w": _dim("w", key="w"),
-    "id": _dim(r"\text{id}", key="id"),
-    "tag": _dim(r"\text{tag}", key="tag"),
-    "pxy": _dim(r"\sqrt{u_x^2 + u_y^2}", "c", key="pxy"),
-    "pyz": _dim(r"\sqrt{u_y^2 + u_z^2}", "c", key="pyz"),
-    "pzx": _dim(r"\sqrt{u_z^2 + u_x^2}", "c", key="pzx"),
-    "anisotropy_y_zx": _dim(r"u_y^2 / (u_z^2 + u_x^2)", key="anisotropy_y_zx"),
-    "wx": _dim("W_x", r"m_\text{e}c^2", key="wx"),
-    "wy": _dim("W_y", r"m_\text{e}c^2", key="wy"),
-    "wz": _dim("W_z", r"m_\text{e}c^2", key="wz"),
-    "wxy": _dim("W_{xy}", r"m_\text{e}c^2", key="wxy"),
-    "wyz": _dim("W_{yz}", r"m_\text{e}c^2", key="wyz"),
-    "wzx": _dim("W_{zx}", r"m_\text{e}c^2", key="wzx"),
-    "wxyz": _dim("W", r"m_\text{e}c^2", key="wxyz"),
-    "f": _dim("f", key="f"),
-}
-
-
-PREFIXED_REGISTRY: dict[tuple[str, str], Dimension] = {
-    **{("pfd", k): v for k, v in _PFD.items()},
-    **{("pfd_moments", k): v for k, v in _PFD_MOMENTS.items()},
-    **{("gauss", k): v for k, v in _GAUSS.items()},
-    **{("continuity", k): v for k, v in _CONTINUITY.items()},
-    **{("prt", k): v for k, v in _PARTICLE.items()},
-}
+_register("prt", "pxy", r"\sqrt{u_x^2 + u_y^2}", unit=SPEED_OF_LIGHT)
+_register("prt", "pyz", r"\sqrt{u_y^2 + u_z^2}", unit=SPEED_OF_LIGHT)
+_register("prt", "pzx", r"\sqrt{u_z^2 + u_x^2}", unit=SPEED_OF_LIGHT)
+_register("prt", "anisotropy_y_zx", r"u_y^2 / (u_z^2 + u_x^2)")
+_register("prt", "wx", "W_x")
+_register("prt", "wy", "W_y")
+_register("prt", "wz", "W_z")
+_register("prt", "wxy", "W_{xy}")
+_register("prt", "wyz", "W_{yz}")
+_register("prt", "wzx", "W_{zx}")
+_register("prt", "wxyz", "W")
+_register("prt", "f", "f")
 
 
 def lookup(prefix: str | None, key: str) -> Dimension:
     """Look up display/unit info for a key, checking prefixed registry then dim registry."""
-    if prefix is not None:
-        info = PREFIXED_REGISTRY.get((prefix, key))
-        if info is not None:
-            return info
-    if key in DIM_REGISTRY:
-        return DIM_REGISTRY[key]
+    if (prefix, key) in _REGISTRY:
+        return _REGISTRY[(prefix, key)]
+
+    if (None, key) in _REGISTRY:
+        return _REGISTRY[(None, key)]
+
     if key.startswith(FOURIER_KEY_PREFIX):
         # TODO: remove this (can't until registered derived field vars can use Fourier adaptor again)
         base_key = key[len(FOURIER_KEY_PREFIX) :]
-        base = None
-        if prefix is not None:
-            base = PREFIXED_REGISTRY.get((prefix, base_key))
-        if base is None:
-            base = DIM_REGISTRY.get(base_key)
-        if base is not None:
+        base = _REGISTRY.get((prefix, base_key))
+        if not base:
+            base = _REGISTRY.get((None, base_key))
+        if base:
             return base.toggle_fourier()
+
     return Dimension(Latex(key), Latex(""), key=key)
