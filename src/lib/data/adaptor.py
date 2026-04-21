@@ -51,17 +51,17 @@ class MetadataAdaptor(Adaptor):
 
         name_fragments = data.metadata.name_fragments + self.get_name_fragments()
 
-        var_info = data.metadata.var_info
-        if data.metadata.active_key is not None and data.metadata.active_key in var_info:
+        var_infos = data.metadata.var_infos
+        if data.metadata.active_key is not None and data.metadata.active_key in var_infos:
             display_latex = self.get_modified_display_latex(data.metadata)
             unit_latex = self.get_modified_unit_latex(data.metadata)
-            old_dim = var_info[data.metadata.active_key]
+            old_dim = var_infos[data.metadata.active_key]
             new_dim = old_dim.assign(display=display_latex, unit=unit_latex)
-            var_info = {**var_info, data.metadata.active_key: new_dim}
+            var_infos = {**var_infos, data.metadata.active_key: new_dim}
 
         return data.assign_metadata(
             name_fragments=name_fragments,
-            var_info=var_info,
+            var_infos=var_infos,
         )
 
 

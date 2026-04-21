@@ -37,8 +37,8 @@ class TransformPolar(MetadataAdaptor):
         self.dim2_key = dim2_key
 
     def apply_field(self, data: Field) -> Field:
-        dim_x = data.metadata.var_info[self.dim1_key]
-        dim_y = data.metadata.var_info[self.dim2_key]
+        dim_x = data.metadata.var_infos[self.dim1_key]
+        dim_y = data.metadata.var_infos[self.dim2_key]
         dim_r, dim_theta = _build_polar_dims(dim_x, dim_y)
 
         key_x, key_y = dim_x.key, dim_y.key
@@ -73,14 +73,14 @@ class TransformPolar(MetadataAdaptor):
         da = da.drop_vars([key_x, key_y])
         da = da.assign_coords({key_r: rs, key_theta: thetas})
 
-        new_var_info = {k: v for k, v in data.metadata.var_info.items() if k not in {key_x, key_y}}
-        new_var_info[key_r] = dim_r
-        new_var_info[key_theta] = dim_theta
-        return data.with_active_data(da).assign_metadata(var_info=new_var_info)
+        new_var_infos = {k: v for k, v in data.metadata.var_infos.items() if k not in {key_x, key_y}}
+        new_var_infos[key_r] = dim_r
+        new_var_infos[key_theta] = dim_theta
+        return data.with_active_data(da).assign_metadata(var_infos=new_var_infos)
 
     def apply_list(self, data: List) -> List:
-        dim_x = data.metadata.var_info[self.dim1_key]
-        dim_y = data.metadata.var_info[self.dim2_key]
+        dim_x = data.metadata.var_infos[self.dim1_key]
+        dim_y = data.metadata.var_infos[self.dim2_key]
         dim_r, dim_theta = _build_polar_dims(dim_x, dim_y)
 
         key_x, key_y = dim_x.key, dim_y.key
@@ -90,10 +90,10 @@ class TransformPolar(MetadataAdaptor):
         rs, thetas = _cartesian_to_polar(df[key_x], df[key_y])
         df = df.assign(**{key_r: rs, key_theta: thetas})
 
-        new_var_info = dict(data.metadata.var_info)
-        new_var_info[key_r] = dim_r
-        new_var_info[key_theta] = dim_theta
-        return data.assign_data(df).assign_metadata(var_info=new_var_info)
+        new_var_infos = dict(data.metadata.var_infos)
+        new_var_infos[key_r] = dim_r
+        new_var_infos[key_theta] = dim_theta
+        return data.assign_data(df).assign_metadata(var_infos=new_var_infos)
 
     def get_name_fragments(self) -> list[str]:
         return [f"polar_{self.dim1_key},{self.dim2_key}"]

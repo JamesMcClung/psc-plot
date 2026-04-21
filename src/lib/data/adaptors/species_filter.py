@@ -25,8 +25,8 @@ class SpeciesFilter(MetadataAdaptor):
         if data.metadata.active_key is None:
             data = super().apply(data)
             species_dim = VarInfo(Latex(f"\\text{{{self.species}s}}"), Latex(""), "linear", key=_SPECIES_VAR_KEY)
-            new_var_info = {**data.metadata.var_info, _SPECIES_VAR_KEY: species_dim}
-            return data.assign_metadata(active_key=_SPECIES_VAR_KEY, var_info=new_var_info)
+            new_var_infos = {**data.metadata.var_infos, _SPECIES_VAR_KEY: species_dim}
+            return data.assign_metadata(active_key=_SPECIES_VAR_KEY, var_infos=new_var_infos)
         return super().apply(data)
 
     def get_modified_display_latex(self, metadata) -> str:

@@ -124,15 +124,15 @@ class AssignNewFieldVariable(Transformer_InPlace):
         [new_variable] = toks
         self._resolve_from_registry(new_variable)
         dim = var_info_registry.lookup(self._data.metadata.prefix, new_variable)
-        new_var_info = {**self._data.metadata.var_info, new_variable: dim}
-        return self._data.assign_metadata(active_key=new_variable, var_info=new_var_info)
+        new_var_infos = {**self._data.metadata.var_infos, new_variable: dim}
+        return self._data.assign_metadata(active_key=new_variable, var_infos=new_var_infos)
 
     def assignment(self, toks: list):
         [new_variable, val] = toks
         new_ds = self._data.data.assign({new_variable: val})
         dim = var_info_registry.lookup(self._data.metadata.prefix, new_variable)
-        new_var_info = {**self._data.metadata.var_info, new_variable: dim}
-        return self._data.assign(new_ds, active_key=new_variable, var_info=new_var_info)
+        new_var_infos = {**self._data.metadata.var_infos, new_variable: dim}
+        return self._data.assign(new_ds, active_key=new_variable, var_infos=new_var_infos)
 
     def _resolve_from_registry(self, name: str):
         prefix = self._data.metadata.prefix

@@ -23,13 +23,13 @@ class Metadata:
     time_dim: str | None = None
     color_dim: str | None = None
 
-    var_info: dict[str, VarInfo] = field(default_factory=dict)
+    var_infos: dict[str, VarInfo] = field(default_factory=dict)
 
     @property
     def active_var_info(self) -> VarInfo:
         if self.active_key is None:
             raise ValueError("no active variable; specify one as a positional argument")
-        return self.var_info[self.active_key]
+        return self.var_infos[self.active_key]
 
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)

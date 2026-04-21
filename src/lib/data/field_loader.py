@@ -30,7 +30,7 @@ class FieldLoader(DataSource):
             active_key=self.active_key,
             name_fragments=self.get_name_fragments(),
             prefix=self.prefix,
-            var_info=var_info,
+            var_infos=var_info,
         )
         return Field(ds, metadata)
 

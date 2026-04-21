@@ -14,11 +14,11 @@ class ParticleLoader(DataSource):
     def get_data(self) -> LazyList:
         df = particle_util.load_df(self.prefix, self.steps)
 
-        var_info = {key: lookup(self.prefix, key) for key in df.dims}
+        var_infos = {key: lookup(self.prefix, key) for key in df.dims}
         return df.assign_metadata(
             name_fragments=self.get_name_fragments(),
             active_key=self.active_key,
-            var_info=var_info,
+            var_infos=var_infos,
         )
 
     def get_name_fragments(self) -> list[str]:

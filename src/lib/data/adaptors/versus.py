@@ -24,11 +24,11 @@ class Versus(MetadataAdaptor):
                 continue
 
             # 1b. need to do a Fourier transform
-            dim = data.metadata.var_info[dim_name]
+            dim = data.metadata.var_infos[dim_name]
             f_dim = dim.toggle_fourier()
             if f_dim.key in data.dims:
                 data = data.assign_metadata(
-                    var_info={**data.metadata.var_info, f_dim.key: f_dim},
+                    var_infos={**data.metadata.var_infos, f_dim.key: f_dim},
                 )
                 fourier = Fourier(f_dim.key)
                 data = fourier.apply(data)

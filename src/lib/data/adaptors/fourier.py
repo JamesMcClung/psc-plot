@@ -34,23 +34,23 @@ class Fourier(MetadataAdaptor):
         self.dim_keys = dim_keys
 
     def apply_field(self, data: Field) -> Field:
-        pre_dim_latexs = [data.metadata.var_info[key].display.latex for key in self.dim_keys]
+        pre_dim_latexs = [data.metadata.var_infos[key].display.latex for key in self.dim_keys]
 
         da = data.active_data
-        new_var_info = dict(data.metadata.var_info)
+        new_var_infos = dict(data.metadata.var_infos)
         for key in self.dim_keys:
-            dim = new_var_info[key]
+            dim = new_var_infos[key]
             f_dim = dim.toggle_fourier()
             da = toggle_fourier(da, dim)
-            del new_var_info[key]
-            new_var_info[f_dim.key] = f_dim
+            del new_var_infos[key]
+            new_var_infos[f_dim.key] = f_dim
 
-        if data.metadata.active_key is not None and data.metadata.active_key in new_var_info:
-            old_active = new_var_info[data.metadata.active_key]
+        if data.metadata.active_key is not None and data.metadata.active_key in new_var_infos:
+            old_active = new_var_infos[data.metadata.active_key]
             new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{old_active.display}]"
-            new_var_info[data.metadata.active_key] = old_active.assign(display=new_display)
+            new_var_infos[data.metadata.active_key] = old_active.assign(display=new_display)
 
-        return data.with_active_data(da).assign_metadata(var_info=new_var_info)
+        return data.with_active_data(da).assign_metadata(var_infos=new_var_infos)
 
     def get_modified_display_latex(self, metadata) -> str:
         return metadata.active_var_info.display.latex
