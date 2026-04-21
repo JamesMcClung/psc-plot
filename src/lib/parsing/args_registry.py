@@ -27,7 +27,7 @@ def get_combine_args_action(combiner: typing.Callable[[list[Any]], Any]) -> Acti
     return CombineArgs
 
 
-type ArgparseNArgs = int | typing.Literal["+", "*"] | None
+type ArgparseNArgs = int | typing.Literal["+", "*", "?"] | None
 type NArgs = ArgparseNArgs | typing.Literal["just one"]
 
 
@@ -63,6 +63,9 @@ class ArgparseArgAdder[ArgType]:
             elif self.nargs == "just one":
                 # Don't allow the above shorthand
                 parser.add_argument(*self.flags, dest=self.dest, help=self.help, action="append", type=self.type, metavar=self.metavar, nargs=None)
+            elif self.nargs == "?":
+                # special handling for const
+                parser.add_argument(*self.flags, dest=self.dest, help=self.help, action="append", type=self.type, metavar=self.metavar, nargs="?", const=self.type(None))
             else:
                 # On the other hand, if a parser specifies a non-None nargs, it means the
                 # parser maps that many command-line arguments to a single arg instance. This
