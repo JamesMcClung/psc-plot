@@ -21,17 +21,13 @@ class Unit(Adaptor):
         if target is None:
             raise ValueError("--unit requires a target; specify a variable as a positional argument or use --unit TARGET=VALUE")
 
-        if target not in metadata.var_info and target not in metadata.dims:
-            raise ValueError(f"--unit target {target!r} is not a known key ({sorted(set(metadata.var_info) | set(metadata.dims))})")
+        if target not in metadata.var_info:
+            raise ValueError(f"--unit target {target!r} is not a known key ({sorted(metadata.var_info)})")
 
-        old_dim = metadata.get_var_info(target)
+        old_dim = metadata.var_info[target]
         new_dim = replace(old_dim, unit=Latex(self.value))
-        new_dims = {**metadata.dims, target: new_dim} if target in metadata.dims else metadata.dims
         new_var_info = {**metadata.var_info, target: new_dim}
-
-        if target == metadata.var_name:
-            return data.assign_metadata(name_fragments=name_fragments, unit_latex=self.value, dims=new_dims, var_info=new_var_info)
-        return data.assign_metadata(name_fragments=name_fragments, dims=new_dims, var_info=new_var_info)
+        return data.assign_metadata(name_fragments=name_fragments, var_info=new_var_info)
 
     def get_name_fragments(self) -> list[str]:
         return [f"unit_{self.target or 'active'}={self.value}"]

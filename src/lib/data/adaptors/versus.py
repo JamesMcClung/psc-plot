@@ -24,15 +24,10 @@ class Versus(MetadataAdaptor):
                 continue
 
             # 1b. need to do a Fourier transform
-            dim = data.metadata.get_var_info(dim_name)
+            dim = data.metadata.var_info[dim_name]
             f_dim = dim.toggle_fourier()
             if f_dim.key in data.dims:
-                # Ensure metadata knows about the Fourier-space dim before the adaptor looks it up.
-                # (The loader may have synthesized a minimal "linear" dim for f_dim.key via
-                # get_default_dim; overwriting it here with the correct toggled dim is required
-                # for Fourier.apply_field to do the right thing.)
                 data = data.assign_metadata(
-                    dims={**data.metadata.dims, f_dim.key: f_dim},
                     var_info={**data.metadata.var_info, f_dim.key: f_dim},
                 )
                 fourier = Fourier(f_dim.key)

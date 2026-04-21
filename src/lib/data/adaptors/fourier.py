@@ -37,29 +37,23 @@ class Fourier(MetadataAdaptor):
         from dataclasses import replace
         from lib.latex import Latex
 
-        # Capture pre-transform dim latex so the display reflects any upstream --display override.
-        pre_dim_latexs = [data.metadata.get_var_info(key).name.latex for key in self.dim_keys]
+        pre_dim_latexs = [data.metadata.var_info[key].name.latex for key in self.dim_keys]
 
         da = data.active_data
-        new_dims = dict(data.metadata.dims)
         new_var_info = dict(data.metadata.var_info)
         for key in self.dim_keys:
-            dim = new_dims.get(key) or new_var_info[key]
+            dim = new_var_info[key]
             f_dim = dim.toggle_fourier()
             da = toggle_fourier(da, dim)
-            if key in new_dims:
-                del new_dims[key]
-            new_dims[f_dim.key] = f_dim
-            if key in new_var_info:
-                del new_var_info[key]
+            del new_var_info[key]
             new_var_info[f_dim.key] = f_dim
 
-        new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{data.metadata.active_var_info.name.latex}]"
         if data.metadata.var_name is not None and data.metadata.var_name in new_var_info:
             old_active = new_var_info[data.metadata.var_name]
+            new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{old_active.name.latex}]"
             new_var_info[data.metadata.var_name] = replace(old_active, name=Latex(new_display))
 
-        return data.with_active_data(da).assign_metadata(dims=new_dims, var_info=new_var_info, display_latex=new_display)
+        return data.with_active_data(da).assign_metadata(var_info=new_var_info)
 
     def get_modified_display_latex(self, metadata) -> str:
         return metadata.active_var_info.name.latex

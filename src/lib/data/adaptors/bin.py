@@ -34,9 +34,9 @@ def _guess_bin_edgess(data: List, varname_to_nbins: dict[str, int | None]) -> li
                 varname_to_edges[varname] = np.concat((coords, [np.inf]))
             else:
                 varname_to_edges[varname] = np.linspace(coords[0], coords[-1] + coords[1] - coords[0], nbins + 1, endpoint=True)
-        elif (varname in data.metadata.dims or varname in data.metadata.var_info) and (data.metadata.get_var_info(varname).geometry == "polar:theta" or data.metadata.get_var_info(varname).geometry == "spherical:phi"):
+        elif varname in data.metadata.var_info and (data.metadata.var_info[varname].geometry == "polar:theta" or data.metadata.var_info[varname].geometry == "spherical:phi"):
             varname_to_edges[varname] = np.linspace(-np.pi, np.pi, nbins + 1, endpoint=True)
-        elif (varname in data.metadata.dims or varname in data.metadata.var_info) and data.metadata.get_var_info(varname).geometry == "spherical:theta":
+        elif varname in data.metadata.var_info and data.metadata.var_info[varname].geometry == "spherical:theta":
             varname_to_edges[varname] = np.linspace(0.0, np.pi, nbins + 1, endpoint=True)
         else:
             compute_varnames.append(varname)
@@ -128,18 +128,19 @@ class Bin(MetadataAdaptor):
         info = field_units.lookup_particle("f")
         # FIXME hack to get species subscripts that depends on species_filter behavior
         display_latex = info.display_latex
-        if data.metadata.display_latex is not None:
-            if "ion" in data.metadata.display_latex:
+        if data.metadata.var_name is not None and data.metadata.var_name in data.metadata.var_info:
+            active_display = data.metadata.active_var_info.name.latex
+            if "ion" in active_display:
                 display_latex += "_\\text{i}"
-            elif "electron" in data.metadata.display_latex:
+            elif "electron" in active_display:
                 display_latex += "_\\text{e}"
 
         from lib.dimension import Dimension
         from lib.latex import Latex
         f_dim = Dimension(Latex(display_latex), Latex(info.unit_latex), "linear", key="f")
-        new_var_info = {key: data.metadata.get_var_info(key) for key in da.coords if key in data.metadata.var_info or key in data.metadata.dims}
+        new_var_info = {key: data.metadata.var_info[key] for key in da.coords if key in data.metadata.var_info}
         new_var_info["f"] = f_dim
-        return Field(da.to_dataset(name="f"), FieldMetadata.create_from(data.metadata, var_name="f", display_latex=display_latex, unit_latex=info.unit_latex, var_info=new_var_info))
+        return Field(da.to_dataset(name="f"), FieldMetadata.create_from(data.metadata, var_name="f", var_info=new_var_info))
 
     def get_name_fragments(self) -> list[str]:
         subfrags = "_".join(f"{varname}={nbins}" if nbins else varname for varname, nbins in self.varname_to_nbins.items())
