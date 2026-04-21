@@ -60,5 +60,3 @@ class Dimension:
 def check_unit_compatability(dim_1: Dimension, dim_2: Dimension, dest_geometry: str):
     if dim_1.unit != dim_2.unit:
         raise ValueError(f"Dimensions {dim_1.name} and {dim_2.name} have incompatible units for transforming to {dest_geometry} coordinates ({dim_1.unit} and {dim_2.unit})")
-
-
