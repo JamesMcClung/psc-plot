@@ -47,9 +47,6 @@ class MetadataAdaptor(Adaptor):
         return metadata.active_var_info.unit.latex
 
     def apply(self, data: DataWithAttrs) -> DataWithAttrs:
-        from dataclasses import replace
-        from lib.latex import Latex
-
         data = super().apply(data)
 
         name_fragments = data.metadata.name_fragments + self.get_name_fragments()
@@ -59,7 +56,7 @@ class MetadataAdaptor(Adaptor):
             display_latex = self.get_modified_display_latex(data.metadata)
             unit_latex = self.get_modified_unit_latex(data.metadata)
             old_dim = var_info[data.metadata.var_name]
-            new_dim = replace(old_dim, display=Latex(display_latex), unit=Latex(unit_latex))
+            new_dim = old_dim.assign(display=display_latex, unit=unit_latex)
             var_info = {**var_info, data.metadata.var_name: new_dim}
 
         return data.assign_metadata(

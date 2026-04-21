@@ -135,9 +135,7 @@ class Bin(MetadataAdaptor):
             elif "electron" in active_display:
                 display_latex += "_\\text{e}"
 
-        from dataclasses import replace
-        from lib.latex import Latex
-        f_dim = replace(f_dim, display=Latex(display_latex))
+        f_dim = f_dim.assign(display=display_latex)
         new_var_info = {key: data.metadata.var_info[key] for key in da.coords if key in data.metadata.var_info}
         new_var_info["f"] = f_dim
         return Field(da.to_dataset(name="f"), FieldMetadata.create_from(data.metadata, var_name="f", var_info=new_var_info))

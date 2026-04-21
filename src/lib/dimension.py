@@ -37,6 +37,18 @@ class Dimension:
         if self.key is None:
             object.__setattr__(self, "key", self.display.plain)
 
+    def assign(
+        self,
+        *,
+        display: str | Latex | None = None,
+        unit: str | Latex | None = None,
+    ) -> Dimension:
+        if isinstance(display, str):
+            display = Latex(display)
+        if isinstance(unit, str):
+            unit = Latex(unit)
+        return Dimension(display or self.display, unit or self.unit, self.geometry, key=self.key)
+
     def to_axis_label(self) -> str:
         if self.unit.latex:
             return f"${self.display}\\ [{self.unit}]$"

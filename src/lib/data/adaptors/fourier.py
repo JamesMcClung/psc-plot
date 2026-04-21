@@ -34,9 +34,6 @@ class Fourier(MetadataAdaptor):
         self.dim_keys = dim_keys
 
     def apply_field(self, data: Field) -> Field:
-        from dataclasses import replace
-        from lib.latex import Latex
-
         pre_dim_latexs = [data.metadata.var_info[key].display.latex for key in self.dim_keys]
 
         da = data.active_data
@@ -51,7 +48,7 @@ class Fourier(MetadataAdaptor):
         if data.metadata.var_name is not None and data.metadata.var_name in new_var_info:
             old_active = new_var_info[data.metadata.var_name]
             new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{old_active.display}]"
-            new_var_info[data.metadata.var_name] = replace(old_active, display=Latex(new_display))
+            new_var_info[data.metadata.var_name] = old_active.assign(display=new_display)
 
         return data.with_active_data(da).assign_metadata(var_info=new_var_info)
 

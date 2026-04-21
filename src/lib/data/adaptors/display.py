@@ -1,8 +1,5 @@
-from dataclasses import replace
-
 from lib.data.adaptor import Adaptor
 from lib.data.data_with_attrs import DataWithAttrs
-from lib.latex import Latex
 from lib.parsing.args_registry import arg_parser
 
 
@@ -25,7 +22,7 @@ class Display(Adaptor):
             raise ValueError(f"--display target {target!r} is not a known key ({sorted(metadata.var_info)})")
 
         old_dim = metadata.var_info[target]
-        new_dim = replace(old_dim, display=Latex(self.value))
+        new_dim = old_dim.assign(display=self.value)
         new_var_info = {**metadata.var_info, target: new_dim}
         return data.assign_metadata(name_fragments=name_fragments, var_info=new_var_info)
 
