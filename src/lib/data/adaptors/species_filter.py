@@ -4,9 +4,12 @@ from lib.latex import Latex
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 from lib.particle_util import SPECIES, Species
-from lib.var_info import VarInfo
 
-_SPECIES_VAR_KEY = "__species__"
+
+_SUBJECT: dict[Species, Latex] = {
+    "ion": Latex(r"\text{Ions}"),
+    "electron": Latex(r"\text{Electrons}"),
+}
 
 
 class SpeciesFilter(MetadataAdaptor):
@@ -22,16 +25,8 @@ class SpeciesFilter(MetadataAdaptor):
         return data.assign_data(df)
 
     def apply(self, data: DataWithAttrs) -> DataWithAttrs:
-        if data.metadata.active_key is None:
-            data = super().apply(data)
-            species_dim = VarInfo(Latex(f"\\text{{{self.species}s}}"), Latex(""), "linear", key=_SPECIES_VAR_KEY)
-            new_var_infos = {**data.metadata.var_infos, _SPECIES_VAR_KEY: species_dim}
-            return data.assign_metadata(active_key=_SPECIES_VAR_KEY, var_infos=new_var_infos)
+        data = data.assign_metadata(subject=_SUBJECT[self.species])
         return super().apply(data)
-
-    def get_modified_display_latex(self, metadata) -> str:
-        subscript = self.species[0]
-        return f"{{{metadata.active_var_info.display}}}_{subscript}"
 
     def get_name_fragments(self) -> list[str]:
         return [self.species]
