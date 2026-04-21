@@ -14,7 +14,7 @@ class Unit(Adaptor):
         metadata = data.metadata
         name_fragments = metadata.name_fragments + self.get_name_fragments()
 
-        target = self.target or metadata.var_name
+        target = self.target or metadata.active_key
         if target is None:
             raise ValueError("--unit requires a target; specify a variable as a positional argument or use --unit TARGET=VALUE")
 

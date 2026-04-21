@@ -57,13 +57,13 @@ class Versus(MetadataAdaptor):
         # TODO
 
         # 2. drop unused vars
-        keep_vars = self.all_dims + ([data.metadata.var_name] if data.metadata.var_name else [])
-        drop_vars = [var_name for var_name in data.dims if var_name not in keep_vars]
+        keep_vars = self.all_dims + ([data.metadata.active_key] if data.metadata.active_key else [])
+        drop_vars = [active_key for active_key in data.dims if active_key not in keep_vars]
         data = data.assign_data(data.data.drop(columns=drop_vars))
 
         spatial_dims = self.spatial_dims.copy()
-        if len(spatial_dims) == 1 and data.metadata.var_name is not None and data.metadata.var_name not in spatial_dims:
-            spatial_dims.append(data.metadata.var_name)
+        if len(spatial_dims) == 1 and data.metadata.active_key is not None and data.metadata.active_key not in spatial_dims:
+            spatial_dims.append(data.metadata.active_key)
 
         return data.assign_metadata(
             spatial_dims=spatial_dims,

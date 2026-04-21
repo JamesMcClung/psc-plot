@@ -45,10 +45,10 @@ class Fourier(MetadataAdaptor):
             del new_var_info[key]
             new_var_info[f_dim.key] = f_dim
 
-        if data.metadata.var_name is not None and data.metadata.var_name in new_var_info:
-            old_active = new_var_info[data.metadata.var_name]
+        if data.metadata.active_key is not None and data.metadata.active_key in new_var_info:
+            old_active = new_var_info[data.metadata.active_key]
             new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{old_active.display}]"
-            new_var_info[data.metadata.var_name] = old_active.assign(display=new_display)
+            new_var_info[data.metadata.active_key] = old_active.assign(display=new_display)
 
         return data.with_active_data(da).assign_metadata(var_info=new_var_info)
 

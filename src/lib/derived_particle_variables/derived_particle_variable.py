@@ -50,16 +50,16 @@ def derived_particle_variable(prefix: ParticlePrefix):
     return derived_particle_variable_inner
 
 
-def derive_particle_variable(data: List, var_name: str, ds_prefix: ParticlePrefix) -> List:
-    if var_name in data.dims:
+def derive_particle_variable(data: List, active_key: str, ds_prefix: ParticlePrefix) -> List:
+    if active_key in data.dims:
         return data
-    elif var_name in DERIVED_PARTICLE_VARIABLES[ds_prefix]:
-        derived_var = DERIVED_PARTICLE_VARIABLES[ds_prefix][var_name]
+    elif active_key in DERIVED_PARTICLE_VARIABLES[ds_prefix]:
+        derived_var = DERIVED_PARTICLE_VARIABLES[ds_prefix][active_key]
         for base_var_name in derived_var.base_var_names:
             data = derive_particle_variable(data, base_var_name, ds_prefix)
         return derived_var.assign_to(data)
     else:
-        message = f"""No variable named '{var_name}'.
+        message = f"""No variable named '{active_key}'.
 The following variables are defined:    {data.dims}.
 The following variables can be derived: {list(DERIVED_PARTICLE_VARIABLES[ds_prefix])}."""
         raise ValueError(message)

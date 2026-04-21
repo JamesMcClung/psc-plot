@@ -48,7 +48,7 @@ def update_cbar(mappable: _ScalarMappable, *, data_min_override: float | None = 
 def update_title(ax: Axes, metadata: Metadata, cut_labels: list[str]):
     cut_labels_str = ", ".join(cut_labels)
 
-    if metadata.var_name is None:
+    if metadata.active_key is None:
         return ax.set_title(cut_labels_str)
 
     if cut_labels_str:

@@ -10,9 +10,9 @@ from .source import DataSource
 
 
 class FieldLoader(DataSource):
-    def __init__(self, prefix: file_util.FieldPrefix, var_name: str | None, steps: list[int]):
+    def __init__(self, prefix: file_util.FieldPrefix, active_key: str | None, steps: list[int]):
         self.prefix = prefix
-        self.var_name = var_name
+        self.active_key = active_key
         self.steps = steps
 
     def get_data(self) -> Field:
@@ -23,11 +23,11 @@ class FieldLoader(DataSource):
             concat_dim="t",
             preprocess=lambda ds: pscpy.decode_psc(ds, ["e", "i"]),
         )
-        if self.var_name is not None:
-            derive_field_variable(ds, self.var_name, self.prefix)
+        if self.active_key is not None:
+            derive_field_variable(ds, self.active_key, self.prefix)
         var_info = {key: lookup(self.prefix, key) for key in ds.variables}
         metadata = FieldMetadata(
-            var_name=self.var_name,
+            active_key=self.active_key,
             name_fragments=self.get_name_fragments(),
             prefix=self.prefix,
             var_info=var_info,
@@ -36,6 +36,6 @@ class FieldLoader(DataSource):
 
     def get_name_fragments(self) -> list[str]:
         fragments = [self.prefix]
-        if self.var_name is not None:
-            fragments.append(self.var_name)
+        if self.active_key is not None:
+            fragments.append(self.active_key)
         return fragments

@@ -16,7 +16,7 @@ from lib.dimension import Dimension
 
 @dataclass(kw_only=True, frozen=True)
 class Metadata:
-    var_name: str | None = None
+    active_key: str | None = None
     name_fragments: list[str] = field(default_factory=list)
 
     spatial_dims: list[str] = field(default_factory=list)
@@ -27,9 +27,9 @@ class Metadata:
 
     @property
     def active_var_info(self) -> Dimension:
-        if self.var_name is None:
+        if self.active_key is None:
             raise ValueError("no active variable; specify one as a positional argument")
-        return self.var_info[self.var_name]
+        return self.var_info[self.active_key]
 
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)
@@ -120,18 +120,18 @@ class Field(DataWithAttrs[xr.Dataset, FieldMetadata]):
 
     @property
     def active_data(self) -> xr.DataArray:
-        if self.metadata.var_name is None:
+        if self.metadata.active_key is None:
             raise ValueError("no active variable; specify one as a positional argument")
-        return self.data[self.metadata.var_name]
+        return self.data[self.metadata.active_key]
 
     def with_active_data(self, new_da: xr.DataArray) -> Self:
         """Returns a copy with the active variable replaced by `new_da`. Sibling variables that
         are no longer compatible with the new active grid (e.g. share a dim name with different
         coordinate values) are dropped."""
-        var_name = self.metadata.var_name
-        new_ds = new_da.to_dataset(name=var_name)
+        active_key = self.metadata.active_key
+        new_ds = new_da.to_dataset(name=active_key)
         for sib in self.data.data_vars:
-            if sib == var_name:
+            if sib == active_key:
                 continue
             try:
                 new_ds = xr.merge([new_ds, self.data[[sib]]], join="exact", compat="no_conflicts")
@@ -177,12 +177,12 @@ class List[D: pd.DataFrame | dd.DataFrame](DataWithAttrs[D, ListMetadata]):
 
     @property
     def active_data(self) -> pd.Series | dd.Series:
-        if self.metadata.var_name is None:
+        if self.metadata.active_key is None:
             raise ValueError("no active variable; specify one as a positional argument")
-        return self.data[self.metadata.var_name]
+        return self.data[self.metadata.active_key]
 
     def with_active_data(self, series: pd.Series | dd.Series) -> Self:
-        return self.assign_data(self.data.assign(**{self.metadata.var_name: series}))
+        return self.assign_data(self.data.assign(**{self.metadata.active_key: series}))
 
     @abstractmethod
     def compute(self) -> FullList: ...
