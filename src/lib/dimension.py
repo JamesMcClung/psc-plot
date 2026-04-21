@@ -22,14 +22,14 @@ def _toggle_unit_fourier(unit: Latex) -> Latex:
         return unit.append(inverse_suffix)
 
 
-type DimensionGeometry = Literal["linear", "polar:r", "polar:theta", "spherical:r", "spherical:theta", "spherical:phi"]
+type Geometry = Literal["linear", "polar:r", "polar:theta", "spherical:r", "spherical:theta", "spherical:phi"]
 
 
 @dataclass(frozen=True)
 class Dimension:
     name: Latex
     unit: Latex
-    geometry: DimensionGeometry
+    geometry: Geometry
     _: KW_ONLY
     key: str = None
 
