@@ -36,9 +36,9 @@ class Scatter(MetadataAdaptor):
     flags="--scatter",
     metavar="name",
     help="convert to list of values and coordinates, optionally naming the result",
-    nargs="*",
+    nargs="?",
 )
-def parse_scatter(args: list[str]) -> Scatter:
-    if args:
-        return Scatter(Latex(args[0]))
-    return Scatter(None)
+def parse_scatter(arg: str | None) -> Scatter:
+    if isinstance(arg, str):
+        arg = Latex(arg)
+    return Scatter(arg)
