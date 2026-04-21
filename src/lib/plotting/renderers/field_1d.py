@@ -39,7 +39,7 @@ class Field1dRenderer(Renderer[Field]):
 
         plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.var_info[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
         ax.set_xlabel(frame_data.metadata.var_info[dim_x].to_axis_label())
-        ax.set_ylabel(plt_util.format_label(frame_data.metadata))
+        ax.set_ylabel(frame_data.metadata.active_var_info.to_axis_label())
 
         ax.set_xscale(init_data.spatial_scales[0])
         ax.set_yscale(init_data.spatial_scales[1])
