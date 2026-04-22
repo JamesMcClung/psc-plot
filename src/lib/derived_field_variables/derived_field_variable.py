@@ -3,8 +3,6 @@ import typing
 
 import xarray as xr
 
-from ..file_util import FieldPrefix
-
 __all__ = ["derived_field_variable", "derive_field_variable"]
 
 
@@ -30,14 +28,14 @@ class DerivedFieldVariable:
         return f"{self.__class__.__name__}(({', '.join(self.base_var_names)}) -> {self.name}: {self.derive!r})"
 
 
-DERIVED_FIELD_VARIABLES: dict[FieldPrefix, dict[str, DerivedFieldVariable]] = {}
+DERIVED_FIELD_VARIABLES: dict[str, dict[str, DerivedFieldVariable]] = {}
 
 
-def register_derived_field_variable(prefix: FieldPrefix, var: DerivedFieldVariable):
+def register_derived_field_variable(prefix: str, var: DerivedFieldVariable):
     DERIVED_FIELD_VARIABLES.setdefault(prefix, {})[var.name] = var
 
 
-def derived_field_variable(prefix: FieldPrefix):
+def derived_field_variable(prefix: str):
     def derived_field_variable_inner[F: (function, DeriveField)](derive_func: F) -> F:
         name = derive_func.__name__
         base_var_names = list(inspect.signature(derive_func).parameters)
@@ -47,7 +45,7 @@ def derived_field_variable(prefix: FieldPrefix):
     return derived_field_variable_inner
 
 
-def derive_field_variable(ds: xr.Dataset, active_key: str, ds_prefix: FieldPrefix):
+def derive_field_variable(ds: xr.Dataset, active_key: str, ds_prefix: str):
     if active_key in ds.variables:
         return
     elif active_key in DERIVED_FIELD_VARIABLES[ds_prefix]:
