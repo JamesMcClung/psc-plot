@@ -12,10 +12,6 @@ from lib.file_util import get_available_steps
 from lib.var_info_registry import lookup
 
 
-def _get_available_field_steps(prefix: str) -> list[int]:
-    return get_available_steps(f"{prefix}.", ".bp")
-
-
 def _get_path(prefix: str, step: int) -> Path:
     return CONFIG.data_dir / f"{prefix}.{step:09}.bp"
 
@@ -25,7 +21,7 @@ class FieldLoader(DataSource):
     def __init__(self, prefix: str, active_key: str | None):
         self.prefix = prefix
         self.active_key = active_key
-        self.steps = _get_available_field_steps(prefix)
+        self.steps = get_available_steps(f"{prefix}.", ".bp")
 
     def get_data(self) -> Field:
         ds = xr.open_mfdataset(

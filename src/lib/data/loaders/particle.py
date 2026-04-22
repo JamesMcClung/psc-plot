@@ -16,10 +16,6 @@ from lib.var_info_registry import lookup
 PRT_PARTICLES_KEY = "particles/p0/1d"
 
 
-def _get_available_particle_steps(prefix: str) -> list[int]:
-    return get_available_steps(f"{prefix}.", ".h5")
-
-
 def _get_path_at_step(prefix: str, step: int) -> pathlib.Path:
     return CONFIG.data_dir / f"{prefix}.{step:09}.h5"
 
@@ -44,7 +40,7 @@ class ParticleLoader(DataSource):
     def __init__(self, prefix: str, active_key: str | None):
         self.prefix = prefix
         self.active_key = active_key
-        self.steps = _get_available_particle_steps(prefix)
+        self.steps = get_available_steps(f"{prefix}.", ".h5")
 
     def get_data(self) -> LazyList:
         attrss = [_load_attrs_at_step(self.prefix, step) for step in self.steps]
