@@ -3,17 +3,16 @@ from lib.data.data_with_attrs import DataWithAttrs, List
 from lib.latex import Latex
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
-from lib.particle_util import SPECIES, Species
+SPECIES = ["ion", "electron"]
 
-
-_SUBJECT: dict[Species, Latex] = {
+_SUBJECT: dict[str, Latex] = {
     "ion": Latex(r"\text{Ions}"),
     "electron": Latex(r"\text{Electrons}"),
 }
 
 
 class SpeciesFilter(MetadataAdaptor):
-    def __init__(self, species: Species):
+    def __init__(self, species: str):
         self.species = species
 
     def apply_list(self, data: List) -> List:
