@@ -36,7 +36,7 @@ def _load_attrs_at_step(prefix: str, step: int) -> dict[str, typing.Any]:
 
 
 @loader("prt")
-class ParticleLoader(DataSource):
+class ParticleLoaderH5(DataSource):
     def __init__(self, prefix: str, active_key: str | None):
         self.prefix = prefix
         self.active_key = active_key
