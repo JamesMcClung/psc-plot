@@ -1,16 +1,15 @@
 import argparse
 from pathlib import Path
 
+from lib.data.loader_registry import LOADERS
 from lib.parsing.args import Args
 from lib.parsing.args_registry import CUSTOM_ARGS
-
-from ..file_util import FIELD_PREFIXES, PARTICLE_PREFIXES
 
 
 def _get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="psc-plot")
 
-    parser.add_argument("prefix", choices=FIELD_PREFIXES + PARTICLE_PREFIXES, help="data file prefix")
+    parser.add_argument("prefix", choices=LOADERS.keys(), help="data file prefix")
     parser.add_argument("variable", nargs="?", default=None, help="field variable to work with")
     parser.add_argument(
         "-s",

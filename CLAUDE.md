@@ -77,16 +77,20 @@ The code lives under `src/lib/` and is organized around three concepts: **source
 ### Data flow
 
 1. `parsing.get_parsed_args()` (`src/lib/parsing/parse.py`) builds a flat argparse parser with positional `prefix` (choices-constrained to known prefixes) and optional `variable`, plus all registered adaptor/hook flags. Returns an `Args` namespace (`src/lib/parsing/args.py`) directly.
-2. `args.get_animation()` checks whether `prefix` is a field or particle prefix and constructs the corresponding loader (`FieldLoader` or `ParticleLoader`), passing `variable` to set the optional initial active variable. It then calls `compile_source` (`src/lib/data/compile.py`) to wrap it in a `DataSourceWithPipeline` made of the user-supplied `Adaptor` list. If no `Versus` adaptor is present, a default one is appended (`y,z` vs `t`) — this is what selects axes and time dim.
+2. `args.get_animation()` looks up the loader class for `prefix` in `LOADERS` (from `src/lib/data/loader_registry.py`) and constructs it with `(prefix, variable)`. Each loader handles step discovery and data loading internally. It then calls `compile_source` (`src/lib/data/compile.py`) to wrap it in a `DataSourceWithPipeline` made of the user-supplied `Adaptor` list. If no `Versus` adaptor is present, a default one is appended (`y,z` vs `t`) — this is what selects axes and time dim.
 3. `source.get_data()` loads raw data and runs the pipeline, returning a `DataWithAttrs` (a `Field` wrapping `xr.Dataset`, or a `List` wrapping `pd.DataFrame` / `dd.DataFrame`). `DataSource` is an ABC with a single abstract method `get_data()`.
 4. `get_plot(data)` (`src/lib/plotting/get_plot.py`) picks a `Renderer` based on data type and geometry (`Field1dRenderer`, `Field2dRenderer`, `PolarFieldRenderer`, `ScatterRenderer`), then wraps it in `StaticPlot` or `AnimatedPlot` based on whether `time_dim` is present. `ScatterRenderer` requires exactly 2 `spatial_dims`. Each renderer defines `make_init_data`/`init` (one-time setup with frame 0) and `make_update_data`/`draw` (per-frame update for animations). Hooks are added to the plot object after construction.
 5. Hooks (`src/lib/plotting/hooks/`) such as `--scale log`, `--grid`, `--vline`, `--fit` are appended onto the chosen plot before `show()`/`save()`.
 
-### Auto-registration of adaptors and hooks
+### Auto-registration of loaders, adaptors, and hooks
 
-`src/lib/__init__.py` imports `lib.data.adaptors` and `lib.plotting.hooks`, whose `__init__.py` files glob and `importlib.import_module` every sibling `*.py`. Each module in those directories is responsible for registering itself with argparse via the `@arg_parser(...)` / `@const_arg(...)` decorators in `src/lib/parsing/args_registry.py`, which append to the module-level `CUSTOM_ARGS` list. `parse._get_parser()` then iterates `CUSTOM_ARGS` and adds them to the parser.
+`src/lib/__init__.py` imports `lib.data.loaders`, `lib.data.adaptors`, and `lib.plotting.hooks`, whose `__init__.py` files glob and `importlib.import_module` every sibling `*.py`.
 
-**Consequence:** to add a new adaptor or hook, drop a new file into `src/lib/data/adaptors/` (or `src/lib/plotting/hooks/`) and decorate its parse function — no central registry edit needed. Conversely, an adaptor that fails to register (e.g. import error in that file) will silently disappear from the CLI; suspect the auto-import if a flag goes missing.
+**Loaders** (`src/lib/data/loaders/`) register themselves via the `@loader(...)` decorator from `src/lib/data/loader_registry.py`, which populates `LOADERS: dict[str, type[DataSource]]`. Each loader class takes `(prefix: str, active_key: str | None)` and handles step discovery and data loading internally. `parse._get_parser()` uses `LOADERS.keys()` as the valid prefix choices. To add a new data source, drop a file into `src/lib/data/loaders/` and decorate the class with `@loader("prefix1", "prefix2", ...)`.
+
+**Adaptors and hooks** register their argparse flags via the `@arg_parser(...)` / `@const_arg(...)` decorators in `src/lib/parsing/args_registry.py`, which append to the module-level `CUSTOM_ARGS` list. `parse._get_parser()` then iterates `CUSTOM_ARGS` and adds them to the parser. To add a new adaptor or hook, drop a new file into `src/lib/data/adaptors/` (or `src/lib/plotting/hooks/`) and decorate its parse function.
+
+**Consequence:** a loader, adaptor, or hook that fails to register (e.g. import error in that file) will silently disappear from the CLI; suspect the auto-import if a flag or prefix goes missing.
 
 ### Adaptor class hierarchy
 

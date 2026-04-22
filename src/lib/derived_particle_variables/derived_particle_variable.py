@@ -5,8 +5,6 @@ import pandas as pd
 
 from lib.data.data_with_attrs import List
 
-from ..file_util import ParticlePrefix
-
 __all__ = ["derived_particle_variable", "derive_particle_variable", "DERIVED_PARTICLE_VARIABLES"]
 
 
@@ -33,14 +31,14 @@ class DerivedParticleVariable:
         return f"{self.__class__.__name__}(({', '.join(self.base_var_names)}) -> {self.name}: {self.derive!r})"
 
 
-DERIVED_PARTICLE_VARIABLES: dict[ParticlePrefix, dict[str, DerivedParticleVariable]] = {}
+DERIVED_PARTICLE_VARIABLES: dict[str, dict[str, DerivedParticleVariable]] = {}
 
 
-def register_derived_particle_variable(prefix: ParticlePrefix, var: DerivedParticleVariable):
+def register_derived_particle_variable(prefix: str, var: DerivedParticleVariable):
     DERIVED_PARTICLE_VARIABLES.setdefault(prefix, {})[var.name] = var
 
 
-def derived_particle_variable(prefix: ParticlePrefix):
+def derived_particle_variable(prefix: str):
     def derived_particle_variable_inner[F: (function, DeriveParticleVariable)](derive_func: F) -> F:
         name = derive_func.__name__
         base_var_names = list(inspect.signature(derive_func).parameters)
@@ -50,7 +48,7 @@ def derived_particle_variable(prefix: ParticlePrefix):
     return derived_particle_variable_inner
 
 
-def derive_particle_variable(data: List, active_key: str, ds_prefix: ParticlePrefix) -> List:
+def derive_particle_variable(data: List, active_key: str, ds_prefix: str) -> List:
     if active_key in data.dims:
         return data
     elif active_key in DERIVED_PARTICLE_VARIABLES[ds_prefix]:

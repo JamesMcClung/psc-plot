@@ -5,7 +5,6 @@ Used by loaders and adaptors to populate `Metadata.var_info`.
 
 from __future__ import annotations
 
-from lib.file_util import Prefix
 from lib.latex import Latex
 from lib.var_info import (
     ELECTRON_MASS,
@@ -21,7 +20,7 @@ from lib.var_info import (
 _REGISTRY: dict[tuple[str | None, str], VarInfo] = {}
 
 
-def _register(prefix: str | Prefix, key: str, display: str | Latex, *, unit: str | Latex = "", geometry: Geometry | None = None):
+def _register(prefix: str | None, key: str, display: str | Latex, *, unit: str | Latex = "", geometry: Geometry | None = None):
     if isinstance(display, str):
         display = Latex(display)
     if isinstance(unit, str):
