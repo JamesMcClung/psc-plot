@@ -17,7 +17,7 @@ def _get_path(prefix: str, step: int) -> Path:
 
 
 @loader("pfd", "pfd_moments", "gauss", "continuity")
-class FieldLoader(DataSource):
+class FieldLoaderBp(DataSource):
     def __init__(self, prefix: str, active_key: str | None):
         self.prefix = prefix
         self.active_key = active_key
