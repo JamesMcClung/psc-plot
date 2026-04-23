@@ -12,6 +12,7 @@ import pandas as pd
 import xarray as xr
 
 from lib.latex import Latex
+from lib.species import SpeciesInfo
 from lib.var_info import VarInfo
 
 
@@ -25,6 +26,7 @@ class Metadata:
     color_dim: str | None = None
 
     var_infos: dict[str, VarInfo] = field(default_factory=dict)
+    species: dict[str, SpeciesInfo] = field(default_factory=dict)
 
     @property
     def active_var_info(self) -> VarInfo:
