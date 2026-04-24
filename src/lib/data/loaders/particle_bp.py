@@ -84,7 +84,9 @@ class ParticleLoaderBp(DataSource):
         )
         data = LazyList(df, metadata)
 
-        var_infos = {key: lookup(self.prefix, key) for key in data.dims}
+        # var_info registry is keyed by "prt" (not per-species), so strip the
+        # species suffix when looking up per-column metadata.
+        var_infos = {key: lookup("prt", key) for key in data.dims}
         return data.assign_metadata(
             name_fragments=self._get_name_fragments(),
             active_key=self.active_key,
