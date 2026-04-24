@@ -24,11 +24,19 @@ def _read_attrs(path: pathlib.Path) -> dict:
 
 def _load_step_df(path: pathlib.Path, time: float) -> dd.DataFrame:
     """Open one BP step lazily and return a per-step dask DataFrame with a
-    constant `t` column. Drops the BP-assigned particle-dim index column."""
+    constant `t` column. Drops the BP-assigned particle-dim index column.
+
+    Note: the `t` column is added via map_partitions rather than
+    dd.DataFrame.assign — the latter creates a broadcast-scalar column whose
+    `to_dask_array()` trips an IndexError in dask-expr's optimizer when the
+    dataframe came from xarray's to_dask_dataframe. map_partitions produces a
+    proper per-row column that survives the optimizer.
+    """
     with xr.open_dataset(path) as raw:
         particle_dim = next(d for d, n in raw.sizes.items() if n > 1)
     ds = xr.open_dataset(path, chunks={particle_dim: CONFIG.dask_chunk_size}).squeeze(drop=True)
-    df = ds.to_dask_dataframe().drop(columns=[particle_dim]).assign(t=np.float64(time))
+    df = ds.to_dask_dataframe().drop(columns=[particle_dim])
+    df = df.map_partitions(lambda p, t: p.assign(t=t), np.float64(time))
     return df
 
 
