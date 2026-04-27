@@ -110,7 +110,8 @@ def _build_species_dict(qm: dict[SpeciesIdx, tuple[Charge, Mass]]) -> dict[str, 
 
     Dedupes by (q, m) first (with a warning on collision), then groups unique
     (q, m) pairs by sign(q). Singletons in a sign-group get keys 'e' / 'i';
-    multi-member groups get mass-suffixed keys like 'i25' / 'i100'.
+    multi-member groups get charge- and/or mass-suffixed keys like 'i+'/'i++'
+    (different charges) or 'i25' / 'i100' (same charge, different masses).
     """
     qm_to_indices: dict[tuple[Charge, Mass], list[SpeciesIdx]] = defaultdict(list)
     for s, key in qm.items():
@@ -132,14 +133,32 @@ def _build_species_dict(qm: dict[SpeciesIdx, tuple[Charge, Mass]]) -> dict[str, 
     for sign, qms in sign_groups.items():
         base, subject = ("i", "Ions") if sign > 0 else ("e", "Electrons")
         if len(qms) == 1:
+            # just one species in sign-group; trivial key
             q, m = qms[0]
             key = base
             display = Latex(rf"\text{{{subject}}}")
             result[key] = SpeciesInfo(species_key=key, display=display, q=q, m=m)
-        else:
+        elif len(set(qm[0] for qm in qms)) == len(qms):
+            # each species in sign-group has unique charge; label keys by charge only
+            q_char = "+" if sign > 0 else "-"
+            for q, m in qms:
+                n_signs = int(abs(q))
+                key = base + q_char * n_signs
+                display = Latex(rf"\text{{{subject}}}^{{{n_signs if n_signs > 1 else ""}{q_char}}}")
+                result[key] = SpeciesInfo(species_key=key, display=display, q=q, m=m)
+        elif len(set(qm[1] for qm in qms)) == len(qms):
+            # each species in sign-group has unique mass; disambiguate by mass only
             for q, m in qms:
                 key = f"{base}{m:g}"
-                display = Latex(rf"\text{{{subject}, }} m={m:g}")
+                display = Latex(rf"\text{{{subject}}}_{{{m:g}}}")
+                result[key] = SpeciesInfo(species_key=key, display=display, q=q, m=m)
+        else:
+            # worst-case scenario: conflicting charges and masses
+            q_char = "+" if sign > 0 else "-"
+            for q, m in qms:
+                n_signs = int(abs(q))
+                key = f"{base}{q_char * n_signs}{m:g}"
+                display = Latex(rf"\text{{{subject}}}^{{{n_signs if n_signs > 1 else ""}{q_char}}}_{{{m:g}}}")
                 result[key] = SpeciesInfo(species_key=key, display=display, q=q, m=m)
     return result
 
