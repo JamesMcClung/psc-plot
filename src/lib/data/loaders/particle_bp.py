@@ -67,13 +67,10 @@ class ParticleLoaderBp(DataSource):
         dfs = [_load_step_df(_get_path(self.prefix, step), time) for step, time in zip(self.steps, times)]
         df = dd.concat(dfs)
 
-        corner = np.asarray(head["corner"])
-        length = np.asarray(head["length"])
+        corners = np.asarray(head["corner"])
+        lengths = np.asarray(head["length"])
         gdims = np.asarray(head["gdims"])
-        coordss = {
-            dim: np.linspace(c, c + L, n, endpoint=False)
-            for dim, c, L, n in zip(("x", "y", "z"), corner, length, gdims)
-        }
+        coordss = {dim: np.linspace(c, c + l, n, endpoint=False) for dim, c, l, n in zip(("x", "y", "z"), corners, lengths, gdims)}
         coordss["t"] = times
 
         metadata = ListMetadata(
