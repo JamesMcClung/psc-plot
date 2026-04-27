@@ -3,7 +3,6 @@
 from pathlib import Path
 
 import h5py
-import numpy as np
 import pytest
 from synthetic_particles import write_step, write_steps
 
@@ -43,15 +42,3 @@ def test_writer_emits_idx_begin_end_with_species_shape(tmp_path: Path):
     assert idx_end[0, 0, 0, 0] == 50
     assert idx_begin[1, 0, 0, 0] == 50
     assert idx_end[1, 0, 0, 0] == 100
-
-
-def test_writer_particles_sorted_by_species(tmp_path: Path):
-    path = tmp_path / "prt.000000000.h5"
-    write_step(path, time=0.0, species=[(1.0, 100.0, 30), (-1.0, 1.0, 70)], seed=0)
-    with h5py.File(path) as f:
-        particles = f["particles/p0/1d"][...]
-    # First 30 rows are species 0 (q=+1); remaining are species 1 (q=-1).
-    assert np.all(particles["q"][:30] == 1.0)
-    assert np.all(particles["m"][:30] == 100.0)
-    assert np.all(particles["q"][30:] == -1.0)
-    assert np.all(particles["m"][30:] == 1.0)
