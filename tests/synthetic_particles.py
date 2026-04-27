@@ -4,9 +4,10 @@ Writes the fields that lib.data.loaders.particle_h5 actually reads: the
 particle table at /particles/p0/1d plus /particles/idx_begin and /idx_end
 so species-discovery can locate particles by species.
 """
+
 from __future__ import annotations
 
-import pathlib
+from pathlib import Path
 
 import h5py
 import numpy as np
@@ -25,7 +26,7 @@ _GDIMS_ZYX = (16, 8, 1)
 
 
 def write_step(
-    path: pathlib.Path,
+    path: Path,
     time: float,
     species: list[tuple[float, float, int]],
     seed: int,
@@ -74,7 +75,7 @@ def write_step(
 
 
 def write_steps(
-    data_dir: pathlib.Path,
+    data_dir: Path,
     steps: list[int],
     times: list[float],
     n_particles_per_step: int,
