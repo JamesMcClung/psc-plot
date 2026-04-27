@@ -1,11 +1,12 @@
 """Tests the species-discovery path in ParticleLoaderH5."""
+
 from __future__ import annotations
 
 import pytest
+from synthetic_particles import write_step
 
 from lib.config import CONFIG
 from lib.data.loaders.particle_h5 import ParticleLoaderH5
-from synthetic_particles import write_step
 
 
 @pytest.fixture
