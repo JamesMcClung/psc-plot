@@ -7,10 +7,24 @@ import xarray as xr
 
 from lib.config import CONFIG
 from lib.data.data_with_attrs import LazyList, ListMetadata
+from lib.data.loader_registry import register_loader
 from lib.data.source import DataSource
 from lib.file_util import get_available_steps
 from lib.species import SpeciesInfo, build_species_display
 from lib.var_info_registry import lookup
+
+_DISCOVER_PARTICLE_BP_PREFIX_RE = re.compile(r"^prt\.([^.]+)\.\d+\.bp$")
+
+
+def discover_particle_bp_loaders(data_dir: pathlib.Path):
+    for entry in data_dir.iterdir():
+        # note that BP "files" are actually directories
+        m = _DISCOVER_PARTICLE_BP_PREFIX_RE.match(entry.name)
+        if m is None:
+            continue
+
+        species_key = m.group(1)
+        register_loader(f"prt.{species_key}", ParticleLoaderBp)
 
 
 def _get_path(prefix: str, step: int) -> pathlib.Path:
