@@ -68,8 +68,6 @@ def _discover_species_qm(prefix: str, steps: list[int]) -> dict[int, tuple[float
     """For each species index in [0, n_species), find a step where it has particles
     and read its (q, m). Tries step 0 first, then the last step, then bisects the
     remaining range. Raises if any species never appears."""
-    if not steps:
-        raise ValueError(f"no data files found for prefix {prefix!r}")
     with h5py.File(_get_path_at_step(prefix, steps[0])) as f:
         n_species = f["particles/idx_begin"].shape[0]
     qm: dict[int, tuple[float, float]] = {}
