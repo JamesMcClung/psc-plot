@@ -13,7 +13,7 @@ from lib.data.loader_registry import loader
 from lib.data.source import DataSource
 from lib.file_util import get_available_steps
 from lib.latex import Latex
-from lib.species import SpeciesInfo, build_species_info
+from lib.species import SpeciesInfo
 from lib.var_info_registry import lookup
 
 PRT_PARTICLES_KEY = "particles/p0/1d"
@@ -132,28 +132,28 @@ def _build_species_dict(qm: dict[SpeciesIdx, tuple[Charge, Mass]]) -> dict[str, 
     result: dict[str, SpeciesInfo] = {}
     for sign, qms in sign_groups.items():
         base, subject = ("i", "Ions") if sign > 0 else ("e", "Electrons")
-        if len(qms) == 1:
-            # just one species in sign-group; trivial key
+
+        masses_are_unique = len(set(qm[1] for qm in qms)) == len(qms)
+        charges_are_unique = len(set(qm[0] for qm in qms)) == len(qms)
+
+        if charges_are_unique and masses_are_unique:
             q, m = qms[0]
             key = base
             display = Latex(rf"\text{{{subject}}}")
             result[key] = SpeciesInfo(species_key=key, display=display, q=q, m=m)
-        elif len(set(qm[0] for qm in qms)) == len(qms):
-            # each species in sign-group has unique charge; label keys by charge only
+        elif charges_are_unique:
             q_char = "+" if sign > 0 else "-"
             for q, m in qms:
                 n_signs = int(abs(q))
                 key = base + q_char * n_signs
                 display = Latex(rf"\text{{{subject}}}^{{{n_signs if n_signs > 1 else ""}{q_char}}}")
                 result[key] = SpeciesInfo(species_key=key, display=display, q=q, m=m)
-        elif len(set(qm[1] for qm in qms)) == len(qms):
-            # each species in sign-group has unique mass; disambiguate by mass only
+        elif masses_are_unique:
             for q, m in qms:
                 key = f"{base}{m:g}"
                 display = Latex(rf"\text{{{subject}}}_{{{m:g}}}")
                 result[key] = SpeciesInfo(species_key=key, display=display, q=q, m=m)
         else:
-            # worst-case scenario: conflicting charges and masses
             q_char = "+" if sign > 0 else "-"
             for q, m in qms:
                 n_signs = int(abs(q))
