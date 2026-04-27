@@ -29,7 +29,7 @@ def test_h5_species_discovery_standard(isolated_data_dir: Path):
     assert i.q == 1.0 and i.m == 100.0
 
 
-def test_h5_species_discovery_multiple_ions(isolated_data_dir: Path):
+def test_h5_species_discovery_multiple_ion_masses(isolated_data_dir: Path):
     write_step(
         isolated_data_dir / "prt.000000000.h5",
         time=0.0,
@@ -41,6 +41,38 @@ def test_h5_species_discovery_multiple_ions(isolated_data_dir: Path):
     assert set(data.metadata.species.keys()) == {"e", "i25", "i100"}
     assert data.metadata.species["i25"].m == 25.0
     assert data.metadata.species["i100"].m == 100.0
+
+
+def test_h5_species_discovery_multiple_ion_charges(isolated_data_dir: Path):
+    write_step(
+        isolated_data_dir / "prt.000000000.h5",
+        time=0.0,
+        species=[(-1.0, 1.0, 10), (1.0, 100.0, 10), (2.0, 100.0, 10)],
+        seed=0,
+    )
+    loader = ParticleLoaderH5("prt", active_key=None)
+    data = loader.get_data()
+    assert set(data.metadata.species.keys()) == {"e", "i+", "i++"}
+    assert data.metadata.species["i+"].q == 1.0
+    assert data.metadata.species["i++"].q == 2.0
+
+
+def test_h5_species_discovery_multiple_ion_everything(isolated_data_dir: Path):
+    write_step(
+        isolated_data_dir / "prt.000000000.h5",
+        time=0.0,
+        species=[(-1.0, 1.0, 10), (1.0, 25.0, 10), (1.0, 100.0, 10), (2.0, 100.0, 10)],
+        seed=0,
+    )
+    loader = ParticleLoaderH5("prt", active_key=None)
+    data = loader.get_data()
+    assert set(data.metadata.species.keys()) == {"e", "i+25", "i+100", "i++100"}
+    assert data.metadata.species["i+25"].q == 1.0
+    assert data.metadata.species["i+25"].m == 25.0
+    assert data.metadata.species["i+100"].q == 1.0
+    assert data.metadata.species["i+100"].m == 100.0
+    assert data.metadata.species["i++100"].q == 2.0
+    assert data.metadata.species["i++100"].m == 100.0
 
 
 def test_h5_species_discovery_electron_merge_warns(isolated_data_dir: Path):
