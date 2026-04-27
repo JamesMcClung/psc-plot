@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from synthetic_particles import write_step
 
@@ -10,13 +12,13 @@ from lib.data.loaders.particle_h5 import ParticleLoaderH5
 
 
 @pytest.fixture
-def isolated_data_dir(tmp_path, monkeypatch):
+def isolated_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """Point CONFIG.data_dir at tmp_path for the duration of one test."""
     monkeypatch.setattr(CONFIG, "data_dir", tmp_path)
     return tmp_path
 
 
-def test_discovers_singleton_species(isolated_data_dir):
+def test_discovers_singleton_species(isolated_data_dir: Path):
     write_step(isolated_data_dir / "prt.000000000.h5", time=0.0, species=[(-1.0, 1.0, 10), (1.0, 100.0, 10)], seed=0)
     loader = ParticleLoaderH5("prt", active_key=None)
     data = loader.get_data()
@@ -29,7 +31,7 @@ def test_discovers_singleton_species(isolated_data_dir):
     assert i.display.latex == r"\text{Ions}"
 
 
-def test_mass_collision_disambiguates_keys(isolated_data_dir):
+def test_mass_collision_disambiguates_keys(isolated_data_dir: Path):
     write_step(
         isolated_data_dir / "prt.000000000.h5",
         time=0.0,
@@ -45,7 +47,7 @@ def test_mass_collision_disambiguates_keys(isolated_data_dir):
     assert data.metadata.species["i100"].display.latex == r"\text{Ions, } m=100"
 
 
-def test_qm_collision_merges_with_warning(isolated_data_dir):
+def test_qm_collision_merges_with_warning(isolated_data_dir: Path):
     write_step(
         isolated_data_dir / "prt.000000000.h5",
         time=0.0,
@@ -58,7 +60,7 @@ def test_qm_collision_merges_with_warning(isolated_data_dir):
     assert set(data.metadata.species.keys()) == {"e"}
 
 
-def test_step0_empty_bisects_to_later_step(isolated_data_dir):
+def test_step0_empty_bisects_to_later_step(isolated_data_dir: Path):
     # step 0: only species 0 has particles; step 1: only species 1 has particles.
     write_step(isolated_data_dir / "prt.000000000.h5", time=0.0, species=[(-1.0, 1.0, 10), (1.0, 1.0, 0)], seed=0)
     write_step(isolated_data_dir / "prt.000000001.h5", time=1.0, species=[(-1.0, 1.0, 0), (1.0, 1.0, 10)], seed=1)
@@ -77,7 +79,7 @@ from lib.latex import Latex
 from lib.species import SpeciesInfo
 
 
-def _make_list_with_species(species_dict, rows):
+def _make_list_with_species(species_dict: dict[str, SpeciesInfo], rows: list[dict]):
     df = pd.DataFrame(rows)
     md = ListMetadata(species=species_dict, subject=Latex(r"\text{Particles}"))
     return FullList(df, md)
@@ -96,7 +98,7 @@ def test_species_filter_matches_by_q_and_m():
     ]
     data = _make_list_with_species(species, rows)
     filt = SpeciesFilter("i25")
-    out = filt.apply(data)
+    out: FullList = filt.apply(data)
     assert out.data["id"].tolist() == [1]
     assert out.metadata.subject.latex == r"\text{Ions, } m=25"
 
