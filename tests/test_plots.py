@@ -94,37 +94,37 @@ def test_spectrum_3d():
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_animated_scatter_electron_positions():
     """A real-space scatter plot of electron positions, with cell edges shown via `--grid`. Grid line positions aren't coordinate-informed, so the spacing is manually specified."""
-    return make_plot("prt --species electron -v y z --grid y=0.0625 z=0.0625".split(), data_dir="test-3d")
+    return make_plot("prt --species e -v y z --grid y=0.0625 z=0.0625".split(), data_dir="test-3d")
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_animated_scatter_ion_phase():
     """A phase-space scatter plot of ions. Color is used to show pz, but requires `--compute` due to a bug."""
-    return make_plot("prt --species ion -v y py color=pz --compute".split())
+    return make_plot("prt --species i -v y py color=pz --compute".split())
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_animated_2d_binned_phase():
     """A clearer way to see phase space distributions for many particles. Since y is a dimension with coordinates, those coordinates are automatically used as bin edges. The combination of `--nan0` and `--scale log` makes faint phase-space structures very easy to see."""
-    return make_plot("prt --species ion --bin y py=16 -v y py --nan0 --scale log".split())
+    return make_plot("prt --species i --bin y py=16 -v y py --nan0 --scale log".split())
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_static_scatter():
     """Static scatter plot of electron positions at the last time step."""
-    return make_plot("prt --species electron -i t=-1 -v y z time= --grid y=0.0625 z=0.0625".split(), data_dir="test-3d")
+    return make_plot("prt --species e -i t=-1 -v y z time= --grid y=0.0625 z=0.0625".split(), data_dir="test-3d")
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_animated_scatter_with_variable():
     """Scatter plot with explicit variable: py on y-axis, y on x-axis."""
-    return make_plot("prt py --species ion -v y".split())
+    return make_plot("prt py --species i -v y".split())
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_animated_scatter_mul():
     """Scatter plot with --mul applied to the active variable."""
-    return make_plot("prt py --species ion --mul 2 -v y".split())
+    return make_plot("prt py --species i --mul 2 -v y".split())
 
 
 # --- Particle moments ---

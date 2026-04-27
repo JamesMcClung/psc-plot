@@ -32,7 +32,7 @@ def _run_pipeline(data_dir: str, chunksize: int, result_queue: mp.Queue) -> None
 
     parser = _get_parser()
     args = parser.parse_args(
-        "prt --species ion --bin y py=16 -v y py".split(),
+        "prt --species i --bin y py=16 -v y py".split(),
         namespace=Args(),
     )
     plot = args.get_animation()

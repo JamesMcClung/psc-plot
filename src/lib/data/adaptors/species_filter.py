@@ -1,46 +1,30 @@
 from lib.data.adaptor import MetadataAdaptor
-from lib.data.data_with_attrs import DataWithAttrs, List
-from lib.latex import Latex
-from lib.parsing import parse_util
+from lib.data.data_with_attrs import List
 from lib.parsing.args_registry import arg_parser
-SPECIES = ["ion", "electron"]
-
-_SUBJECT: dict[str, Latex] = {
-    "ion": Latex(r"\text{Ions}"),
-    "electron": Latex(r"\text{Electrons}"),
-}
 
 
 class SpeciesFilter(MetadataAdaptor):
-    def __init__(self, species: str):
-        self.species = species
+    def __init__(self, species_key: str):
+        self.species_key = species_key
 
     def apply_list(self, data: List) -> List:
+        info = data.metadata.species.get(self.species_key)
+        if info is None:
+            available = sorted(data.metadata.species.keys())
+            raise ValueError(f"unknown species {self.species_key!r}; available: {available}")
         df = data.data
-        if self.species == "electron":
-            df = df[df["q"] < 0]
-        elif self.species == "ion":
-            df = df[df["q"] > 0]
-        return data.assign_data(df)
-
-    def apply(self, data: DataWithAttrs) -> DataWithAttrs:
-        data = data.assign_metadata(subject=_SUBJECT[self.species])
-        return super().apply(data)
+        df = df[(df["q"] == info.q) & (df["m"] == info.m)]
+        return data.assign_data(df).assign_metadata(subject=info.display)
 
     def get_name_fragments(self) -> list[str]:
-        return [self.species]
-
-
-_SPECIES_FILTER_FORMAT = "species"
+        return [self.species_key]
 
 
 @arg_parser(
     dest="adaptors",
     flags="--species",
-    metavar=_SPECIES_FILTER_FORMAT,
-    help="include only particles of this species",
+    metavar="species_key",
+    help="include only particles of this species (example `species_key`s: 'e', 'i', 'i+', 'i25')",
 )
-def parse_slice(arg: str) -> SpeciesFilter:
-    species = arg
-    parse_util.check_value(species, "species", SPECIES)
-    return SpeciesFilter(species)
+def parse_species(arg: str) -> SpeciesFilter:
+    return SpeciesFilter(arg)
