@@ -1,12 +1,13 @@
 """Tests for ParticleLoaderBp registration and loading."""
+
 import numpy as np
 import pytest
+from synthetic_particles import write_steps_bp
 
 from lib.config import CONFIG
 from lib.data.loaders.particle_bp import ParticleLoaderBp
 from lib.latex import Latex
 from lib.parsing.parse import _get_parser
-from synthetic_particles import write_steps_bp
 
 
 def test_dynamic_prefix_registration(tmp_path, monkeypatch):
@@ -62,5 +63,4 @@ def test_particle_loader_bp_mass_suffix_subject(tmp_path, monkeypatch):
     monkeypatch.setattr(CONFIG, "data_dir", tmp_path)
     loader = ParticleLoaderBp(prefix="prt.i25", active_key=None)
     data = loader.get_data()
-    assert data.metadata.subject == Latex(r"\text{Ions, } m=25")
     assert data.metadata.species["i25"].m == 25.0

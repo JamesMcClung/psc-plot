@@ -13,7 +13,7 @@ from lib.data.loader_registry import loader
 from lib.data.source import DataSource
 from lib.file_util import get_available_steps
 from lib.latex import Latex
-from lib.species import SpeciesInfo
+from lib.species import SpeciesInfo, build_species_display
 from lib.var_info_registry import lookup
 
 PRT_PARTICLES_KEY = "particles/p0/1d"
@@ -139,26 +139,26 @@ def _build_species_dict(qm: dict[SpeciesIdx, tuple[Charge, Mass]]) -> dict[str, 
         if charges_are_unique and masses_are_unique:
             q, m = qms[0]
             key = base
-            display = Latex(rf"\text{{{subject}}}")
+            display = build_species_display(subject)
             result[key] = SpeciesInfo(species_key=key, display=display, q=q, m=m)
         elif charges_are_unique:
             q_char = "+" if sign > 0 else "-"
             for q, m in qms:
                 n_signs = int(abs(q))
                 key = base + q_char * n_signs
-                display = Latex(rf"\text{{{subject}}}^{{{n_signs if n_signs > 1 else ""}{q_char}}}")
+                display = build_species_display(subject, show_q=q)
                 result[key] = SpeciesInfo(species_key=key, display=display, q=q, m=m)
         elif masses_are_unique:
             for q, m in qms:
                 key = f"{base}{m:g}"
-                display = Latex(rf"\text{{{subject}}}_{{{m:g}}}")
+                display = build_species_display(subject, show_m=m)
                 result[key] = SpeciesInfo(species_key=key, display=display, q=q, m=m)
         else:
             q_char = "+" if sign > 0 else "-"
             for q, m in qms:
                 n_signs = int(abs(q))
                 key = f"{base}{q_char * n_signs}{m:g}"
-                display = Latex(rf"\text{{{subject}}}^{{{n_signs if n_signs > 1 else ""}{q_char}}}_{{{m:g}}}")
+                display = build_species_display(subject, show_q=q, show_m=m)
                 result[key] = SpeciesInfo(species_key=key, display=display, q=q, m=m)
     return result
 

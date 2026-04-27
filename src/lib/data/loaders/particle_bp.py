@@ -1,4 +1,5 @@
 import pathlib
+import re
 
 import dask.dataframe as dd
 import numpy as np
@@ -8,7 +9,7 @@ from lib.config import CONFIG
 from lib.data.data_with_attrs import LazyList, ListMetadata
 from lib.data.source import DataSource
 from lib.file_util import get_available_steps
-from lib.species import build_species_info
+from lib.species import SpeciesInfo, build_species_display
 from lib.var_info_registry import lookup
 
 
@@ -40,6 +41,9 @@ def _load_step_df(path: pathlib.Path, time: float) -> dd.DataFrame:
     return df
 
 
+_SPECIES_KEY_RE = re.compile(r"^([a-zA-Z]+)([+-]*)(\d*)$")
+
+
 class ParticleLoaderBp(DataSource):
     """ADIOS2 particle loader — one instance per prt.<species_key> prefix.
 
@@ -61,7 +65,19 @@ class ParticleLoaderBp(DataSource):
         head = step_attrs[0]
         q = float(head["q"])
         m = float(head["m"])
-        info = build_species_info(self.species_key, q, m)
+
+        subject = "Electrons" if q < 0 else "Ions"
+        match = _SPECIES_KEY_RE.match(self.species_key)
+        show_q = None
+        show_m = None
+        if match:
+            if match.group(2):
+                show_q = q
+            if match.group(3):
+                show_m = m
+        display = build_species_display(subject, show_q, show_m)
+
+        info = SpeciesInfo(self.species_key, display, q, m)
         species_dict = {self.species_key: info}
 
         dfs = [_load_step_df(_get_path(self.prefix, step), time) for step, time in zip(self.steps, times)]
