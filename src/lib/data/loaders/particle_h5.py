@@ -17,6 +17,9 @@ from lib.species import SpeciesInfo
 from lib.var_info_registry import lookup
 
 PRT_PARTICLES_KEY = "particles/p0/1d"
+type SpeciesIdx = int
+type Charge = float
+type Mass = float
 
 
 def _get_path_at_step(prefix: str, step: int) -> pathlib.Path:
@@ -47,7 +50,7 @@ def _find_first_populated_cell(idx_begin_s: np.ndarray, idx_end_s: np.ndarray) -
     return int(idx_begin_s[mask].min())
 
 
-def _read_species_qm(prefix: str, step: int, missing: set[int]) -> dict[int, tuple[float, float]]:
+def _read_species_qm(prefix: str, step: int, missing: set[SpeciesIdx]) -> dict[SpeciesIdx, tuple[Charge, Mass]]:
     """Open one step and return {species_index: (q, m)} for any species with particles in that step.
     Only populates entries for species-indices in `missing`; others are left untouched."""
     with h5py.File(_get_path_at_step(prefix, step)) as f:
@@ -64,13 +67,13 @@ def _read_species_qm(prefix: str, step: int, missing: set[int]) -> dict[int, tup
     return found
 
 
-def _discover_species_qm(prefix: str, steps: list[int]) -> dict[int, tuple[float, float]]:
+def _discover_species_qm(prefix: str, steps: list[int]) -> dict[SpeciesIdx, tuple[Charge, Mass]]:
     """For each species index in [0, n_species), find a step where it has particles
     and read its (q, m). Tries step 0 first, then the last step, then bisects the
     remaining range. Raises if any species never appears."""
     with h5py.File(_get_path_at_step(prefix, steps[0])) as f:
         n_species = f["particles/idx_begin"].shape[0]
-    qm: dict[int, tuple[float, float]] = {}
+    qm: dict[SpeciesIdx, tuple[Charge, Mass]] = {}
     missing = set(range(n_species))
 
     probed: set[int] = set()
@@ -102,14 +105,14 @@ def _discover_species_qm(prefix: str, steps: list[int]) -> dict[int, tuple[float
     return qm
 
 
-def _build_species_dict(qm: dict[int, tuple[float, float]]) -> dict[str, SpeciesInfo]:
+def _build_species_dict(qm: dict[SpeciesIdx, tuple[Charge, Mass]]) -> dict[str, SpeciesInfo]:
     """Turn {species_index: (q, m)} into {species_key: SpeciesInfo}.
 
     Dedupes by (q, m) first (with a warning on collision), then groups unique
     (q, m) pairs by sign(q). Singletons in a sign-group get keys 'e' / 'i';
     multi-member groups get mass-suffixed keys like 'i25' / 'i100'.
     """
-    qm_to_indices: dict[tuple[float, float], list[int]] = defaultdict(list)
+    qm_to_indices: dict[tuple[Charge, Mass], list[SpeciesIdx]] = defaultdict(list)
     for s, key in qm.items():
         qm_to_indices[key].append(s)
     for (q, m), indices in qm_to_indices.items():
@@ -119,9 +122,9 @@ def _build_species_dict(qm: dict[int, tuple[float, float]]) -> dict[str, Species
                 UserWarning,
                 stacklevel=3,
             )
-    unique_qm: list[tuple[float, float]] = list(qm_to_indices.keys())
+    unique_qm: list[tuple[Charge, Mass]] = list(qm_to_indices.keys())
 
-    sign_groups: dict[int, list[tuple[float, float]]] = defaultdict(list)
+    sign_groups: dict[SpeciesIdx, list[tuple[Charge, Mass]]] = defaultdict(list)
     for q, m in unique_qm:
         sign_groups[1 if q > 0 else -1].append((q, m))
 
