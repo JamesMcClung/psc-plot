@@ -131,15 +131,35 @@ def _build_species_dict(qm: dict[SpeciesIdx, tuple[Charge, Mass]]) -> dict[str, 
 
     result: dict[str, SpeciesInfo] = {}
     for sign, qms in sign_groups.items():
-        base = "i" if sign > 0 else "e"
+        base, subject = ("i", "Ions") if sign > 0 else ("e", "Electrons")
         if len(qms) == 1:
             # just one species in sign-group; trivial key
             q, m = qms[0]
-            result[base] = build_species_info(base, q, m)
-        else:
+            key = base
+            display = Latex(rf"\text{{{subject}}}")
+            result[key] = SpeciesInfo(species_key=key, display=display, q=q, m=m)
+        elif len(set(qm[0] for qm in qms)) == len(qms):
+            # each species in sign-group has unique charge; label keys by charge only
+            q_char = "+" if sign > 0 else "-"
+            for q, m in qms:
+                n_signs = int(abs(q))
+                key = base + q_char * n_signs
+                display = Latex(rf"\text{{{subject}}}^{{{n_signs if n_signs > 1 else ""}{q_char}}}")
+                result[key] = SpeciesInfo(species_key=key, display=display, q=q, m=m)
+        elif len(set(qm[1] for qm in qms)) == len(qms):
+            # each species in sign-group has unique mass; disambiguate by mass only
             for q, m in qms:
                 key = f"{base}{m:g}"
-                result[key] = build_species_info(key, q, m)
+                display = Latex(rf"\text{{{subject}}}_{{{m:g}}}")
+                result[key] = SpeciesInfo(species_key=key, display=display, q=q, m=m)
+        else:
+            # worst-case scenario: conflicting charges and masses
+            q_char = "+" if sign > 0 else "-"
+            for q, m in qms:
+                n_signs = int(abs(q))
+                key = f"{base}{q_char * n_signs}{m:g}"
+                display = Latex(rf"\text{{{subject}}}^{{{n_signs if n_signs > 1 else ""}{q_char}}}_{{{m:g}}}")
+                result[key] = SpeciesInfo(species_key=key, display=display, q=q, m=m)
     return result
 
 
