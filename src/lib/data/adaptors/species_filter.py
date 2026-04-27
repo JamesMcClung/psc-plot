@@ -24,7 +24,7 @@ class SpeciesFilter(MetadataAdaptor):
     dest="adaptors",
     flags="--species",
     metavar="species_key",
-    help="include only particles of this species (species_key, e.g. 'e', 'i', 'i25')",
+    help="include only particles of this species (example `species_key`s: 'e', 'i', 'i+', 'i25')",
 )
 def parse_species(arg: str) -> SpeciesFilter:
     return SpeciesFilter(arg)
