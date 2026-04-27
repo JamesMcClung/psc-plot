@@ -1,12 +1,14 @@
 """Sanity-check that the synthetic writer produces files loadable by lib."""
 
+from pathlib import Path
+
 import h5py
 import numpy as np
 import pytest
 from synthetic_particles import write_step, write_steps
 
 
-def test_writer_produces_loadable_files(tmp_path):
+def test_writer_produces_loadable_files(tmp_path: Path):
     write_steps(tmp_path, steps=[0, 1], times=[0.0, 1.0], n_particles_per_step=1000)
 
     for step in (0, 1):
@@ -18,7 +20,7 @@ def test_writer_produces_loadable_files(tmp_path):
             assert set(f["particles/p0/1d"].dtype.names) >= {"x", "y", "z", "px", "py", "pz", "q", "m", "w"}
 
 
-def test_writer_file_size_scales_with_n_particles(tmp_path):
+def test_writer_file_size_scales_with_n_particles(tmp_path: Path):
     """Each particle is 56 bytes; a file with N particles should be close to N*56 plus HDF5 overhead (well under 2x)."""
     n = 100_000
     write_steps(tmp_path, steps=[0], times=[0.0], n_particles_per_step=n)
@@ -27,7 +29,7 @@ def test_writer_file_size_scales_with_n_particles(tmp_path):
     assert n * 56 < size < n * 56 * 2
 
 
-def test_writer_emits_idx_begin_end_with_species_shape(tmp_path):
+def test_writer_emits_idx_begin_end_with_species_shape(tmp_path: Path):
     path = tmp_path / "prt.000000000.h5"
     write_step(path, time=0.0, species=[(1.0, 100.0, 50), (-1.0, 1.0, 50)], seed=0)
     with h5py.File(path) as f:
@@ -43,7 +45,7 @@ def test_writer_emits_idx_begin_end_with_species_shape(tmp_path):
     assert idx_end[1, 0, 0, 0] == 100
 
 
-def test_writer_particles_sorted_by_species(tmp_path):
+def test_writer_particles_sorted_by_species(tmp_path: Path):
     path = tmp_path / "prt.000000000.h5"
     write_step(path, time=0.0, species=[(1.0, 100.0, 30), (-1.0, 1.0, 70)], seed=0)
     with h5py.File(path) as f:
