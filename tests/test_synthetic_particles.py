@@ -4,7 +4,8 @@ from pathlib import Path
 
 import h5py
 import pytest
-from synthetic_particles import write_step, write_steps
+import xarray as xr
+from synthetic_particles import write_step, write_step_bp, write_steps
 
 
 def test_writer_produces_loadable_files(tmp_path: Path):
@@ -42,3 +43,27 @@ def test_writer_emits_idx_begin_end_with_species_shape(tmp_path: Path):
     assert idx_end[0, 0, 0, 0] == 50
     assert idx_begin[1, 0, 0, 0] == 50
     assert idx_end[1, 0, 0, 0] == 100
+
+
+def test_synthetic_bp(tmp_path):
+    path = tmp_path / "prt.e.000000042.bp"
+    write_step_bp(
+        path=path,
+        time=1.5,
+        step=42,
+        species_key="e",
+        q=-1.0,
+        m=1.0,
+        n_particles=100,
+        seed=0,
+    )
+    ds = xr.open_dataset(path)
+    assert set(ds.data_vars) == {"x", "y", "z", "px", "py", "pz", "w"}
+    for name in ("x", "y", "z", "px", "py", "pz", "w"):
+        sizes = [n for n in ds[name].shape if n > 1]
+        assert sizes == [100], f"{name} has shape {ds[name].shape}"
+    assert ds.attrs["name"] == "e"
+    assert float(ds.attrs["q"]) == -1.0
+    assert float(ds.attrs["m"]) == 1.0
+    assert float(ds.attrs["time"]) == 1.5
+    assert int(ds.attrs["step"]) == 42
