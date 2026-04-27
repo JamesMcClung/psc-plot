@@ -1,8 +1,8 @@
 """Sanity-check that the synthetic writer produces files loadable by lib."""
+
 import h5py
 import numpy as np
 import pytest
-
 from synthetic_particles import write_step, write_steps
 
 
