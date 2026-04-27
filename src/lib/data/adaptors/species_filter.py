@@ -14,8 +14,7 @@ class SpeciesFilter(MetadataAdaptor):
             raise ValueError(f"unknown species {self.species_key!r}; available: {available}")
         df = data.data
         df = df[(df["q"] == info.q) & (df["m"] == info.m)]
-        data = data.assign_metadata(subject=info.display)
-        return data.assign_data(df)
+        return data.assign_data(df).assign_metadata(subject=info.display)
 
     def get_name_fragments(self) -> list[str]:
         return [self.species_key]
