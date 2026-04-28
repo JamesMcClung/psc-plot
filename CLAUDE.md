@@ -70,6 +70,42 @@ New `@pytest.mark.mpl_image_compare` tests must pass `style="default"` — witho
 
 Running `plots/check*.sh` against a real data directory remains useful for manual validation of more complex scenarios.
 
+## Formatting
+
+Code is formatted with [Ruff](https://docs.astral.sh/ruff/) and import-sorted via Ruff's isort rule. CI enforces both via `.github/workflows/format.yml`.
+
+Install dev tooling:
+
+```sh
+pip install -e ".[dev]"
+```
+
+Run locally:
+
+```sh
+ruff format .
+ruff check --fix .
+```
+
+Conventions:
+
+- `line-length` is set to 320 (Ruff's maximum) — effectively unlimited for this codebase. Ruff respects the "magic trailing comma": a trailing comma in a call/collection forces it to stay multi-line; without one, it collapses onto a single line if it fits. Use a trailing comma to signal "I want this exploded."
+- Only the isort rule (`I`) is enabled. No other lint rules.
+
+VS Code: install the official Ruff extension (`charliermarsh.ruff`) and add to your settings to format and organize imports on save:
+
+```json
+"[python]": {
+  "editor.defaultFormatter": "charliermarsh.ruff",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  }
+}
+```
+
+`.vscode/settings.json` is intentionally not checked in.
+
 ## Architecture
 
 The code lives under `src/lib/` and is organized around three concepts: **sources**, **adaptors**, and **plots**. Argument parsing wires them together.
