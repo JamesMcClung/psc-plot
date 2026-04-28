@@ -139,7 +139,7 @@ class AssignNewFieldVariable(Transformer_InPlace):
         if prefix is None:
             raise ValueError(f"--derive cannot resolve '{name}': field metadata has no prefix.")
         if name not in DERIVED_FIELD_VARIABLES.get(prefix, {}):
-            raise ValueError(f"--derive: '{name}' is not in the dataset and not in the registry for prefix '{prefix}'. " f"Note that earlier adaptors (e.g. --downsample) may have dropped variables that became " f"incompatible with the active grid; consider moving --derive earlier in the pipeline.")
+            raise ValueError(f"--derive: '{name}' is not in the dataset and not in the registry for prefix '{prefix}'. Note that earlier adaptors (e.g. --downsample) may have dropped variables that became incompatible with the active grid; consider moving --derive earlier in the pipeline.")
         # Mutates self._data.data in-place to add `name` (and any of its dependencies).
         derive_field_variable(self._data.data, name, prefix)
 

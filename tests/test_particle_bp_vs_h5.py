@@ -1,5 +1,6 @@
 """Row-level equality test: BP and H5 loaders against the same PSC sim output
 must produce identical particle dataframes (up to row ordering)."""
+
 import numpy as np
 import pytest
 

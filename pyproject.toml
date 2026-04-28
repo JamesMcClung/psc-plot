@@ -23,6 +23,7 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest>=8.0", "pytest-mpl>=0.17"]
+dev = ["ruff>=0.6"]
 
 [project.scripts]
 psc-plot = "lib.cli:main"
@@ -35,3 +36,9 @@ filterwarnings = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.ruff]
+line-length = 320
+
+[tool.ruff.lint]
+select = ["I"]
