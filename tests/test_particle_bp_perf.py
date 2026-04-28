@@ -90,4 +90,4 @@ def test_bp_pipeline_faster_than_h5(synthetic_two_species_dir):
     h5_time = _measure(_run_h5_pipeline, synthetic_two_species_dir)
     bp_time = _measure(_run_bp_pipeline, synthetic_two_species_dir)
     ratio = bp_time / h5_time
-    assert ratio < 0.5, f"expected BP to be >2x faster than H5, but ratio is {ratio:.2f} " f"(bp={bp_time:.2f}s, h5={h5_time:.2f}s)"
+    assert ratio < 0.5, f"expected BP to be >2x faster than H5, but ratio is {ratio:.2f} (bp={bp_time:.2f}s, h5={h5_time:.2f}s)"

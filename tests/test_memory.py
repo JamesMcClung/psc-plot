@@ -4,6 +4,7 @@ Proves that setting PSC_PLOT_DASK_CHUNK_SIZE to a small value reduces peak
 memory during a particle binning pipeline. Runs each pipeline in its own
 subprocess so ru_maxrss readings are clean.
 """
+
 from __future__ import annotations
 
 import multiprocessing as mp
