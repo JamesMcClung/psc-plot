@@ -12,7 +12,6 @@ import pathlib
 import resource
 
 import pytest
-
 from synthetic_particles import write_steps
 
 
