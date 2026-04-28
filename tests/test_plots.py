@@ -127,6 +127,30 @@ def test_animated_scatter_mul():
     return make_plot("prt py --species i --mul 2 -v y".split())
 
 
+# --- Particles (ADIOS2 .bp) ---
+# Each test points at the same baseline PNG as its H5 counterpart. Test data
+# was generated from the same PSC runs for both formats, so the plots should
+# match pixel-for-pixel within the existing tolerance.
+
+
+@pytest.mark.mpl_image_compare(filename="test_animated_scatter_ion_phase.png", **MPL_KWARGS)
+def test_animated_scatter_ion_phase_bp():
+    """BP twin of test_animated_scatter_ion_phase."""
+    return make_plot("prt.i -v y py color=pz --compute".split())
+
+
+@pytest.mark.mpl_image_compare(filename="test_animated_2d_binned_phase.png", **MPL_KWARGS)
+def test_animated_2d_binned_phase_bp():
+    """BP twin of test_animated_2d_binned_phase."""
+    return make_plot("prt.i --bin y py=16 -v y py --nan0 --scale log".split())
+
+
+@pytest.mark.mpl_image_compare(filename="test_static_scatter.png", **MPL_KWARGS)
+def test_static_scatter_bp():
+    """BP twin of test_static_scatter."""
+    return make_plot("prt.e -i t=-1 -v y z time= --grid y=0.0625 z=0.0625".split(), data_dir="test-3d")
+
+
 # --- Particle moments ---
 
 

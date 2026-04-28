@@ -1,12 +1,16 @@
 import argparse
 from pathlib import Path
 
+from lib.config import CONFIG
 from lib.data.loader_registry import LOADERS
+from lib.data.loaders.particle_bp import discover_particle_bp_loaders
 from lib.parsing.args import Args
 from lib.parsing.args_registry import CUSTOM_ARGS
 
 
 def _get_parser() -> argparse.ArgumentParser:
+    # FIXME: this is a hack. Shouldn't modify a global for this.
+    discover_particle_bp_loaders(CONFIG.data_dir)
     parser = argparse.ArgumentParser(prog="psc-plot")
 
     parser.add_argument("prefix", choices=LOADERS.keys(), help="data file prefix")

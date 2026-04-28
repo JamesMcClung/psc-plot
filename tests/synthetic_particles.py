@@ -87,3 +87,76 @@ def write_steps(
         path = data_dir / f"prt.{step:09d}.h5"
         half = n_particles_per_step // 2
         write_step(path, time, species=[(1.0, 100.0, half), (-1.0, 1.0, n_particles_per_step - half)], seed=step)
+
+
+from adios2 import Stream
+
+
+def write_step_bp(
+    path: Path,
+    time: float,
+    step: int,
+    species_key: str,
+    q: float,
+    m: float,
+    n_particles: int,
+    seed: int,
+) -> None:
+    """Write one synthetic BP particle file at `path` for a single species.
+
+    Matches PSC's BP layout: per-particle vars x,y,z,px,py,pz,w and file attrs
+    name,q,m,time,step,corner,length,gdims.
+    """
+    rng = np.random.default_rng(seed)
+    x = rng.uniform(0.0, 1.0, n_particles).astype(np.float32)
+    y = rng.uniform(0.0, 1.0, n_particles).astype(np.float32)
+    z = rng.uniform(0.0, 1.0, n_particles).astype(np.float32)
+    px = rng.normal(0.0, 0.1, n_particles).astype(np.float32)
+    py = rng.normal(0.0, 0.1, n_particles).astype(np.float32)
+    pz = rng.normal(0.0, 0.1, n_particles).astype(np.float32)
+    w = np.ones(n_particles, dtype=np.float32)
+
+    with Stream(str(path), "w") as s:
+        s.write_attribute("name", species_key)
+        s.write_attribute("q", np.float32(q))
+        s.write_attribute("m", np.float32(m))
+        s.write_attribute("time", np.float64(time))
+        s.write_attribute("step", np.int32(step))
+        s.write_attribute("corner", np.array([0.0, 0.0, 0.0], dtype=np.float64))
+        s.write_attribute("length", np.array([1.0, 1.0, 1.0], dtype=np.float64))
+        s.write_attribute("gdims", np.array([_GDIMS_ZYX[2], _GDIMS_ZYX[1], _GDIMS_ZYX[0]], dtype=np.int32))
+        s.write("x", x)
+        s.write("y", y)
+        s.write("z", z)
+        s.write("px", px)
+        s.write("py", py)
+        s.write("pz", pz)
+        s.write("w", w)
+
+
+def write_steps_bp(
+    data_dir: Path,
+    steps: list[int],
+    times: list[float],
+    species: list[tuple[str, float, float, int]],
+) -> None:
+    """Convenience wrapper: writes one BP file per (step, species_key) pair.
+
+    `species` is a list of (species_key, q, m, n_particles_per_step) tuples.
+    Seeds are deterministic per (step, species_key) to avoid particle-position
+    collisions between different species.
+    """
+    data_dir.mkdir(parents=True, exist_ok=True)
+    for step, time in zip(steps, times):
+        for species_index, (species_key, q, m, n) in enumerate(species):
+            path = data_dir / f"prt.{species_key}.{step:09d}.bp"
+            write_step_bp(
+                path=path,
+                time=time,
+                step=step,
+                species_key=species_key,
+                q=q,
+                m=m,
+                n_particles=n,
+                seed=step * 100 + species_index,
+            )
