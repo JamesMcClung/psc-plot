@@ -5,6 +5,7 @@ Uses subprocess-per-run so each pipeline is measured in a fresh interpreter
 (no warm caches, no dask-cluster contamination). Synthetic data (2 species,
 1M particles/step/species, 4 steps) via the tests/synthetic_particles.py
 helpers."""
+
 from __future__ import annotations
 
 import multiprocessing as mp
@@ -12,15 +13,16 @@ import pathlib
 import time
 
 import pytest
-
 from synthetic_particles import write_steps, write_steps_bp
 
 
 def _run_h5_pipeline(data_dir: str, result_queue: mp.Queue) -> None:
     import os
+
     os.environ["PSC_PLOT_DATA_DIR"] = data_dir
     os.environ["PSC_PLOT_DASK_NUM_WORKERS"] = "1"
     import matplotlib
+
     matplotlib.use("Agg")
     from lib.parsing.args import Args
     from lib.parsing.parse import _get_parser
@@ -36,9 +38,11 @@ def _run_h5_pipeline(data_dir: str, result_queue: mp.Queue) -> None:
 
 def _run_bp_pipeline(data_dir: str, result_queue: mp.Queue) -> None:
     import os
+
     os.environ["PSC_PLOT_DATA_DIR"] = data_dir
     os.environ["PSC_PLOT_DASK_NUM_WORKERS"] = "1"
     import matplotlib
+
     matplotlib.use("Agg")
     from lib.parsing.args import Args
     from lib.parsing.parse import _get_parser
@@ -86,7 +90,4 @@ def test_bp_pipeline_faster_than_h5(synthetic_two_species_dir):
     h5_time = _measure(_run_h5_pipeline, synthetic_two_species_dir)
     bp_time = _measure(_run_bp_pipeline, synthetic_two_species_dir)
     ratio = bp_time / h5_time
-    assert ratio < 0.5, (
-        f"expected BP to be >2x faster than H5, but ratio is {ratio:.2f} "
-        f"(bp={bp_time:.2f}s, h5={h5_time:.2f}s)"
-    )
+    assert ratio < 0.5, f"expected BP to be >2x faster than H5, but ratio is {ratio:.2f} " f"(bp={bp_time:.2f}s, h5={h5_time:.2f}s)"
