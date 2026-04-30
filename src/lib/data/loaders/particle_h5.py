@@ -1,4 +1,5 @@
 import pathlib
+import re
 import typing
 import warnings
 from collections import defaultdict
@@ -17,6 +18,7 @@ from lib.species import SpeciesInfo, build_species_display
 from lib.var_info_registry import lookup
 
 PRT_PARTICLES_KEY = "particles/p0/1d"
+_PRT_H5_RE = re.compile(r"^prt\.\d+\.h5$")
 type SpeciesIdx = int
 type Charge = float
 type Mass = float
@@ -165,7 +167,14 @@ def _build_species_dict(qm: dict[SpeciesIdx, tuple[Charge, Mass]]) -> dict[str, 
 
 @loader("prt")
 class ParticleLoaderH5(DataSource):
-    def __init__(self, prefix: str, active_key: str | None):
+    @classmethod
+    def discover(cls, data_dir: pathlib.Path) -> list[str]:
+        for entry in data_dir.iterdir():
+            if _PRT_H5_RE.match(entry.name):
+                return ["prt"]
+        return []
+
+    def __init__(self, prefix: str, active_key: str | None = None):
         self.prefix = prefix
         self.active_key = active_key
         self.steps = get_available_steps(f"{prefix}.", ".h5")

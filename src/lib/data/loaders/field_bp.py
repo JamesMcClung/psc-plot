@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import pscpy
@@ -11,14 +12,22 @@ from lib.derived_field_variables import derive_field_variable
 from lib.file_util import get_available_steps
 from lib.var_info_registry import lookup
 
+_KNOWN_PREFIXES = ("pfd", "pfd_moments", "gauss", "continuity")
+_STEP_BP_RE = re.compile(r"^(.+?)\.\d+\.bp$")
+
 
 def _get_path(prefix: str, step: int) -> Path:
     return CONFIG.data_dir / f"{prefix}.{step:09}.bp"
 
 
-@loader("pfd", "pfd_moments", "gauss", "continuity")
+@loader(*_KNOWN_PREFIXES)
 class FieldLoaderBp(DataSource):
-    def __init__(self, prefix: str, active_key: str | None):
+    @classmethod
+    def discover(cls, data_dir: Path) -> list[str]:
+        present = {m.group(1) for entry in data_dir.iterdir() if (m := _STEP_BP_RE.match(entry.name))}
+        return [p for p in _KNOWN_PREFIXES if p in present]
+
+    def __init__(self, prefix: str, active_key: str | None = None):
         self.prefix = prefix
         self.active_key = active_key
         self.steps = get_available_steps(f"{prefix}.", ".bp")

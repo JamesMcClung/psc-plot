@@ -66,7 +66,15 @@ class ParticleLoaderBp(DataSource):
     directory at run time.
     """
 
-    def __init__(self, prefix: str, active_key: str | None):
+    @classmethod
+    def discover(cls, data_dir: pathlib.Path) -> list[str]:
+        prefixes = set()
+        for entry in data_dir.iterdir():
+            if m := _DISCOVER_PARTICLE_BP_PREFIX_RE.match(entry.name):
+                prefixes.add(f"prt.{m.group(1)}")
+        return sorted(prefixes)
+
+    def __init__(self, prefix: str, active_key: str | None = None):
         self.prefix = prefix
         self.species_key = prefix.split(".", 1)[1]
         self.active_key = active_key
