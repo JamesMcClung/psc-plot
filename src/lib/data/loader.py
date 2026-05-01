@@ -5,8 +5,6 @@ from pathlib import Path
 from lib.data.data_source import DataSource
 from lib.file_util import get_available_steps
 
-LOADERS: list[type[Loader]] = []
-
 
 class Loader(DataSource):
     @classmethod
@@ -29,6 +27,9 @@ class Loader(DataSource):
         if self.active_key is not None:
             fragments.append(self.active_key)
         return fragments
+
+
+LOADERS: list[type[Loader]] = []
 
 
 def loader[T: type[Loader]](cls: T) -> T:
