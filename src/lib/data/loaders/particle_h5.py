@@ -10,8 +10,7 @@ import numpy as np
 
 from lib.config import CONFIG
 from lib.data.data_with_attrs import LazyList, ListMetadata
-from lib.data.loader import Loader
-from lib.data.loader_registry import loader
+from lib.data.loader import Loader, loader
 from lib.file_util import get_available_steps
 from lib.latex import Latex
 from lib.species import SpeciesInfo, build_species_display

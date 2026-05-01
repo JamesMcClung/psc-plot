@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Iterable
 
 from lib.config import CONFIG
-from lib.data.loader_registry import discover_loaders
+from lib.data.loader import discover_loaders
 from lib.parsing.args import Args
 from lib.parsing.args_registry import CUSTOM_ARGS
 
