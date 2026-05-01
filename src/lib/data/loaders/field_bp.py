@@ -20,7 +20,7 @@ def _get_path(prefix: str, step: int) -> Path:
     return CONFIG.data_dir / f"{prefix}.{step:09}.bp"
 
 
-@loader(*_KNOWN_PREFIXES)
+@loader
 class FieldLoaderBp(DataSource):
     @classmethod
     def discover(cls, data_dir: Path) -> list[str]:

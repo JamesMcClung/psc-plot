@@ -27,8 +27,9 @@ def make_plot(args_list: list[str], data_dir: str | None = None):
         CONFIG.data_dir = _DATA_DIR / data_dir
 
     try:
-        parser = _get_parser()
+        parser, discoveries = _get_parser()
         args = parser.parse_args(args_list, namespace=Args())
+        args.loader = discoveries[args.prefix](args.prefix, active_key=args.variable)
         plot = args.get_animation()
         plot._initialize()
         return plot.fig
@@ -44,8 +45,9 @@ def make_save(args_list: list[str], save_dir: Path, format: SaveFormat, data_dir
         CONFIG.data_dir = _DATA_DIR / data_dir
 
     try:
-        parser = _get_parser()
+        parser, discoveries = _get_parser()
         args = parser.parse_args(args_list, namespace=Args())
+        args.loader = discoveries[args.prefix](args.prefix, active_key=args.variable)
         plot = args.get_animation()
         save_dir.mkdir(exist_ok=True)
         plot.save(save_dir, format=format)

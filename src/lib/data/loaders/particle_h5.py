@@ -165,7 +165,7 @@ def _build_species_dict(qm: dict[SpeciesIdx, tuple[Charge, Mass]]) -> dict[str, 
     return result
 
 
-@loader("prt")
+@loader
 class ParticleLoaderH5(DataSource):
     @classmethod
     def discover(cls, data_dir: pathlib.Path) -> list[str]:

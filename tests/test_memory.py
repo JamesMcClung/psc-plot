@@ -30,11 +30,12 @@ def _run_pipeline(data_dir: str, chunksize: int, result_queue: mp.Queue) -> None
     from lib.parsing.args import Args
     from lib.parsing.parse import _get_parser
 
-    parser = _get_parser()
+    parser, discoveries = _get_parser()
     args = parser.parse_args(
         "prt --species i --bin y py=16 -v y py".split(),
         namespace=Args(),
     )
+    args.loader = discoveries[args.prefix](args.prefix, active_key=args.variable)
     plot = args.get_animation()
     plot._initialize()
 

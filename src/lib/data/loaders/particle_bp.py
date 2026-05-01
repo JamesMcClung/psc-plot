@@ -7,24 +7,13 @@ import xarray as xr
 
 from lib.config import CONFIG
 from lib.data.data_with_attrs import LazyList, ListMetadata
-from lib.data.loader_registry import register_loader
+from lib.data.loader_registry import loader
 from lib.data.source import DataSource
 from lib.file_util import get_available_steps
 from lib.species import SpeciesInfo, build_species_display
 from lib.var_info_registry import lookup
 
 _DISCOVER_PARTICLE_BP_PREFIX_RE = re.compile(r"^prt\.([^.]+)\.\d+\.bp$")
-
-
-def discover_particle_bp_loaders(data_dir: pathlib.Path):
-    for entry in data_dir.iterdir():
-        # note that BP "files" are actually directories
-        m = _DISCOVER_PARTICLE_BP_PREFIX_RE.match(entry.name)
-        if m is None:
-            continue
-
-        species_key = m.group(1)
-        register_loader(f"prt.{species_key}", ParticleLoaderBp)
 
 
 def _get_path(prefix: str, step: int) -> pathlib.Path:
@@ -58,13 +47,9 @@ def _load_step_df(path: pathlib.Path, time: float) -> dd.DataFrame:
 _SPECIES_KEY_RE = re.compile(r"^([a-zA-Z]+)([+-]*)(\d*)$")
 
 
+@loader
 class ParticleLoaderBp(DataSource):
-    """ADIOS2 particle loader — one instance per prt.<species_key> prefix.
-
-    Registered dynamically by lib.parsing.parse._get_parser (not via @loader),
-    because the set of valid prefixes depends on files present in the data
-    directory at run time.
-    """
+    """ADIOS2 particle loader — one instance per prt.<species_key> prefix."""
 
     @classmethod
     def discover(cls, data_dir: pathlib.Path) -> list[str]:

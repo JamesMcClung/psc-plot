@@ -2,18 +2,17 @@ import argparse
 from pathlib import Path
 
 from lib.config import CONFIG
-from lib.data.loader_registry import LOADERS
-from lib.data.loaders.particle_bp import discover_particle_bp_loaders
+from lib.data.loader_registry import discover_all
 from lib.parsing.args import Args
 from lib.parsing.args_registry import CUSTOM_ARGS
 
 
-def _get_parser() -> argparse.ArgumentParser:
-    # FIXME: this is a hack. Shouldn't modify a global for this.
-    discover_particle_bp_loaders(CONFIG.data_dir)
+def _get_parser() -> tuple[argparse.ArgumentParser, dict]:
+    discoveries = discover_all(CONFIG.data_dir)
+
     parser = argparse.ArgumentParser(prog="psc-plot")
 
-    parser.add_argument("prefix", choices=LOADERS.keys(), help="data file prefix")
+    parser.add_argument("prefix", choices=discoveries.keys(), help="data file prefix (auto-discovered from the data directory)")
     parser.add_argument("variable", nargs="?", default=None, help="field variable to work with")
     parser.add_argument(
         "-s",
@@ -37,9 +36,11 @@ def _get_parser() -> argparse.ArgumentParser:
     for custom_arg in CUSTOM_ARGS:
         custom_arg.add_to(parser)
 
-    return parser
+    return parser, discoveries
 
 
 def get_parsed_args() -> Args:
-    parser = _get_parser()
-    return parser.parse_args(namespace=Args())
+    parser, discoveries = _get_parser()
+    args = parser.parse_args(namespace=Args())
+    args.loader = discoveries[args.prefix](args.prefix, active_key=args.variable)
+    return args
