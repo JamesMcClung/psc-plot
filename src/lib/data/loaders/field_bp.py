@@ -26,6 +26,10 @@ class FieldLoaderBp(Loader):
         present = {m.group(1) for entry in data_dir.iterdir() if (m := _STEP_BP_RE.match(entry.name))}
         return [p for p in _KNOWN_PREFIXES if p in present]
 
+    @classmethod
+    def suffix(cls):
+        return "bp"
+
     def __init__(self, prefix: str, active_key: str | None = None):
         self.prefix = prefix
         self.active_key = active_key

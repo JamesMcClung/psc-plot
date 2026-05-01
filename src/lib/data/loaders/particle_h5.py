@@ -173,6 +173,10 @@ class ParticleLoaderH5(Loader):
                 return ["prt"]
         return []
 
+    @classmethod
+    def suffix(cls):
+        return "h5"
+
     def __init__(self, prefix: str, active_key: str | None = None):
         self.prefix = prefix
         self.active_key = active_key

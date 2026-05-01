@@ -14,6 +14,11 @@ class Loader(DataSource):
     def discover_prefixes(cls, data_dir: Path) -> list[str]:
         """Return prefixes this loader can handle in data_dir."""
 
+    @classmethod
+    @abstractmethod
+    def suffix(cls) -> str:
+        """Return the suffix that this loader supports."""
+
 
 def loader[T: type[Loader]](cls: T) -> T:
     """Register a loader class. Each loader's discover() classmethod determines

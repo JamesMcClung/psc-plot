@@ -58,6 +58,10 @@ class ParticleLoaderBp(Loader):
                 prefixes.add(f"prt.{m.group(1)}")
         return sorted(prefixes)
 
+    @classmethod
+    def suffix(cls):
+        return "bp"
+
     def __init__(self, prefix: str, active_key: str | None = None):
         self.prefix = prefix
         self.species_key = prefix.split(".", 1)[1]
