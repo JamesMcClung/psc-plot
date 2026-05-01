@@ -1,4 +1,5 @@
 import pathlib
+import re
 import typing
 import warnings
 from collections import defaultdict
@@ -9,14 +10,13 @@ import numpy as np
 
 from lib.config import CONFIG
 from lib.data.data_with_attrs import LazyList, ListMetadata
-from lib.data.loader_registry import loader
-from lib.data.source import DataSource
-from lib.file_util import get_available_steps
+from lib.data.loader import Loader, loader
 from lib.latex import Latex
 from lib.species import SpeciesInfo, build_species_display
 from lib.var_info_registry import lookup
 
 PRT_PARTICLES_KEY = "particles/p0/1d"
+_PRT_H5_RE = re.compile(r"^prt\.\d+\.h5$")
 type SpeciesIdx = int
 type Charge = float
 type Mass = float
@@ -163,12 +163,18 @@ def _build_species_dict(qm: dict[SpeciesIdx, tuple[Charge, Mass]]) -> dict[str, 
     return result
 
 
-@loader("prt")
-class ParticleLoaderH5(DataSource):
-    def __init__(self, prefix: str, active_key: str | None):
-        self.prefix = prefix
-        self.active_key = active_key
-        self.steps = get_available_steps(f"{prefix}.", ".h5")
+@loader
+class ParticleLoaderH5(Loader):
+    @classmethod
+    def discover_prefixes(cls, data_dir: pathlib.Path) -> list[str]:
+        for entry in data_dir.iterdir():
+            if _PRT_H5_RE.match(entry.name):
+                return ["prt"]
+        return []
+
+    @classmethod
+    def suffix(cls):
+        return "h5"
 
     def get_data(self) -> LazyList:
         species_dict = _build_species_dict(_discover_species_qm(self.prefix, self.steps))
@@ -206,9 +212,3 @@ class ParticleLoaderH5(DataSource):
             var_infos=var_infos,
             subject=Latex(r"\text{Particles}"),
         )
-
-    def _get_name_fragments(self) -> list[str]:
-        fragments = [self.prefix]
-        if self.active_key is not None:
-            fragments.append(self.active_key)
-        return fragments

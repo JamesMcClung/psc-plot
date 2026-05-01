@@ -7,24 +7,11 @@ import xarray as xr
 
 from lib.config import CONFIG
 from lib.data.data_with_attrs import LazyList, ListMetadata
-from lib.data.loader_registry import register_loader
-from lib.data.source import DataSource
-from lib.file_util import get_available_steps
+from lib.data.loader import Loader, loader
 from lib.species import SpeciesInfo, build_species_display
 from lib.var_info_registry import lookup
 
 _DISCOVER_PARTICLE_BP_PREFIX_RE = re.compile(r"^prt\.([^.]+)\.\d+\.bp$")
-
-
-def discover_particle_bp_loaders(data_dir: pathlib.Path):
-    for entry in data_dir.iterdir():
-        # note that BP "files" are actually directories
-        m = _DISCOVER_PARTICLE_BP_PREFIX_RE.match(entry.name)
-        if m is None:
-            continue
-
-        species_key = m.group(1)
-        register_loader(f"prt.{species_key}", ParticleLoaderBp)
 
 
 def _get_path(prefix: str, step: int) -> pathlib.Path:
@@ -58,19 +45,25 @@ def _load_step_df(path: pathlib.Path, time: float) -> dd.DataFrame:
 _SPECIES_KEY_RE = re.compile(r"^([a-zA-Z]+)([+-]*)(\d*)$")
 
 
-class ParticleLoaderBp(DataSource):
-    """ADIOS2 particle loader — one instance per prt.<species_key> prefix.
+@loader
+class ParticleLoaderBp(Loader):
+    """ADIOS2 particle loader — one instance per prt.<species_key> prefix."""
 
-    Registered dynamically by lib.parsing.parse._get_parser (not via @loader),
-    because the set of valid prefixes depends on files present in the data
-    directory at run time.
-    """
+    @classmethod
+    def discover_prefixes(cls, data_dir: pathlib.Path) -> list[str]:
+        prefixes = set()
+        for entry in data_dir.iterdir():
+            if m := _DISCOVER_PARTICLE_BP_PREFIX_RE.match(entry.name):
+                prefixes.add(f"prt.{m.group(1)}")
+        return sorted(prefixes)
 
-    def __init__(self, prefix: str, active_key: str | None):
-        self.prefix = prefix
+    @classmethod
+    def suffix(cls):
+        return "bp"
+
+    def __init__(self, prefix: str, active_key: str | None = None):
+        super().__init__(prefix, active_key)
         self.species_key = prefix.split(".", 1)[1]
-        self.active_key = active_key
-        self.steps = get_available_steps(f"{prefix}.", ".bp")
 
     def get_data(self) -> LazyList:
         step_attrs = [_read_attrs(_get_path(self.prefix, step)) for step in self.steps]
@@ -119,9 +112,3 @@ class ParticleLoaderBp(DataSource):
             active_key=self.active_key,
             var_infos=var_infos,
         )
-
-    def _get_name_fragments(self) -> list[str]:
-        fragments = [self.prefix]
-        if self.active_key is not None:
-            fragments.append(self.active_key)
-        return fragments
