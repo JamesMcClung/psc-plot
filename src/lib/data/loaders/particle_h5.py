@@ -11,7 +11,7 @@ import numpy as np
 from lib.config import CONFIG
 from lib.data.data_with_attrs import LazyList, ListMetadata
 from lib.data.loader_registry import loader
-from lib.data.source import DataSource
+from lib.data.source import Loader
 from lib.file_util import get_available_steps
 from lib.latex import Latex
 from lib.species import SpeciesInfo, build_species_display
@@ -166,7 +166,7 @@ def _build_species_dict(qm: dict[SpeciesIdx, tuple[Charge, Mass]]) -> dict[str, 
 
 
 @loader
-class ParticleLoaderH5(DataSource):
+class ParticleLoaderH5(Loader):
     @classmethod
     def discover_prefixes(cls, data_dir: pathlib.Path) -> list[str]:
         for entry in data_dir.iterdir():

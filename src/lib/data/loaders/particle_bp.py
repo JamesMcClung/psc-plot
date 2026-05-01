@@ -8,7 +8,7 @@ import xarray as xr
 from lib.config import CONFIG
 from lib.data.data_with_attrs import LazyList, ListMetadata
 from lib.data.loader_registry import loader
-from lib.data.source import DataSource
+from lib.data.source import Loader
 from lib.file_util import get_available_steps
 from lib.species import SpeciesInfo, build_species_display
 from lib.var_info_registry import lookup
@@ -48,7 +48,7 @@ _SPECIES_KEY_RE = re.compile(r"^([a-zA-Z]+)([+-]*)(\d*)$")
 
 
 @loader
-class ParticleLoaderBp(DataSource):
+class ParticleLoaderBp(Loader):
     """ADIOS2 particle loader — one instance per prt.<species_key> prefix."""
 
     @classmethod

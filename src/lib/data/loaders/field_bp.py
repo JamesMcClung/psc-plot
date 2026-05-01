@@ -7,7 +7,7 @@ import xarray as xr
 from lib.config import CONFIG
 from lib.data.data_with_attrs import Field, FieldMetadata
 from lib.data.loader_registry import loader
-from lib.data.source import DataSource
+from lib.data.source import Loader
 from lib.derived_field_variables import derive_field_variable
 from lib.file_util import get_available_steps
 from lib.var_info_registry import lookup
@@ -21,7 +21,7 @@ def _get_path(prefix: str, step: int) -> Path:
 
 
 @loader
-class FieldLoaderBp(DataSource):
+class FieldLoaderBp(Loader):
     @classmethod
     def discover_prefixes(cls, data_dir: Path) -> list[str]:
         present = {m.group(1) for entry in data_dir.iterdir() if (m := _STEP_BP_RE.match(entry.name))}
