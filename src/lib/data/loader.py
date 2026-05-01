@@ -3,7 +3,6 @@ from abc import abstractmethod
 from pathlib import Path
 
 from lib.data.data_source import DataSource
-from lib.data.loader import Loader
 from lib.file_util import get_available_steps
 
 LOADERS: list[type[Loader]] = []
