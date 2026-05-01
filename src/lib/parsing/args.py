@@ -3,7 +3,7 @@ from pathlib import Path
 
 from lib.data.adaptor import Adaptor
 from lib.data.compile import compile_source
-from lib.data.source import DataSource
+from lib.data.data_source import DataSource
 from lib.plotting.get_plot import get_plot
 from lib.plotting.hook import Hook
 from lib.plotting.plot import Plot

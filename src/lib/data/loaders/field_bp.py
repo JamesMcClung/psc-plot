@@ -7,7 +7,7 @@ import xarray as xr
 from lib.config import CONFIG
 from lib.data.data_with_attrs import Field, FieldMetadata
 from lib.data.loader_registry import loader
-from lib.data.source import Loader
+from lib.data.data_source import Loader
 from lib.derived_field_variables import derive_field_variable
 from lib.file_util import get_available_steps
 from lib.var_info_registry import lookup

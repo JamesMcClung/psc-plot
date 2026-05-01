@@ -1,7 +1,7 @@
 from lib.data.adaptor import Adaptor
 from lib.data.adaptors.versus import Versus
 from lib.data.pipeline import Pipeline
-from lib.data.source import DataSource, DataSourceWithPipeline
+from lib.data.data_source import DataSource, DataSourceWithPipeline
 
 
 def compile_source(loader: DataSource, adaptors: list[Adaptor]) -> DataSource:
