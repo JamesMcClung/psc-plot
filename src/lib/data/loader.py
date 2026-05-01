@@ -4,6 +4,7 @@ from pathlib import Path
 
 from lib.data.data_source import DataSource
 from lib.data.loader import Loader
+from lib.file_util import get_available_steps
 
 LOADERS: list[type[Loader]] = []
 
@@ -18,6 +19,17 @@ class Loader(DataSource):
     @abstractmethod
     def suffix(cls) -> str:
         """Return the suffix that this loader supports."""
+
+    def __init__(self, prefix: str, active_key: str | None = None):
+        self.prefix = prefix
+        self.steps = get_available_steps(prefix + ".", "." + self.suffix())
+        self.active_key = active_key
+
+    def _get_name_fragments(self) -> list[str]:
+        fragments = [self.prefix]
+        if self.active_key is not None:
+            fragments.append(self.active_key)
+        return fragments
 
 
 def loader[T: type[Loader]](cls: T) -> T:
