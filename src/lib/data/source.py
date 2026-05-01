@@ -10,7 +10,7 @@ from .pipeline import Pipeline
 class DataSource(ABC):
     @classmethod
     @abstractmethod
-    def discover(cls, data_dir: Path) -> list[str]:
+    def discover_prefixes(cls, data_dir: Path) -> list[str]:
         """Return prefixes this loader can handle in data_dir."""
 
     @abstractmethod
@@ -19,7 +19,7 @@ class DataSource(ABC):
 
 class DataSourceWithPipeline(DataSource):
     @classmethod
-    def discover(cls, data_dir: Path) -> list[str]:
+    def discover_prefixes(cls, data_dir: Path) -> list[str]:
         return []
 
     def __init__(self, source: DataSource, pipeline: Pipeline):

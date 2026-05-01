@@ -52,7 +52,7 @@ class ParticleLoaderBp(DataSource):
     """ADIOS2 particle loader — one instance per prt.<species_key> prefix."""
 
     @classmethod
-    def discover(cls, data_dir: pathlib.Path) -> list[str]:
+    def discover_prefixes(cls, data_dir: pathlib.Path) -> list[str]:
         prefixes = set()
         for entry in data_dir.iterdir():
             if m := _DISCOVER_PARTICLE_BP_PREFIX_RE.match(entry.name):

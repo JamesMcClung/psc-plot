@@ -23,7 +23,7 @@ def _get_path(prefix: str, step: int) -> Path:
 @loader
 class FieldLoaderBp(DataSource):
     @classmethod
-    def discover(cls, data_dir: Path) -> list[str]:
+    def discover_prefixes(cls, data_dir: Path) -> list[str]:
         present = {m.group(1) for entry in data_dir.iterdir() if (m := _STEP_BP_RE.match(entry.name))}
         return [p for p in _KNOWN_PREFIXES if p in present]
 

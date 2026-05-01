@@ -19,7 +19,7 @@ def discover_loaders(data_dir: Path) -> dict[str, type[DataSource]]:
     user-defined loaders can shadow built-ins."""
     result: dict[str, type[DataSource]] = {}
     for cls in LOADERS:
-        for prefix in cls.discover(data_dir):
+        for prefix in cls.discover_prefixes(data_dir):
             if prefix in result:
                 warnings.warn(
                     f"prefix '{prefix}' claimed by both {result[prefix].__name__} and {cls.__name__}; using {cls.__name__}",
