@@ -1,7 +1,7 @@
 import warnings
 from pathlib import Path
 
-from lib.data.data_source import Loader
+from lib.data.loader import Loader
 
 LOADERS: list[type[Loader]] = []
 
