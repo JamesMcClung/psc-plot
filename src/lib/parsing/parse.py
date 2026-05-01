@@ -39,8 +39,8 @@ def _get_parser() -> tuple[argparse.ArgumentParser, dict]:
     return parser, discoveries
 
 
-def get_parsed_args() -> Args:
+def get_parsed_args(args: list[str] | None = None) -> Args:
     parser, discoveries = _get_parser()
-    args = parser.parse_args(namespace=Args())
+    args = parser.parse_args(args, namespace=Args())
     args.loader = discoveries[args.prefix](args.prefix, active_key=args.variable)
     return args
