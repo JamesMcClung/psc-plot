@@ -15,4 +15,4 @@ class Nan0(BareAdaptor):
         return da.where(da != 0, np.nan)
 
     def get_name_fragments(self) -> list[str]:
-        return [f"nan0"]
+        return ["nan0"]
