@@ -4,7 +4,7 @@ import numpy as np
 import numpy.typing as npt
 from matplotlib.axes import Axes
 
-from lib.data.data_with_attrs import DataWithAttrs, List
+from lib.data.data_with_attrs import DataWithAttrs
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 from lib.plotting.frame_data_traits import HasAxes, HasData, assert_impl
