@@ -39,8 +39,8 @@ def _get_parser(prefixes: Iterable[str]) -> argparse.ArgumentParser:
 
 
 def get_parsed_args(args: list[str] | None = None) -> Args:
-    discoveries = discover_loaders(CONFIG.data_dir)
-    parser = _get_parser(discoveries.keys())
+    prefix_to_loader = discover_loaders(CONFIG.data_dir)
+    parser = _get_parser(prefix_to_loader.keys())
     args = parser.parse_args(args, namespace=Args())
-    args.loader = discoveries[args.prefix](args.prefix, active_key=args.variable)
+    args.loader = prefix_to_loader[args.prefix](args.prefix, active_key=args.variable)
     return args
