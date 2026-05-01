@@ -13,7 +13,7 @@ def loader[T: type[DataSource]](cls: T) -> T:
     return cls
 
 
-def discover_all(data_dir: Path) -> dict[str, type[DataSource]]:
+def discover_loaders(data_dir: Path) -> dict[str, type[DataSource]]:
     """Poll every registered loader for the prefixes it claims in data_dir.
     On conflict, the later-registered loader wins (with a warning), so
     user-defined loaders can shadow built-ins."""

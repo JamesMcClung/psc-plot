@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Iterable
 
 from lib.config import CONFIG
-from lib.data.loader_registry import discover_all
+from lib.data.loader_registry import discover_loaders
 from lib.parsing.args import Args
 from lib.parsing.args_registry import CUSTOM_ARGS
 
@@ -39,7 +39,7 @@ def _get_parser(prefixes: Iterable[str]) -> argparse.ArgumentParser:
 
 
 def get_parsed_args(args: list[str] | None = None) -> Args:
-    discoveries = discover_all(CONFIG.data_dir)
+    discoveries = discover_loaders(CONFIG.data_dir)
     parser = _get_parser(discoveries.keys())
     args = parser.parse_args(args, namespace=Args())
     args.loader = discoveries[args.prefix](args.prefix, active_key=args.variable)
