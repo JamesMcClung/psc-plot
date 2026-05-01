@@ -24,12 +24,9 @@ def _run_h5_pipeline(data_dir: str, result_queue: mp.Queue) -> None:
     import matplotlib
 
     matplotlib.use("Agg")
-    from lib.parsing.args import Args
-    from lib.parsing.parse import _get_parser
+    from lib.parsing.parse import get_parsed_args
 
-    parser, discoveries = _get_parser()
-    args = parser.parse_args("prt --species i --bin y py -v y py".split(), namespace=Args())
-    args.loader = discoveries[args.prefix](args.prefix, active_key=args.variable)
+    args = get_parsed_args("prt --species i --bin y py -v y py".split())
     plot = args.get_animation()
     t0 = time.perf_counter()
     plot._initialize()
@@ -45,12 +42,9 @@ def _run_bp_pipeline(data_dir: str, result_queue: mp.Queue) -> None:
     import matplotlib
 
     matplotlib.use("Agg")
-    from lib.parsing.args import Args
-    from lib.parsing.parse import _get_parser
+    from lib.parsing.parse import get_parsed_args
 
-    parser, discoveries = _get_parser()
-    args = parser.parse_args("prt.i --bin y py -v y py".split(), namespace=Args())
-    args.loader = discoveries[args.prefix](args.prefix, active_key=args.variable)
+    args = get_parsed_args("prt.i --bin y py -v y py".split())
     plot = args.get_animation()
     t0 = time.perf_counter()
     plot._initialize()
