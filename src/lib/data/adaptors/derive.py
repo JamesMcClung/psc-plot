@@ -183,7 +183,7 @@ number   : SIGNED_NUMBER
 
 _DERIVE_PARSER = Lark(_DERIVE_GRAMMAR)
 
-_DERIVE_FORMAT = "active_key[=expression]"
+_DERIVE_FORMAT = "new_var_key[=expression]"
 _EXPRESSION_DESCRIPTION = "The expression can be any mathematical expression using the standard operators (+, -, *, /, ^), parentheses, signed floating point numbers, and existing variable names."
 
 
@@ -191,7 +191,7 @@ _EXPRESSION_DESCRIPTION = "The expression can be any mathematical expression usi
     dest="adaptors",
     flags="--derive",
     metavar=_DERIVE_FORMAT,
-    help=f"Create a new variable with the given name. {_EXPRESSION_DESCRIPTION} If the expression is omitted, the variable name is derived via the registry of derivable variables.",
+    help=f"Create a new variable with the given name. {_EXPRESSION_DESCRIPTION} If the expression is omitted, the variable is derived via the registry of derivable variables.",
 )
 def parse_derive(arg: str) -> Derive:
     return Derive(arg)
