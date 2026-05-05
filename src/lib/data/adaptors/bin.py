@@ -141,14 +141,14 @@ class Bin(MetadataAdaptor):
         return [f"bin_{subfrags}"]
 
 
-_BIN_FORMAT = "active_key[=nbins]"
+_BIN_FORMAT = "var_key[=nbins]"
 
 
 @arg_parser(
     dest="adaptors",
     flags=["--bin", "-b"],
     metavar=_BIN_FORMAT,
-    help="Bin the data along these variables, which serve as axes. If nbins is unspecified, it is guessed. Note that t is implicitly binned; disable by passing t= (with no nbins).",
+    help="Bin the data along each of the given variables, which become coordinates. If nbins is unspecified, it is guessed. Note that t is implicitly binned; disable by passing t= (with no nbins).",
     nargs="+",
 )
 def parse_bin(args: list[str]) -> Bin:
