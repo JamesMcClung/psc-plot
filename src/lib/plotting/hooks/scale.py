@@ -3,7 +3,7 @@ from typing import Literal, Self
 from matplotlib.colors import SymLogNorm
 from matplotlib.scale import SymmetricalLogScale
 
-from lib.data.data_with_attrs import DataWithAttrs, List
+from lib.data.data_with_attrs import DataWithAttrs
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 from lib.plotting import plt_util

@@ -34,4 +34,4 @@ class StaticPlot[Data: DataWithAttrs](Plot[Data]):
 
     def _save_to_path(self, path: Path):
         self._initialize()
-        self.fig.savefig(path)
+        self.fig.savefig(path, dpi=300.0)

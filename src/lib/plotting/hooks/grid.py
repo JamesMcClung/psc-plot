@@ -4,7 +4,7 @@ import numpy as np
 import numpy.typing as npt
 from matplotlib.axes import Axes
 
-from lib.data.data_with_attrs import DataWithAttrs, List
+from lib.data.data_with_attrs import DataWithAttrs
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 from lib.plotting.frame_data_traits import HasAxes, HasData, assert_impl
@@ -91,11 +91,11 @@ GRID_FORMAT = (
 
 
 @arg_parser(
+    dest="hooks",
     flags="--grid",
-    metavar=(GRID_FORMAT),
+    metavar=GRID_FORMAT,
     nargs="+",
     help="Mark the given axes with major and/or minor gridlines. The spacing between major grid lines can be specified, as can the number of minor lines between major lines. If unspecified, major/minor lines are placed at preexisting major/minor tick locations. Note that linear axes have no minor ticks by default.",
-    dest="hooks",
 )
 def parse_grid(args: list[str]) -> Grid:
     major: MajorGridParams = {}
