@@ -191,6 +191,12 @@ class ParticleLoaderH5(Loader):
 
         df: dd.DataFrame = dd.concat(dfs_of_steps)
 
+        partition_ranges = []
+        offset = 0
+        for d in dfs_of_steps:
+            partition_ranges.append((offset, offset + d.npartitions))
+            offset += d.npartitions
+
         corners = np.array(attrss[0]["corner"])
         lengths = np.array(attrss[0]["length"])
         gdims = np.array(attrss[0]["gdims"])
@@ -201,6 +207,8 @@ class ParticleLoaderH5(Loader):
             weight_key="w",
             coordss=coordss,
             species=species_dict,
+            partition_dim="t",
+            partition_ranges=partition_ranges,
         )
 
         df_with_metadata = LazyList(df, metadata)
