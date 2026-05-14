@@ -18,6 +18,10 @@ def _get_path(prefix: str, step: int) -> Path:
     return CONFIG.data_dir / f"{prefix}.{step:09}.bp"
 
 
+def _decode_psc(ds):
+    return pscpy.decode_psc(ds, ["e", "i"])
+
+
 @loader
 class FieldLoaderBp(Loader):
     @classmethod
@@ -34,7 +38,7 @@ class FieldLoaderBp(Loader):
             paths=[_get_path(self.prefix, step) for step in self.steps],
             combine="nested",
             concat_dim="t",
-            preprocess=lambda ds: pscpy.decode_psc(ds, ["e", "i"]),
+            preprocess=_decode_psc,
             parallel=True,
         )
         if self.active_key is not None:
