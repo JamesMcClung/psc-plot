@@ -1,6 +1,5 @@
 import os
 import shutil
-import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Self
@@ -37,9 +36,7 @@ class PscPlotConfig:
 
         dask_num_workers = parse_optional(os.environ.get(_DASK_NUM_WORKERS_KEY), int)
         if not dask_num_workers:
-            dask_num_workers = 1
-            message = f"Number of dask workers not specified; defaulting to {dask_num_workers}. Set {_DASK_NUM_WORKERS_KEY} to specify."
-            warnings.warn(message)
+            dask_num_workers = os.cpu_count() or 1
 
         dask_chunk_size = parse_optional(os.environ.get(_DASK_CHUNK_SIZE_KEY), int)
         if not dask_chunk_size:
