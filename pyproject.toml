@@ -12,6 +12,7 @@ dependencies = [
     "xrft>=1.0",
     "pandas>=2.0",
     "dask>=2024.0",
+    "distributed>=2024.0",
     "h5py>=3.0",
     "tables>=3.10",
     "scipy>=1.10",
