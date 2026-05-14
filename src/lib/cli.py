@@ -37,7 +37,12 @@ def _resolve_save_format(args: Args) -> SaveFormat | None:
 
 def main():
     dask.config.set(num_workers=CONFIG.dask_num_workers)
-    if CONFIG.dask_scheduler:
+    if CONFIG.dask_scheduler == "distributed":
+        from dask.distributed import Client, LocalCluster
+
+        cluster = LocalCluster(n_workers=CONFIG.dask_num_workers, threads_per_worker=1, processes=True)
+        Client(cluster)
+    elif CONFIG.dask_scheduler:
         dask.config.set(scheduler=CONFIG.dask_scheduler)
 
     args = parsing.get_parsed_args()
