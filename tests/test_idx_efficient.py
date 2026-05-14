@@ -59,7 +59,6 @@ def test_field_pos_t(files_and_vars):
     assert len(files_read) == 1, f"--pos t=999 read 'jeh' from {len(files_read)} files; expected 1. files: {sorted(files_read)}"
 
 
-@pytest.mark.xfail(reason="Pos.apply_list does a predicate filter on the concat'd df, scanning all partitions; fix in next commit.")
 def test_particle_bp_pos_t(files_and_vars):
     args = get_parsed_args("prt.e --pos t=999 -v y z time= --compute".split())
     args.get_animation()._initialize()

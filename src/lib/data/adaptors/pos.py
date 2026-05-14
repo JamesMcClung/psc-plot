@@ -7,6 +7,17 @@ from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
 
+def _sel_to_isel(coords: np.ndarray, sel: float | slice, include_bounds: tuple[bool, bool]) -> int | slice:
+    """Translate a coordinate-value selection into an integer-index selection
+    against the given coords. Used by Pos to delegate to Idx."""
+    if isinstance(sel, float):
+        return int(np.argmin(np.abs(coords - sel)))
+    inc_lo, inc_hi = include_bounds
+    start = None if sel.start is None else int(np.searchsorted(coords, sel.start, side="left" if inc_lo else "right"))
+    stop = None if sel.stop is None else int(np.searchsorted(coords, sel.stop, side="right" if inc_hi else "left"))
+    return slice(start, stop)
+
+
 class Pos(MetadataAdaptor):
     def __init__(
         self,
@@ -25,44 +36,31 @@ class Pos(MetadataAdaptor):
         return data.assign_data(data.data.sel(dim_names_to_pos, method="nearest").sel(dim_names_to_slice))
 
     def apply_list(self, data: List) -> List:
-        coordss = data.coordss.copy()
-        df = data.data
+        # Lazy-import Idx to avoid a circular import via lib.plotting.animated_plot.
+        from lib.data.adaptors.idx import Idx
 
+        coord_isels: dict[str, int | slice] = {}
+        value_sels: dict[str, slice] = {}
         for dim, sel in self.dim_names_to_sel.items():
-            if isinstance(sel, float):
-                if dim not in coordss:
-                    raise ValueError(f"Data has no coordinate information for dimension {dim}")
-
-                nearest_coord = float(coordss[dim][0])
-                for coord in coordss[dim]:
-                    if abs(coord - sel) < abs(nearest_coord - sel):
-                        nearest_coord = float(coord)
-
-                df = df[df[dim] == nearest_coord]
-                coordss[dim] = nearest_coord
+            if dim in data.coordss:
+                coord_isels[dim] = _sel_to_isel(data.coordss[dim], sel, self.dim_names_to_include_bounds[dim])
+            elif isinstance(sel, slice):
+                value_sels[dim] = sel
             else:
+                raise ValueError(f"Data has no coordinate information for dimension {dim}")
+
+        if coord_isels:
+            data = Idx(coord_isels).apply_list(data)
+
+        if value_sels:
+            df = data.data
+            for dim, sel in value_sels.items():
+                inc_lo, inc_hi = self.dim_names_to_include_bounds[dim]
                 if sel.start is not None:
-                    if self.dim_names_to_include_bounds[dim][0]:
-                        df = df[df[dim] >= sel.start]
-                    else:
-                        df = df[df[dim] > sel.start]
-
+                    df = df[df[dim] >= sel.start] if inc_lo else df[df[dim] > sel.start]
                 if sel.stop is not None:
-                    if self.dim_names_to_include_bounds[dim][1]:
-                        df = df[df[dim] <= sel.stop]
-                    else:
-                        df = df[df[dim] < sel.stop]
-
-                if dim in coordss:
-                    coords = coordss[dim]
-
-                    lower_idx = None if sel.start is None else np.searchsorted(coords, sel.start, side="right") - 1
-                    upper_idx = None if sel.stop is None else np.searchsorted(coords, sel.stop, side="right")
-
-                    coordss[dim] = coords[lower_idx:upper_idx]
-
+                    df = df[df[dim] <= sel.stop] if inc_hi else df[df[dim] < sel.stop]
             data = data.assign_data(df)
-            data = data.assign_metadata(coordss=coordss)
 
         return data
 
