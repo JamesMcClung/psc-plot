@@ -35,6 +35,7 @@ class FieldLoaderBp(Loader):
             combine="nested",
             concat_dim="t",
             preprocess=lambda ds: pscpy.decode_psc(ds, ["e", "i"]),
+            parallel=True,
         )
         if self.active_key is not None:
             derive_field_variable(ds, self.active_key, self.prefix)
