@@ -37,6 +37,8 @@ def _resolve_save_format(args: Args) -> SaveFormat | None:
 
 def main():
     dask.config.set(num_workers=CONFIG.dask_num_workers)
+    if CONFIG.dask_scheduler:
+        dask.config.set(scheduler=CONFIG.dask_scheduler)
 
     args = parsing.get_parsed_args()
     # resolve format BEFORE applying pipeline in order to fail early
