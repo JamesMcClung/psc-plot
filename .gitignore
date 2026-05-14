@@ -3,6 +3,7 @@ __pycache__/
 *.egg-info/
 .vscode/
 .DS_Store
+docs/
 TODO.md
 
 # a place to put plotting scripts and generated plots:

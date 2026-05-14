@@ -176,6 +176,16 @@ class ListMetadata(Metadata):
     subject: Latex | None = None
     """The `subject` is essentially the (display) name of the list's implicit index dimension."""
 
+    partition_dim: str | None = None
+    """If set, the dim along which partitions of `data` are laid out. Each
+    value of this dim corresponds to a contiguous range of partitions given
+    by `partition_ranges`. Used by `Idx` to do dask-native partition pruning
+    instead of a predicate filter."""
+
+    partition_ranges: list[tuple[int, int]] | None = None
+    """Per-value `(start, end)` partition index ranges along `partition_dim`.
+    `len(partition_ranges) == len(coordss[partition_dim])`."""
+
 
 class List[D: pd.DataFrame | dd.DataFrame](DataWithAttrs[D, ListMetadata]):
     data: pd.DataFrame | dd.DataFrame
@@ -236,7 +246,8 @@ class LazyList(List[dd.DataFrame]):
     data: dd.DataFrame
 
     def compute(self) -> FullList:
-        return FullList(self.data.compute(), self.metadata)
+        # partition_* describe the dask layout; meaningless after compute.
+        return FullList(self.data.compute(), self.metadata.assign(partition_dim=None, partition_ranges=None))
 
     def bounds(self, dim_name):
         cache = self._caches.setdefault("bounds", {})

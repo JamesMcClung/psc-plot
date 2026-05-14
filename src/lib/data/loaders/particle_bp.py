@@ -90,6 +90,12 @@ class ParticleLoaderBp(Loader):
         dfs = [_load_step_df(_get_path(self.prefix, step), time) for step, time in zip(self.steps, times)]
         df = dd.concat(dfs)
 
+        partition_ranges = []
+        offset = 0
+        for d in dfs:
+            partition_ranges.append((offset, offset + d.npartitions))
+            offset += d.npartitions
+
         corners = np.asarray(head["corner"])
         lengths = np.asarray(head["length"])
         gdims = np.asarray(head["gdims"])
@@ -101,6 +107,8 @@ class ParticleLoaderBp(Loader):
             coordss=coordss,
             species=species_dict,
             subject=info.display,
+            partition_dim="t",
+            partition_ranges=partition_ranges,
         )
         data = LazyList(df, metadata)
 
