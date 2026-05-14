@@ -9,6 +9,7 @@ _DATA_DIR_KEY = "PSC_PLOT_DATA_DIR"
 _FFMPEG_BIN_KEY = "PSC_PLOT_FFMPEG_BIN"
 _DASK_NUM_WORKERS_KEY = "PSC_PLOT_DASK_NUM_WORKERS"
 _DASK_CHUNK_SIZE_KEY = "PSC_PLOT_DASK_CHUNK_SIZE"
+_DASK_SCHEDULER_KEY = "PSC_PLOT_DASK_SCHEDULER"
 
 
 def parse_optional[T](s: str | None, parser: Callable[[str], T]) -> T | None:
@@ -23,6 +24,7 @@ class PscPlotConfig:
     ffmpeg_bin: Path | None
     dask_num_workers: int
     dask_chunk_size: int
+    dask_scheduler: str | None
 
     @classmethod
     def _load(cls) -> Self:
@@ -43,7 +45,9 @@ class PscPlotConfig:
         if not dask_chunk_size:
             dask_chunk_size = 1_000_000
 
-        return cls(data_dir, ffmpeg_bin, dask_num_workers, dask_chunk_size)
+        dask_scheduler = os.environ.get(_DASK_SCHEDULER_KEY) or None
+
+        return cls(data_dir, ffmpeg_bin, dask_num_workers, dask_chunk_size, dask_scheduler)
 
 
 CONFIG = PscPlotConfig._load()
