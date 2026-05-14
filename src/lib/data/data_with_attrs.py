@@ -246,7 +246,8 @@ class LazyList(List[dd.DataFrame]):
     data: dd.DataFrame
 
     def compute(self) -> FullList:
-        return FullList(self.data.compute(), self.metadata)
+        # partition_* describe the dask layout; meaningless after compute.
+        return FullList(self.data.compute(), self.metadata.assign(partition_dim=None, partition_ranges=None))
 
     def bounds(self, dim_name):
         cache = self._caches.setdefault("bounds", {})

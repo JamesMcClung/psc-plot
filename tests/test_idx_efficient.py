@@ -39,7 +39,6 @@ def test_field_idx_t_last_reads_only_indexed_file(bulk_read_counter):
     assert len(files_read) == 1, f"--idx t=-1 read 'jeh' from {len(files_read)} files; expected 1. files: {sorted(files_read)}"
 
 
-@pytest.mark.xfail(reason="dd.concat scans all partitions; fix deferred — see docs/superpowers/specs/2026-05-14-efficient-time-indexing-design.md")
 def test_particle_idx_t_last_reads_only_indexed_file(bulk_read_counter):
     args = get_parsed_args("prt.e --idx t=-1 -v y z time= --compute".split())
     args.get_animation()._initialize()
