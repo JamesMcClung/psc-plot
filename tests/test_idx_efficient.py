@@ -48,3 +48,22 @@ def test_particle_bp_idx_t(files_and_vars):
     position_vars = {"y", "z"}
     files_read = {f for f, var in files_and_vars if var in position_vars}
     assert len(files_read) == 1, f"--idx t=-1 read particle columns from {len(files_read)} files; expected 1. files: {sorted(files_read)}"
+
+
+def test_field_pos_t(files_and_vars):
+    # t=999 is past max(t) in test-2d, so "nearest" resolves to the last file.
+    args = get_parsed_args("pfd ex_ec --pos t=999 -v y z time= --compute".split())
+    args.get_animation()._initialize()
+
+    files_read = {f for f, var in files_and_vars if var == "jeh"}
+    assert len(files_read) == 1, f"--pos t=999 read 'jeh' from {len(files_read)} files; expected 1. files: {sorted(files_read)}"
+
+
+@pytest.mark.xfail(reason="Pos.apply_list does a predicate filter on the concat'd df, scanning all partitions; fix in next commit.")
+def test_particle_bp_pos_t(files_and_vars):
+    args = get_parsed_args("prt.e --pos t=999 -v y z time= --compute".split())
+    args.get_animation()._initialize()
+
+    position_vars = {"y", "z"}
+    files_read = {f for f, var in files_and_vars if var in position_vars}
+    assert len(files_read) == 1, f"--pos t=999 read particle columns from {len(files_read)} files; expected 1. files: {sorted(files_read)}"
