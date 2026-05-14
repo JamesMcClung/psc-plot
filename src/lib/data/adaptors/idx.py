@@ -25,10 +25,10 @@ class Idx(MetadataAdaptor):
             if dim == pdim and pranges is not None:
                 # Dask-native partition pruning along the partition dim.
                 all_steps = list(range(len(pranges)))
-                selected = all_steps[isel]
-                if isinstance(selected, int):
-                    selected = [selected]
-                partition_indices = [p for k in selected for p in range(*pranges[k])]
+                selected_steps = all_steps[isel]
+                if isinstance(selected_steps, int):
+                    selected_steps = [selected_steps]
+                partition_indices = [p for step in selected_steps for p in range(*pranges[step])]
                 df = df.partitions[partition_indices]
                 coordss[dim] = coordss[dim][isel] if isinstance(isel, slice) else float(coordss[dim][isel])
                 continue
