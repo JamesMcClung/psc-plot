@@ -151,6 +151,12 @@ def test_static_scatter_bp():
     return make_plot("prt.e -i t=-1 -v y z time= --grid y=0.0625 z=0.0625".split(), data_dir="test-3d")
 
 
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_hamscan():
+    """Archetypal scan for hammerhead distributions ("hams")."""
+    return make_plot("prt.e -i t=-1 --derive pzx --bin y py=20 pzx=20 t= -v py pzx time=y --compute".split(), data_dir="test-2d")
+
+
 # --- Particle moments ---
 
 
