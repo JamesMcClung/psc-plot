@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -13,7 +14,8 @@ from lib.plotting.renderer import Renderer
 
 def print_progress(current_frame: int, n_frames: int):
     current_frame_padded = str(current_frame + 1).rjust(len(str(n_frames)))
-    print(f"frame {current_frame_padded}/{n_frames}", end="\r")
+    end = "\r" if sys.stdout.isatty() else "\n"
+    print(f"frame {current_frame_padded}/{n_frames}", end=end)
 
 
 class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
