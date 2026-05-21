@@ -19,7 +19,6 @@ from lib.var_info import VarInfo
 @dataclass(kw_only=True, frozen=True)
 class Metadata:
     active_key: str | None = None
-    name_fragments: list[str] = field(default_factory=list)
 
     spatial_dims: list[str] = field(default_factory=list)
     time_dim: str | None = None

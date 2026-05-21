@@ -5,6 +5,7 @@ import pandas as pd
 import xarray as xr
 
 from lib.data.data_with_attrs import DataWithAttrs, Field, List, Metadata
+from lib.has_name_fragments import HasNameFragments
 
 
 def _fail_apply_field(adaptor_type: type[Adaptor]):
@@ -17,7 +18,7 @@ def _fail_apply_list(adaptor_type: type[Adaptor]):
     raise RuntimeError(message)
 
 
-class Adaptor:
+class Adaptor(HasNameFragments):
     def apply(self, data: DataWithAttrs) -> DataWithAttrs:
         if isinstance(data, List):
             return self.apply_list(data)
@@ -33,9 +34,6 @@ class Adaptor:
     def apply_field(self, data: Field) -> DataWithAttrs:
         _fail_apply_list(self.__class__)
 
-    def get_name_fragments(self) -> list[str]:
-        return []
-
 
 class MetadataAdaptor(Adaptor):
     """Wraps `apply` to perform standard metadata mutations."""
@@ -49,8 +47,6 @@ class MetadataAdaptor(Adaptor):
     def apply(self, data: DataWithAttrs) -> DataWithAttrs:
         data = super().apply(data)
 
-        name_fragments = data.metadata.name_fragments + self.get_name_fragments()
-
         var_infos = data.metadata.var_infos
         if data.metadata.active_key is not None and data.metadata.active_key in var_infos:
             display_latex = self.get_modified_display_latex(data.metadata)
@@ -59,10 +55,7 @@ class MetadataAdaptor(Adaptor):
             new_dim = old_dim.assign(display=display_latex, unit=unit_latex)
             var_infos = {**var_infos, data.metadata.active_key: new_dim}
 
-        return data.assign_metadata(
-            name_fragments=name_fragments,
-            var_infos=var_infos,
-        )
+        return data.assign_metadata(var_infos=var_infos)
 
 
 class BareAdaptor(MetadataAdaptor):

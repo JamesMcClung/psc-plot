@@ -4,9 +4,10 @@ from pathlib import Path
 
 from lib.data.data_source import DataSource
 from lib.file_util import get_available_steps
+from lib.has_name_fragments import HasNameFragments
 
 
-class Loader(DataSource):
+class Loader(DataSource, HasNameFragments):
     @classmethod
     @abstractmethod
     def discover_prefixes(cls, data_dir: Path) -> list[str]:
@@ -22,7 +23,7 @@ class Loader(DataSource):
         self.steps = get_available_steps(prefix + ".", "." + self.suffix())
         self.active_key = active_key
 
-    def _get_name_fragments(self) -> list[str]:
+    def get_name_fragments(self) -> list[str]:
         fragments = [self.prefix]
         if self.active_key is not None:
             fragments.append(self.active_key)

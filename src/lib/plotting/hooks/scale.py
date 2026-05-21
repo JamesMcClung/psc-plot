@@ -32,6 +32,9 @@ class Scale:
     def to_color_norm(self, data: DataWithAttrs) -> plt_util.ColorNormArg:
         return self.scale_key
 
+    def to_name_fragment_part(self) -> str:
+        return str(self.scale_key)
+
     @classmethod
     def to_argparse_format(cls) -> str:
         return cls.scale_key
@@ -72,6 +75,11 @@ class SymLogScale(Scale):
     def to_color_norm(self, data: DataWithAttrs) -> plt_util.ColorNormArg:
         linthresh = self.linear_threshold or self._choose_linear_threshold(data)
         return SymLogNorm(linthresh)
+
+    def to_name_fragment_part(self) -> str:
+        if self.linear_threshold is None:
+            return self.scale_key
+        return f"{self.scale_key}{parse_util.SUBARG_DELIM}{self.linear_threshold}"
 
     @classmethod
     def to_argparse_format(cls) -> str:
@@ -122,6 +130,10 @@ class SetScale(Hook):
                 message = f"'{self.dim_name}' isn't a dimension"
                 raise Exception(message)
 
+    def get_name_fragments(self) -> list[str]:
+        maybe_dim_name = f"{self.dim_name}=" if self.dim_name is not None else ""
+        return [f"scale_{maybe_dim_name}{self.scale.to_name_fragment_part()}"]
+
 
 ANY_SCALE_ARGS_FORMAT = "{" + ",".join(scale_type.to_argparse_format() for scale_type in SCALE_TYPES) + "}"
 SCALE_FORMAT = f"[dim_name=]{ANY_SCALE_ARGS_FORMAT}"
@@ -133,7 +145,7 @@ SCALE_FORMAT = f"[dim_name=]{ANY_SCALE_ARGS_FORMAT}"
     help="set the axis/color scale of the dependent variable or specified dimension (default: linear)",
     dest="hooks",
 )
-def parse_vline(arg: str) -> Scale:
+def parse_scale(arg: str) -> Scale:
     if "=" in arg:
         dim_name, scale_arg = parse_util.parse_assignment(arg, SCALE_FORMAT)
         parse_util.check_identifier(dim_name, "dim_name")

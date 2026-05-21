@@ -29,3 +29,8 @@ class Args(argparse.Namespace):
             plot.add_hook(hook)
 
         return plot
+
+    def get_save_file_stem(self) -> str:
+        sources = [self.loader, *self.adaptors, *self.hooks]
+        fragments = [frag for src in sources for frag in src.get_name_fragments()]
+        return "-".join(fragments)

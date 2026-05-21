@@ -8,10 +8,7 @@ class With(Adaptor):
         self.key = key
 
     def apply(self, data: DataWithAttrs) -> DataWithAttrs:
-        return data.assign_metadata(
-            active_key=self.key,
-            name_fragments=data.metadata.name_fragments + self.get_name_fragments(),
-        )
+        return data.assign_metadata(active_key=self.key)
 
     def get_name_fragments(self) -> list[str]:
         return [f"with_{self.key}"]

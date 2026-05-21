@@ -1,7 +1,9 @@
 from typing import Any
 
+from lib.has_name_fragments import HasNameFragments
 
-class Hook:
+
+class Hook(HasNameFragments):
     def post_add_hook(self, add_data: Any):
         pass
 
