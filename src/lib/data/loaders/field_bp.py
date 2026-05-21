@@ -46,7 +46,6 @@ class FieldLoaderBp(Loader):
         var_info = {key: lookup(self.prefix, key) for key in ds.variables}
         metadata = FieldMetadata(
             active_key=self.active_key,
-            name_fragments=self.get_name_fragments(),
             prefix=self.prefix,
             var_infos=var_info,
         )
