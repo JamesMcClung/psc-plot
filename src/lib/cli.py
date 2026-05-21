@@ -68,4 +68,6 @@ def main():
 
             format = plot.default_save_format()
 
-        plot.save(args.save, format=format)
+        path = args.save / f"{args.get_save_file_stem()}.{format}"
+        plot.save_to_path(path)
+        print(f"wrote to {path}")
