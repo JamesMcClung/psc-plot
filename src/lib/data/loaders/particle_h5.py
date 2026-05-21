@@ -215,7 +215,6 @@ class ParticleLoaderH5(Loader):
 
         var_infos = {key: lookup(self.prefix, key) for key in df_with_metadata.dims}
         return df_with_metadata.assign_metadata(
-            name_fragments=self.get_name_fragments(),
             active_key=self.active_key,
             var_infos=var_infos,
             subject=Latex(r"\text{Particles}"),
