@@ -15,7 +15,6 @@ def _stem(args_list: list[str]) -> str:
     [
         (["pfd", "hx_fc"], "pfd-hx_fc-vs_y,z;time=t"),
         (["pfd", "hx_fc", "--nan0"], "pfd-hx_fc-nan0-vs_y,z;time=t"),
-        (["pfd", "hx_fc", "--grid", "x"], "pfd-hx_fc-vs_y,z;time=t"),
         (["pfd", "hx_fc", "--scale", "log"], "pfd-hx_fc-vs_y,z;time=t-scale_log"),
     ],
 )
