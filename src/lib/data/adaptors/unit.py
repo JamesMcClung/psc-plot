@@ -12,7 +12,6 @@ class Unit(Adaptor):
 
     def apply(self, data: DataWithAttrs) -> DataWithAttrs:
         metadata = data.metadata
-        name_fragments = metadata.name_fragments + self.get_name_fragments()
 
         target = self.target or metadata.active_key
         if target is None:
@@ -24,7 +23,7 @@ class Unit(Adaptor):
         old_dim = metadata.var_infos[target]
         new_dim = old_dim.assign(unit=self.value)
         new_var_infos = {**metadata.var_infos, target: new_dim}
-        return data.assign_metadata(name_fragments=name_fragments, var_infos=new_var_infos)
+        return data.assign_metadata(var_infos=new_var_infos)
 
     def get_name_fragments(self) -> list[str]:
         return [f"unit_{self.target or 'active'}={self.value}"]
