@@ -5,6 +5,7 @@ import pandas as pd
 import xarray as xr
 
 from lib.data.data_with_attrs import DataWithAttrs, Field, List, Metadata
+from lib.has_name_fragments import HasNameFragments
 
 
 def _fail_apply_field(adaptor_type: type[Adaptor]):
@@ -17,7 +18,7 @@ def _fail_apply_list(adaptor_type: type[Adaptor]):
     raise RuntimeError(message)
 
 
-class Adaptor:
+class Adaptor(HasNameFragments):
     def apply(self, data: DataWithAttrs) -> DataWithAttrs:
         if isinstance(data, List):
             return self.apply_list(data)
@@ -32,9 +33,6 @@ class Adaptor:
 
     def apply_field(self, data: Field) -> DataWithAttrs:
         _fail_apply_list(self.__class__)
-
-    def get_name_fragments(self) -> list[str]:
-        return []
 
 
 class MetadataAdaptor(Adaptor):
