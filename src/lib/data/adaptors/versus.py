@@ -14,9 +14,6 @@ class Versus(MetadataAdaptor):
         self.all_dims = spatial_dims + ([time_dim] if time_dim else []) + ([color_dim] if color_dim else [])
 
     def apply_field(self, data: Field) -> Field:
-        # going to cut out name fragments of inner adaptors, since they can be inferred
-        initial_name_fragments = data.metadata.name_fragments
-
         # 1. apply implicit coordinate transforms, as necessary
         for dim_name in self.all_dims:
             # 1a. already have the coordinate; do nothing
@@ -46,13 +43,9 @@ class Versus(MetadataAdaptor):
             spatial_dims=self.spatial_dims.copy(),
             time_dim=self.time_dim,
             color_dim=self.color_dim,
-            name_fragments=initial_name_fragments,
         )
 
     def apply_list(self, data: List) -> List:
-        # going to cut out name fragments of inner adaptors, since they can be inferred
-        initial_name_fragments = data.metadata.name_fragments
-
         # 1. coordinate transform
         # TODO
 
@@ -69,7 +62,6 @@ class Versus(MetadataAdaptor):
             spatial_dims=spatial_dims,
             time_dim=self.time_dim,
             color_dim=self.color_dim,
-            name_fragments=initial_name_fragments,
         )
 
     def get_name_fragments(self) -> list[str]:
