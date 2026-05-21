@@ -116,7 +116,6 @@ class ParticleLoaderBp(Loader):
         # species suffix when looking up per-column metadata.
         var_infos = {key: lookup("prt", key) for key in data.dims}
         return data.assign_metadata(
-            name_fragments=self.get_name_fragments(),
             active_key=self.active_key,
             var_infos=var_infos,
         )
