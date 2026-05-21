@@ -133,7 +133,7 @@ SCALE_FORMAT = f"[dim_name=]{ANY_SCALE_ARGS_FORMAT}"
     help="set the axis/color scale of the dependent variable or specified dimension (default: linear)",
     dest="hooks",
 )
-def parse_vline(arg: str) -> Scale:
+def parse_scale(arg: str) -> Scale:
     if "=" in arg:
         dim_name, scale_arg = parse_util.parse_assignment(arg, SCALE_FORMAT)
         parse_util.check_identifier(dim_name, "dim_name")
