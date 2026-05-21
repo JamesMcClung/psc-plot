@@ -45,10 +45,9 @@ def make_save(args_list: list[str], save_dir: Path, format: SaveFormat, data_dir
         args = get_parsed_args(args_list)
         plot = args.get_animation()
         save_dir.mkdir(exist_ok=True)
-        plot.save(save_dir, format=format)
-
-        name = "-".join(plot.data.metadata.name_fragments) + "." + format
-        return save_dir / name
+        path = save_dir / f"{args.get_save_file_stem()}.{format}"
+        plot.save_to_path(path)
+        return path
     finally:
         if data_dir is not None:
             CONFIG.data_dir = original_dir
