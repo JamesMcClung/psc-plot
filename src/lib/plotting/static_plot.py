@@ -32,6 +32,6 @@ class StaticPlot[Data: DataWithAttrs](Plot[Data]):
     def allowed_save_formats(self) -> list[SaveFormat]:
         return ["png"]
 
-    def _save_to_path(self, path: Path):
+    def save_to_path(self, path: Path):
         self._initialize()
         self.fig.savefig(path, dpi=300.0)

@@ -32,7 +32,7 @@ class Plot[Data: DataWithAttrs](ABC):
     def show(self): ...
 
     @abstractmethod
-    def _save_to_path(self, path: Path): ...
+    def save_to_path(self, path: Path): ...
 
     @abstractmethod
     def allowed_save_formats(self) -> list[SaveFormat]: ...
@@ -44,7 +44,7 @@ class Plot[Data: DataWithAttrs](ABC):
         format = format or self.default_save_format()
         name = "-".join(self.data.metadata.name_fragments) + "." + format
         path = dir / name
-        self._save_to_path(path)
+        self.save_to_path(path)
         print(f"wrote to {path}")
 
     def pre_init_fig(self, init_data: Any):
