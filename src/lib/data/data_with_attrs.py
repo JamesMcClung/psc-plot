@@ -110,6 +110,9 @@ class DataWithAttrs[D: xr.DataArray | pd.DataFrame | dd.DataFrame, MD: Metadata]
     @abstractmethod
     def upper_bound(self, dim_name: str) -> float: ...
 
+    @abstractmethod
+    def dask_collections(self) -> list: ...
+
 
 @dataclass(kw_only=True, frozen=True)
 class FieldMetadata(Metadata):
@@ -165,6 +168,9 @@ class Field(DataWithAttrs[xr.Dataset, FieldMetadata]):
     def var_bounds(self) -> tuple[float, float]:
         active = self.active_data
         return dask.compute(np.min(active), np.max(active))
+
+    def dask_collections(self) -> list:
+        return [da.data for da in self.data.data_vars.values() if dask.is_dask_collection(da.data)]
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -240,6 +246,9 @@ class FullList(List[pd.DataFrame]):
                 cache[dim_name] = self.data[dim_name].max(skipna=True)
         return cache[dim_name]
 
+    def dask_collections(self) -> list:
+        return []
+
 
 class LazyList(List[dd.DataFrame]):
     data: dd.DataFrame
@@ -266,3 +275,6 @@ class LazyList(List[dd.DataFrame]):
 
     def upper_bound(self, dim_name) -> float:
         return self.bounds(dim_name)[1]
+
+    def dask_collections(self) -> list:
+        return [self.data]
