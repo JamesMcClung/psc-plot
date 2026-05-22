@@ -64,7 +64,7 @@ def _run_dask_graph(args: Args) -> None:
     print(f"wrote to {path}")
 
     if args.show:
-        webbrowser.open(path.as_uri())
+        webbrowser.open(path.absolute().as_uri())
 
 
 def main():
