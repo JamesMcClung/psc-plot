@@ -60,7 +60,7 @@ def _run_dask_graph(args: Args) -> None:
     save_dir = args.save or Path.cwd()
     save_dir.mkdir(exist_ok=True)
     path = save_dir / f"{args.get_save_file_stem()}.daskgraph.svg"
-    dask.visualize(*collections, filename=str(path), format="svg")
+    dask.visualize(*collections, filename=str(path), optimize_graph=True)
     print(f"wrote to {path}")
 
     if args.show:
