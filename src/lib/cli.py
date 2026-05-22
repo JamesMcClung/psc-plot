@@ -60,6 +60,11 @@ def _run_dask_graph(args: Args) -> None:
     save_dir = args.save or Path.cwd()
     save_dir.mkdir(exist_ok=True)
     path = save_dir / f"{args.get_save_file_stem()}.daskgraph.svg"
+    # dask.visualize's optimize_graph flag only lowers legacy HLG collections
+    # (e.g. dask Arrays), not new-style Expr ones (dask DataFrames) — without
+    # pre-optimizing the latter, un-lowered nodes (e.g. Concat from dd.concat)
+    # fail with NotImplementedError in _layer.
+    collections = [c.optimize() if hasattr(c, "optimize") else c for c in collections]
     dask.visualize(*collections, filename=str(path), optimize_graph=True)
     print(f"wrote to {path}")
 
