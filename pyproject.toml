@@ -25,6 +25,7 @@ dependencies = [
 [project.optional-dependencies]
 test = ["pytest>=8.0", "pytest-mpl>=0.17"]
 dev = ["ruff>=0.6"]
+dask-graph = ["graphviz>=0.20"]
 
 [project.scripts]
 psc-plot = "lib.cli:main"
