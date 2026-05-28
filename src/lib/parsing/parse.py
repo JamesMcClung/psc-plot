@@ -31,6 +31,11 @@ def _get_parser(prefixes: Iterable[str]) -> argparse.ArgumentParser:
         default=None,
         help="format for saved animations (default: mp4, falls back to gif if ffmpeg unavailable)",
     )
+    parser.add_argument(
+        "--dask-graph",
+        action="store_true",
+        help="visualize the pipeline's dask graph as SVG instead of rendering a plot",
+    )
 
     for custom_arg in CUSTOM_ARGS:
         custom_arg.add_to(parser)

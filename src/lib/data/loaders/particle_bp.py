@@ -3,6 +3,7 @@ import re
 
 import dask.dataframe as dd
 import numpy as np
+import pandas as pd
 import xarray as xr
 
 from lib.config import CONFIG
@@ -24,22 +25,46 @@ def _read_attrs(path: pathlib.Path) -> dict:
         return {k: ds.attrs[k] for k in ds.attrs}
 
 
-def _load_step_df(path: pathlib.Path, time: float) -> dd.DataFrame:
-    """Open one BP step lazily and return a per-step dask DataFrame with a
-    constant `t` column. Drops the BP-assigned particle-dim index column.
+def _peek_size(path: pathlib.Path) -> tuple[str, int]:
+    """Return the file's particle-dim name and length without reading data."""
+    with xr.open_dataset(path) as ds:
+        return next((d, n) for d, n in ds.sizes.items() if n > 1)
 
-    Note: the `t` column is added via map_partitions rather than
-    dd.DataFrame.assign — the latter creates a broadcast-scalar column whose
-    `to_dask_array()` trips an IndexError in dask-expr's optimizer when the
-    dataframe came from xarray's to_dask_dataframe. map_partitions produces a
-    proper per-row column that survives the optimizer.
-    """
-    with xr.open_dataset(path) as raw:
-        particle_dim = next(d for d, n in raw.sizes.items() if n > 1)
-    ds = xr.open_dataset(path, chunks={particle_dim: CONFIG.dask_chunk_size}).squeeze(drop=True)
-    df = ds.to_dask_dataframe().drop(columns=[particle_dim])
-    df = df.map_partitions(lambda p, t: p.assign(t=t), np.float64(time))
-    return df
+
+def _build_meta(path: pathlib.Path) -> pd.DataFrame:
+    """Build an empty pandas DataFrame whose columns/dtypes match a per-partition read."""
+    with xr.open_dataset(path) as ds:
+        particle_dim = next(d for d, n in ds.sizes.items() if n > 1)
+        dtypes = {var: ds[var].dtype for var in ds.data_vars if var != particle_dim}
+    meta = pd.DataFrame({var: pd.Series(dtype=dt) for var, dt in dtypes.items()})
+    meta["t"] = pd.Series(dtype=np.float64)
+    return meta
+
+
+def _read_chunk(
+    path: pathlib.Path,
+    time: float,
+    particle_dim: str,
+    slice_obj: slice,
+    columns: list[str] | None = None,
+) -> pd.DataFrame:
+    """Read one chunk-slice of one BP file as a pandas DataFrame with a `t`
+    column. The `columns` keyword is populated by dask-expr's column-projection
+    optimizer; when supplied, only those variables are read from disk."""
+    ds = xr.open_dataset(path)
+    wanted_vars = [c for c in columns if c != "t" and c in ds.data_vars] if columns is not None else [v for v in ds.data_vars if v != particle_dim]
+    if wanted_vars:
+        sliced = ds[wanted_vars].isel({particle_dim: slice_obj}).squeeze(drop=True)
+        pdf = pd.DataFrame({var: np.asarray(sliced[var].values) for var in sliced.data_vars})
+    else:
+        start, stop, step = slice_obj.indices(ds.sizes[particle_dim])
+        n_rows = max(0, (stop - start + step - 1) // step)
+        pdf = pd.DataFrame(index=pd.RangeIndex(n_rows))
+    if columns is None or "t" in columns:
+        pdf["t"] = np.float64(time)
+    if columns is not None:
+        pdf = pdf[[c for c in columns if c in pdf.columns]]
+    return pdf
 
 
 _SPECIES_KEY_RE = re.compile(r"^([a-zA-Z]+)([+-]*)(\d*)$")
@@ -87,14 +112,31 @@ class ParticleLoaderBp(Loader):
         info = SpeciesInfo(self.species_key, display, q, m)
         species_dict = {self.species_key: info}
 
-        dfs = [_load_step_df(_get_path(self.prefix, step), time) for step, time in zip(self.steps, times)]
-        df = dd.concat(dfs)
-
+        # Build per-partition iterables for dd.from_map, chunking each file
+        # along its particle dim. dd.from_map propagates downstream column
+        # projection into `_read_chunk` via its `columns` kwarg, so unused
+        # variables are never read from disk.
+        chunk_size = CONFIG.dask_chunk_size
+        paths: list[pathlib.Path] = []
+        step_times: list[float] = []
+        particle_dims: list[str] = []
+        slices: list[slice] = []
         partition_ranges = []
         offset = 0
-        for d in dfs:
-            partition_ranges.append((offset, offset + d.npartitions))
-            offset += d.npartitions
+        for step, time in zip(self.steps, times):
+            path = _get_path(self.prefix, step)
+            particle_dim, n = _peek_size(path)
+            n_chunks = max(1, (n + chunk_size - 1) // chunk_size)
+            partition_ranges.append((offset, offset + n_chunks))
+            offset += n_chunks
+            for i in range(n_chunks):
+                paths.append(path)
+                step_times.append(float(time))
+                particle_dims.append(particle_dim)
+                slices.append(slice(i * chunk_size, (i + 1) * chunk_size))
+
+        meta = _build_meta(paths[0])
+        df = dd.from_map(_read_chunk, paths, step_times, particle_dims, slices, meta=meta)
 
         corners = np.asarray(head["corner"])
         lengths = np.asarray(head["length"])
