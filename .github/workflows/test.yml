@@ -1,8 +1,11 @@
 name: tests
 
 on:
-  push:
-    branches: [main]
+  # no need to run on push to main, since main is protected such that:
+  # - it can't be pushed to directly; changes must go through PRs
+  # - PRs must pass the CI
+  # - PRs must be rebased
+  # the state of main should thus always be identical to the PR being merged into it
   pull_request:
 
 jobs:
