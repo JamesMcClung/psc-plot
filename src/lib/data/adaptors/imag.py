@@ -8,7 +8,7 @@ from lib.parsing.args_registry import const_arg
 
 @const_arg(
     dest="adaptors",
-    flags="--image",
+    flags="--imag",
     help="take the imaginary part",
 )
 class Imaginary(BareAdaptor):
