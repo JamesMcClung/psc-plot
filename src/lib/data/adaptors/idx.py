@@ -34,6 +34,11 @@ class Idx(MetadataAdaptor):
             if isinstance(isel, int):
                 pos = float(coordss[dim][isel])
                 df = df[df[dim] == pos]
+                if len(df) == 0:
+                    import warnings
+
+                    message = f"--idx {dim}={isel} on list data requires exact coordinate match, and returned an empty list. Try --idx {dim}={isel}:{isel + 1} instead."
+                    warnings.warn(message)
                 coordss[dim] = pos
             else:
                 if isel.start not in [None, 0]:
