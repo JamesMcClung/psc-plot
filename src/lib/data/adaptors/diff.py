@@ -9,7 +9,7 @@ from lib.latex import Latex
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
-type Boundary = Literal["periodic", "pad"]
+type Boundary = Literal["truncate", "periodic", "pad"]
 BOUNDARY_KEYS: tuple[Boundary, ...] = Boundary.__value__.__args__
 
 
@@ -21,13 +21,17 @@ class _Diff1d:
 
     def apply_field_bare(self, da: xr.DataArray) -> xr.DataArray:
         shifted = da.roll({self.dim_key: -self.dir}, roll_coords=False)
+        diff = self.dir * (shifted - da)
+
+        if self.boundary == "truncate":
+            isel = slice(1, None) if self.dir == -1 else slice(0, -1)
+            return diff.isel({self.dim_key: isel})
 
         if self.boundary == "pad":
             boundary_idx = 0 if self.dir == -1 else -1
-            shifted = shifted.copy()
-            shifted[{self.dim_key: boundary_idx}] = da[{self.dim_key: boundary_idx}]
+            diff[{self.dim_key: boundary_idx}] = 0.0
 
-        return self.dir * (shifted - da)
+        return diff
 
 
 class Diff(BareAdaptor):
