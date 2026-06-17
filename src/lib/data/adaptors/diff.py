@@ -12,15 +12,15 @@ type Boundary = Literal["periodic", "pad"]
 BOUNDARY_KEYS: tuple[Boundary, ...] = Boundary.__value__.__args__
 
 
-def _diff_one(da: xr.DataArray, dim: str, interp_dir: int, boundary: Boundary) -> xr.DataArray:
-    shifted = da.roll({dim: -interp_dir}, roll_coords=False)
+def _diff_one(da: xr.DataArray, dim: str, dir: int, boundary: Boundary) -> xr.DataArray:
+    shifted = da.roll({dim: -dir}, roll_coords=False)
 
     if boundary == "pad":
-        boundary_idx = 0 if interp_dir == -1 else -1
+        boundary_idx = 0 if dir == -1 else -1
         shifted = shifted.copy()
         shifted[{dim: boundary_idx}] = da[{dim: boundary_idx}]
 
-    return interp_dir * (shifted - da)
+    return dir * (shifted - da)
 
 
 class Diff(BareAdaptor):
@@ -32,19 +32,19 @@ class Diff(BareAdaptor):
         return Latex(f"\\Delta_{{{dims}}}{metadata.active_var_info.display}")
 
     def apply_field_bare(self, da: xr.DataArray) -> xr.DataArray:
-        for dim, interp_dir, boundary in self.specs:
-            da = _diff_one(da, dim, interp_dir, boundary)
+        for dim, dir, boundary in self.specs:
+            da = _diff_one(da, dim, dir, boundary)
         return da
 
     def get_name_fragments(self) -> list[str]:
         parts = []
         prev_boundary: Boundary | None = None
-        for dim, interp_dir, boundary in self.specs:
+        for dim, dir, boundary in self.specs:
             if boundary != prev_boundary:
                 parts.append(boundary)
                 prev_boundary = boundary
-            sign = "+" if interp_dir > 0 else "-"
-            parts.append(f"{dim}={sign}{abs(interp_dir)}")
+            sign = "+" if dir > 0 else "-"
+            parts.append(f"{dim}={sign}{abs(dir)}")
         return [f"diff_{'_'.join(parts)}"]
 
 
@@ -68,13 +68,13 @@ def parse(args: list[str]) -> Diff:
             boundary = arg
             continue
 
-        dims_arg, interp_dir_arg = parse_util.parse_assignment(arg, DIFF_FORMAT)
+        dims_arg, dir_arg = parse_util.parse_assignment(arg, DIFF_FORMAT)
 
-        parse_util.check_value(interp_dir_arg, "dir", DIR_TO_SHIFT.keys())
-        interp_dir = DIR_TO_SHIFT[interp_dir_arg]
+        parse_util.check_value(dir_arg, "dir", DIR_TO_SHIFT.keys())
+        dir = DIR_TO_SHIFT[dir_arg]
 
         for dim in parse_util.parse_comma_separated_list(dims_arg):
             parse_util.check_identifier(dim, "dim_name")
-            specs.append((dim, interp_dir, boundary))
+            specs.append((dim, dir, boundary))
 
     return Diff(specs)
