@@ -4,6 +4,8 @@ import numpy as np
 import xarray as xr
 
 from lib.data.adaptor import BareAdaptor
+from lib.data.data_with_attrs import Metadata
+from lib.latex import Latex
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
@@ -46,10 +48,10 @@ class Reduce(BareAdaptor):
             return da
         return REDUCE_FUNCS[self.func_name][0](da, self.dim_names)
 
-    def get_modified_display_latex(self, metadata) -> str:
+    def get_modified_display_latex(self, metadata: Metadata) -> Latex:
         if not self.dim_names:
-            return metadata.active_var_info.display.latex
-        return REDUCE_FUNCS[self.func_name][1](metadata.active_var_info.display.latex, self.dim_names)
+            return metadata.active_var_info.display
+        return Latex(REDUCE_FUNCS[self.func_name][1](metadata.active_var_info.display.latex, self.dim_names))
 
     def get_name_fragments(self) -> list[str]:
         if not self.dim_names:
