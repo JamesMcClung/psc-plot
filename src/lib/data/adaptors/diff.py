@@ -3,6 +3,8 @@ from typing import Literal
 import xarray as xr
 
 from lib.data.adaptor import BareAdaptor
+from lib.data.data_with_attrs import Metadata
+from lib.latex import Latex
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
@@ -23,6 +25,10 @@ def _diff_one(da: xr.DataArray, dim: str, interp_dir: int, boundary: Boundary) -
 class Diff(BareAdaptor):
     def __init__(self, specs: list[tuple[str, int, Boundary]]):
         self.specs = specs
+
+    def get_modified_display_latex(self, metadata: Metadata) -> Latex:
+        dims = ",".join(spec[0] for spec in self.specs)
+        return Latex(f"\\Delta_{{{dims}}}{metadata.active_var_info.display}")
 
     def apply_field_bare(self, da: xr.DataArray) -> xr.DataArray:
         for dim, interp_dir, boundary in self.specs:
