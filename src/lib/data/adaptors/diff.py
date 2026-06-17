@@ -10,9 +10,12 @@ from lib.parsing.args_registry import arg_parser
 
 type Boundary = Literal["periodic", "pad"]
 BOUNDARY_KEYS: tuple[Boundary, ...] = Boundary.__value__.__args__
+type DimKey = str
+type Dir = Literal[-1, 1]
+type DiffSpec = tuple[DimKey, Dir, Boundary]
 
 
-def _diff_one(da: xr.DataArray, dim: str, dir: int, boundary: Boundary) -> xr.DataArray:
+def _diff_one(da: xr.DataArray, dim: DimKey, dir: Dir, boundary: Boundary) -> xr.DataArray:
     shifted = da.roll({dim: -dir}, roll_coords=False)
 
     if boundary == "pad":
@@ -24,7 +27,7 @@ def _diff_one(da: xr.DataArray, dim: str, dir: int, boundary: Boundary) -> xr.Da
 
 
 class Diff(BareAdaptor):
-    def __init__(self, specs: list[tuple[str, int, Boundary]]):
+    def __init__(self, specs: list[DiffSpec]):
         self.specs = specs
 
     def get_modified_display_latex(self, metadata: Metadata) -> Latex:
@@ -60,7 +63,7 @@ DIFF_FORMAT = f"[{' | '.join(BOUNDARY_KEYS)}] dim_name[,dim_name...]={set(DIR_TO
     nargs="+",
 )
 def parse(args: list[str]) -> Diff:
-    specs: list[tuple[str, int, Boundary]] = []
+    specs: list[DiffSpec] = []
     boundary = BOUNDARY_KEYS[0]
 
     for arg in args:
