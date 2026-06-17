@@ -97,11 +97,11 @@ class Versus(MetadataAdaptor):
 
     def get_name_fragments(self) -> list[str]:
         dims = ",".join(self.spatial_dims)
-        if self.time_dim_rule not in [None, "guess"]:
-            dims += f";time={self.time_dim_rule}"
+        if self.time_dim_rule != "guess":
+            dims += f";{_TIME_PREFIX}{self.time_dim_rule or ''}"
         if self.color_dim:
-            dims += f";color={self.color_dim}"
-        return [f"vs_{dims}"]
+            dims += f";{_COLOR_PREFIX}{self.color_dim}"
+        return [f"v_{dims}"]
 
 
 _TIME_PREFIX = "time="
