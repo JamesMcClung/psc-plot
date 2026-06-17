@@ -9,6 +9,7 @@ from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
 type Boundary = Literal["periodic", "pad"]
+BOUNDARY_KEYS: tuple[Boundary, ...] = Boundary.__value__.__args__
 
 
 def _diff_one(da: xr.DataArray, dim: str, interp_dir: int, boundary: Boundary) -> xr.DataArray:
@@ -47,29 +48,24 @@ class Diff(BareAdaptor):
         return [f"diff_{'_'.join(parts)}"]
 
 
-PERIODIC_MARKER = "periodic"
-PAD_MARKER = "pad"
 DIR_TO_SHIFT = {"+": 1, "-": -1}
-DIFF_FORMAT = f"[{PERIODIC_MARKER} | {PAD_MARKER}] dim_name[,dim_name...]={set(DIR_TO_SHIFT)} [...]"
+DIFF_FORMAT = f"[{' | '.join(BOUNDARY_KEYS)}] dim_name[,dim_name...]={set(DIR_TO_SHIFT)} [...]"
 
 
 @arg_parser(
     dest="adaptors",
     flags="--diff",
     metavar=DIFF_FORMAT,
-    help=f"Take the forward ('+') or backward ('-') difference along the given dimension(s). '{PAD_MARKER}'/'{PERIODIC_MARKER}' markers determine how to handle boundaries for subsequent specs (default: {PERIODIC_MARKER}).",
+    help=f"Take the forward ('+') or backward ('-') difference along the given dimension(s). {'/'.join(BOUNDARY_KEYS)} markers determine how to handle boundaries for subsequent specs (default: {BOUNDARY_KEYS[0]}).",
     nargs="+",
 )
 def parse(args: list[str]) -> Diff:
     specs: list[tuple[str, int, Boundary]] = []
-    boundary: Boundary = "periodic"
+    boundary = BOUNDARY_KEYS[0]
 
     for arg in args:
-        if arg == PERIODIC_MARKER:
-            boundary = "periodic"
-            continue
-        if arg == PAD_MARKER:
-            boundary = "pad"
+        if args in BOUNDARY_KEYS:
+            boundary = arg
             continue
 
         dims_arg, interp_dir_arg = parse_util.parse_assignment(arg, DIFF_FORMAT)
