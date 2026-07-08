@@ -49,6 +49,7 @@ class Field2dRenderer(Renderer[Field]):
             origin="lower",
             extent=(*get_extent(da, spatial_dims[0]), *get_extent(da, spatial_dims[1])),
             norm=init_data.color_norm,
+            interpolation="nearest",
         )
 
         fig.colorbar(self.im)
