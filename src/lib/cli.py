@@ -113,5 +113,5 @@ def main():
             format = plot.default_save_format()
 
         path = args.save / f"{args.get_save_file_stem()}.{format}"
-        plot.save_to_path(path)
+        plot.save_to_path(path, dpi=args.save_dpi)
         print(f"wrote to {path}")

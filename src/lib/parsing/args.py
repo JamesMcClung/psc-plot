@@ -19,6 +19,7 @@ class Args(argparse.Namespace):
     show: bool
     save: Path | None
     save_format: str | None
+    save_dpi: float | None
     dask_graph: bool
 
     def get_data(self) -> DataWithAttrs:
