@@ -32,6 +32,12 @@ def _get_parser(prefixes: Iterable[str]) -> argparse.ArgumentParser:
         help="format for saved animations (default: mp4, falls back to gif if ffmpeg unavailable)",
     )
     parser.add_argument(
+        "--save-dpi",
+        type=float,
+        default=None,
+        help="dots per inch of saved figure (defaults to Matplotlib's default)",
+    )
+    parser.add_argument(
         "--dask-graph",
         action="store_true",
         help="visualize the pipeline's dask graph as SVG instead of rendering a plot",
