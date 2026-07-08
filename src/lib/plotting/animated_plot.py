@@ -60,7 +60,7 @@ class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
     def allowed_save_formats(self) -> list[SaveFormat]:
         return ["mp4", "gif"]
 
-    def save_to_path(self, path: Path):
+    def save_to_path(self, path: Path, *, dpi: float | None = None):
         self._initialize()
         writer = PillowWriter() if path.suffix == ".gif" else FFMpegWriter()
-        self.anim.save(path, writer=writer)
+        self.anim.save(path, writer=writer, dpi=dpi)
