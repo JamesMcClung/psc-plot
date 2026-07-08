@@ -16,7 +16,7 @@ dependencies = [
     "h5py>=3.0",
     "tables>=3.10",
     "scipy>=1.10",
-    "matplotlib>=3.8",
+    "matplotlib>=3.11",
     "pyarrow>=22.0",
     "lark>=1.0",
     "pscpy @ git+https://github.com/psc-code/pscpy.git",
