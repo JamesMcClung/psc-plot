@@ -1,21 +1,54 @@
+from typing import Literal
+
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.adaptors.fourier import Fourier
 from lib.data.adaptors.reduce import Reduce
-from lib.data.data_with_attrs import Field, List
+from lib.data.data_with_attrs import DataWithAttrs, Field, List
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
 
 class Versus(MetadataAdaptor):
-    def __init__(self, spatial_dims: list[str], time_dim: str | None, color_dim: str | None):
+    def __init__(
+        self,
+        spatial_dims: list[str],
+        *,
+        time_dim: str | None | Literal["guess"],
+        color_dim: str | None,
+    ):
         self.spatial_dims = spatial_dims
         self.time_dim = time_dim
         self.color_dim = color_dim
-        self.all_dims = spatial_dims + ([time_dim] if time_dim else []) + ([color_dim] if color_dim else [])
+
+    def _get_retained_dim_keys(self, data: DataWithAttrs) -> list[str]:
+        retained_dims = self.spatial_dims.copy()
+
+        if time_dim := self._get_time_dim(data):
+            retained_dims.append(time_dim)
+
+        if self.color_dim:
+            retained_dims.append(self.color_dim)
+
+        if isinstance(data, List) and data.metadata.active_key:
+            retained_dims.append(data.metadata.active_key)
+
+        return retained_dims
+
+    def _get_time_dim(self, data: DataWithAttrs) -> str | None:
+        time_dim = self.time_dim
+
+        if time_dim == "guess":
+            if "t" in data.dims and "t" not in self.spatial_dims and "t" != self.color_dim:
+                time_dim = "t"
+            else:
+                time_dim = None
+
+        return time_dim
 
     def apply_field(self, data: Field) -> Field:
         # 1. apply implicit coordinate transforms, as necessary
-        for dim_name in self.all_dims:
+        retained_dims = self._get_retained_dim_keys(data)
+        for dim_name in retained_dims:
             # 1a. already have the coordinate; do nothing
             if dim_name in data.dims:
                 continue
@@ -35,13 +68,13 @@ class Versus(MetadataAdaptor):
             # TODO
 
         # 2. reduce remaining dimensions via arithmetic mean
-        reduce_dims = [dim for dim in data.dims if dim not in self.all_dims]
+        reduce_dims = [dim for dim in data.dims if dim not in retained_dims]
         reduce = Reduce(reduce_dims, "mean")
         data = reduce.apply(data)
 
         return data.assign_metadata(
             spatial_dims=self.spatial_dims.copy(),
-            time_dim=self.time_dim,
+            time_dim=self._get_time_dim(data),
             color_dim=self.color_dim,
         )
 
@@ -50,7 +83,7 @@ class Versus(MetadataAdaptor):
         # TODO
 
         # 2. drop unused vars
-        keep_vars = self.all_dims + ([data.metadata.active_key] if data.metadata.active_key else [])
+        keep_vars = self._get_retained_dim_keys(data)
         drop_vars = [active_key for active_key in data.dims if active_key not in keep_vars]
         data = data.assign_data(data.data.drop(columns=drop_vars))
 
@@ -60,13 +93,13 @@ class Versus(MetadataAdaptor):
 
         return data.assign_metadata(
             spatial_dims=spatial_dims,
-            time_dim=self.time_dim,
+            time_dim=self._get_time_dim(data),
             color_dim=self.color_dim,
         )
 
     def get_name_fragments(self) -> list[str]:
         dims = ",".join(self.spatial_dims)
-        if self.time_dim:
+        if self.time_dim not in [None, "guess"]:
             dims += f";time={self.time_dim}"
         if self.color_dim:
             dims += f";color={self.color_dim}"
@@ -87,21 +120,17 @@ _VERSUS_FORMAT = f"dim_key | {_TIME_PREFIX}[dim_key] | {_COLOR_PREFIX}dim_key"
 )
 def parse_versus(args: list[str]) -> Versus:
     spatial_dims = []
-    time_dim = "t"
-    time_dim_is_default = True
+    time_dim = "guess"
     color_dim = None
     for arg in args:
         if arg.startswith(_TIME_PREFIX):
             time_dim = arg.removeprefix(_TIME_PREFIX) or None
             parse_util.check_optional_identifier(time_dim, "time dim_key")
-            time_dim_is_default = False
         elif arg.startswith(_COLOR_PREFIX):
             color_dim = arg.removeprefix(_COLOR_PREFIX)
             parse_util.check_identifier(color_dim, "color dim_key")
         else:
             parse_util.check_identifier(arg, "dim_key")
             spatial_dims.append(arg)
-            if time_dim_is_default and arg == time_dim:
-                time_dim = None
 
-    return Versus(spatial_dims, time_dim, color_dim)
+    return Versus(spatial_dims, time_dim=time_dim, color_dim=color_dim)

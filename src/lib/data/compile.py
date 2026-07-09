@@ -9,7 +9,7 @@ def compile_source(loader: DataSource, adaptors: list[Adaptor]) -> DataSource:
         if isinstance(adaptor, Versus):
             break
     else:
-        adaptors.append(Versus(["y", "z"], "t", color_dim=None))
+        adaptors.append(Versus(["y", "z"], time_dim="guess", color_dim=None))
 
     pipeline = Pipeline(*adaptors)
     source = DataSourceWithPipeline(loader, pipeline)
