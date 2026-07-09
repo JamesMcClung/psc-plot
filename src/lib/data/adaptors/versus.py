@@ -113,7 +113,7 @@ _VERSUS_FORMAT = f"dim_key | {_TIME_PREFIX}[dim_key] | {_COLOR_PREFIX}dim_key"
     dest="adaptors",
     flags=["--versus", "-v"],
     metavar=_VERSUS_FORMAT,
-    help=f"Specifies the independent axes to plot against (automatically performs necessary Fourier and coordinate transforms, and reduces other dimensions via arithmetic mean). The optional `{_TIME_PREFIX}[dim_key]` specifies an additional dimension to use as the time axis. If unspecified, defaults to `{_TIME_PREFIX}t` unless t is used as a spatial axis. Alternatively, disable time by passing `{_TIME_PREFIX}` (with no dim_key).",
+    help=f"Specifies the independent axes of the plot. Remaining dimensions are reduced via arithmetic mean. Time has a special behavior: if {_TIME_PREFIX}[dim_key] is omitted, it is set to 't' if 't' is present in the data and isn't being used as a different axis. Disable this guessing by passing {_TIME_PREFIX} (with no dim_key).",
     nargs="+",
 )
 def parse_versus(args: list[str]) -> Versus:
