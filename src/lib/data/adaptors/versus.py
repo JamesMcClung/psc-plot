@@ -13,11 +13,11 @@ class Versus(MetadataAdaptor):
         self,
         spatial_dims: list[str],
         *,
-        time_dim: str | None | Literal["guess"],
+        time_dim_rule: str | None | Literal["guess"],
         color_dim: str | None,
     ):
         self.spatial_dims = spatial_dims
-        self.time_dim = time_dim
+        self.time_dim_rule = time_dim_rule
         self.color_dim = color_dim
 
     def _get_retained_dim_keys(self, data: DataWithAttrs) -> list[str]:
@@ -35,15 +35,13 @@ class Versus(MetadataAdaptor):
         return retained_dims
 
     def _get_time_dim(self, data: DataWithAttrs) -> str | None:
-        time_dim = self.time_dim
+        if self.time_dim_rule != "guess":
+            return self.time_dim_rule
 
-        if time_dim == "guess":
-            if "t" in data.dims and "t" not in self.spatial_dims and "t" != self.color_dim:
-                time_dim = "t"
-            else:
-                time_dim = None
+        if "t" in data.dims and "t" not in self.spatial_dims and "t" != self.color_dim:
+            return "t"
 
-        return time_dim
+        return None
 
     def apply_field(self, data: Field) -> Field:
         # 1. apply implicit coordinate transforms, as necessary
@@ -99,8 +97,8 @@ class Versus(MetadataAdaptor):
 
     def get_name_fragments(self) -> list[str]:
         dims = ",".join(self.spatial_dims)
-        if self.time_dim not in [None, "guess"]:
-            dims += f";time={self.time_dim}"
+        if self.time_dim_rule not in [None, "guess"]:
+            dims += f";time={self.time_dim_rule}"
         if self.color_dim:
             dims += f";color={self.color_dim}"
         return [f"vs_{dims}"]
@@ -120,12 +118,12 @@ _VERSUS_FORMAT = f"dim_key | {_TIME_PREFIX}[dim_key] | {_COLOR_PREFIX}dim_key"
 )
 def parse_versus(args: list[str]) -> Versus:
     spatial_dims = []
-    time_dim = "guess"
+    time_dim_rule = "guess"
     color_dim = None
     for arg in args:
         if arg.startswith(_TIME_PREFIX):
-            time_dim = arg.removeprefix(_TIME_PREFIX) or None
-            parse_util.check_optional_identifier(time_dim, "time dim_key")
+            time_dim_rule = arg.removeprefix(_TIME_PREFIX) or None
+            parse_util.check_optional_identifier(time_dim_rule, "time dim_key")
         elif arg.startswith(_COLOR_PREFIX):
             color_dim = arg.removeprefix(_COLOR_PREFIX)
             parse_util.check_identifier(color_dim, "color dim_key")
@@ -133,4 +131,4 @@ def parse_versus(args: list[str]) -> Versus:
             parse_util.check_identifier(arg, "dim_key")
             spatial_dims.append(arg)
 
-    return Versus(spatial_dims, time_dim=time_dim, color_dim=color_dim)
+    return Versus(spatial_dims, time_dim_rule=time_dim_rule, color_dim=color_dim)
