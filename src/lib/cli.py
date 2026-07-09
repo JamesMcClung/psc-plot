@@ -72,9 +72,26 @@ def _run_dask_graph(args: Args) -> None:
         webbrowser.open(path.absolute().as_uri())
 
 
+def _init_mpi_scheduler() -> None:
+    try:
+        from dask_mpi import initialize
+    except ImportError:
+        print(
+            "error: PSC_PLOT_DASK_SCHEDULER=mpi requires dask-mpi; install with 'pip install -e \".[mpi]\"'",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    from dask.distributed import Client
+
+    initialize(nthreads=1)
+    Client()
+
+
 def main():
     dask.config.set(num_workers=CONFIG.dask_num_workers)
-    if CONFIG.dask_scheduler == "distributed":
+    if CONFIG.dask_scheduler == "mpi":
+        _init_mpi_scheduler()
+    elif CONFIG.dask_scheduler == "distributed":
         from dask.distributed import Client, LocalCluster
 
         cluster = LocalCluster(n_workers=CONFIG.dask_num_workers, threads_per_worker=1, processes=True)
