@@ -52,12 +52,6 @@ class Fourier(MetadataAdaptor):
 
         return data.with_active_data(da).assign_metadata(var_infos=new_var_infos)
 
-    def get_modified_display_latex(self, metadata) -> str:
-        return metadata.active_var_info.display.latex
-
-    def get_modified_unit_latex(self, metadata) -> str:
-        return metadata.active_var_info.unit.latex
-
     def get_name_fragments(self) -> list[str]:
         return [f"fourier_{','.join(self.dim_keys)}"]
 

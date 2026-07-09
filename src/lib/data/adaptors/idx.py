@@ -16,19 +16,17 @@ class Idx(MetadataAdaptor):
         coordss = data.coordss.copy()
         df = data.data
 
-        pdim = data.metadata.partition_dim
-        pranges = data.metadata.partition_ranges
         for dim, isel in self.dim_names_to_isel.items():
             if dim not in coordss:
                 raise ValueError(f"Data has no coordinate information for dimension {dim}")
 
-            if dim == pdim and pranges is not None:
+            if dim == data.metadata.partition_dim and data.metadata.partition_ranges is not None:
                 # Dask-native partition pruning along the partition dim.
-                all_steps = list(range(len(pranges)))
+                all_steps = list(range(len(data.metadata.partition_ranges)))
                 selected_steps = all_steps[isel]
                 if isinstance(selected_steps, int):
                     selected_steps = [selected_steps]
-                partition_indices = [p for step in selected_steps for p in range(*pranges[step])]
+                partition_indices = [p for step in selected_steps for p in range(*data.metadata.partition_ranges[step])]
                 df = df.partitions[partition_indices]
                 coordss[dim] = coordss[dim][isel] if isinstance(isel, slice) else float(coordss[dim][isel])
                 continue
@@ -36,6 +34,11 @@ class Idx(MetadataAdaptor):
             if isinstance(isel, int):
                 pos = float(coordss[dim][isel])
                 df = df[df[dim] == pos]
+                if len(df) == 0:
+                    import warnings
+
+                    message = f"--idx {dim}={isel} on list data requires exact coordinate match, and returned an empty list. Try --idx {dim}={isel}:{isel + 1} instead."
+                    warnings.warn(message)
                 coordss[dim] = pos
             else:
                 if isel.start not in [None, 0]:

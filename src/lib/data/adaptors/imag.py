@@ -3,12 +3,14 @@ import pandas as pd
 import xarray as xr
 
 from lib.data.adaptor import BareAdaptor
+from lib.data.data_with_attrs import Metadata
+from lib.latex import Latex
 from lib.parsing.args_registry import const_arg
 
 
 @const_arg(
     dest="adaptors",
-    flags="--image",
+    flags="--imag",
     help="take the imaginary part",
 )
 class Imaginary(BareAdaptor):
@@ -21,5 +23,5 @@ class Imaginary(BareAdaptor):
     def get_name_fragments(self) -> list[str]:
         return ["imag"]
 
-    def get_modified_display_latex(self, metadata) -> str:
-        return f"\\text{{Im}}[{metadata.active_var_info.display}]"
+    def get_modified_display_latex(self, metadata: Metadata) -> Latex:
+        return Latex(f"\\text{{Im}}[{metadata.active_var_info.display}]")

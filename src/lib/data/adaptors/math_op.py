@@ -5,6 +5,8 @@ import pandas as pd
 import xarray as xr
 
 from lib.data.adaptor import BareAdaptor
+from lib.data.data_with_attrs import Metadata
+from lib.latex import Latex
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
@@ -43,8 +45,8 @@ class MathOp(BareAdaptor):
     def get_name_fragments(self) -> list[str]:
         return [f"{self.name_abbrev}_{self.rhs}"]
 
-    def get_modified_display_latex(self, metadata) -> str:
-        return f"({metadata.active_var_info.display}){self.symbol}{{{float_to_latex_str(self.rhs)}}}"
+    def get_modified_display_latex(self, metadata: Metadata) -> Latex:
+        return Latex(f"({metadata.active_var_info.display}){self.symbol}{{{float_to_latex_str(self.rhs)}}}")
 
 
 op_params = [

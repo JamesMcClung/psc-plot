@@ -3,6 +3,8 @@ import pandas as pd
 import xarray as xr
 
 from lib.data.adaptor import BareAdaptor
+from lib.data.data_with_attrs import Metadata
+from lib.latex import Latex
 from lib.parsing.args_registry import const_arg
 
 
@@ -21,5 +23,5 @@ class Real(BareAdaptor):
     def get_name_fragments(self) -> list[str]:
         return ["real"]
 
-    def get_modified_display_latex(self, metadata) -> str:
-        return f"\\text{{Re}}[{metadata.active_var_info.display}]"
+    def get_modified_display_latex(self, metadata: Metadata) -> Latex:
+        return Latex(f"\\text{{Re}}[{metadata.active_var_info.display}]")

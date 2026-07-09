@@ -58,7 +58,7 @@ def _run_dask_graph(args: Args) -> None:
         sys.exit(1)
 
     save_dir = args.save or Path.cwd()
-    save_dir.mkdir(exist_ok=True)
+    save_dir.mkdir(exist_ok=True, parents=True)
     path = save_dir / f"{args.get_save_file_stem()}.daskgraph.svg"
     # dask.visualize's optimize_graph flag only lowers legacy HLG collections
     # (e.g. dask Arrays), not new-style Expr ones (dask DataFrames) — without
@@ -101,7 +101,7 @@ def main():
     if args.show:
         plot.show()
     if args.save is not None:
-        args.save.mkdir(exist_ok=True)
+        args.save.mkdir(exist_ok=True, parents=True)
 
         if format not in plot.allowed_save_formats():
             if format == args.save_format:  # user actually specified this format

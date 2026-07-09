@@ -6,6 +6,7 @@ import xarray as xr
 
 from lib.data.data_with_attrs import DataWithAttrs, Field, List, Metadata
 from lib.has_name_fragments import HasNameFragments
+from lib.latex import Latex
 
 
 def _fail_apply_field(adaptor_type: type[Adaptor]):
@@ -38,11 +39,11 @@ class Adaptor(HasNameFragments):
 class MetadataAdaptor(Adaptor):
     """Wraps `apply` to perform standard metadata mutations."""
 
-    def get_modified_display_latex(self, metadata: Metadata) -> str:
-        return metadata.active_var_info.display.latex
+    def get_modified_display_latex(self, metadata: Metadata) -> Latex:
+        return metadata.active_var_info.display
 
-    def get_modified_unit_latex(self, metadata: Metadata) -> str:
-        return metadata.active_var_info.unit.latex
+    def get_modified_unit_latex(self, metadata: Metadata) -> Latex:
+        return metadata.active_var_info.unit
 
     def apply(self, data: DataWithAttrs) -> DataWithAttrs:
         data = super().apply(data)

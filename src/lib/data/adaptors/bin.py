@@ -10,6 +10,7 @@ from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, FieldMetadata, List
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
+from lib.var_info import VarInfo
 
 
 def _guess_bin_edgess(data: List, varname_to_nbins: dict[str, int | None]) -> list:
@@ -133,6 +134,8 @@ class Bin(MetadataAdaptor):
         elif subject is not None and subject.latex == r"\text{Electrons}":
             f_dim = f_dim.assign(display=f_dim.display.latex + r"_\text{e}")
         new_var_infos = {key: data.metadata.var_infos[key] for key in da.coords if key in data.metadata.var_infos}
+        # want: psc-plot prt.i --derive K="ux^2+uy^2+uz^2" --bin K=128 -v K --scale log
+
         new_var_infos["f"] = f_dim
         return Field(da.to_dataset(name="f"), FieldMetadata.create_from(data.metadata, active_key="f", var_infos=new_var_infos))
 
