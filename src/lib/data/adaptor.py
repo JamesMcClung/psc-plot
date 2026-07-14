@@ -5,6 +5,7 @@ import pandas as pd
 import xarray as xr
 
 from lib.data.data_with_attrs import DataWithAttrs, Field, List, Metadata
+from lib.data.data_world import DataWorld
 from lib.has_name_fragments import HasNameFragments
 from lib.latex import Latex
 
@@ -20,6 +21,9 @@ def _fail_apply_list(adaptor_type: type[Adaptor]):
 
 
 class Adaptor(HasNameFragments):
+    def apply_world(self, world: DataWorld) -> DataWorld:
+        return world.with_active_data(self.apply(world.active_data))
+
     def apply(self, data: DataWithAttrs) -> DataWithAttrs:
         if isinstance(data, List):
             return self.apply_list(data)
