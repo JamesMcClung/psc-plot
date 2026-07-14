@@ -5,6 +5,7 @@ from lib.data.data_with_attrs import DataWithAttrs
 
 @dataclass(frozen=True)
 class DataWorld:
+    # TODO python 3.15: make frozendict
     datas: dict[str, DataWithAttrs] = []
     active_key: str | None = None
 
