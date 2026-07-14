@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from lib.data.data_with_attrs import DataWithAttrs
 
@@ -6,7 +6,7 @@ from lib.data.data_with_attrs import DataWithAttrs
 @dataclass(frozen=True)
 class DataWorld:
     # TODO python 3.15: make frozendict
-    datas: dict[str, DataWithAttrs] = []
+    datas: dict[str, DataWithAttrs] = field(default_factory=dict)
     active_key: str | None = None
 
     def __post_init__(self):
