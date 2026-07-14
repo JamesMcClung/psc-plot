@@ -1,10 +1,12 @@
+from dataclasses import dataclass
+
 from lib.data.data_with_attrs import DataWithAttrs
 
 
+@dataclass(frozen=True)
 class DataWorld:
-    def __init__(self):
-        self.datas: dict[str, DataWithAttrs] = {}
-        self.active_key: str | None = None
+    datas: dict[str, DataWithAttrs] = []
+    active_key: str | None = None
 
     @property
     def active_data(self) -> DataWithAttrs | None:
