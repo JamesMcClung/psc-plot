@@ -7,12 +7,16 @@ from lib.data.loader import Loader
 
 
 class DataProcessingNode[D](ABC):
+    def __init__(self, name_fragments: list[str]):
+        self.name_fragments = name_fragments
+
     @abstractmethod
     def pull(self) -> D: ...
 
 
 class AdaptorNode(DataProcessingNode[DataWorld]):
     def __init__(self, adaptor: Adaptor, input_node: DataProcessingNode[DataWorld]):
+        super().__init__(input_node.name_fragments + adaptor.get_name_fragments())
         self.adaptor = adaptor
         self.input_node = input_node
 
@@ -23,6 +27,7 @@ class AdaptorNode(DataProcessingNode[DataWorld]):
 
 class LoaderNode(DataProcessingNode[DataWorld]):
     def __init__(self, loader: Loader):
+        super().__init__(loader.get_name_fragments())
         self.loader = loader
 
     @cache
