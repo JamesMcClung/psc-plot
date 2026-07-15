@@ -35,7 +35,7 @@ class LoaderNode(DataProcessingNode[DataWorld]):
 
     @cache
     def pull(self) -> DataWorld:
-        return DataWorld(self.loader.get_data(), self.loader.active_key)
+        return DataWorld({self.loader.prefix: self.loader.get_data()}, self.loader.prefix)
 
 
 class PlotNode(DataProcessingNode[Plot]):
