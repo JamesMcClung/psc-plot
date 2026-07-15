@@ -1,12 +1,14 @@
+import warnings
 from abc import ABC, abstractmethod
 from functools import cache
+from pathlib import Path
 
 from lib.data.adaptor import Adaptor
 from lib.data.data_world import DataWorld
 from lib.data.loader import Loader
 from lib.plotting.get_plot import get_plot
 from lib.plotting.hook import Hook
-from lib.plotting.plot import Plot
+from lib.plotting.plot import Plot, SaveFormat
 
 
 class DataProcessingNode[D](ABC):
@@ -56,3 +58,51 @@ class PlotNode(DataProcessingNode[Plot]):
             plot.add_hook(hook)
 
         return plot
+
+
+class ShowPlotNode(DataProcessingNode[None]):
+    def __init__(self, input_node: DataProcessingNode[Plot]):
+        super().__init__(input_node.name_fragments)
+        self.input_node = input_node
+
+    def pull(self) -> None:
+        self.input_node.pull().show()
+
+
+class SavePlotNode(DataProcessingNode[None]):
+    def __init__(
+        self,
+        input_node: DataProcessingNode[Plot],
+        *,
+        save_dir: Path,
+        save_format: SaveFormat | None,
+        save_dpi: float,
+    ):
+        super().__init__(input_node.name_fragments)
+        self.input_node = input_node
+        self.save_dir = save_dir
+        self.save_format = save_format
+        self.save_dpi = save_dpi
+
+    def pull(self) -> None:
+        plot = self.input_node.pull()
+
+        format = self.save_format
+        if format not in plot.allowed_save_formats():
+            if format is not None:
+                message = f"{format} is incompatible with the data; reverting to default ({plot.default_save_format()})"
+                warnings.warn(message)
+
+            format = plot.default_save_format()
+
+        if format == "mp4":
+            from matplotlib import pyplot as plt
+
+            from lib.config import CONFIG
+
+            plt.rcParams["animation.ffmpeg_path"] = str(CONFIG.ffmpeg_bin)
+
+        self.save_dir.mkdir(exist_ok=True, parents=True)
+        path = self.save_dir / f"{self.get_save_file_stem()}.{format}"
+        plot.save_to_path(path, dpi=self.save_dpi)
+        print(f"wrote to {path}")
