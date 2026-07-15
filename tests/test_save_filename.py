@@ -1,7 +1,7 @@
 import pytest
 
 from lib.data.compile import compile_plot_node
-from lib.parsing.parse import get_parsed_args
+from lib.parsing.parse import parse_args
 
 
 @pytest.mark.parametrize(
@@ -14,5 +14,5 @@ from lib.parsing.parse import get_parsed_args
     ],
 )
 def test_save_file_stem(args_list, expected_stem):
-    actual_stem = compile_plot_node(get_parsed_args(args_list)).get_save_file_stem()
+    actual_stem = compile_plot_node(parse_args(args_list)).get_save_file_stem()
     assert actual_stem == expected_stem

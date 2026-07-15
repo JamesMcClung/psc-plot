@@ -15,7 +15,7 @@ def main():
     elif CONFIG.dask_scheduler:
         dask.config.set(scheduler=CONFIG.dask_scheduler)
 
-    args = parsing.get_parsed_args()
+    args = parsing.parse_args()
 
     actions = compile_action_nodes(args)
 

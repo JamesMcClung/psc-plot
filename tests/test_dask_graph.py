@@ -13,7 +13,7 @@ from conftest import _DATA_DIR
 
 from lib.config import CONFIG
 from lib.data.compile import compile_plot_node
-from lib.parsing.parse import get_parsed_args
+from lib.parsing.parse import parse_args
 
 
 def _read_keys_for_columns(args_list: list[str], data_dir: str = "test-2d") -> list[str]:
@@ -22,7 +22,7 @@ def _read_keys_for_columns(args_list: list[str], data_dir: str = "test-2d") -> l
     original = CONFIG.data_dir
     CONFIG.data_dir = _DATA_DIR / data_dir
     try:
-        args = get_parsed_args(args_list)
+        args = parse_args(args_list)
         node = compile_plot_node(args)
         data = node.input_node.pull().active_data
         collections = data.dask_collections()

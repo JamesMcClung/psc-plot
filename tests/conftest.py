@@ -16,7 +16,7 @@ import pytest
 
 from lib.config import CONFIG
 from lib.data.compile import compile_plot_node
-from lib.parsing.parse import get_parsed_args
+from lib.parsing.parse import parse_args
 from lib.plotting.plot import SaveFormat
 
 
@@ -27,7 +27,7 @@ def make_plot(args_list: list[str], data_dir: str | None = None):
         CONFIG.data_dir = _DATA_DIR / data_dir
 
     try:
-        args = get_parsed_args(args_list)
+        args = parse_args(args_list)
         plot = compile_plot_node(args).pull()
         plot._initialize()
         return plot.fig
@@ -43,7 +43,7 @@ def make_save(args_list: list[str], save_dir: Path, format: SaveFormat, data_dir
         CONFIG.data_dir = _DATA_DIR / data_dir
 
     try:
-        args = get_parsed_args(args_list)
+        args = parse_args(args_list)
         node = compile_plot_node(args)
         plot = node.pull()
         save_dir.mkdir(exist_ok=True)

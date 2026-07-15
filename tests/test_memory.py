@@ -28,9 +28,9 @@ def _run_pipeline(data_dir: str, chunksize: int, result_queue: mp.Queue) -> None
     matplotlib.use("Agg")
 
     from lib.data.compile import compile_plot_node
-    from lib.parsing.parse import get_parsed_args
+    from lib.parsing.parse import parse_args
 
-    args = get_parsed_args("prt --species i --bin y py=16 -v y py".split())
+    args = parse_args("prt --species i --bin y py=16 -v y py".split())
     plot = compile_plot_node(args).pull()
     plot._initialize()
 

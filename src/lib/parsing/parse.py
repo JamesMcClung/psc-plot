@@ -46,6 +46,6 @@ def _get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def get_parsed_args(args_list: list[str] | None = None) -> Args:
+def parse_args(args_list: list[str] | None = None) -> Args:
     parser = _get_parser()
     return parser.parse_args(args_list, namespace=Args())
