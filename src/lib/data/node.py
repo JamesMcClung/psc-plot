@@ -34,14 +34,12 @@ class AdaptorNode(DataProcessingNode[DataWorld]):
         return self.adaptor.apply_world(self.input_node.pull())
 
 
-class LoaderNode(DataProcessingNode[DataWorld]):
-    def __init__(self, loader: Loader):
-        super().__init__(loader.get_name_fragments())
-        self.loader = loader
+class RootNode(DataProcessingNode[DataWorld]):
+    def __init__(self):
+        super().__init__([])
 
-    @cache
     def pull(self) -> DataWorld:
-        return DataWorld({self.loader.prefix: self.loader.get_data()}, self.loader.prefix)
+        return DataWorld()
 
 
 class PlotNode(DataProcessingNode[Plot]):
