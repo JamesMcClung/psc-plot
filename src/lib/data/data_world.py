@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 
+from lib.config import PscPlotConfig
 from lib.data.data_with_attrs import DataWithAttrs
 
 
@@ -8,6 +9,7 @@ class DataWorld:
     # TODO python 3.15: make frozendict
     datas: dict[str, DataWithAttrs] = field(default_factory=dict)
     active_key: str | None = None
+    config: PscPlotConfig = field(default_factory=PscPlotConfig.from_env)
 
     def __post_init__(self):
         assert self.active_key is None or self.active_key in self.datas
