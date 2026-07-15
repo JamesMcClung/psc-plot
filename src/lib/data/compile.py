@@ -4,7 +4,7 @@ import warnings
 from lib.config import CONFIG
 from lib.data.adaptor import Adaptor
 from lib.data.adaptors.versus import Versus
-from lib.data.node import AdaptorNode, DataProcessingNode, LoaderNode, PlotNode, SavePlotNode, ShowPlotNode
+from lib.data.node import AdaptorNode, DaskGraphNode, DataProcessingNode, LoaderNode, PlotNode, SavePlotNode, ShowPlotNode
 from lib.parsing.args import Args
 from lib.plotting.plot import SaveFormat
 
@@ -58,6 +58,14 @@ def compile_plot_node(args: Args) -> PlotNode:
 def compile_action_nodes(args: Args) -> list[DataProcessingNode[None]]:
     plot_node = compile_plot_node(args)
     action_nodes = []
+
+    if args.dask_graph:
+        action_nodes.append(DaskGraphNode(plot_node.input_node, save_dir=args.save, show=args.show))
+
+        if args.save_format is not None:
+            warnings.warn("--save-format is ignored with --dask-graph")
+
+        return action_nodes
 
     if args.show:
         action_nodes.append(ShowPlotNode(plot_node))
