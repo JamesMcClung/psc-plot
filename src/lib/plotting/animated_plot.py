@@ -23,11 +23,12 @@ class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
         super().__init__(renderer, data)
         self.time_dim: str = self.data.metadata.time_dim
 
-        self._initialized = False
-
         # FIXME get blitting to work with the title
         self.n_frames = len(data.coordss[data.metadata.time_dim])
         self.anim = FuncAnimation(self.fig, self._next_frame, frames=self.n_frames, blit=False)
+
+    def _get_initial_data(self) -> DataWithAttrs:
+        return self._get_data_at_frame(0)
 
     def _get_data_at_frame(self, frame: int) -> Data:
         return Idx({self.time_dim: frame}).apply(self.data)
@@ -39,18 +40,6 @@ class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
         self.renderer.draw(self.ax, frame_data, update_data)
         self.post_update_fig(update_data)
         print_progress(frame, self.n_frames)
-
-    def _initialize(self):
-        if self._initialized:
-            return
-        self._initialized = True
-
-        frame_0 = self._get_data_at_frame(0)
-        init_data = self.renderer.make_init_data(self.fig, self.ax, frame_0)
-        self.pre_init_fig(init_data)
-        self.renderer.init(self.fig, self.ax, self.data, frame_0, init_data)
-        self.post_init_fig(init_data)
-        self.fig.tight_layout()
 
     def show(self):
         self._initialize()

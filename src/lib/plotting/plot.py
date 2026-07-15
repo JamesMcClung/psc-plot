@@ -23,6 +23,23 @@ class Plot[Data: DataWithAttrs](ABC):
         self.hooks: list[Hook] = []
         self.fig, self.ax = plt.subplots(subplot_kw=renderer.subplot_kw())
 
+        self._initialized = False
+
+    def _initialize(self):
+        if self._initialized:
+            return
+        self._initialized = True
+
+        initial_data = self._get_initial_data()
+        init_data = self.renderer.make_init_data(self.fig, self.ax, initial_data)
+        self.pre_init_fig(init_data)
+        self.renderer.init(self.fig, self.ax, self.data, initial_data, init_data)
+        self.post_init_fig(init_data)
+        self.fig.tight_layout()
+
+    @abstractmethod
+    def _get_initial_data(self) -> DataWithAttrs: ...
+
     def add_hook(self, hook: Hook):
         self.hooks.append(hook)
 
