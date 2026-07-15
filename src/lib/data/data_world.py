@@ -18,9 +18,17 @@ class DataWorld:
             return None
         return self.datas[self.active_key]
 
-    def with_active_data(self, new_active_data: DataWithAttrs, new_key: str | None = None) -> DataWorld:
-        new_key = new_key or self.active_key
-        assert new_key is not None
+    def with_active_data(
+        self,
+        active_data: DataWithAttrs | None = None,
+        active_key: str | None = None,
+    ) -> DataWorld:
+        if active_data is None:
+            return DataWorld(self.datas, active_key)
+
+        active_key = active_key or self.active_key
+        assert active_key is not None
+
         new_datas = self.datas.copy()
-        new_datas[new_key] = new_active_data
-        return DataWorld(new_datas, new_key)
+        new_datas[active_key] = active_data
+        return DataWorld(new_datas, active_key)
