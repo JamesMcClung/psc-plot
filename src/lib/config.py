@@ -26,7 +26,7 @@ class PscPlotConfig:
     dask_scheduler: str | None
 
     @classmethod
-    def _load(cls) -> Self:
+    def from_env(cls) -> Self:
         data_dir = parse_optional(os.environ.get(_DATA_DIR_KEY), Path)
         if not data_dir:
             message = f"Path to data not specified. Set the {_DATA_DIR_KEY} environment variable to specify."
@@ -47,4 +47,4 @@ class PscPlotConfig:
         return cls(data_dir, ffmpeg_bin, dask_num_workers, dask_chunk_size, dask_scheduler)
 
 
-CONFIG = PscPlotConfig._load()
+CONFIG = PscPlotConfig.from_env()
