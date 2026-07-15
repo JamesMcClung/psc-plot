@@ -61,3 +61,8 @@ def discover_loaders(data_dir: Path) -> dict[str, type[Loader]]:
                 )
             result[prefix] = cls
     return result
+
+
+def get_loader(data_dir: Path, prefix: str, active_key: str | None) -> Loader:
+    loader_types = discover_loaders(data_dir)
+    return loader_types[prefix](prefix, active_key)

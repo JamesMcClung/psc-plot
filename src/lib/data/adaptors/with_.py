@@ -1,6 +1,6 @@
 from lib.config import CONFIG
 from lib.data.adaptor import WorldAdaptor
-from lib.data.loader import discover_loaders
+from lib.data.loader import get_loader
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
@@ -23,8 +23,7 @@ class With(WorldAdaptor):
         if prefix in world.datas:
             return world.with_active_data(world.active_data.assign_metadata(active_key=key), prefix)
 
-        loader_types = discover_loaders(CONFIG.data_dir)
-        loader = loader_types[prefix](prefix, key)
+        loader = get_loader(CONFIG.data_dir, prefix, key)
         return loader.apply_world(world)
 
     def get_name_fragments(self) -> list[str]:
