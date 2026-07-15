@@ -1,13 +1,13 @@
 import warnings
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from pathlib import Path
 
+from lib.data.adaptor import WorldAdaptor
 from lib.data.data_with_attrs import DataWithAttrs
 from lib.file_util import get_available_steps
-from lib.has_name_fragments import HasNameFragments
 
 
-class Loader(ABC, HasNameFragments):
+class Loader(WorldAdaptor):
     @classmethod
     @abstractmethod
     def discover_prefixes(cls, data_dir: Path) -> list[str]:
@@ -28,6 +28,9 @@ class Loader(ABC, HasNameFragments):
         if self.active_key is not None:
             fragments.append(self.active_key)
         return fragments
+
+    def apply_world(self, world):
+        return world.with_active_data(self.get_data(), self.prefix)
 
     @abstractmethod
     def get_data(self) -> DataWithAttrs: ...
