@@ -132,7 +132,7 @@ _SPHERICAL_FORMAT = ("dim_1", "dim_2", "dim_3")
 )
 def parse_transform_spherical(args: list[str]) -> TransformSpherical:
     for i, arg in enumerate(args, start=1):
-        parse_util.check_identifier(arg, f"dim_{i}")
+        parse_util.parse_identifier(arg, f"dim_{i}")
     try:
         return TransformSpherical(args[0], args[1], args[2])
     except ValueError as e:

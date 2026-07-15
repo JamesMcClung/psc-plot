@@ -84,7 +84,7 @@ def parse_pos(args: list[str]) -> Pos:
     for arg in args:
         [dim_name, sel_arg] = parse_util.parse_assignment(arg, POS_FORMAT)
 
-        parse_util.check_identifier(dim_name, "dim_name")
+        parse_util.parse_identifier(dim_name, "dim_name")
         if ":" in sel_arg:
             dim_names_to_sel[dim_name] = parse_util.parse_slice(sel_arg, float)
         else:

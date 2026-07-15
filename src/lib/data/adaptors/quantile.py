@@ -49,7 +49,7 @@ def parse_quantile(args: list[str]) -> Quantile:
     for arg in args:
         [dim_name, sel_arg] = parse_util.parse_assignment(arg, QUANTILE_FORMAT)
 
-        parse_util.check_identifier(dim_name, "dim_name")
+        parse_util.parse_identifier(dim_name, "dim_name")
         dim_names_to_quants[dim_name] = parse_util.parse_slice(sel_arg, float)
 
     return Quantile(dim_names_to_quants)

@@ -68,11 +68,11 @@ def parse(args: list[str]) -> Recenter:
 
         dims_arg, interp_dir_arg = parse_util.parse_assignment(arg, RECENTER_FORMAT)
 
-        parse_util.check_value(interp_dir_arg, "dir", DIR_TO_SHIFT.keys())
+        parse_util.parse_value(interp_dir_arg, "dir", DIR_TO_SHIFT.keys())
         interp_dir = DIR_TO_SHIFT[interp_dir_arg]
 
         for dim in parse_util.parse_comma_separated_list(dims_arg):
-            parse_util.check_identifier(dim, "dim_name")
+            parse_util.parse_identifier(dim, "dim_name")
             specs.append((dim, interp_dir, boundary))
 
     return Recenter(specs)

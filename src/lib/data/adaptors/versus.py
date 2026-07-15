@@ -123,12 +123,12 @@ def parse_versus(args: list[str]) -> Versus:
     for arg in args:
         if arg.startswith(_TIME_PREFIX):
             time_dim_rule = arg.removeprefix(_TIME_PREFIX) or None
-            parse_util.check_optional_identifier(time_dim_rule, "time dim_key")
+            parse_util.parse_optional_identifier(time_dim_rule, "time dim_key")
         elif arg.startswith(_COLOR_PREFIX):
             color_dim = arg.removeprefix(_COLOR_PREFIX)
-            parse_util.check_identifier(color_dim, "color dim_key")
+            parse_util.parse_identifier(color_dim, "color dim_key")
         else:
-            parse_util.check_identifier(arg, "dim_key")
+            parse_util.parse_identifier(arg, "dim_key")
             spatial_dims.append(arg)
 
     return Versus(spatial_dims, time_dim_rule=time_dim_rule, color_dim=color_dim)

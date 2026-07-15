@@ -68,6 +68,6 @@ FOURIER_FORMAT = "dim_name"
 )
 def parse_fourier(args: list[str]) -> Fourier:
     for dim_name in args:
-        parse_util.check_identifier(dim_name, "dim_name")
+        parse_util.parse_identifier(dim_name, "dim_name")
 
     return Fourier(args)

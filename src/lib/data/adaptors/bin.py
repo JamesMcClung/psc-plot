@@ -163,7 +163,7 @@ def parse_bin(args: list[str]) -> Bin:
 
         if len(split_arg) == 2 and not split_arg[1]:
             # arg is "t=", i.e., disable implicit binning along t
-            parse_util.check_value(split_arg[0], "active_key", ["t"])
+            parse_util.parse_value(split_arg[0], "active_key", ["t"])
             insert_bin_t = False
             continue
         elif len(split_arg) > 2:
@@ -171,7 +171,7 @@ def parse_bin(args: list[str]) -> Bin:
 
         [active_key, nbins_arg, *_] = split_arg + [""]
 
-        parse_util.check_identifier(active_key, "active_key")
+        parse_util.parse_identifier(active_key, "active_key")
         nbins = parse_util.parse_optional_number(nbins_arg, "nbins", int)
 
         varname_to_nbins[active_key] = nbins
