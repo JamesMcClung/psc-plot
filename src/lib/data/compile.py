@@ -4,7 +4,7 @@ import warnings
 from lib.config import CONFIG
 from lib.data.adaptor import Adaptor
 from lib.data.adaptors.versus import Versus
-from lib.data.node import AdaptorNode, LoaderNode, PlotNode
+from lib.data.node import AdaptorNode, DataProcessingNode, LoaderNode, PlotNode, SavePlotNode, ShowPlotNode
 from lib.parsing.args import Args
 from lib.plotting.plot import SaveFormat
 
@@ -53,3 +53,23 @@ def compile_plot_node(args: Args) -> PlotNode:
     node = PlotNode(node, args.hooks)
 
     return node
+
+
+def compile_action_nodes(args: Args) -> list[DataProcessingNode[None]]:
+    plot_node = compile_plot_node(args)
+    action_nodes = []
+
+    if args.show:
+        action_nodes.append(ShowPlotNode(plot_node))
+
+    if args.save is not None:
+        action_nodes.append(
+            SavePlotNode(
+                plot_node,
+                save_dir=args.save,
+                save_format=_resolve_save_format(args),
+                save_dpi=args.save_dpi,
+            )
+        )
+
+    return action_nodes
