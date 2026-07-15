@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 from lib import parsing
 from lib.config import CONFIG
+from lib.data.compile import compile_args
 from lib.parsing.args import Args
 from lib.plotting.plot import SaveFormat
 
@@ -96,7 +97,8 @@ def main():
     if format == "mp4":
         plt.rcParams["animation.ffmpeg_path"] = str(CONFIG.ffmpeg_bin)
 
-    plot = args.get_animation()
+    node = compile_args(args)
+    plot = node.pull()
 
     if args.show:
         plot.show()
@@ -112,6 +114,6 @@ def main():
 
             format = plot.default_save_format()
 
-        path = args.save / f"{args.get_save_file_stem()}.{format}"
+        path = args.save / f"{node.get_save_file_stem()}.{format}"
         plot.save_to_path(path, dpi=args.save_dpi)
         print(f"wrote to {path}")

@@ -1,13 +1,7 @@
 import pytest
 
-from lib.data.compile import compile_source
+from lib.data.compile import compile_args
 from lib.parsing.parse import get_parsed_args
-
-
-def _stem(args_list: list[str]) -> str:
-    args = get_parsed_args(args_list)
-    compile_source(args.loader, args.adaptors)  # mutates args.adaptors: appends default Versus
-    return args.get_save_file_stem()
 
 
 @pytest.mark.parametrize(
@@ -20,4 +14,5 @@ def _stem(args_list: list[str]) -> str:
     ],
 )
 def test_save_file_stem(args_list, expected_stem):
-    assert _stem(args_list) == expected_stem
+    actual_stem = compile_args(get_parsed_args(args_list)).get_save_file_stem()
+    assert actual_stem == expected_stem

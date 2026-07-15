@@ -15,6 +15,8 @@ import time
 import pytest
 from synthetic_particles import write_steps, write_steps_bp
 
+from lib.data.compile import compile_args
+
 
 def _run_h5_pipeline(data_dir: str, result_queue: mp.Queue) -> None:
     import os
@@ -27,7 +29,7 @@ def _run_h5_pipeline(data_dir: str, result_queue: mp.Queue) -> None:
     from lib.parsing.parse import get_parsed_args
 
     args = get_parsed_args("prt --species i --bin y py -v y py".split())
-    plot = args.get_animation()
+    plot = compile_args(args).pull()
     t0 = time.perf_counter()
     plot._initialize()
     elapsed = time.perf_counter() - t0
@@ -45,7 +47,7 @@ def _run_bp_pipeline(data_dir: str, result_queue: mp.Queue) -> None:
     from lib.parsing.parse import get_parsed_args
 
     args = get_parsed_args("prt.i --bin y py -v y py".split())
-    plot = args.get_animation()
+    plot = compile_args(args).pull()
     t0 = time.perf_counter()
     plot._initialize()
     elapsed = time.perf_counter() - t0

@@ -1,13 +1,13 @@
 import warnings
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from pathlib import Path
 
-from lib.data.data_source import DataSource
+from lib.data.data_with_attrs import DataWithAttrs
 from lib.file_util import get_available_steps
 from lib.has_name_fragments import HasNameFragments
 
 
-class Loader(DataSource, HasNameFragments):
+class Loader(ABC, HasNameFragments):
     @classmethod
     @abstractmethod
     def discover_prefixes(cls, data_dir: Path) -> list[str]:
@@ -28,6 +28,9 @@ class Loader(DataSource, HasNameFragments):
         if self.active_key is not None:
             fragments.append(self.active_key)
         return fragments
+
+    @abstractmethod
+    def get_data(self) -> DataWithAttrs: ...
 
 
 LOADERS: list[type[Loader]] = []

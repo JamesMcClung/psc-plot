@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import pytest
 
 from lib.config import CONFIG
+from lib.data.compile import compile_args
 from lib.parsing.parse import get_parsed_args
 from lib.plotting.plot import SaveFormat
 
@@ -27,7 +28,7 @@ def make_plot(args_list: list[str], data_dir: str | None = None):
 
     try:
         args = get_parsed_args(args_list)
-        plot = args.get_animation()
+        plot = compile_args(args).pull()
         plot._initialize()
         return plot.fig
     finally:
@@ -43,9 +44,10 @@ def make_save(args_list: list[str], save_dir: Path, format: SaveFormat, data_dir
 
     try:
         args = get_parsed_args(args_list)
-        plot = args.get_animation()
+        node = compile_args(args)
+        plot = node.pull()
         save_dir.mkdir(exist_ok=True)
-        path = save_dir / f"{args.get_save_file_stem()}.{format}"
+        path = save_dir / f"{node.get_save_file_stem()}.{format}"
         plot.save_to_path(path)
         return path
     finally:

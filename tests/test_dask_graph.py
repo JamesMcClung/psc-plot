@@ -12,6 +12,7 @@ silently causing dead loads of every column in every file.
 from conftest import _DATA_DIR
 
 from lib.config import CONFIG
+from lib.data.compile import compile_args
 from lib.parsing.parse import get_parsed_args
 
 
@@ -22,7 +23,8 @@ def _read_keys_for_columns(args_list: list[str], data_dir: str = "test-2d") -> l
     CONFIG.data_dir = _DATA_DIR / data_dir
     try:
         args = get_parsed_args(args_list)
-        data = args.get_data()
+        node = compile_args(args)
+        data = node.input_node.pull().active_data
         collections = data.dask_collections()
         assert collections, "expected particle pipeline to be dask-backed"
         read_keys: list[str] = []
