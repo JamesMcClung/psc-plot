@@ -14,15 +14,11 @@ import resource
 import pytest
 from synthetic_particles import write_steps
 
+from lib.config import PscPlotConfig
 
-def _run_pipeline(data_dir: str, chunksize: int, result_queue: mp.Queue) -> None:
+
+def _run_pipeline(data_dir: pathlib.Path, chunksize: int, result_queue: mp.Queue) -> None:
     """Child-process entry point: configure env, run the pipeline, report ru_maxrss."""
-    import os
-
-    os.environ["PSC_PLOT_DATA_DIR"] = data_dir
-    os.environ["PSC_PLOT_DASK_NUM_WORKERS"] = "1"
-    os.environ["PSC_PLOT_DASK_CHUNK_SIZE"] = str(chunksize)
-
     import matplotlib
 
     matplotlib.use("Agg")
@@ -31,7 +27,7 @@ def _run_pipeline(data_dir: str, chunksize: int, result_queue: mp.Queue) -> None
     from lib.parsing.parse import parse_args
 
     args = parse_args("prt --species i --bin y py=16 -v y py".split())
-    plot = compile_plot_node(args).pull()
+    plot = compile_plot_node(args, PscPlotConfig(data_dir=data_dir, dask_chunk_size=chunksize)).pull()
     plot._initialize()
 
     peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
@@ -42,7 +38,7 @@ def _measure(data_dir: pathlib.Path, chunksize: int) -> int:
     """Run _run_pipeline in a child and return the reported peak ru_maxrss."""
     ctx = mp.get_context("spawn")
     queue = ctx.Queue()
-    proc = ctx.Process(target=_run_pipeline, args=(str(data_dir), chunksize, queue))
+    proc = ctx.Process(target=_run_pipeline, args=(data_dir, chunksize, queue))
     proc.start()
     proc.join(timeout=120)
     if proc.exitcode != 0:

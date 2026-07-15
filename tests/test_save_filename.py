@@ -1,4 +1,5 @@
 import pytest
+from conftest import CONFIG_2D
 
 from lib.data.compile import compile_plot_node
 from lib.parsing.parse import parse_args
@@ -14,5 +15,5 @@ from lib.parsing.parse import parse_args
     ],
 )
 def test_save_file_stem(args_list, expected_stem):
-    actual_stem = compile_plot_node(parse_args(args_list)).get_save_file_stem()
+    actual_stem = compile_plot_node(parse_args(args_list), CONFIG_2D).get_save_file_stem()
     assert actual_stem == expected_stem

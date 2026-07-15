@@ -1,6 +1,6 @@
 import os
 import shutil
-from dataclasses import dataclass
+from dataclasses import KW_ONLY, dataclass, field
 from pathlib import Path
 from typing import Callable, Self
 
@@ -19,32 +19,21 @@ def parse_optional[T](s: str | None, parser: Callable[[str], T]) -> T | None:
 
 @dataclass
 class PscPlotConfig:
-    data_dir: Path
-    ffmpeg_bin: Path | None
-    dask_num_workers: int
-    dask_chunk_size: int
-    dask_scheduler: str | None
+    _: KW_ONLY
+    data_dir: Path = field(default_factory=Path.cwd)
+    ffmpeg_bin: Path | None = None
+    dask_num_workers: int = 1
+    dask_chunk_size: int = 1_000_000
+    dask_scheduler: str | None = None
 
     @classmethod
     def from_env(cls) -> Self:
-        data_dir = parse_optional(os.environ.get(_DATA_DIR_KEY), Path)
-        if not data_dir:
-            message = f"Path to data not specified. Set the {_DATA_DIR_KEY} environment variable to specify."
-            raise RuntimeError(message)
+        config = cls()
 
-        ffmpeg_bin = parse_optional(os.environ.get(_FFMPEG_BIN_KEY, shutil.which("ffmpeg")), Path)
+        config.data_dir = parse_optional(os.environ.get(_DATA_DIR_KEY), Path) or config.data_dir
+        config.ffmpeg_bin = parse_optional(os.environ.get(_FFMPEG_BIN_KEY, shutil.which("ffmpeg")), Path) or config.ffmpeg_bin
+        config.dask_num_workers = parse_optional(os.environ.get(_DASK_NUM_WORKERS_KEY), int) or os.cpu_count() or config.dask_num_workers
+        config.dask_chunk_size = parse_optional(os.environ.get(_DASK_CHUNK_SIZE_KEY), int) or config.dask_chunk_size
+        config.dask_scheduler = os.environ.get(_DASK_SCHEDULER_KEY) or config.dask_scheduler
 
-        dask_num_workers = parse_optional(os.environ.get(_DASK_NUM_WORKERS_KEY), int)
-        if not dask_num_workers:
-            dask_num_workers = os.cpu_count() or 1
-
-        dask_chunk_size = parse_optional(os.environ.get(_DASK_CHUNK_SIZE_KEY), int)
-        if not dask_chunk_size:
-            dask_chunk_size = 1_000_000
-
-        dask_scheduler = os.environ.get(_DASK_SCHEDULER_KEY) or None
-
-        return cls(data_dir, ffmpeg_bin, dask_num_workers, dask_chunk_size, dask_scheduler)
-
-
-CONFIG = PscPlotConfig.from_env()
+        return config

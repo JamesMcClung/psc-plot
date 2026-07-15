@@ -4,9 +4,9 @@ from abc import ABC, abstractmethod
 from functools import cache
 from pathlib import Path
 
+from lib.config import PscPlotConfig
 from lib.data.adaptor import Adaptor
 from lib.data.data_world import DataWorld
-from lib.data.loader import Loader
 from lib.plotting.get_plot import get_plot
 from lib.plotting.hook import Hook
 from lib.plotting.plot import Plot, SaveFormat
@@ -35,11 +35,12 @@ class AdaptorNode(DataProcessingNode[DataWorld]):
 
 
 class RootNode(DataProcessingNode[DataWorld]):
-    def __init__(self):
+    def __init__(self, config: PscPlotConfig):
         super().__init__([])
+        self.config = config
 
     def pull(self) -> DataWorld:
-        return DataWorld()
+        return DataWorld(config=self.config)
 
 
 class PlotNode(DataProcessingNode[Plot]):
@@ -97,9 +98,7 @@ class SavePlotNode(DataProcessingNode[None]):
         if format == "mp4":
             from matplotlib import pyplot as plt
 
-            from lib.config import CONFIG
-
-            plt.rcParams["animation.ffmpeg_path"] = str(CONFIG.ffmpeg_bin)
+            plt.rcParams["animation.ffmpeg_path"] = str(PscPlotConfig.from_env().ffmpeg_bin)
 
         self.save_dir.mkdir(exist_ok=True, parents=True)
         path = self.save_dir / f"{self.get_save_file_stem()}.{format}"

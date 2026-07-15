@@ -2,9 +2,9 @@ import warnings
 from abc import abstractmethod
 from pathlib import Path
 
+from lib.config import PscPlotConfig
 from lib.data.adaptor import WorldAdaptor
 from lib.data.data_with_attrs import DataWithAttrs
-from lib.file_util import get_available_steps
 
 
 class Loader(WorldAdaptor):
@@ -20,7 +20,6 @@ class Loader(WorldAdaptor):
 
     def __init__(self, prefix: str, active_key: str | None = None):
         self.prefix = prefix
-        self.steps = get_available_steps(prefix + ".", "." + self.suffix())
         self.active_key = active_key
 
     def get_name_fragments(self) -> list[str]:
@@ -30,10 +29,10 @@ class Loader(WorldAdaptor):
         return fragments
 
     def apply_world(self, world):
-        return world.with_active_data(self.get_data(), self.prefix)
+        return world.with_active_data(self.get_data(world.config), self.prefix)
 
     @abstractmethod
-    def get_data(self) -> DataWithAttrs: ...
+    def get_data(self, config: PscPlotConfig) -> DataWithAttrs: ...
 
 
 LOADERS: list[type[Loader]] = []

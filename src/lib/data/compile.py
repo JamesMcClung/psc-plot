@@ -1,7 +1,7 @@
 import sys
 import warnings
 
-from lib.config import CONFIG
+from lib.config import PscPlotConfig
 from lib.data.adaptor import Adaptor
 from lib.data.adaptors.versus import Versus
 from lib.data.loader import get_loader
@@ -20,7 +20,7 @@ def _with_versus(adaptors: list[Adaptor]) -> list[Adaptor]:
     return adaptors
 
 
-def _resolve_save_format(args: Args) -> SaveFormat | None:
+def _resolve_save_format(args: Args, config: PscPlotConfig) -> SaveFormat | None:
     if args.save is None:
         if args.save_format is not None:
             print("error: --save-format requires --save", file=sys.stderr)
@@ -28,7 +28,7 @@ def _resolve_save_format(args: Args) -> SaveFormat | None:
         return None
 
     if args.save_format == "mp4":
-        if not CONFIG.ffmpeg_bin:
+        if not config.ffmpeg_bin:
             print("error: --save-format mp4 requires ffmpeg", file=sys.stderr)
             sys.exit(1)
         return "mp4"
@@ -37,7 +37,7 @@ def _resolve_save_format(args: Args) -> SaveFormat | None:
         return "gif"
 
     # save_format is None: try mp4, fall back to gif
-    if CONFIG.ffmpeg_bin:
+    if config.ffmpeg_bin:
         return "mp4"
 
     message = "ffmpeg not found; will save animations as gif instead of mp4"
@@ -45,10 +45,10 @@ def _resolve_save_format(args: Args) -> SaveFormat | None:
     return "gif"
 
 
-def compile_plot_node(args: Args) -> PlotNode:
-    node = RootNode()
+def compile_plot_node(args: Args, config: PscPlotConfig) -> PlotNode:
+    node = RootNode(config)
 
-    node = AdaptorNode(node, get_loader(CONFIG.data_dir, args.prefix, args.variable))
+    node = AdaptorNode(node, get_loader(config.data_dir, args.prefix, args.variable))
 
     for adaptor in _with_versus(args.adaptors):
         node = AdaptorNode(node, adaptor)
@@ -58,8 +58,8 @@ def compile_plot_node(args: Args) -> PlotNode:
     return node
 
 
-def compile_action_nodes(args: Args) -> list[DataProcessingNode[None]]:
-    plot_node = compile_plot_node(args)
+def compile_action_nodes(args: Args, config: PscPlotConfig) -> list[DataProcessingNode[None]]:
+    plot_node = compile_plot_node(args, config)
     action_nodes = []
 
     if args.dask_graph:
@@ -74,7 +74,7 @@ def compile_action_nodes(args: Args) -> list[DataProcessingNode[None]]:
             SavePlotNode(
                 plot_node,
                 save_dir=args.save,
-                save_format=_resolve_save_format(args),
+                save_format=_resolve_save_format(args, config),
                 save_dpi=args.save_dpi,
             )
         )

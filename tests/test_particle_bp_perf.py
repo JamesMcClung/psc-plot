@@ -15,39 +15,34 @@ import time
 import pytest
 from synthetic_particles import write_steps, write_steps_bp
 
+from lib.config import PscPlotConfig
 from lib.data.compile import compile_plot_node
 
 
-def _run_h5_pipeline(data_dir: str, result_queue: mp.Queue) -> None:
-    import os
-
-    os.environ["PSC_PLOT_DATA_DIR"] = data_dir
-    os.environ["PSC_PLOT_DASK_NUM_WORKERS"] = "1"
+def _run_h5_pipeline(data_dir: pathlib.Path, result_queue: mp.Queue) -> None:
     import matplotlib
 
     matplotlib.use("Agg")
+
     from lib.parsing.parse import parse_args
 
     args = parse_args("prt --species i --bin y py -v y py".split())
-    plot = compile_plot_node(args).pull()
+    plot = compile_plot_node(args, PscPlotConfig(data_dir=data_dir)).pull()
     t0 = time.perf_counter()
     plot._initialize()
     elapsed = time.perf_counter() - t0
     result_queue.put(elapsed)
 
 
-def _run_bp_pipeline(data_dir: str, result_queue: mp.Queue) -> None:
-    import os
-
-    os.environ["PSC_PLOT_DATA_DIR"] = data_dir
-    os.environ["PSC_PLOT_DASK_NUM_WORKERS"] = "1"
+def _run_bp_pipeline(data_dir: pathlib.Path, result_queue: mp.Queue) -> None:
     import matplotlib
 
     matplotlib.use("Agg")
+
     from lib.parsing.parse import parse_args
 
     args = parse_args("prt.i --bin y py -v y py".split())
-    plot = compile_plot_node(args).pull()
+    plot = compile_plot_node(args, PscPlotConfig(data_dir=data_dir)).pull()
     t0 = time.perf_counter()
     plot._initialize()
     elapsed = time.perf_counter() - t0
@@ -57,7 +52,7 @@ def _run_bp_pipeline(data_dir: str, result_queue: mp.Queue) -> None:
 def _measure(target, data_dir: pathlib.Path) -> float:
     ctx = mp.get_context("spawn")
     queue = ctx.Queue()
-    proc = ctx.Process(target=target, args=(str(data_dir), queue))
+    proc = ctx.Process(target=target, args=(data_dir, queue))
     proc.start()
     proc.join(timeout=300)
     if proc.exitcode != 0:

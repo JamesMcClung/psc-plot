@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from lib.config import CONFIG
+from lib import file_util
+from lib.config import PscPlotConfig
 from lib.data.data_with_attrs import LazyList, ListMetadata
 from lib.data.loader import Loader, loader
 from lib.species import SpeciesInfo, build_species_display
@@ -15,8 +16,8 @@ from lib.var_info_registry import lookup
 _DISCOVER_PARTICLE_BP_PREFIX_RE = re.compile(r"^prt\.([^.]+)\.\d+\.bp$")
 
 
-def _get_path(prefix: str, step: int) -> pathlib.Path:
-    return CONFIG.data_dir / f"{prefix}.{step:09}.bp"
+def _get_path(data_dir: pathlib.Path, prefix: str, step: int) -> pathlib.Path:
+    return data_dir / f"{prefix}.{step:09}.bp"
 
 
 def _read_attrs(path: pathlib.Path) -> dict:
@@ -90,8 +91,9 @@ class ParticleLoaderBp(Loader):
         super().__init__(prefix, active_key)
         self.species_key = prefix.split(".", 1)[1]
 
-    def get_data(self) -> LazyList:
-        step_attrs = [_read_attrs(_get_path(self.prefix, step)) for step in self.steps]
+    def get_data(self, config: PscPlotConfig) -> LazyList:
+        steps = file_util.get_available_steps(config.data_dir, self.prefix + ".", ".bp")
+        step_attrs = [_read_attrs(_get_path(config.data_dir, self.prefix, step)) for step in steps]
         times = np.array([float(a["time"]) for a in step_attrs])
 
         head = step_attrs[0]
@@ -116,15 +118,15 @@ class ParticleLoaderBp(Loader):
         # along its particle dim. dd.from_map propagates downstream column
         # projection into `_read_chunk` via its `columns` kwarg, so unused
         # variables are never read from disk.
-        chunk_size = CONFIG.dask_chunk_size
+        chunk_size = config.dask_chunk_size
         paths: list[pathlib.Path] = []
         step_times: list[float] = []
         particle_dims: list[str] = []
         slices: list[slice] = []
         partition_ranges = []
         offset = 0
-        for step, time in zip(self.steps, times):
-            path = _get_path(self.prefix, step)
+        for step, time in zip(steps, times):
+            path = _get_path(config.data_dir, self.prefix, step)
             particle_dim, n = _peek_size(path)
             n_chunks = max(1, (n + chunk_size - 1) // chunk_size)
             partition_ranges.append((offset, offset + n_chunks))
