@@ -15,10 +15,10 @@ class DataProcessingNode[D](ABC):
 
 
 class AdaptorNode(DataProcessingNode[DataWorld]):
-    def __init__(self, adaptor: Adaptor, input_node: DataProcessingNode[DataWorld]):
+    def __init__(self, input_node: DataProcessingNode[DataWorld], adaptor: Adaptor):
         super().__init__(input_node.name_fragments + adaptor.get_name_fragments())
-        self.adaptor = adaptor
         self.input_node = input_node
+        self.adaptor = adaptor
 
     @cache
     def pull(self) -> DataWorld:
