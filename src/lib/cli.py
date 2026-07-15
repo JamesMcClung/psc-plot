@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 from lib import parsing
 from lib.config import CONFIG
-from lib.data.compile import _resolve_save_format, compile_args
+from lib.data.compile import _resolve_save_format, compile_plot_node
 from lib.parsing.args import Args
 
 
@@ -71,7 +71,7 @@ def main():
     if format == "mp4":
         plt.rcParams["animation.ffmpeg_path"] = str(CONFIG.ffmpeg_bin)
 
-    node = compile_args(args)
+    node = compile_plot_node(args)
     plot = node.pull()
 
     if args.show:

@@ -44,7 +44,7 @@ def _resolve_save_format(args: Args) -> SaveFormat | None:
     return "gif"
 
 
-def compile_args(args: Args) -> PlotNode:
+def compile_plot_node(args: Args) -> PlotNode:
     node = LoaderNode(args.loader)
 
     for adaptor in _with_versus(args.adaptors):
