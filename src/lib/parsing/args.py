@@ -2,13 +2,11 @@ import argparse
 from pathlib import Path
 
 from lib.data.adaptor import Adaptor
-from lib.data.loader import Loader
 from lib.plotting.hook import Hook
 
 
 class Args(argparse.Namespace):
     prefix: str
-    loader: Loader
     variable: str | None
     adaptors: list[Adaptor]
     hooks: list[Hook]
