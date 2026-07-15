@@ -1,3 +1,4 @@
+import sys
 import warnings
 from abc import ABC, abstractmethod
 from functools import cache
@@ -106,3 +107,54 @@ class SavePlotNode(DataProcessingNode[None]):
         path = self.save_dir / f"{self.get_save_file_stem()}.{format}"
         plot.save_to_path(path, dpi=self.save_dpi)
         print(f"wrote to {path}")
+
+
+class DaskGraphNode(DataProcessingNode[None]):
+    def __init__(
+        self,
+        input_node: DataProcessingNode[DataWorld],
+        *,
+        save_dir: Path | None,
+        show: bool,
+    ):
+        super().__init__(input_node.name_fragments)
+        self.input_node = input_node
+        self.save_dir = save_dir or Path.cwd()
+        self.show = show
+
+    def pull(self) -> None:
+        data = self.input_node.pull().active_data
+
+        collections = data.dask_collections()
+        if not collections:
+            print(
+                f"error: --dask-graph requires dask-backed data; pipeline produced eager {type(data).__name__}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        try:
+            import graphviz  # noqa: F401
+        except ImportError:
+            print(
+                "error: --dask-graph requires the 'graphviz' package; install with `pip install -e \".[dask-graph]\"`",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        import dask
+
+        self.save_dir.mkdir(exist_ok=True, parents=True)
+        path = self.save_dir / f"{self.get_save_file_stem()}.daskgraph.svg"
+        # dask.visualize's optimize_graph flag only lowers legacy HLG collections
+        # (e.g. dask Arrays), not new-style Expr ones (dask DataFrames) — without
+        # pre-optimizing the latter, un-lowered nodes (e.g. Concat from dd.concat)
+        # fail with NotImplementedError in _layer.
+        collections = [c.optimize() if hasattr(c, "optimize") else c for c in collections]
+        dask.visualize(*collections, filename=str(path), optimize_graph=True)
+        print(f"wrote to {path}")
+
+        if self.show:
+            import webbrowser
+
+            webbrowser.open(path.absolute().as_uri())
