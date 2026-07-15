@@ -11,8 +11,8 @@ from lib.parsing.args_registry import CUSTOM_ARGS
 def _get_parser(prefixes: Iterable[str]) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="psc-plot")
 
-    parser.add_argument("prefix", choices=prefixes, help="data file prefix (auto-discovered from the data directory)")
-    parser.add_argument("variable", nargs="?", default=None, help="field variable to work with")
+    parser.add_argument("prefix", help="initial active prefix")
+    parser.add_argument("variable", nargs="?", default=None, help="initial active variable")
     parser.add_argument(
         "-s",
         "--save",
