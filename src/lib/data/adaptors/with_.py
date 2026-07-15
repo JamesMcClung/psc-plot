@@ -27,7 +27,8 @@ class With(Adaptor):
         return data.assign_metadata(active_key=self.key)
 
     def get_name_fragments(self) -> list[str]:
-        return [f"with_{self.key}"]
+        maybe_prefix = f"{self.prefix}{SCOPE_OP}" if self.prefix else ""
+        return [f"with_{maybe_prefix}{self.key or ''}"]
 
 
 SCOPE_OP = "::"
