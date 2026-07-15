@@ -11,7 +11,6 @@ class StaticPlot[Data: DataWithAttrs](Plot[Data]):
     def __init__(self, renderer: Renderer[Data], data: Data):
         super().__init__(renderer, data)
 
-        self.fig, self.ax = plt.subplots(subplot_kw=renderer.subplot_kw())
         self._initialized = False
 
     def _initialize(self):

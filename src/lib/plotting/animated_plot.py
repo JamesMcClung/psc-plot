@@ -23,7 +23,6 @@ class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
         super().__init__(renderer, data)
         self.time_dim: str = self.data.metadata.time_dim
 
-        self.fig, self.ax = plt.subplots(subplot_kw=renderer.subplot_kw())
         self._initialized = False
 
         # FIXME get blitting to work with the title

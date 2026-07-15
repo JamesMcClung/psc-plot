@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Literal
 
+from matplotlib import pyplot as plt
+
 from lib.data.data_with_attrs import DataWithAttrs
 from lib.plotting.frame_data_traits import HasHookList
 from lib.plotting.hook import Hook
@@ -19,6 +21,7 @@ class Plot[Data: DataWithAttrs](ABC):
         self.renderer = renderer
         self.data = data
         self.hooks: list[Hook] = []
+        self.fig, self.ax = plt.subplots(subplot_kw=renderer.subplot_kw())
 
     def add_hook(self, hook: Hook):
         self.hooks.append(hook)
