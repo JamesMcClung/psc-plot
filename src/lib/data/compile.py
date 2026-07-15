@@ -4,7 +4,7 @@ import warnings
 from lib.config import CONFIG
 from lib.data.adaptor import Adaptor
 from lib.data.adaptors.versus import Versus
-from lib.data.adaptors.with_ import With
+from lib.data.loader import discover_loaders
 from lib.data.node import AdaptorNode, DaskGraphNode, DataProcessingNode, PlotNode, RootNode, SavePlotNode, ShowPlotNode
 from lib.parsing.args import Args
 from lib.plotting.plot import SaveFormat
@@ -48,7 +48,9 @@ def _resolve_save_format(args: Args) -> SaveFormat | None:
 def compile_plot_node(args: Args) -> PlotNode:
     node = RootNode()
 
-    node = AdaptorNode(node, With(args.prefix, args.variable))
+    loader_types = discover_loaders(CONFIG.data_dir)
+    loader = loader_types[args.prefix](args.prefix, args.variable)
+    node = AdaptorNode(node, loader)
 
     for adaptor in _with_versus(args.adaptors):
         node = AdaptorNode(node, adaptor)
