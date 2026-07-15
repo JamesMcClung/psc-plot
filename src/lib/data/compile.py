@@ -61,10 +61,6 @@ def compile_action_nodes(args: Args) -> list[DataProcessingNode[None]]:
 
     if args.dask_graph:
         action_nodes.append(DaskGraphNode(plot_node.input_node, save_dir=args.save, show=args.show))
-
-        if args.save_format is not None:
-            warnings.warn("--save-format is ignored with --dask-graph")
-
         return action_nodes
 
     if args.show:
