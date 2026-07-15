@@ -3,7 +3,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 from matplotlib.animation import FFMpegWriter, FuncAnimation, PillowWriter
 
 from lib.data.adaptors.idx import Idx
@@ -40,10 +39,6 @@ class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
         self.renderer.draw(self.ax, frame_data, update_data)
         self.post_update_fig(update_data)
         print_progress(frame, self.n_frames)
-
-    def show(self):
-        self._initialize()
-        plt.show()
 
     def allowed_save_formats(self) -> list[SaveFormat]:
         return ["mp4", "gif"]

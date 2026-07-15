@@ -48,8 +48,9 @@ class Plot[Data: DataWithAttrs](ABC):
         for hook in self.hooks.copy():  # hooks might reorder themselves
             hook.post_add_hook(post_add_data)
 
-    @abstractmethod
-    def show(self): ...
+    def show(self):
+        self._initialize()
+        plt.show()
 
     @abstractmethod
     def save_to_path(self, path: Path, *, dpi: float | None = None): ...
