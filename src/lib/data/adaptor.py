@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
+
 import dask.dataframe as dd
 import pandas as pd
 import xarray as xr
@@ -20,7 +22,12 @@ def _fail_apply_list(adaptor_type: type[Adaptor]):
     raise RuntimeError(message)
 
 
-class Adaptor(HasNameFragments):
+class WorldAdaptor(ABC, HasNameFragments):
+    @abstractmethod
+    def apply_world(self, world: DataWorld) -> DataWorld: ...
+
+
+class Adaptor(WorldAdaptor):
     def apply_world(self, world: DataWorld) -> DataWorld:
         return world.with_active_data(self.apply(world.active_data))
 
