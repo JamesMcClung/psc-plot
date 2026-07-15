@@ -7,7 +7,7 @@ from lib.parsing.args_registry import arg_parser
 
 
 class With(Adaptor):
-    def __init__(self, prefix: str | None, key: str):
+    def __init__(self, prefix: str | None, key: str | None):
         self.prefix = prefix
         self.key = key
 
@@ -46,7 +46,7 @@ def parse_with(arg: str) -> With:
 
     if len(split_arg) == 2:
         prefix = parse_util.parse_identifier(split_arg[0], "prefix")
-        key = parse_util.parse_optional_identifier(split_arg[1], "key")
+        key = parse_util.parse_optional_identifier(split_arg[1] or None, "key")
         return With(prefix, key)
     elif len(split_arg) == 1:
         prefix = None
