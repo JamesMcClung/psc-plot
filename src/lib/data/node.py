@@ -16,6 +16,9 @@ class DataProcessingNode[D](ABC):
     @abstractmethod
     def pull(self) -> D: ...
 
+    def get_save_file_stem(self) -> str:
+        return "-".join(self.name_fragments)
+
 
 class AdaptorNode(DataProcessingNode[DataWorld]):
     def __init__(self, input_node: DataProcessingNode[DataWorld], adaptor: Adaptor):
