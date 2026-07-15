@@ -1,8 +1,6 @@
 import argparse
 from pathlib import Path
 
-from lib.config import CONFIG
-from lib.data.loader import discover_loaders
 from lib.parsing.args import Args
 from lib.parsing.args_registry import CUSTOM_ARGS
 
@@ -50,7 +48,4 @@ def _get_parser() -> argparse.ArgumentParser:
 
 def get_parsed_args(args_list: list[str] | None = None) -> Args:
     parser = _get_parser()
-    args = parser.parse_args(args_list, namespace=Args())
-    prefix_to_loader = discover_loaders(CONFIG.data_dir)
-    args.loader = prefix_to_loader[args.prefix](args.prefix, active_key=args.variable)
-    return args
+    return parser.parse_args(args_list, namespace=Args())
