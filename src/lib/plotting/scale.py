@@ -1,11 +1,17 @@
 from typing import Literal, Self
 
-from matplotlib.colors import SymLogNorm
-from matplotlib.scale import SymmetricalLogScale
+from matplotlib.colors import Normalize, SymLogNorm
+from matplotlib.scale import ScaleBase, SymmetricalLogScale
 
-from lib.data.data_with_attrs import DataWithAttrs
 from lib.parsing import parse_util
-from lib.plotting import plt_util
+
+type BuiltinAxisScaleKey = Literal["linear", "log"]
+SCALES: list[BuiltinAxisScaleKey] = list(BuiltinAxisScaleKey.__value__.__args__)
+type AxisScaleArg = BuiltinAxisScaleKey | ScaleBase
+
+type BuiltinColorNormKey = Literal["linear", "log"]
+BUILTIN_COLOR_NORM_KEYS: tuple[BuiltinColorNormKey, ...] = BuiltinColorNormKey.__value__.__args__
+type ColorNormArg = BuiltinColorNormKey | Normalize
 
 type ScaleKey = Literal["linear", "log", "symlog"]
 SCALE_KEYS: tuple[ScaleKey, ...] = ScaleKey.__value__.__args__
@@ -17,10 +23,10 @@ class Scale:
     def __init_subclass__(cls):
         SCALE_TYPES.append(cls)
 
-    def to_axis_scale(self) -> plt_util.AxisScaleArg:
+    def to_axis_scale(self) -> AxisScaleArg:
         return self.scale_key
 
-    def to_color_norm(self) -> plt_util.ColorNormArg:
+    def to_color_norm(self) -> ColorNormArg:
         return self.scale_key
 
     def to_name_fragment_part(self) -> str:
@@ -52,18 +58,14 @@ class SymLogScale(Scale):
     scale_key = "symlog"
     LINEAR_THRESHOLD_ARG_FORMAT = "linear_threshold"
 
-    def __init__(self, linear_threshold: float | None):
+    def __init__(self, linear_threshold: float):
         self.linear_threshold = linear_threshold
 
-    def _choose_linear_threshold(self, data: DataWithAttrs) -> float:
-        # TODO pipe it through Magnitude -> Reduce, but reduce via quantile... which requires refactoring Reduce to support subargs
-        return 0.0001
-
-    def to_axis_scale(self) -> plt_util.AxisScaleArg:
+    def to_axis_scale(self) -> AxisScaleArg:
         linthresh = self.linear_threshold  # or self._choose_linear_threshold(data)
         return SymmetricalLogScale(None, linthresh=linthresh)
 
-    def to_color_norm(self) -> plt_util.ColorNormArg:
+    def to_color_norm(self) -> ColorNormArg:
         linthresh = self.linear_threshold  # or self._choose_linear_threshold(data)
         return SymLogNorm(linthresh)
 
