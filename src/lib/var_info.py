@@ -52,7 +52,7 @@ class VarInfo:
 
     def to_axis_label(self) -> str:
         if self.unit:
-            return f"${self.display}\\ [{self.unit}]$"
+            return f"${self.display}$ [${self.unit}$]"
         return f"${self.display}$"
 
     def get_coordinate_label(self, coord_val: float) -> str:
