@@ -13,7 +13,7 @@ from lib.plotting.frame_data_traits import (
 )
 from lib.plotting.plot_info import LineInfo, PlotInfo
 from lib.plotting.renderer import Renderer
-from lib.plotting.scale import LinearScale
+from lib.scale import LinearScale
 
 
 class Field1dRenderer(Renderer[Field]):
@@ -68,8 +68,8 @@ class Field1dRenderer(Renderer[Field]):
             y_dim=y_dim,
             subject=frame_data.metadata.active_var_info.to_axis_label(),
             dim_scales={
-                x_dim: init_data.spatial_scales[0],
-                y_dim: init_data.spatial_scales[1],
+                x_dim: frame_data.metadata.var_infos[x_dim].scale,
+                y_dim: frame_data.metadata.var_infos[y_dim].scale,
             },
             dim_bounds={
                 x_dim: (frame_data.coordss[x_dim][0], frame_data.coordss[x_dim][-1]),

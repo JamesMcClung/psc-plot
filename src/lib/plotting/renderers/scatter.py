@@ -14,7 +14,7 @@ from lib.plotting.frame_data_traits import (
 )
 from lib.plotting.plot_info import PlotInfo, ScatterInfo
 from lib.plotting.renderer import Renderer
-from lib.plotting.scale import LinearScale
+from lib.scale import LinearScale
 
 
 class ScatterRenderer(Renderer[FullList]):
@@ -93,8 +93,8 @@ class ScatterRenderer(Renderer[FullList]):
             y_dim=y_dim,
             subject=f"${frame_data.metadata.subject}$" if frame_data.metadata.subject else None,
             dim_scales={
-                x_dim: init_data.spatial_scales[0],
-                y_dim: init_data.spatial_scales[1],
+                x_dim: frame_data.metadata.var_infos[x_dim].scale,
+                y_dim: frame_data.metadata.var_infos[y_dim].scale,
             },
             dim_bounds={
                 x_dim: full_data.bounds(x_dim),
@@ -119,7 +119,7 @@ class ScatterRenderer(Renderer[FullList]):
         if color_dim := frame_data.metadata.color_dim:
             self.plot_info.color_dim = color_dim
             self.plot_info.color_data = frame_data.data[color_dim]
-            self.plot_info.dim_scales[color_dim] = init_data.color_norm
+            self.plot_info.dim_scales[color_dim] = frame_data.metadata.var_infos[color_dim].scale
             self.plot_info.dim_bounds[color_dim] = full_data.bounds(color_dim)
             self.plot_info.dim_displays[color_dim] = frame_data.metadata.var_infos[color_dim].display
             self.plot_info.dim_units[color_dim] = frame_data.metadata.var_infos[color_dim].unit

@@ -9,7 +9,7 @@ from lib.plotting import plt_util
 from lib.plotting.frame_data_traits import HasAxes, HasColorNorm, HasFieldData, HasSpatialScales
 from lib.plotting.plot_info import ImageInfo, PlotInfo
 from lib.plotting.renderer import Renderer
-from lib.plotting.scale import LinearScale
+from lib.scale import LinearScale
 
 
 def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
@@ -80,6 +80,8 @@ class Field2dRenderer(Renderer[Field]):
 
         data = frame_data.active_data.transpose(y_dim, x_dim)
 
+        print(frame_data.metadata.var_infos[color_dim].scale)
+
         self.plot_info = ImageInfo(
             data=data,
             x_dim=x_dim,
@@ -87,9 +89,9 @@ class Field2dRenderer(Renderer[Field]):
             color_dim=color_dim,
             subject=frame_data.metadata.active_var_info.to_axis_label(),
             dim_scales={
-                x_dim: init_data.spatial_scales[0],
-                y_dim: init_data.spatial_scales[1],
-                color_dim: init_data.color_norm,
+                x_dim: frame_data.metadata.var_infos[x_dim].scale,
+                y_dim: frame_data.metadata.var_infos[y_dim].scale,
+                color_dim: frame_data.metadata.var_infos[color_dim].scale,
             },
             dim_bounds={
                 x_dim: get_extent(data, x_dim),

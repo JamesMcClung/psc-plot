@@ -10,7 +10,7 @@ from lib.plotting import plt_util
 from lib.plotting.frame_data_traits import HasAxes, HasColorNorm, HasFieldData, HasSpatialScales
 from lib.plotting.plot_info import PlotInfo, PolarMeshInfo
 from lib.plotting.renderer import Renderer
-from lib.plotting.scale import LinearScale
+from lib.scale import LinearScale
 
 
 class PolarFieldRenderer(Renderer[Field]):
@@ -101,8 +101,8 @@ class PolarFieldRenderer(Renderer[Field]):
             theta_vertices=theta_vertices,
             subject=frame_data.metadata.active_var_info.to_axis_label(),
             dim_scales={
-                r_dim: init_data.spatial_scales[0],
-                color_dim: init_data.color_norm,
+                r_dim: frame_data.metadata.var_infos[r_dim].scale,
+                color_dim: frame_data.metadata.var_infos[color_dim].scale,
             },
             dim_bounds={
                 color_dim: full_data.var_bounds,

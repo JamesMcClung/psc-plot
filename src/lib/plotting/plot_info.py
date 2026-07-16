@@ -9,7 +9,7 @@ from matplotlib.typing import LineStyleType
 
 from lib.latex import Latex
 from lib.plotting import plt_util
-from lib.plotting.scale import Scale
+from lib.scale import Scale
 
 type DimKey = str
 type AttrKey = str

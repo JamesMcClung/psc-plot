@@ -6,7 +6,7 @@ from matplotlib.axes import Axes
 from lib.data.compatability import isinstance2
 from lib.data.data_with_attrs import Field, FullList, List
 from lib.plotting.hook import Hook
-from lib.plotting.scale import Scale
+from lib.scale import Scale
 
 
 def check_impl[T](data: Any, data_type: type[T]) -> TypeGuard[T]:

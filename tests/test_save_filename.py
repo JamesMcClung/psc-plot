@@ -10,7 +10,7 @@ from lib.parsing.parse import parse_args
     [
         (["pfd", "hx_fc"], "pfd-hx_fc-v_y,z"),
         (["pfd", "hx_fc", "--nan0"], "pfd-hx_fc-nan0-v_y,z"),
-        (["pfd", "hx_fc", "--scale", "log"], "pfd-hx_fc-v_y,z-scale_log"),
+        (["pfd", "hx_fc", "--scale", "log"], "pfd-hx_fc-scale_log-v_y,z"),
         (["pfd", "hx_fc", "-v", "y", "z", "time="], "pfd-hx_fc-v_y,z;time="),
     ],
 )
