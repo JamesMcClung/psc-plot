@@ -134,16 +134,8 @@ def setup_fig(plot_info: PlotInfo) -> Figure:
             plot_info._setter_callbacks[("dim_units", dim)] = update_label
             update_label()
 
-        for dim, set_scale in [
-            (plot_info.x_dim, ax.set_xscale),
-            (plot_info.y_dim, ax.set_yscale),
-        ]:
-            update_scale = lambda _=None: set_scale(plot_info.dim_scales[dim].to_axis_scale())
-            plot_info._setter_callbacks[("dim_scales", dim)] = update_scale
-            update_scale(plot_info.dim_scales[dim])
-
     if isinstance(plot_info, LineInfo):
-        [line] = ax.plot(plot_info.x_data, plot_info.y_data, linestyle=plot_info.line_style)
+        [line] = ax.plot(plot_info.x_data, plot_info.y_data, linestyle=plot_info.line_style, scalex=False, scaley=False)
         plot_info._setter_callbacks["x_data"] = line.set_xdata
         plot_info._setter_callbacks["y_data"] = line.set_ydata
         plot_info._setter_callbacks["line_style"] = line.set_linestyle
@@ -189,6 +181,14 @@ def setup_fig(plot_info: PlotInfo) -> Figure:
         plot_info._setter_callbacks["y_data"] = update_data
 
     if isinstance(plot_info, PlotInfo2D):
+        for dim, set_scale in [
+            (plot_info.x_dim, ax.set_xscale),
+            (plot_info.y_dim, ax.set_yscale),
+        ]:
+            update_scale = lambda _=None: set_scale(plot_info.dim_scales[dim].to_axis_scale())
+            plot_info._setter_callbacks[("dim_scales", dim)] = update_scale
+            update_scale(plot_info.dim_scales[dim])
+
         for dim, set_bound in [
             (plot_info.x_dim, ax.set_xbound),
             (plot_info.y_dim, ax.set_ybound),

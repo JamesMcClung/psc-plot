@@ -72,7 +72,7 @@ class Field1dRenderer(Renderer[Field]):
                 y_dim: init_data.spatial_scales[1],
             },
             dim_bounds={
-                x_dim: (None, None),
+                x_dim: (frame_data.coordss[x_dim][0], frame_data.coordss[x_dim][-1]),
                 y_dim: plt_util.symmetrize_bounds(*full_data.var_bounds),
             },
             dim_displays={
