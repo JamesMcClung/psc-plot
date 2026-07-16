@@ -26,7 +26,8 @@ def check_impl[T](data: Any, data_type: type[T]) -> TypeGuard[T]:
 
 def assert_impl[T](data: Any, required_type: type[T]) -> T:
     if not check_impl(data, required_type):
-        raise TypeError("TODO better message")
+        message = f"data type={data.__class__} is not a subtype of {required_type}"
+        raise TypeError(message)
     return data
 
 
