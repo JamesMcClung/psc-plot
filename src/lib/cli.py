@@ -1,8 +1,8 @@
 import dask
 
-from lib import parsing
 from lib.config import PscPlotConfig
 from lib.data.compile import compile_action_nodes
+from lib.parsing.parse import parse_args
 
 
 def main():
@@ -17,7 +17,7 @@ def main():
     elif config.dask_scheduler:
         dask.config.set(scheduler=config.dask_scheduler)
 
-    args = parsing.parse_args()
+    args = parse_args()
 
     actions = compile_action_nodes(args, config)
 
