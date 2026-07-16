@@ -5,8 +5,8 @@ from matplotlib.axes import Axes
 
 from lib.data.compatability import isinstance2
 from lib.data.data_with_attrs import Field, FullList, List
-from lib.plotting import plt_util
 from lib.plotting.hook import Hook
+from lib.plotting.scale import Scale
 
 
 def check_impl[T](data: Any, data_type: type[T]) -> TypeGuard[T]:
@@ -63,13 +63,13 @@ class HasAxes:
 
 @dataclass(kw_only=True)
 class HasSpatialScales:
-    spatial_scales: list[plt_util.AxisScaleArg]
+    spatial_scales: list[Scale]
     last_spatial_dim_is_dependent: bool = False
 
 
 @dataclass(kw_only=True)
 class HasColorNorm:
-    color_norm: plt_util.ColorNormArg
+    color_norm: Scale
     color_is_dependent: bool = False
 
 

@@ -11,7 +11,9 @@ from lib.plotting.frame_data_traits import (
     HasLineType,
     HasSpatialScales,
 )
+from lib.plotting.plot_info import LineInfo, PlotInfo
 from lib.plotting.renderer import Renderer
+from lib.plotting.scale import LinearScale
 
 
 class Field1dRenderer(Renderer[Field]):
@@ -26,7 +28,7 @@ class Field1dRenderer(Renderer[Field]):
             data=frame_data,
             axes=ax,
             line_type="-",
-            spatial_scales=["linear", "linear"],
+            spatial_scales=[LinearScale(), LinearScale()],
             last_spatial_dim_is_dependent=True,
         )
 
@@ -54,3 +56,43 @@ class Field1dRenderer(Renderer[Field]):
         self.line.set_ydata(frame_data.active_data)
 
         plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.var_infos[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
+
+    def init_plot_info(self, full_data: Field, frame_data: Field, init_data: InitData) -> PlotInfo:
+        [x_dim] = frame_data.metadata.spatial_dims
+        y_dim = frame_data.metadata.active_key
+
+        self.plot_info = LineInfo(
+            x_data=frame_data.coordss[x_dim],
+            y_data=frame_data.active_data,
+            x_dim=x_dim,
+            y_dim=y_dim,
+            subject=frame_data.metadata.active_var_info.to_axis_label(),
+            dim_scales={
+                x_dim: init_data.spatial_scales[0],
+                y_dim: init_data.spatial_scales[1],
+            },
+            dim_bounds={
+                x_dim: (None, None),
+                y_dim: plt_util.symmetrize_bounds(*full_data.var_bounds),
+            },
+            dim_displays={
+                x_dim: frame_data.metadata.var_infos[x_dim].display,
+                y_dim: frame_data.metadata.var_infos[y_dim].display,
+            },
+            dim_units={
+                x_dim: frame_data.metadata.var_infos[x_dim].unit,
+                y_dim: frame_data.metadata.var_infos[y_dim].unit,
+            },
+        )
+
+        for dim, coord in frame_data.coordss.items():
+            if coord.shape == ():
+                self.plot_info.scalar_coord_values[dim] = coord
+                self.plot_info.dim_displays[dim] = frame_data.metadata.var_infos[dim].display
+                self.plot_info.dim_units[dim] = frame_data.metadata.var_infos[dim].unit
+
+        return self.plot_info
+
+    def update_plot_info(self, frame_data: Field, update_data: UpdateData):
+        self.plot_info.set("y_data", frame_data.active_data)
+        self.plot_info.set("scalar_coord_values", {dim: coord for dim, coord in frame_data.coordss.items() if coord.shape == ()})

@@ -7,6 +7,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from lib.data.data_with_attrs import DataWithAttrs
+from lib.plotting.plot_info import PlotInfo
 
 
 class Renderer[Data: DataWithAttrs](ABC):
@@ -24,3 +25,9 @@ class Renderer[Data: DataWithAttrs](ABC):
 
     def draw(self, ax: Axes, frame_data: Data, update_data: Any) -> None:
         pass
+
+    @abstractmethod
+    def init_plot_info(self, full_data: Data, frame_data: Data, init_data: Any) -> PlotInfo: ...
+
+    @abstractmethod
+    def update_plot_info(self, frame_data: Data, update_data: Any): ...

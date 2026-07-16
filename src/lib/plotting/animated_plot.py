@@ -22,8 +22,12 @@ class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
         super().__init__(renderer, data)
         self.time_dim: str = self.data.metadata.time_dim
 
-        # FIXME get blitting to work with the title
         self.n_frames = len(data.coordss[data.metadata.time_dim])
+
+    def _initialize(self):
+        super()._initialize()
+
+        # FIXME get blitting to work with the title
         self.anim = FuncAnimation(self.fig, self._next_frame, frames=self.n_frames, blit=False)
 
     def _get_initial_data(self) -> DataWithAttrs:
@@ -34,9 +38,9 @@ class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
 
     def _next_frame(self, frame: int):
         frame_data = self._get_data_at_frame(frame)
-        update_data = self.renderer.make_update_data(self.ax, frame_data)
+        update_data = self.renderer.make_update_data(None, frame_data)
         self.pre_update_fig(update_data)
-        self.renderer.draw(self.ax, frame_data, update_data)
+        self.renderer.update_plot_info(frame_data, update_data)
         self.post_update_fig(update_data)
         print_progress(frame, self.n_frames)
 

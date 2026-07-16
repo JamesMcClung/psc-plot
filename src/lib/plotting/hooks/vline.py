@@ -11,16 +11,6 @@ class VLine(Hook):
 
     class InitData(HasAxes): ...
 
-    def pre_init_fig(self, init_data):
-        init_data = assert_impl(init_data, VLine.InitData)
-
-        lower_spine = init_data.axes.spines["bottom"]
-        init_data.axes.axvline(
-            self.pos,
-            color="lightgray",
-            linewidth=lower_spine.get_linewidth(),
-        )
-
     def post_init_fig(self, init_data):
         if not self.label:
             return
@@ -28,6 +18,12 @@ class VLine(Hook):
         init_data = assert_impl(init_data, VLine.InitData)
 
         lower_spine = init_data.axes.spines["bottom"]
+
+        init_data.axes.axvline(
+            self.pos,
+            color="lightgray",
+            linewidth=lower_spine.get_linewidth(),
+        )
 
         init_data.axes.text(
             self.pos,

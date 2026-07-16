@@ -9,6 +9,7 @@ from matplotlib import pyplot as plt
 from lib.data.data_with_attrs import DataWithAttrs
 from lib.plotting.frame_data_traits import HasHookList
 from lib.plotting.hook import Hook
+from lib.plotting.plot_info import setup_fig
 from lib.plotting.renderer import Renderer
 
 type SaveFormat = Literal["mp4", "gif", "png"]
@@ -21,7 +22,6 @@ class Plot[Data: DataWithAttrs](ABC):
         self.renderer = renderer
         self.data = data
         self.hooks: list[Hook] = []
-        self.fig, self.ax = plt.subplots(subplot_kw=renderer.subplot_kw())
 
         self._initialized = False
 
@@ -31,9 +31,11 @@ class Plot[Data: DataWithAttrs](ABC):
         self._initialized = True
 
         initial_data = self._get_initial_data()
-        init_data = self.renderer.make_init_data(self.fig, self.ax, initial_data)
+        init_data = self.renderer.make_init_data(None, None, initial_data)
         self.pre_init_fig(init_data)
-        self.renderer.init(self.fig, self.ax, self.data, initial_data, init_data)
+        plot_info = self.renderer.init_plot_info(self.data, initial_data, init_data)
+        self.fig = setup_fig(plot_info)
+        init_data.axes = self.fig.axes[0]
         self.post_init_fig(init_data)
         self.fig.tight_layout()
 

@@ -32,7 +32,7 @@ class Fit(Hook):
 
         x_data, y_data = self._get_xy_data(init_data.data)
         fit_y_data, label = self._get_fit_y_data(x_data, y_data)
-        [self.line] = init_data.axes.plot(x_data, fit_y_data, "--", label=label)
+        [self.line] = init_data.axes.plot(x_data, fit_y_data, "--", label=label, scalex=False, scaley=False)
 
         init_data.axes.legend()
 

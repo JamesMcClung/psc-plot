@@ -28,11 +28,11 @@ class Idx(MetadataAdaptor):
                     selected_steps = [selected_steps]
                 partition_indices = [p for step in selected_steps for p in range(*data.metadata.partition_ranges[step])]
                 df = df.partitions[partition_indices]
-                coordss[dim] = coordss[dim][isel] if isinstance(isel, slice) else float(coordss[dim][isel])
+                coordss[dim] = coordss[dim][isel] if isinstance(isel, slice) else coordss[dim][isel]
                 continue
 
             if isinstance(isel, int):
-                pos = float(coordss[dim][isel])
+                pos = coordss[dim][isel]
                 df = df[df[dim] == pos]
                 if len(df) == 0:
                     import warnings
@@ -42,11 +42,11 @@ class Idx(MetadataAdaptor):
                 coordss[dim] = pos
             else:
                 if isel.start not in [None, 0]:
-                    pos_lower = float(coordss[dim][isel.start])
+                    pos_lower = coordss[dim][isel.start]
                     df = df[df[dim] >= pos_lower]
 
                 if isel.stop is not None:
-                    pos_upper = float(coordss[dim][isel.stop])
+                    pos_upper = coordss[dim][isel.stop]
                     df = df[df[dim] < pos_upper]
 
                 coordss[dim] = coordss[dim][isel]

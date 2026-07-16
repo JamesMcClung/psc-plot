@@ -12,7 +12,9 @@ from lib.plotting.frame_data_traits import (
     HasFullListData,
     HasSpatialScales,
 )
+from lib.plotting.plot_info import PlotInfo, ScatterInfo
 from lib.plotting.renderer import Renderer
+from lib.plotting.scale import LinearScale
 
 
 class ScatterRenderer(Renderer[FullList]):
@@ -26,9 +28,9 @@ class ScatterRenderer(Renderer[FullList]):
         return self.InitData(
             data=frame_data,
             axes=ax,
-            spatial_scales=["linear", "linear"],
+            spatial_scales=[LinearScale(), LinearScale()],
             last_spatial_dim_is_dependent=True,
-            color_norm="linear",
+            color_norm=LinearScale(),
         )
 
     def init(self, fig: Figure, ax: Axes, full_data: FullList, frame_data: FullList, init_data: InitData) -> None:
@@ -80,3 +82,56 @@ class ScatterRenderer(Renderer[FullList]):
 
         if frame_data.metadata.color_dim:
             self.scatter.set_array(df[frame_data.metadata.color_dim])
+
+    def init_plot_info(self, full_data: FullList, frame_data: FullList, init_data: InitData) -> PlotInfo:
+        [x_dim, y_dim] = frame_data.metadata.spatial_dims
+
+        self.plot_info = ScatterInfo(
+            x_data=frame_data.data[x_dim],
+            y_data=frame_data.data[y_dim],
+            x_dim=x_dim,
+            y_dim=y_dim,
+            subject=f"${frame_data.metadata.subject}$" if frame_data.metadata.subject else None,
+            dim_scales={
+                x_dim: init_data.spatial_scales[0],
+                y_dim: init_data.spatial_scales[1],
+            },
+            dim_bounds={
+                x_dim: full_data.bounds(x_dim),
+                y_dim: full_data.bounds(y_dim),
+            },
+            dim_displays={
+                x_dim: frame_data.metadata.var_infos[x_dim].display,
+                y_dim: frame_data.metadata.var_infos[y_dim].display,
+            },
+            dim_units={
+                x_dim: frame_data.metadata.var_infos[x_dim].unit,
+                y_dim: frame_data.metadata.var_infos[y_dim].unit,
+            },
+        )
+
+        for dim, coord in frame_data.coordss.items():
+            if coord.shape == ():
+                self.plot_info.scalar_coord_values[dim] = coord
+                self.plot_info.dim_displays[dim] = frame_data.metadata.var_infos[dim].display
+                self.plot_info.dim_units[dim] = frame_data.metadata.var_infos[dim].unit
+
+        if color_dim := frame_data.metadata.color_dim:
+            self.plot_info.color_dim = color_dim
+            self.plot_info.color_data = frame_data.data[color_dim]
+            self.plot_info.dim_scales[color_dim] = init_data.color_norm
+            self.plot_info.dim_bounds[color_dim] = full_data.bounds(color_dim)
+            self.plot_info.dim_displays[color_dim] = frame_data.metadata.var_infos[color_dim].display
+            self.plot_info.dim_units[color_dim] = frame_data.metadata.var_infos[color_dim].unit
+
+        return self.plot_info
+
+    def update_plot_info(self, frame_data: FullList, update_data: UpdateData):
+        [x_dim, y_dim] = frame_data.metadata.spatial_dims
+
+        self.plot_info.set("x_data", frame_data.data[x_dim])
+        self.plot_info.set("y_data", frame_data.data[y_dim])
+        self.plot_info.set("scalar_coord_values", {dim: coord for dim, coord in frame_data.coordss.items() if coord.shape == ()})
+
+        if color_dim := self.plot_info.color_dim:
+            self.plot_info.set("color_data", frame_data.data[color_dim])
