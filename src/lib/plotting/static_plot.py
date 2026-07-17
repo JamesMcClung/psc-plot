@@ -5,9 +5,6 @@ from lib.plotting.plot import Plot, SaveFormat
 
 
 class StaticPlot[Data: DataWithAttrs](Plot[Data]):
-    def _get_initial_data(self) -> DataWithAttrs:
-        return self.data
-
     def allowed_save_formats(self) -> list[SaveFormat]:
         return ["png"]
 

@@ -15,9 +15,9 @@ def get_plot(world: DataWorld) -> Plot:
     renderer = get_renderers(world)[0]
 
     if renderer.plot_target.time_dim:
-        return AnimatedPlot(renderer, renderer.full_data)
+        return AnimatedPlot(renderer, len(renderer.full_data.coordss[renderer.plot_target.time_dim]))
     else:
-        return StaticPlot(renderer, renderer.full_data)
+        return StaticPlot(renderer)
 
 
 def get_renderers(world: DataWorld) -> list[Renderer]:

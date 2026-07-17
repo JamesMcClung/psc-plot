@@ -6,7 +6,6 @@ from pathlib import Path
 
 from matplotlib.animation import FFMpegWriter, FuncAnimation, PillowWriter
 
-from lib.data.adaptors.idx import Idx
 from lib.data.data_with_attrs import DataWithAttrs
 from lib.plotting.frame_data_traits import HasAxes, HasData
 from lib.plotting.hook import DrawMessage
@@ -21,11 +20,9 @@ def print_progress(current_frame: int, n_frames: int):
 
 
 class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
-    def __init__(self, renderer: Renderer[Data], data: Data):
-        super().__init__(renderer, data)
-        self.time_dim: str = self.data.metadata.time_dim
-
-        self.n_frames = len(data.coordss[data.metadata.time_dim])
+    def __init__(self, renderer: Renderer[Data], n_frames: int):
+        super().__init__(renderer)
+        self.n_frames = n_frames
 
     @dataclass(kw_only=True)
     class UpdateData(HasData, HasAxes): ...
@@ -35,12 +32,6 @@ class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
 
         # FIXME get blitting to work with the title
         self.anim = FuncAnimation(self.fig, self._next_frame, frames=self.n_frames, blit=False)
-
-    def _get_initial_data(self) -> DataWithAttrs:
-        return self._get_data_at_frame(0)
-
-    def _get_data_at_frame(self, frame: int) -> Data:
-        return Idx({self.time_dim: frame}).apply(self.data)
 
     def _next_frame(self, frame: int):
         self.renderer.update_plot_info(frame)

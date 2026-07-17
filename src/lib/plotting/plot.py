@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Literal
+from typing import Literal
 
 from matplotlib import pyplot as plt
 
@@ -18,9 +18,8 @@ type SaveFormat = Literal["mp4", "gif", "png"]
 class Plot[Data: DataWithAttrs](ABC):
     class AddHookData(HasHookList): ...
 
-    def __init__(self, renderer: Renderer[Data], data: Data):
+    def __init__(self, renderer: Renderer[Data]):
         self.renderer = renderer
-        self.data = data
         self.hooks: list[Hook] = []
 
         self._initialized = False
@@ -35,9 +34,6 @@ class Plot[Data: DataWithAttrs](ABC):
         self.post_init_fig(DrawMessage(plot_info=plot_info, axes=self.fig.axes[0], frame_data=self.renderer._get_data_at_frame(0)))
 
         self.fig.tight_layout()
-
-    @abstractmethod
-    def _get_initial_data(self) -> DataWithAttrs: ...
 
     def add_hook(self, hook: Hook):
         self.hooks.append(hook)
