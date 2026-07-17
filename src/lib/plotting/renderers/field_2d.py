@@ -20,9 +20,6 @@ class Field2dRenderer(Renderer[Field]):
     @dataclass(kw_only=True)
     class InitData(HasFieldData, HasAxes): ...
 
-    @dataclass(kw_only=True)
-    class UpdateData(HasFieldData, HasAxes): ...
-
     def _transpose(self, data: Field) -> Field:
         spatial_dims = data.metadata.spatial_dims
         return data.with_active_data(data.active_data.transpose(*reversed(spatial_dims)))
@@ -32,9 +29,6 @@ class Field2dRenderer(Renderer[Field]):
             data=frame_data,
             axes=ax,
         )
-
-    def make_update_data(self, ax: Axes, frame_data: Field) -> UpdateData:
-        return self.UpdateData(data=frame_data, axes=ax)
 
     def init_plot_info(self, full_data: Field, frame_data: Field) -> PlotInfo:
         [x_dim, y_dim] = frame_data.metadata.spatial_dims

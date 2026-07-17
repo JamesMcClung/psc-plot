@@ -18,18 +18,12 @@ class Field1dRenderer(Renderer[Field]):
     @dataclass(kw_only=True)
     class InitData(HasFieldData, HasLineType, HasAxes): ...
 
-    @dataclass(kw_only=True)
-    class UpdateData(HasFieldData, HasAxes): ...
-
     def make_init_data(self, fig: Figure, ax: Axes, frame_data: Field) -> InitData:
         return self.InitData(
             data=frame_data,
             axes=ax,
             line_type="-",
         )
-
-    def make_update_data(self, ax: Axes, frame_data: Field) -> UpdateData:
-        return self.UpdateData(data=frame_data, axes=ax)
 
     def init_plot_info(self, full_data: Field, frame_data: Field) -> PlotInfo:
         [x_dim] = frame_data.metadata.spatial_dims

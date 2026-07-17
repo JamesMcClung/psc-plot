@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 from matplotlib.animation import FFMpegWriter, FuncAnimation, PillowWriter
 
 from lib.data.adaptors.idx import Idx
 from lib.data.data_with_attrs import DataWithAttrs
+from lib.plotting.frame_data_traits import HasAxes, HasData
 from lib.plotting.plot import Plot, SaveFormat
 from lib.plotting.renderer import Renderer
 
@@ -24,6 +26,9 @@ class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
 
         self.n_frames = len(data.coordss[data.metadata.time_dim])
 
+    @dataclass(kw_only=True)
+    class UpdateData(HasData, HasAxes): ...
+
     def _initialize(self):
         super()._initialize()
 
@@ -38,7 +43,7 @@ class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
 
     def _next_frame(self, frame: int):
         frame_data = self._get_data_at_frame(frame)
-        update_data = self.renderer.make_update_data(None, frame_data)
+        update_data = self.UpdateData(axes=self.fig.axes[0], data=frame_data)
         self.pre_update_fig(update_data)
         self.renderer.update_plot_info(frame_data)
         self.post_update_fig(update_data)

@@ -15,9 +15,6 @@ class PolarFieldRenderer(Renderer[Field]):
     @dataclass(kw_only=True)
     class InitData(HasFieldData, HasAxes): ...
 
-    @dataclass(kw_only=True)
-    class UpdateData(HasFieldData, HasAxes): ...
-
     def subplot_kw(self) -> dict[str, Any]:
         return {"projection": "polar"}
 
@@ -26,9 +23,6 @@ class PolarFieldRenderer(Renderer[Field]):
             data=frame_data,
             axes=ax,
         )
-
-    def make_update_data(self, ax: Axes, frame_data: Field) -> UpdateData:
-        return self.UpdateData(data=frame_data, axes=ax)
 
     def init_plot_info(self, full_data: Field, frame_data: Field) -> PlotInfo:
         [r_dim, theta_dim] = frame_data.metadata.spatial_dims
