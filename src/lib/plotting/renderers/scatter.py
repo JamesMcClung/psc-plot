@@ -1,11 +1,9 @@
 from dataclasses import dataclass
 
-import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from lib.data.data_with_attrs import FullList
-from lib.plotting import plt_util
 from lib.plotting.frame_data_traits import (
     HasAxes,
     HasColorNorm,
@@ -35,16 +33,6 @@ class ScatterRenderer(Renderer[FullList]):
 
     def make_update_data(self, ax: Axes, frame_data: FullList) -> UpdateData:
         return self.UpdateData(data=frame_data, axes=ax)
-
-    def draw(self, ax: Axes, frame_data: FullList, update_data: UpdateData) -> None:
-        spatial_dims = frame_data.metadata.spatial_dims
-        df = frame_data.data
-
-        self.scatter.set_offsets(np.array([df[spatial_dims[0]], df[spatial_dims[1]]]).T)
-        plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.var_infos[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if isinstance(pos, float)])
-
-        if frame_data.metadata.color_dim:
-            self.scatter.set_array(df[frame_data.metadata.color_dim])
 
     def init_plot_info(self, full_data: FullList, frame_data: FullList) -> PlotInfo:
         [x_dim, y_dim] = frame_data.metadata.spatial_dims

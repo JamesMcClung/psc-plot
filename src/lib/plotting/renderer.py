@@ -20,9 +20,6 @@ class Renderer[Data: DataWithAttrs](ABC):
     def make_update_data(self, ax: Axes, frame_data: Data) -> Any:
         return None
 
-    def draw(self, ax: Axes, frame_data: Data, update_data: Any) -> None:
-        pass
-
     @abstractmethod
     def init_plot_info(self, full_data: Data, frame_data: Data) -> PlotInfo: ...
 

@@ -35,11 +35,6 @@ class Field1dRenderer(Renderer[Field]):
     def make_update_data(self, ax: Axes, frame_data: Field) -> UpdateData:
         return self.UpdateData(data=frame_data, axes=ax)
 
-    def draw(self, ax: Axes, frame_data: Field, update_data: UpdateData) -> None:
-        self.line.set_ydata(frame_data.active_data)
-
-        plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.var_infos[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
-
     def init_plot_info(self, full_data: Field, frame_data: Field) -> PlotInfo:
         [x_dim] = frame_data.metadata.spatial_dims
         y_dim = frame_data.metadata.active_key

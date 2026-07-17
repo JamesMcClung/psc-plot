@@ -6,7 +6,6 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from lib.data.data_with_attrs import Field
-from lib.plotting import plt_util
 from lib.plotting.frame_data_traits import HasAxes, HasColorNorm, HasFieldData, HasSpatialScales
 from lib.plotting.plot_info import PlotInfo, PolarMeshInfo
 from lib.plotting.renderer import Renderer
@@ -34,11 +33,6 @@ class PolarFieldRenderer(Renderer[Field]):
 
     def make_update_data(self, ax: Axes, frame_data: Field) -> UpdateData:
         return self.UpdateData(data=frame_data, axes=ax)
-
-    def draw(self, ax: Axes, frame_data: Field, update_data: UpdateData) -> None:
-        self.im.set_array(frame_data.active_data)
-
-        plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.var_infos[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
 
     def init_plot_info(self, full_data: Field, frame_data: Field) -> PlotInfo:
         [r_dim, theta_dim] = frame_data.metadata.spatial_dims
