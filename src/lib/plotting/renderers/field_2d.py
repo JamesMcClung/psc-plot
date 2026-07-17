@@ -1,11 +1,6 @@
-from dataclasses import dataclass
-
 import xarray as xr
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
 
 from lib.data.data_with_attrs import Field
-from lib.plotting.frame_data_traits import HasAxes, HasFieldData
 from lib.plotting.plot_info import ImageInfo, PlotInfo
 from lib.plotting.renderer import Renderer
 
@@ -17,18 +12,9 @@ def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
 
 
 class Field2dRenderer(Renderer[Field]):
-    @dataclass(kw_only=True)
-    class InitData(HasFieldData, HasAxes): ...
-
     def _transpose(self, data: Field) -> Field:
         spatial_dims = data.metadata.spatial_dims
         return data.with_active_data(data.active_data.transpose(*reversed(spatial_dims)))
-
-    def make_init_data(self, fig: Figure, ax: Axes, frame_data: Field) -> InitData:
-        return self.InitData(
-            data=frame_data,
-            axes=ax,
-        )
 
     def init_plot_info(self) -> PlotInfo:
         full_data = self.full_data

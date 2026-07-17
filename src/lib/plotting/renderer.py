@@ -1,10 +1,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
-
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
 
 from lib.data.adaptors.idx import Idx
 from lib.data.data_with_attrs import DataWithAttrs
@@ -23,9 +19,6 @@ class Renderer[Data: DataWithAttrs](ABC):
         if self.plot_target.time_dim:
             return Idx({self.plot_target.time_dim: frame}).apply(self.full_data)
         return self.full_data
-
-    @abstractmethod
-    def make_init_data(self, fig: Figure, ax: Axes, frame_data: Data) -> Any: ...
 
     @abstractmethod
     def init_plot_info(self) -> PlotInfo: ...

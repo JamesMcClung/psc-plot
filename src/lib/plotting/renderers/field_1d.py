@@ -1,30 +1,10 @@
-from dataclasses import dataclass
-
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
-
 from lib.data.data_with_attrs import Field
 from lib.plotting import plt_util
-from lib.plotting.frame_data_traits import (
-    HasAxes,
-    HasFieldData,
-    HasLineStyle,
-)
 from lib.plotting.plot_info import LineInfo, PlotInfo
 from lib.plotting.renderer import Renderer
 
 
 class Field1dRenderer(Renderer[Field]):
-    @dataclass(kw_only=True)
-    class InitData(HasFieldData, HasLineStyle, HasAxes): ...
-
-    def make_init_data(self, fig: Figure, ax: Axes, frame_data: Field) -> InitData:
-        return self.InitData(
-            data=frame_data,
-            axes=ax,
-            line_style="-",
-        )
-
     def init_plot_info(self) -> PlotInfo:
         full_data = self.full_data
         frame_data = self._get_data_at_frame(0)

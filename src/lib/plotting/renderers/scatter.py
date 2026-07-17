@@ -1,27 +1,9 @@
-from dataclasses import dataclass
-
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
-
 from lib.data.data_with_attrs import FullList
-from lib.plotting.frame_data_traits import (
-    HasAxes,
-    HasFullListData,
-)
 from lib.plotting.plot_info import PlotInfo, ScatterInfo
 from lib.plotting.renderer import Renderer
 
 
 class ScatterRenderer(Renderer[FullList]):
-    @dataclass(kw_only=True)
-    class InitData(HasFullListData, HasAxes): ...
-
-    def make_init_data(self, fig: Figure, ax: Axes, frame_data: FullList) -> InitData:
-        return self.InitData(
-            data=frame_data,
-            axes=ax,
-        )
-
     def init_plot_info(self) -> PlotInfo:
         full_data = self.full_data
         frame_data = self._get_data_at_frame(0)

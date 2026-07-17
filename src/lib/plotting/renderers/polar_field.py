@@ -1,25 +1,11 @@
-from dataclasses import dataclass
-
 import numpy as np
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
 
 from lib.data.data_with_attrs import Field
-from lib.plotting.frame_data_traits import HasAxes, HasFieldData
 from lib.plotting.plot_info import PlotInfo, PolarMeshInfo
 from lib.plotting.renderer import Renderer
 
 
 class PolarFieldRenderer(Renderer[Field]):
-    @dataclass(kw_only=True)
-    class InitData(HasFieldData, HasAxes): ...
-
-    def make_init_data(self, fig: Figure, ax: Axes, frame_data: Field) -> InitData:
-        return self.InitData(
-            data=frame_data,
-            axes=ax,
-        )
-
     def init_plot_info(self) -> PlotInfo:
         full_data = self.full_data
         frame_data = self._get_data_at_frame(0)
