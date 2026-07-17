@@ -1,11 +1,15 @@
+from abc import ABC, abstractmethod
 from dataclasses import KW_ONLY, dataclass, field
 
 type DimKey = str
 
 
 @dataclass
-class SpatialDims:
+class SpatialDims(ABC):
     ndims: int
+
+    @abstractmethod
+    def unpack(self) -> tuple[DimKey, DimKey]: ...
 
 
 @dataclass
@@ -14,12 +18,18 @@ class SpatialDimsXY(SpatialDims):
     y_dim: DimKey
     ndims: int = field(default=2, init=False)
 
+    def unpack(self):
+        return (self.x_dim, self.y_dim)
+
 
 @dataclass
 class SpatialDimsRTheta(SpatialDims):
     r_dim: DimKey
     theta_dim: DimKey
     ndims: int = field(default=2, init=False)
+
+    def unpack(self):
+        return (self.r_dim, self.theta_dim)
 
 
 @dataclass
