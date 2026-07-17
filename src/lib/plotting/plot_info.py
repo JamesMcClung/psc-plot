@@ -41,15 +41,15 @@ class PlotInfo:
         if attr_key in self._setter_callbacks:
             self._setter_callbacks[attr_key](value)
 
-    def get_title(self) -> str:
-        coord_labels = []
-        for dim, coord_val in self.scalar_coord_values.items():
-            dim_display = self.dim_displays.get(dim, f"\\text{{{dim}}}")
-            dim_unit = self.dim_units.get(dim, "")
-            maybe_space = "\\ " if dim_unit else ""
-            coord_labels.append(f"${dim_display} = {coord_val:.3f}{maybe_space}{dim_unit}$")
+    def get_coord_label(self, dim: DimKey) -> Latex:
+        display = self.dim_displays.get(dim, f"\\text{{{dim}}}")
+        coord_val = self.scalar_coord_values[dim]
+        unit = self.dim_units.get(dim, "")
+        maybe_space = "\\ " if unit else ""
+        return Latex(f"{display} = {coord_val:.3f}{maybe_space}{unit}")
 
-        coord_labels_str = ", ".join(coord_labels)
+    def get_title(self) -> str:
+        coord_labels_str = ", ".join(f"${self.get_coord_label(dim)}$" for dim in self.scalar_coord_values)
 
         if self.subject and coord_labels_str:
             return f"{self.subject} ({coord_labels_str})"
