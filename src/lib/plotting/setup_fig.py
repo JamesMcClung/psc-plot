@@ -107,20 +107,11 @@ def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
             plot_info._setter_callbacks["y_data"] = update_data
 
         if isinstance(plot_info, PlotInfo2D):
-            for dim, set_scale in [
-                (plot_info.x_dim, ax.set_xscale),
-                (plot_info.y_dim, ax.set_yscale),
-            ]:
-                update_scale = lambda _=None: set_scale(plot_info.dim_scales[dim].to_axis_scale())
-                plot_info._setter_callbacks[("dim_scales", dim)] = update_scale
-                update_scale(plot_info.dim_scales[dim])
+            ax.set_xscale(plot_info.dim_scales[plot_info.x_dim].to_axis_scale())
+            ax.set_yscale(plot_info.dim_scales[plot_info.y_dim].to_axis_scale())
 
-            for dim, set_bound in [
-                (plot_info.x_dim, ax.set_xbound),
-                (plot_info.y_dim, ax.set_ybound),
-            ]:
-                plot_info._setter_callbacks[("dim_bounds", dim)] = set_bound
-                set_bound(*plot_info.dim_bounds[dim])
+            ax.set_xbound(*plot_info.dim_bounds[plot_info.x_dim])
+            ax.set_ybound(*plot_info.dim_bounds[plot_info.y_dim])
 
         if isinstance(plot_info, (ScatterInfo, ImageInfo)):
             ax.set_aspect(1 / ax.get_data_ratio())
