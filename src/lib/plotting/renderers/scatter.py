@@ -7,16 +7,14 @@ from lib.data.data_with_attrs import FullList
 from lib.plotting.frame_data_traits import (
     HasAxes,
     HasFullListData,
-    HasSpatialScales,
 )
 from lib.plotting.plot_info import PlotInfo, ScatterInfo
 from lib.plotting.renderer import Renderer
-from lib.scale import LinearScale
 
 
 class ScatterRenderer(Renderer[FullList]):
     @dataclass(kw_only=True)
-    class InitData(HasFullListData, HasAxes, HasSpatialScales): ...
+    class InitData(HasFullListData, HasAxes): ...
 
     @dataclass(kw_only=True)
     class UpdateData(HasFullListData, HasAxes): ...
@@ -25,8 +23,6 @@ class ScatterRenderer(Renderer[FullList]):
         return self.InitData(
             data=frame_data,
             axes=ax,
-            spatial_scales=[LinearScale(), LinearScale()],
-            last_spatial_dim_is_dependent=True,
         )
 
     def make_update_data(self, ax: Axes, frame_data: FullList) -> UpdateData:

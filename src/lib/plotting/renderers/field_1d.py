@@ -9,16 +9,14 @@ from lib.plotting.frame_data_traits import (
     HasAxes,
     HasFieldData,
     HasLineType,
-    HasSpatialScales,
 )
 from lib.plotting.plot_info import LineInfo, PlotInfo
 from lib.plotting.renderer import Renderer
-from lib.scale import LinearScale
 
 
 class Field1dRenderer(Renderer[Field]):
     @dataclass(kw_only=True)
-    class InitData(HasFieldData, HasLineType, HasAxes, HasSpatialScales): ...
+    class InitData(HasFieldData, HasLineType, HasAxes): ...
 
     @dataclass(kw_only=True)
     class UpdateData(HasFieldData, HasAxes): ...
@@ -28,8 +26,6 @@ class Field1dRenderer(Renderer[Field]):
             data=frame_data,
             axes=ax,
             line_type="-",
-            spatial_scales=[LinearScale(), LinearScale()],
-            last_spatial_dim_is_dependent=True,
         )
 
     def make_update_data(self, ax: Axes, frame_data: Field) -> UpdateData:

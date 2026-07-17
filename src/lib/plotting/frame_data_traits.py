@@ -62,11 +62,5 @@ class HasAxes:
 
 
 @dataclass(kw_only=True)
-class HasSpatialScales:
-    spatial_scales: list[Scale]
-    last_spatial_dim_is_dependent: bool = False
-
-
-@dataclass(kw_only=True)
 class HasHookList:
     hooks: list[Hook]
