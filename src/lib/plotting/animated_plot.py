@@ -45,7 +45,7 @@ class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
         frame_data = self._get_data_at_frame(frame)
         update_data = self.UpdateData(axes=self.fig.axes[0], data=frame_data)
         self.pre_update_fig(update_data)
-        self.renderer.update_plot_info(frame_data)
+        self.renderer.update_plot_info(frame)
         self.post_update_fig(update_data)
         print_progress(frame, self.n_frames)
 

@@ -31,7 +31,7 @@ class Plot[Data: DataWithAttrs](ABC):
         self._initialized = True
 
         initial_data = self._get_initial_data()
-        plot_info = self.renderer.init_plot_info(self.data, initial_data)
+        plot_info = self.renderer.init_plot_info()
         self.fig = setup_fig(plot_info)
         init_data = self.renderer.make_init_data(None, self.fig.axes[0], initial_data)
 

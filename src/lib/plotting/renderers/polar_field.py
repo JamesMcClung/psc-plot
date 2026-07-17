@@ -20,7 +20,10 @@ class PolarFieldRenderer(Renderer[Field]):
             axes=ax,
         )
 
-    def init_plot_info(self, full_data: Field, frame_data: Field) -> PlotInfo:
+    def init_plot_info(self) -> PlotInfo:
+        full_data = self.full_data
+        frame_data = self._get_data_at_frame(0)
+
         [r_dim, theta_dim] = frame_data.metadata.spatial_dims
         color_dim = frame_data.metadata.active_key
 
@@ -71,6 +74,8 @@ class PolarFieldRenderer(Renderer[Field]):
 
         return self.plot_info
 
-    def update_plot_info(self, frame_data: Field):
+    def update_plot_info(self, frame: int):
+        frame_data = self._get_data_at_frame(frame)
+
         self.plot_info.set("data", frame_data.active_data)
         self.plot_info.set("scalar_coord_values", {dim: coord for dim, coord in frame_data.coordss.items() if coord.shape == ()})

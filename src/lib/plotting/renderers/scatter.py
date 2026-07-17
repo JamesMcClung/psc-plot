@@ -22,7 +22,10 @@ class ScatterRenderer(Renderer[FullList]):
             axes=ax,
         )
 
-    def init_plot_info(self, full_data: FullList, frame_data: FullList) -> PlotInfo:
+    def init_plot_info(self) -> PlotInfo:
+        full_data = self.full_data
+        frame_data = self._get_data_at_frame(0)
+
         [x_dim, y_dim] = frame_data.metadata.spatial_dims
 
         self.plot_info = ScatterInfo(
@@ -65,7 +68,9 @@ class ScatterRenderer(Renderer[FullList]):
 
         return self.plot_info
 
-    def update_plot_info(self, frame_data: FullList):
+    def update_plot_info(self, frame: int):
+        frame_data = self._get_data_at_frame(frame)
+
         [x_dim, y_dim] = frame_data.metadata.spatial_dims
 
         self.plot_info.set("x_data", frame_data.data[x_dim])
