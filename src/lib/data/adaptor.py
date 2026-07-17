@@ -37,7 +37,7 @@ class Adaptor(WorldAdaptor):
         elif isinstance(data, Field):
             return self.apply_field(data)
         else:
-            message = f"unrecognized data type: {data.__class__:r}"
+            message = f"unrecognized data type: {data.__class__!r}"
             raise Exception(message)
 
     def apply_list(self, data: List) -> DataWithAttrs:
