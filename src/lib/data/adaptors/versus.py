@@ -111,11 +111,7 @@ class Versus(MetadataAdaptor):
         reduce = Reduce(reduce_dims, "mean")
         data = reduce.apply(data)
 
-        return data.assign_metadata(
-            spatial_dims=self.spatial_dims.copy(),
-            time_dim=self._get_time_dim(data),
-            color_dim=self.color_dim,
-        )
+        return data
 
     def apply_list(self, data: List) -> List:
         # 1. coordinate transform
@@ -130,11 +126,7 @@ class Versus(MetadataAdaptor):
         if len(spatial_dims) == 1 and data.metadata.active_key is not None and data.metadata.active_key not in spatial_dims:
             spatial_dims.append(data.metadata.active_key)
 
-        return data.assign_metadata(
-            spatial_dims=spatial_dims,
-            time_dim=self._get_time_dim(data),
-            color_dim=self.color_dim,
-        )
+        return data
 
     def get_name_fragments(self) -> list[str]:
         dims = ",".join(self.spatial_dims)
