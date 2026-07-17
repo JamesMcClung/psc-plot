@@ -1,10 +1,9 @@
 from pathlib import Path
 
-from lib.data.data_with_attrs import DataWithAttrs
 from lib.plotting.plot import Plot, SaveFormat
 
 
-class StaticPlot[Data: DataWithAttrs](Plot[Data]):
+class StaticPlot(Plot):
     def allowed_save_formats(self) -> list[SaveFormat]:
         return ["png"]
 

@@ -15,10 +15,10 @@ from lib.plotting.setup_fig import setup_fig
 type SaveFormat = Literal["mp4", "gif", "png"]
 
 
-class Plot[Data: DataWithAttrs](ABC):
+class Plot(ABC):
     class AddHookData(HasHookList): ...
 
-    def __init__(self, renderer: Renderer[Data]):
+    def __init__(self, renderer: Renderer[DataWithAttrs]):
         self.renderer = renderer
         self.hooks: list[Hook] = []
 

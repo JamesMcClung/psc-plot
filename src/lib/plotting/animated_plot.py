@@ -19,8 +19,8 @@ def print_progress(current_frame: int, n_frames: int):
     print(f"frame {current_frame_padded}/{n_frames}", end=end)
 
 
-class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
-    def __init__(self, renderer: Renderer[Data], n_frames: int):
+class AnimatedPlot(Plot):
+    def __init__(self, renderer: Renderer[DataWithAttrs], n_frames: int):
         super().__init__(renderer)
         self.n_frames = n_frames
 
