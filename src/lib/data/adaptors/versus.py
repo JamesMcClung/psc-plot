@@ -17,10 +17,12 @@ class Versus(MetadataAdaptor):
         *,
         time_dim_rule: str | None | Literal["guess"],
         color_dim: str | None,
+        axes_idx: tuple[int, int] = (1, 1),
     ):
         self.spatial_dims = spatial_dims
         self.time_dim_rule = time_dim_rule
         self.color_dim = color_dim
+        self.axes_idx = axes_idx
 
     def _get_retained_dim_keys(self, data: DataWithAttrs) -> list[str]:
         retained_dims = self.spatial_dims.copy()
@@ -74,6 +76,7 @@ class Versus(MetadataAdaptor):
             spatial_dims=self._get_spatial_dims(data),
             color_dim=self._get_color_dim(data),
             time_dim=self._get_time_dim(data),
+            axes_index=self.axes_idx,
         )
         return replace(
             world,
@@ -144,20 +147,23 @@ class Versus(MetadataAdaptor):
 
 _TIME_PREFIX = "time="
 _COLOR_PREFIX = "color="
-_VERSUS_FORMAT = f"dim_key | {_TIME_PREFIX}[dim_key] | {_COLOR_PREFIX}dim_key"
+_AXES_IDX_PREFIX = "loc="
+_AXES_IDX_FORMAT = f"{_AXES_IDX_PREFIX}i,j"
+_VERSUS_FORMAT = f"dim_key | {_TIME_PREFIX}[dim_key] | {_COLOR_PREFIX}dim_key | {_AXES_IDX_FORMAT}"
 
 
 @arg_parser(
     dest="adaptors",
     flags=["--versus", "-v"],
     metavar=_VERSUS_FORMAT,
-    help=f"Specifies the independent axes of the plot. Remaining dimensions are reduced via arithmetic mean. Time has a special behavior: if {_TIME_PREFIX}[dim_key] is omitted, it is set to 't' if 't' is present in the data and isn't being used as a different axis. Disable this guessing by passing {_TIME_PREFIX} (with no dim_key).",
+    help=f"Specifies the independent axes of the plot. Remaining dimensions are reduced via arithmetic mean. Time has a special behavior: if {_TIME_PREFIX}[dim_key] is omitted, it is set to 't' if 't' is present in the data and isn't being used as a different axis. Disable this guessing by passing '{_TIME_PREFIX}' (with no dim_key). The special '{_AXES_IDX_FORMAT}' argument sets the 1-indexed location of the subplot in the figure grid, which is 1,1 by default.",
     nargs="+",
 )
 def parse_versus(args: list[str]) -> Versus:
     spatial_dims = []
     time_dim_rule = "guess"
     color_dim = None
+    axes_idx = 1, 1
     for arg in args:
         if arg.startswith(_TIME_PREFIX):
             time_dim_rule = arg.removeprefix(_TIME_PREFIX) or None
@@ -165,8 +171,14 @@ def parse_versus(args: list[str]) -> Versus:
         elif arg.startswith(_COLOR_PREFIX):
             color_dim = arg.removeprefix(_COLOR_PREFIX)
             parse_util.parse_identifier(color_dim, "color dim_key")
+        elif arg.startswith(_AXES_IDX_PREFIX):
+            axes_idx_arg = arg.removeprefix(_AXES_IDX_PREFIX)
+            i_arg, j_arg = parse_util.parse_assignment(axes_idx_arg, "i,j", delim=",")  # bit of a hack
+            i = parse_util.parse_number(i_arg, "i", int)
+            j = parse_util.parse_number(j_arg, "j", int)
+            axes_idx = i, j
         else:
             parse_util.parse_identifier(arg, "dim_key")
             spatial_dims.append(arg)
 
-    return Versus(spatial_dims, time_dim_rule=time_dim_rule, color_dim=color_dim)
+    return Versus(spatial_dims, time_dim_rule=time_dim_rule, color_dim=color_dim, axes_idx=axes_idx)
