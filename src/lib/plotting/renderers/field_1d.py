@@ -37,6 +37,7 @@ class Field1dRenderer(Renderer[Field]):
             y_data=frame_data.active_data,
             x_dim=x_dim,
             y_dim=y_dim,
+            time_dim=self.plot_target.time_dim,
             subject=frame_data.metadata.active_var_info.to_axis_label(),
             dim_scales={
                 x_dim: frame_data.metadata.var_infos[x_dim].scale,

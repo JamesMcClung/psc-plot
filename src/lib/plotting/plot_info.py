@@ -21,6 +21,7 @@ class PlotInfo:
     dim_bounds: dict[DimKey, tuple[float | None, float | None]] = field(default_factory=dict)
     dim_displays: dict[DimKey, Latex] = field(default_factory=dict)
     dim_units: dict[DimKey, Latex] = field(default_factory=dict)
+    time_dim: DimKey | None = None
     scalar_coord_values: dict[DimKey, float] = field(default_factory=dict)
     projection: Projection = field(default="rectilinear", init=False)
 

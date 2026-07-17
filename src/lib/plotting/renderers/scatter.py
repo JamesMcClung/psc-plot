@@ -33,6 +33,7 @@ class ScatterRenderer(Renderer[FullList]):
             y_data=frame_data.data[y_dim],
             x_dim=x_dim,
             y_dim=y_dim,
+            time_dim=self.plot_target.time_dim,
             subject=f"${frame_data.metadata.subject}$" if frame_data.metadata.subject else None,
             dim_scales={
                 x_dim: frame_data.metadata.var_infos[x_dim].scale,
