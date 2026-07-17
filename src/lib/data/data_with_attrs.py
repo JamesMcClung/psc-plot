@@ -20,10 +20,6 @@ from lib.var_info import VarInfo
 class Metadata:
     active_key: str | None = None
 
-    spatial_dims: list[str] = field(default_factory=list)
-    time_dim: str | None = None
-    color_dim: str | None = None
-
     var_infos: dict[str, VarInfo] = field(default_factory=dict)
     species: dict[str, SpeciesInfo] = field(default_factory=dict)
 
