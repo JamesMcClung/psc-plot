@@ -71,7 +71,7 @@ class ScatterRenderer(Renderer[FullList]):
 
         return self.plot_info
 
-    def update_plot_info(self, frame_data: FullList, update_data: UpdateData):
+    def update_plot_info(self, frame_data: FullList):
         [x_dim, y_dim] = frame_data.metadata.spatial_dims
 
         self.plot_info.set("x_data", frame_data.data[x_dim])

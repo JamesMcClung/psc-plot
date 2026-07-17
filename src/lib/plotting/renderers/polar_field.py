@@ -81,6 +81,6 @@ class PolarFieldRenderer(Renderer[Field]):
 
         return self.plot_info
 
-    def update_plot_info(self, frame_data: Field, update_data: UpdateData):
+    def update_plot_info(self, frame_data: Field):
         self.plot_info.set("data", frame_data.active_data)
         self.plot_info.set("scalar_coord_values", {dim: coord for dim, coord in frame_data.coordss.items() if coord.shape == ()})
