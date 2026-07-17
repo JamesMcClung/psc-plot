@@ -6,7 +6,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from lib.data.data_with_attrs import Field
-from lib.plotting.frame_data_traits import HasAxes, HasColorNorm, HasFieldData, HasSpatialScales
+from lib.plotting.frame_data_traits import HasAxes, HasFieldData, HasSpatialScales
 from lib.plotting.plot_info import PlotInfo, PolarMeshInfo
 from lib.plotting.renderer import Renderer
 from lib.scale import LinearScale
@@ -14,7 +14,7 @@ from lib.scale import LinearScale
 
 class PolarFieldRenderer(Renderer[Field]):
     @dataclass(kw_only=True)
-    class InitData(HasFieldData, HasSpatialScales, HasColorNorm, HasAxes): ...
+    class InitData(HasFieldData, HasSpatialScales, HasAxes): ...
 
     @dataclass(kw_only=True)
     class UpdateData(HasFieldData, HasAxes): ...
@@ -26,8 +26,6 @@ class PolarFieldRenderer(Renderer[Field]):
         return self.InitData(
             data=frame_data,
             spatial_scales=[LinearScale(), LinearScale()],
-            color_norm=LinearScale(),
-            color_is_dependent=True,
             axes=ax,
         )
 

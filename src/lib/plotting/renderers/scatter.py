@@ -6,7 +6,6 @@ from matplotlib.figure import Figure
 from lib.data.data_with_attrs import FullList
 from lib.plotting.frame_data_traits import (
     HasAxes,
-    HasColorNorm,
     HasFullListData,
     HasSpatialScales,
 )
@@ -17,7 +16,7 @@ from lib.scale import LinearScale
 
 class ScatterRenderer(Renderer[FullList]):
     @dataclass(kw_only=True)
-    class InitData(HasFullListData, HasAxes, HasSpatialScales, HasColorNorm): ...
+    class InitData(HasFullListData, HasAxes, HasSpatialScales): ...
 
     @dataclass(kw_only=True)
     class UpdateData(HasFullListData, HasAxes): ...
@@ -28,7 +27,6 @@ class ScatterRenderer(Renderer[FullList]):
             axes=ax,
             spatial_scales=[LinearScale(), LinearScale()],
             last_spatial_dim_is_dependent=True,
-            color_norm=LinearScale(),
         )
 
     def make_update_data(self, ax: Axes, frame_data: FullList) -> UpdateData:

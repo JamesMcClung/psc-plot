@@ -68,11 +68,5 @@ class HasSpatialScales:
 
 
 @dataclass(kw_only=True)
-class HasColorNorm:
-    color_norm: Scale
-    color_is_dependent: bool = False
-
-
-@dataclass(kw_only=True)
 class HasHookList:
     hooks: list[Hook]
