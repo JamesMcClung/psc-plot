@@ -38,33 +38,6 @@ class Field2dRenderer(Renderer[Field]):
             axes=ax,
         )
 
-    def init(self, fig: Figure, ax: Axes, full_data: Field, frame_data: Field, init_data: InitData) -> None:
-        spatial_dims = frame_data.metadata.spatial_dims
-        frame_data = self._transpose(frame_data)
-        da = frame_data.active_data
-
-        # must set scale (log, linear) before making image
-        ax.set_xscale(init_data.spatial_scales[0])
-        ax.set_yscale(init_data.spatial_scales[1])
-
-        self.im = ax.imshow(
-            da,
-            origin="lower",
-            extent=(*get_extent(da, spatial_dims[0]), *get_extent(da, spatial_dims[1])),
-            norm=init_data.color_norm,
-            interpolation="nearest",
-        )
-
-        fig.colorbar(self.im)
-        data_lower, data_upper = full_data.var_bounds
-        plt_util.update_cbar(self.im, data_min_override=data_lower, data_max_override=data_upper)
-
-        plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.var_infos[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
-
-        ax.set_aspect(1 / ax.get_data_ratio())
-        ax.set_xlabel(frame_data.metadata.var_infos[spatial_dims[0]].to_axis_label())
-        ax.set_ylabel(frame_data.metadata.var_infos[spatial_dims[1]].to_axis_label())
-
     def make_update_data(self, ax: Axes, frame_data: Field) -> UpdateData:
         return self.UpdateData(data=frame_data, axes=ax)
 

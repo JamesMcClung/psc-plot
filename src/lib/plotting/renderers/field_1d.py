@@ -32,23 +32,6 @@ class Field1dRenderer(Renderer[Field]):
             last_spatial_dim_is_dependent=True,
         )
 
-    def init(self, fig: Figure, ax: Axes, full_data: Field, frame_data: Field, init_data: InitData) -> None:
-        [dim_x] = frame_data.metadata.spatial_dims
-        xdata = frame_data.coordss[dim_x]
-        ydata = frame_data.active_data
-
-        [self.line] = ax.plot(xdata, ydata, init_data.line_type)
-
-        plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.var_infos[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
-        ax.set_xlabel(frame_data.metadata.var_infos[dim_x].to_axis_label())
-        ax.set_ylabel(frame_data.metadata.active_var_info.to_axis_label())
-
-        ax.set_xscale(init_data.spatial_scales[0])
-        ax.set_yscale(init_data.spatial_scales[1])
-
-        ymin, ymax = plt_util.symmetrize_bounds(*full_data.var_bounds)
-        ax.set_ybound(ymin, ymax)
-
     def make_update_data(self, ax: Axes, frame_data: Field) -> UpdateData:
         return self.UpdateData(data=frame_data, axes=ax)
 

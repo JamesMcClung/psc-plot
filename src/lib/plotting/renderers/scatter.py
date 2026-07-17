@@ -33,43 +33,6 @@ class ScatterRenderer(Renderer[FullList]):
             color_norm=LinearScale(),
         )
 
-    def init(self, fig: Figure, ax: Axes, full_data: FullList, frame_data: FullList, init_data: InitData) -> None:
-        [dim_x, dim_y] = frame_data.metadata.spatial_dims
-        df = frame_data.data
-
-        ax.set_xscale(init_data.spatial_scales[0])
-        ax.set_yscale(init_data.spatial_scales[1])
-
-        ax.set_xlabel(frame_data.metadata.var_infos[dim_x].to_axis_label())
-        ax.set_ylabel(frame_data.metadata.var_infos[dim_y].to_axis_label())
-
-        ax.set_xlim(*full_data.bounds(dim_x))
-        ax.set_ylim(*full_data.bounds(dim_y))
-
-        if frame_data.metadata.color_dim:
-            self.scatter = ax.scatter(
-                df[dim_x],
-                df[dim_y],
-                c=df[frame_data.metadata.color_dim],
-                norm=init_data.color_norm,
-                s=1,
-            )
-
-            fig.colorbar(self.scatter, label=frame_data.metadata.var_infos[frame_data.metadata.color_dim].to_axis_label())
-            data_lower, data_upper = full_data.bounds(frame_data.metadata.color_dim)
-            plt_util.update_cbar(self.scatter, data_min_override=data_lower, data_max_override=data_upper)
-        else:
-            self.scatter = ax.scatter(
-                df[dim_x],
-                df[dim_y],
-                color=ax._get_lines.get_next_color(),
-                s=0.5,
-            )
-
-        plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.var_infos[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if isinstance(pos, float)])
-
-        ax.set_aspect(1 / ax.get_data_ratio())
-
     def make_update_data(self, ax: Axes, frame_data: FullList) -> UpdateData:
         return self.UpdateData(data=frame_data, axes=ax)
 
