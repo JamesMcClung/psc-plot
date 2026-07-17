@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import sys
-from dataclasses import dataclass
 from pathlib import Path
 
 from matplotlib.animation import FFMpegWriter, FuncAnimation, PillowWriter
 
 from lib.data.data_with_attrs import DataWithAttrs
-from lib.plotting.frame_data_traits import HasAxes, HasData
 from lib.plotting.hook import DrawMessage
 from lib.plotting.plot import Plot, SaveFormat
 from lib.plotting.renderer import Renderer
@@ -23,9 +21,6 @@ class AnimatedPlot(Plot):
     def __init__(self, renderer: Renderer[DataWithAttrs], n_frames: int):
         super().__init__(renderer)
         self.n_frames = n_frames
-
-    @dataclass(kw_only=True)
-    class UpdateData(HasData, HasAxes): ...
 
     def _initialize(self):
         super()._initialize()
