@@ -6,6 +6,7 @@ from typing import Any
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
+from lib.data.adaptors.idx import Idx
 from lib.data.data_with_attrs import DataWithAttrs
 from lib.data.plot_target import PlotTarget
 from lib.plotting.plot_info import PlotInfo
@@ -15,6 +16,11 @@ class Renderer[Data: DataWithAttrs](ABC):
     def __init__(self, full_data: Data, plot_target: PlotTarget):
         self.full_data = full_data
         self.plot_target = plot_target
+
+    def _get_data_at_frame(self, frame: int) -> Data:
+        if self.plot_target.time_dim:
+            return Idx({self.plot_target.time_dim: frame}).apply(self.full_data)
+        return self.full_data
 
     @abstractmethod
     def make_init_data(self, fig: Figure, ax: Axes, frame_data: Data) -> Any: ...
