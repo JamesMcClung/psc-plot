@@ -10,7 +10,7 @@ class ScatterRenderer(Renderer[FullList]):
 
         [x_dim, y_dim] = frame_data.metadata.spatial_dims
 
-        self.plot_info = ScatterInfo(
+        plot_info = ScatterInfo(
             x_data=frame_data.data[x_dim],
             y_data=frame_data.data[y_dim],
             x_dim=x_dim,
@@ -37,19 +37,19 @@ class ScatterRenderer(Renderer[FullList]):
 
         for dim, coord in frame_data.coordss.items():
             if coord.shape == ():
-                self.plot_info.scalar_coord_values[dim] = coord
-                self.plot_info.dim_displays[dim] = frame_data.metadata.var_infos[dim].display
-                self.plot_info.dim_units[dim] = frame_data.metadata.var_infos[dim].unit
+                plot_info.scalar_coord_values[dim] = coord
+                plot_info.dim_displays[dim] = frame_data.metadata.var_infos[dim].display
+                plot_info.dim_units[dim] = frame_data.metadata.var_infos[dim].unit
 
         if color_dim := frame_data.metadata.color_dim:
-            self.plot_info.color_dim = color_dim
-            self.plot_info.color_data = frame_data.data[color_dim]
-            self.plot_info.dim_scales[color_dim] = frame_data.metadata.var_infos[color_dim].scale
-            self.plot_info.dim_bounds[color_dim] = full_data.bounds(color_dim)
-            self.plot_info.dim_displays[color_dim] = frame_data.metadata.var_infos[color_dim].display
-            self.plot_info.dim_units[color_dim] = frame_data.metadata.var_infos[color_dim].unit
+            plot_info.color_dim = color_dim
+            plot_info.color_data = frame_data.data[color_dim]
+            plot_info.dim_scales[color_dim] = frame_data.metadata.var_infos[color_dim].scale
+            plot_info.dim_bounds[color_dim] = full_data.bounds(color_dim)
+            plot_info.dim_displays[color_dim] = frame_data.metadata.var_infos[color_dim].display
+            plot_info.dim_units[color_dim] = frame_data.metadata.var_infos[color_dim].unit
 
-        return self.plot_info
+        return plot_info
 
     def update_plot_info(self, frame: int):
         frame_data = self._get_data_at_frame(frame)

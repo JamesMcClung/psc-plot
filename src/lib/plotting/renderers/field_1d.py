@@ -12,7 +12,7 @@ class Field1dRenderer(Renderer[Field]):
         [x_dim] = frame_data.metadata.spatial_dims
         y_dim = frame_data.metadata.active_key
 
-        self.plot_info = LineInfo(
+        plot_info = LineInfo(
             x_data=frame_data.coordss[x_dim],
             y_data=frame_data.active_data,
             x_dim=x_dim,
@@ -39,11 +39,11 @@ class Field1dRenderer(Renderer[Field]):
 
         for dim, coord in frame_data.coordss.items():
             if coord.shape == ():
-                self.plot_info.scalar_coord_values[dim] = coord
-                self.plot_info.dim_displays[dim] = frame_data.metadata.var_infos[dim].display
-                self.plot_info.dim_units[dim] = frame_data.metadata.var_infos[dim].unit
+                plot_info.scalar_coord_values[dim] = coord
+                plot_info.dim_displays[dim] = frame_data.metadata.var_infos[dim].display
+                plot_info.dim_units[dim] = frame_data.metadata.var_infos[dim].unit
 
-        return self.plot_info
+        return plot_info
 
     def update_plot_info(self, frame: int):
         frame_data = self._get_data_at_frame(frame)

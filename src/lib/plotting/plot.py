@@ -29,9 +29,8 @@ class Plot[Data: DataWithAttrs](ABC):
             return
         self._initialized = True
 
-        plot_info = self.renderer.init_plot_info()
-        self.fig = setup_fig(plot_info)
-        self.post_init_fig(DrawMessage(plot_info=plot_info, axes=self.fig.axes[0], frame_data=self.renderer._get_data_at_frame(0)))
+        self.fig = setup_fig(self.renderer.plot_info)
+        self.post_init_fig(DrawMessage(plot_info=self.renderer.plot_info, axes=self.fig.axes[0], frame_data=self.renderer._get_data_at_frame(0)))
 
         self.fig.tight_layout()
 

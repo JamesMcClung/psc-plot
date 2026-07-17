@@ -9,11 +9,10 @@ from lib.plotting.plot_info import PlotInfo
 
 
 class Renderer[Data: DataWithAttrs](ABC):
-    plot_info: PlotInfo  # TODO move into this base class
-
     def __init__(self, full_data: Data, plot_target: PlotTarget):
         self.full_data = full_data
         self.plot_target = plot_target
+        self.plot_info = self.init_plot_info()
 
     def _get_data_at_frame(self, frame: int) -> Data:
         if self.plot_target.time_dim:
