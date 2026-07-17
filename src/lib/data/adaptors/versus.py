@@ -1,9 +1,11 @@
+from dataclasses import replace
 from typing import Literal
 
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.adaptors.fourier import Fourier
 from lib.data.adaptors.reduce import Reduce
 from lib.data.data_with_attrs import DataWithAttrs, Field, List
+from lib.data.plot_target import PlotTarget, SpatialDims, SpatialDimsRTheta, SpatialDimsXY
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
@@ -42,6 +44,42 @@ class Versus(MetadataAdaptor):
             return "t"
 
         return None
+
+    def _get_spatial_dims(self, data: DataWithAttrs) -> SpatialDims:
+        spatial_dims = self.spatial_dims.copy()
+
+        if len(spatial_dims) == 1 and data.metadata.active_key:
+            spatial_dims.append(data.metadata.active_key)
+
+        if data.metadata.var_infos[spatial_dims[0]].geometry == "polar:r" and data.metadata.var_infos[spatial_dims[1]].geometry == "polar:theta":
+            return SpatialDimsRTheta(*spatial_dims)
+
+        return SpatialDimsXY(*spatial_dims)
+
+    def _get_color_dim(self, data: DataWithAttrs) -> str | None:
+        if isinstance(data, Field):
+            if self.color_dim:
+                message = f"Can't set color dim of field data"
+                raise ValueError(message)
+            if len(self.spatial_dims) == 2:
+                return data.metadata.active_key
+            return None
+
+        return self.color_dim
+
+    def apply_world(self, world):
+        data = self.apply(world.active_data)
+        new_plot_target = PlotTarget(
+            world.active_key,
+            spatial_dims=self._get_spatial_dims(data),
+            color_dim=self._get_color_dim(data),
+            time_dim=self._get_time_dim(data),
+        )
+        return replace(
+            world,
+            plot_targets=world.plot_targets + [new_plot_target],
+            datas=world.datas | {world.active_key: data},
+        )
 
     def apply_field(self, data: Field) -> Field:
         # 1. apply implicit coordinate transforms, as necessary
