@@ -10,6 +10,10 @@ from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, Po
 type AxesIdx = tuple[int, int]
 
 
+def _flatten_idx(axes_idx: tuple[int, int], ncols: int) -> int:
+    return ncols * (axes_idx[1] - 1) + axes_idx[0]
+
+
 def _setup_axes(figure: Figure, plot_infos: list[PlotInfo]) -> dict[AxesIdx, tuple[Axes, list[PlotInfo]]]:
     idx_to_infos: dict[AxesIdx, list[PlotInfo]] = {}
     for info in plot_infos:
@@ -24,8 +28,7 @@ def _setup_axes(figure: Figure, plot_infos: list[PlotInfo]) -> dict[AxesIdx, tup
         for info in infos[1:]:
             if info.projection != projection:
                 raise ValueError("incompatible plots (TODO: better error message)")
-        idx_flat = ncols * (idx[1] - 1) + idx[0]
-        ax = figure.add_subplot(nrows, ncols, idx_flat, projection=projection)
+        ax = figure.add_subplot(nrows, ncols, _flatten_idx(idx, ncols), projection=projection)
         ret[idx] = (ax, infos)
 
     return ret
