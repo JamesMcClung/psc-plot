@@ -33,6 +33,7 @@ class ScatterRenderer(Renderer[FullList]):
                 x_dim: frame_data.metadata.var_infos[x_dim].unit,
                 y_dim: frame_data.metadata.var_infos[y_dim].unit,
             },
+            axes_index=self.plot_target.axes_index,
         )
 
         for dim, coord in frame_data.coordss.items():

@@ -52,6 +52,7 @@ class Field2dRenderer(Renderer[Field]):
                 y_dim: frame_data.metadata.var_infos[y_dim].unit,
                 color_dim: frame_data.metadata.var_infos[color_dim].unit,
             },
+            axes_index=self.plot_target.axes_index,
         )
 
         for dim, coord in frame_data.coordss.items():

@@ -23,6 +23,8 @@ class PlotInfo:
     dim_units: dict[DimKey, Latex] = field(default_factory=dict)
     time_dim: DimKey | None = None
     scalar_coord_values: dict[DimKey, float] = field(default_factory=dict)
+
+    axes_index: tuple[int, int] = (1, 1)
     projection: Projection = field(default="rectilinear", init=False)
 
     _setter_callbacks: dict[AttrKey | tuple[AttrKey, DimKey], Callable[[Any], None]] = field(default_factory=dict, init=False)
