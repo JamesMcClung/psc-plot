@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Any
 
 from matplotlib.axes import Axes
 
@@ -16,9 +15,6 @@ class DrawMessage:
 
 
 class Hook(HasNameFragments):
-    def post_add_hook(self, add_data: Any):
-        pass
-
     def post_init_fig(self, message: DrawMessage):
         pass
 

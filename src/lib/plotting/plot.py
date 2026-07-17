@@ -7,7 +7,6 @@ from typing import Literal
 from matplotlib import pyplot as plt
 
 from lib.data.data_with_attrs import DataWithAttrs
-from lib.plotting.frame_data_traits import HasHookList
 from lib.plotting.hook import DrawMessage, Hook
 from lib.plotting.renderer import Renderer
 from lib.plotting.setup_fig import setup_fig
@@ -16,8 +15,6 @@ type SaveFormat = Literal["mp4", "gif", "png"]
 
 
 class Plot(ABC):
-    class AddHookData(HasHookList): ...
-
     def __init__(self, renderer: Renderer[DataWithAttrs]):
         self.renderer = renderer
         self.hooks: list[Hook] = []
@@ -36,11 +33,6 @@ class Plot(ABC):
 
     def add_hook(self, hook: Hook):
         self.hooks.append(hook)
-
-        post_add_data = Plot.AddHookData(hooks=self.hooks)
-
-        for hook in self.hooks.copy():  # hooks might reorder themselves
-            hook.post_add_hook(post_add_data)
 
     def show(self):
         self._initialize()
