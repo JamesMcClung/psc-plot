@@ -1,4 +1,6 @@
 from lib.data.data_with_attrs import DataWithAttrs, Field, List
+from lib.data.data_world import DataWorld
+from lib.data.plot_target import SpatialDimsRTheta, SpatialDimsXY
 from lib.plotting.animated_plot import AnimatedPlot
 from lib.plotting.plot import Plot
 from lib.plotting.renderer import Renderer
@@ -31,10 +33,38 @@ def _get_renderer(data: DataWithAttrs) -> Renderer:
     raise TypeError(f"unexpected data type: {type(data)}")
 
 
-def get_plot(data: DataWithAttrs) -> Plot:
-    renderer = _get_renderer(data)
+def get_plot(world: DataWorld) -> Plot:
+    renderer = get_renderers(world)[0]
 
-    if data.metadata.time_dim:
-        return AnimatedPlot(renderer, data)
+    if renderer.plot_target.time_dim:
+        return AnimatedPlot(renderer, renderer.full_data)
     else:
-        return StaticPlot(renderer, data)
+        return StaticPlot(renderer, renderer.full_data)
+
+
+def get_renderers(world: DataWorld) -> list[Renderer]:
+    renderers = []
+
+    for target in world.plot_targets:
+        data = world.datas[target.prefix]
+
+        if isinstance(data, Field):
+            if not target.color_dim:
+                renderers.append(Field1dRenderer(data, target))
+            elif isinstance(target.spatial_dims, SpatialDimsRTheta):
+                renderers.append(PolarFieldRenderer(data, target))
+            elif isinstance(target.spatial_dims, SpatialDimsXY):
+                renderers.append(Field2dRenderer(data, target))
+            else:
+                raise NotImplementedError("don't have 3D field plots yet")
+
+        elif isinstance(data, List):
+            if target.spatial_dims.ndims == 2:
+                renderers.append(ScatterRenderer(data, target))
+            else:
+                raise NotImplementedError(f"don't have {target.spatial_dims.ndims}D scatter plots yet")
+
+        else:
+            raise TypeError(f"unexpected data type: {type(data)}")
+
+    return renderers

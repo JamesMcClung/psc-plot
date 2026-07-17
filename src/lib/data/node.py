@@ -51,8 +51,8 @@ class PlotNode(DataProcessingNode[Plot]):
 
     @cache
     def pull(self) -> Plot:
-        data = self.input_node.pull()
-        plot = get_plot(data.active_data)
+        world = self.input_node.pull()
+        plot = get_plot(world)
 
         for hook in self.hooks:
             plot.add_hook(hook)
