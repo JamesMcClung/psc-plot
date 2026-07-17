@@ -1,6 +1,7 @@
 import xarray as xr
 
 from lib.data.data_with_attrs import Field
+from lib.data.plot_target import SpatialDimsXY
 from lib.plotting.plot_info import ImageInfo, PlotInfo
 from lib.plotting.renderer import Renderer
 
@@ -20,8 +21,8 @@ class Field2dRenderer(Renderer[Field]):
         full_data = self.full_data
         frame_data = self._get_data_at_frame(0)
 
-        [x_dim, y_dim] = frame_data.metadata.spatial_dims
-        color_dim = frame_data.metadata.active_key
+        [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
+        color_dim = self.plot_target.color_dim
 
         data = frame_data.active_data.transpose(y_dim, x_dim)
 
@@ -66,7 +67,7 @@ class Field2dRenderer(Renderer[Field]):
     def update_plot_info(self, frame: int):
         frame_data = self._get_data_at_frame(frame)
 
-        [x_dim, y_dim] = frame_data.metadata.spatial_dims
+        [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
         data = frame_data.active_data.transpose(y_dim, x_dim)
 
         self.plot_info.set("data", data)

@@ -8,7 +8,7 @@ class ScatterRenderer(Renderer[FullList]):
         full_data = self.full_data
         frame_data = self._get_data_at_frame(0)
 
-        [x_dim, y_dim] = frame_data.metadata.spatial_dims
+        [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
 
         plot_info = ScatterInfo(
             x_data=frame_data.data[x_dim],
@@ -42,7 +42,7 @@ class ScatterRenderer(Renderer[FullList]):
                 plot_info.dim_displays[dim] = frame_data.metadata.var_infos[dim].display
                 plot_info.dim_units[dim] = frame_data.metadata.var_infos[dim].unit
 
-        if color_dim := frame_data.metadata.color_dim:
+        if color_dim := self.plot_target.color_dim:
             plot_info.color_dim = color_dim
             plot_info.color_data = frame_data.data[color_dim]
             plot_info.dim_scales[color_dim] = frame_data.metadata.var_infos[color_dim].scale
@@ -55,7 +55,7 @@ class ScatterRenderer(Renderer[FullList]):
     def update_plot_info(self, frame: int):
         frame_data = self._get_data_at_frame(frame)
 
-        [x_dim, y_dim] = frame_data.metadata.spatial_dims
+        [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
 
         self.plot_info.set("x_data", frame_data.data[x_dim])
         self.plot_info.set("y_data", frame_data.data[y_dim])

@@ -10,8 +10,8 @@ class PolarFieldRenderer(Renderer[Field]):
         full_data = self.full_data
         frame_data = self._get_data_at_frame(0)
 
-        [r_dim, theta_dim] = frame_data.metadata.spatial_dims
-        color_dim = frame_data.metadata.active_key
+        [r_dim, theta_dim] = self.plot_target.spatial_dims.unpack()
+        color_dim = self.plot_target.color_dim
 
         theta_vertices = frame_data.coordss[theta_dim]
         theta_vertices = np.concat([theta_vertices, [theta_vertices[-1] + theta_vertices[1] - theta_vertices[0]]])

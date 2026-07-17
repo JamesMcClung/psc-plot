@@ -9,8 +9,7 @@ class Field1dRenderer(Renderer[Field]):
         full_data = self.full_data
         frame_data = self._get_data_at_frame(0)
 
-        [x_dim] = frame_data.metadata.spatial_dims
-        y_dim = frame_data.metadata.active_key
+        [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
 
         plot_info = LineInfo(
             x_data=frame_data.coordss[x_dim],
