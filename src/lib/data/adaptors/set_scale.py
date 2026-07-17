@@ -16,7 +16,6 @@ class SetScale(MetadataAdaptor):
         dim_name = self.dim_name or data.metadata.active_key
         new_var_infos = data.metadata.var_infos.copy()
         new_var_infos[dim_name] = replace(new_var_infos[dim_name], scale=self.scale)
-        print(new_var_infos[dim_name])
         return data.assign_metadata(var_infos=new_var_infos)
 
     def get_name_fragments(self) -> list[str]:

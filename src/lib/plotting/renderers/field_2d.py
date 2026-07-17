@@ -39,8 +39,6 @@ class Field2dRenderer(Renderer[Field]):
 
         data = frame_data.active_data.transpose(y_dim, x_dim)
 
-        print(frame_data.metadata.var_infos[color_dim].scale)
-
         self.plot_info = ImageInfo(
             data=data,
             x_dim=x_dim,
