@@ -11,9 +11,6 @@ from lib.plotting.plot_info import PlotInfo
 
 
 class Renderer[Data: DataWithAttrs](ABC):
-    def subplot_kw(self) -> dict[str, Any]:
-        return {}
-
     @abstractmethod
     def make_init_data(self, fig: Figure, ax: Axes, frame_data: Data) -> Any: ...
 

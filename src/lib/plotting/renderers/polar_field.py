@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Any
 
 import numpy as np
 from matplotlib.axes import Axes
@@ -14,9 +13,6 @@ from lib.plotting.renderer import Renderer
 class PolarFieldRenderer(Renderer[Field]):
     @dataclass(kw_only=True)
     class InitData(HasFieldData, HasAxes): ...
-
-    def subplot_kw(self) -> dict[str, Any]:
-        return {"projection": "polar"}
 
     def make_init_data(self, fig: Figure, ax: Axes, frame_data: Field) -> InitData:
         return self.InitData(
