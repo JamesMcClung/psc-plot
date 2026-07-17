@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.projections import PolarAxes
+from matplotlib.text import Text
 
 from lib.plotting import plt_util
 from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PolarMeshInfo, ScatterInfo
@@ -35,29 +36,29 @@ def _setup_axes(figure: Figure, plot_infos: list[PlotInfo]) -> dict[AxesIdx, tup
 
 
 class UpdateTitle:
-    def __init__(self, ax: Axes, plot_infos: list[PlotInfo]):
-        self.ax = ax
-        self.plot_infos = plot_infos
+    def __init__(self, text: Text, plot_info: PlotInfo):
+        self.text = text
+        self.plot_info = plot_info
 
     def __call__(self, *_):
-        assert len(self.plot_infos) == 1
-        self.ax.set_title(self.plot_infos[0].get_title())
+        self.text.set_text(self.plot_info.get_title())
 
 
 def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
     figure = plt.figure()
 
     for ax, infos in _setup_axes(figure, plot_infos).values():
+        if len(infos) == 1:
+            info = infos[0]
+            update_title = UpdateTitle(ax.title, info)
+            info._setter_callbacks["subject"] = update_title
+            info._setter_callbacks["dim_displays"] = update_title
+            info._setter_callbacks["dim_units"] = update_title
+            info._setter_callbacks["scalar_coord_values"] = update_title
+            update_title()
+
         assert len(infos) == 1  # TODO remove
         [plot_info] = infos
-
-        # note: must avoid lambdas in loop, since they don't capture
-        update_title = UpdateTitle(ax, infos)
-        plot_info._setter_callbacks["subject"] = update_title
-        plot_info._setter_callbacks["dim_displays"] = update_title
-        plot_info._setter_callbacks["dim_units"] = update_title
-        plot_info._setter_callbacks["scalar_coord_values"] = update_title
-        update_title()
 
         if isinstance(plot_info, PlotInfo2D):
             ax.set_xlabel(plot_info.get_dim_label(plot_info.x_dim))
