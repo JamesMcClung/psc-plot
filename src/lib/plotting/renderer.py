@@ -19,6 +19,11 @@ class Renderer[Data: DataWithAttrs](ABC):
             return Idx({self.plot_target.time_dim: frame}).apply(self.full_data)
         return self.full_data
 
+    def get_n_frames(self) -> int:
+        if self.plot_target.time_dim:
+            return len(self.full_data.coordss[self.plot_target.time_dim])
+        return 1
+
     @abstractmethod
     def init_plot_info(self) -> PlotInfo: ...
 
