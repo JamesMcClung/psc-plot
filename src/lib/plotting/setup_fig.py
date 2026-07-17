@@ -31,6 +31,16 @@ def _setup_axes(figure: Figure, plot_infos: list[PlotInfo]) -> dict[AxesIdx, tup
     return ret
 
 
+class UpdateTitle:
+    def __init__(self, ax: Axes, plot_infos: list[PlotInfo]):
+        self.ax = ax
+        self.plot_infos = plot_infos
+
+    def __call__(self, *_):
+        assert len(self.plot_infos) == 1
+        self.ax.set_title(self.plot_infos[0].get_title())
+
+
 def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
     figure = plt.figure()
 
@@ -38,7 +48,8 @@ def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
         assert len(infos) == 1  # TODO remove
         [plot_info] = infos
 
-        update_title = lambda _=None: ax.set_title(plot_info.get_title())
+        # note: must avoid lambdas in loop, since they don't capture
+        update_title = UpdateTitle(ax, infos)
         plot_info._setter_callbacks["subject"] = update_title
         plot_info._setter_callbacks["dim_displays"] = update_title
         plot_info._setter_callbacks["dim_units"] = update_title
