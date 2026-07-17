@@ -5,46 +5,35 @@ from lib.data.adaptors.pos import Pos
 from lib.data.data_with_attrs import DataWithAttrs, Field, List
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
-from lib.plotting.frame_data_traits import (
-    HasAxes,
-    HasData,
-    HasLineStyle,
-    assert_impl,
-    check_impl,
-)
 from lib.plotting.hook import Hook
+from lib.plotting.plot_info import LineInfo, ScatterInfo
 
 
 class Fit(Hook):
-    class InitData(HasData, HasAxes): ...
-
-    class UpdateData(HasData, HasAxes): ...
-
     def __init__(self, subdomain: slice):
         self.subdomain = subdomain
 
-    def pre_init_fig(self, init_data):
-        if check_impl(init_data, HasLineStyle) and init_data.line_style == "-":
-            init_data.line_style = "."
+    def post_init_fig(self, message):
+        if isinstance(message.plot_info, LineInfo) and message.plot_info.line_style == "-":
+            message.plot_info.set("line_style", ".")
 
-    def post_init_fig(self, init_data):
-        init_data = assert_impl(init_data, Fit.InitData)
+        assert isinstance(message.plot_info, (LineInfo, ScatterInfo))
 
-        x_data, y_data = self._get_xy_data(init_data.data)
+        x_data, y_data = self._get_xy_data(message.frame_data, message.plot_info.x_dim, message.plot_info.y_dim)
         fit_y_data, label = self._get_fit_y_data(x_data, y_data)
-        [self.line] = init_data.axes.plot(x_data, fit_y_data, "--", label=label, scalex=False, scaley=False)
+        [self.line] = message.axes.plot(x_data, fit_y_data, "--", label=label, scalex=False, scaley=False)
 
-        init_data.axes.legend()
+        message.axes.legend()
 
-    def post_update_fig(self, update_data):
-        update_data = assert_impl(update_data, Fit.UpdateData)
+    def post_update_fig(self, message):
+        assert isinstance(message.plot_info, (LineInfo, ScatterInfo))
 
-        x_data, y_data = self._get_xy_data(update_data.data)
+        x_data, y_data = self._get_xy_data(message.frame_data, message.plot_info.x_dim, message.plot_info.y_dim)
         fit_y_data, label = self._get_fit_y_data(x_data, y_data)
         self.line.set_data(x_data, fit_y_data)
         self.line.set_label(label)
 
-        update_data.axes.legend()  # in case label changed
+        message.axes.legend()  # in case label changed
 
     def _get_fit_y_data(self, x_data: np.ndarray, y_data: np.ndarray) -> tuple[np.ndarray, str]:
         x_log = np.log(x_data)
@@ -59,14 +48,13 @@ class Fit(Hook):
 
         return y_fit, label
 
-    def _get_xy_data(self, data: DataWithAttrs) -> tuple[np.ndarray, np.ndarray]:
-        spatial_dim = data.metadata.spatial_dims[0]
-        slicer = Pos({spatial_dim: self.subdomain})
+    def _get_xy_data(self, data: DataWithAttrs, x_dim: str, y_dim: str) -> tuple[np.ndarray, np.ndarray]:
+        slicer = Pos({x_dim: self.subdomain})
         data = slicer.apply(data)
         if isinstance(data, Field):
-            return (data.coordss[spatial_dim], data.active_data)
+            return (data.coordss[x_dim], data.data[y_dim])
         elif isinstance(data, List):
-            return (data.data[spatial_dim], data.data[data.metadata.spatial_dims[1]])
+            return (data.data[x_dim], data.data[y_dim])
 
 
 @arg_parser(

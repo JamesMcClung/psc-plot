@@ -9,6 +9,7 @@ from matplotlib.animation import FFMpegWriter, FuncAnimation, PillowWriter
 from lib.data.adaptors.idx import Idx
 from lib.data.data_with_attrs import DataWithAttrs
 from lib.plotting.frame_data_traits import HasAxes, HasData
+from lib.plotting.hook import DrawMessage
 from lib.plotting.plot import Plot, SaveFormat
 from lib.plotting.renderer import Renderer
 
@@ -42,11 +43,8 @@ class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
         return Idx({self.time_dim: frame}).apply(self.data)
 
     def _next_frame(self, frame: int):
-        frame_data = self._get_data_at_frame(frame)
-        update_data = self.UpdateData(axes=self.fig.axes[0], data=frame_data)
-        self.pre_update_fig(update_data)
         self.renderer.update_plot_info(frame)
-        self.post_update_fig(update_data)
+        self.post_update_fig(DrawMessage(plot_info=self.renderer.plot_info, axes=self.fig.axes[0], frame_data=self.renderer._get_data_at_frame(frame)))
         print_progress(frame, self.n_frames)
 
     def allowed_save_formats(self) -> list[SaveFormat]:

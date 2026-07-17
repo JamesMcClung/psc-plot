@@ -1,28 +1,18 @@
-from lib.data.data_with_attrs import Field
 from lib.parsing.args_registry import const_arg
-from lib.plotting.frame_data_traits import HasAxes, HasData, HasLineStyle, assert_impl
 from lib.plotting.hook import Hook
+from lib.plotting.plot_info import LineInfo
 
 
 class ShowInitial(Hook):
-    class PreInitData(HasData, HasAxes, HasLineStyle): ...
+    def post_init_fig(self, message):
+        assert isinstance(message.plot_info, LineInfo)
+        assert message.plot_info.time_dim
 
-    def pre_init_fig(self, init_data):
-        init_data = assert_impl(init_data, ShowInitial.PreInitData)
+        message.axes.plot(message.plot_info.x_data, message.plot_info.y_data, "-", label=message.plot_info.get_coord_label(message.plot_info.time_dim))
+        message.plot_info.set("line_style", "--")
 
-        data = init_data.data
-        xdata = data.coordss[data.dims[0]]
-        ydata = data.active_data if isinstance(data, Field) else data.data
-        time_dim = data.metadata.time_dim
-        init_data.axes.plot(xdata, ydata, "-", label=data.metadata.var_infos[time_dim].get_coordinate_label(data.coordss[time_dim]))
-
-        init_data.line_style = "--"
-
-    class PostInitData(HasAxes): ...
-
-    def post_init_fig(self, init_data):
-        init_data = assert_impl(init_data, ShowInitial.PostInitData)
-        init_data.axes.legend()
+    def post_init_fig(self, message):
+        message.axes.legend()
 
 
 @const_arg(
