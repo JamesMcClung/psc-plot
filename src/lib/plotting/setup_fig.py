@@ -57,14 +57,8 @@ def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
         update_title()
 
         if isinstance(plot_info, PlotInfo2D):
-            for dim, set_label in [
-                (plot_info.x_dim, ax.set_xlabel),
-                (plot_info.y_dim, ax.set_ylabel),
-            ]:
-                update_label = lambda _=None: set_label(plot_info.get_dim_label(dim))
-                plot_info._setter_callbacks[("dim_displays", dim)] = update_label
-                plot_info._setter_callbacks[("dim_units", dim)] = update_label
-                update_label()
+            ax.set_xlabel(plot_info.get_dim_label(plot_info.x_dim))
+            ax.set_ylabel(plot_info.get_dim_label(plot_info.y_dim))
 
         if isinstance(plot_info, LineInfo):
             [line] = ax.plot(plot_info.x_data, plot_info.y_data, linestyle=plot_info.line_style, scalex=False, scaley=False)
