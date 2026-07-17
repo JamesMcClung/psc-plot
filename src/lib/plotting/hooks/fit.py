@@ -8,7 +8,7 @@ from lib.parsing.args_registry import arg_parser
 from lib.plotting.frame_data_traits import (
     HasAxes,
     HasData,
-    HasLineType,
+    HasLineStyle,
     assert_impl,
     check_impl,
 )
@@ -24,8 +24,8 @@ class Fit(Hook):
         self.subdomain = subdomain
 
     def pre_init_fig(self, init_data):
-        if check_impl(init_data, HasLineType) and init_data.line_type == "-":
-            init_data.line_type = "."
+        if check_impl(init_data, HasLineStyle) and init_data.line_style == "-":
+            init_data.line_style = "."
 
     def post_init_fig(self, init_data):
         init_data = assert_impl(init_data, Fit.InitData)

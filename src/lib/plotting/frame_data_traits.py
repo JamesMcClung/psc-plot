@@ -2,11 +2,11 @@ from dataclasses import dataclass
 from typing import Any, TypeGuard
 
 from matplotlib.axes import Axes
+from matplotlib.typing import LineStyleType
 
 from lib.data.compatability import isinstance2
 from lib.data.data_with_attrs import Field, FullList, List
 from lib.plotting.hook import Hook
-from lib.scale import Scale
 
 
 def check_impl[T](data: Any, data_type: type[T]) -> TypeGuard[T]:
@@ -52,8 +52,8 @@ class HasFullListData:
 
 
 @dataclass(kw_only=True)
-class HasLineType:
-    line_type: str
+class HasLineStyle:
+    line_style: LineStyleType
 
 
 @dataclass(kw_only=True)

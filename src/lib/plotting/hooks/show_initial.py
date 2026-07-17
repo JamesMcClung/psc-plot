@@ -1,11 +1,11 @@
 from lib.data.data_with_attrs import Field
 from lib.parsing.args_registry import const_arg
-from lib.plotting.frame_data_traits import HasAxes, HasData, HasLineType, assert_impl
+from lib.plotting.frame_data_traits import HasAxes, HasData, HasLineStyle, assert_impl
 from lib.plotting.hook import Hook
 
 
 class ShowInitial(Hook):
-    class PreInitData(HasData, HasAxes, HasLineType): ...
+    class PreInitData(HasData, HasAxes, HasLineStyle): ...
 
     def pre_init_fig(self, init_data):
         init_data = assert_impl(init_data, ShowInitial.PreInitData)
@@ -16,7 +16,7 @@ class ShowInitial(Hook):
         time_dim = data.metadata.time_dim
         init_data.axes.plot(xdata, ydata, "-", label=data.metadata.var_infos[time_dim].get_coordinate_label(data.coordss[time_dim]))
 
-        init_data.line_type = "--"
+        init_data.line_style = "--"
 
     class PostInitData(HasAxes): ...
 

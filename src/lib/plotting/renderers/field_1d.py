@@ -8,7 +8,7 @@ from lib.plotting import plt_util
 from lib.plotting.frame_data_traits import (
     HasAxes,
     HasFieldData,
-    HasLineType,
+    HasLineStyle,
 )
 from lib.plotting.plot_info import LineInfo, PlotInfo
 from lib.plotting.renderer import Renderer
@@ -16,13 +16,13 @@ from lib.plotting.renderer import Renderer
 
 class Field1dRenderer(Renderer[Field]):
     @dataclass(kw_only=True)
-    class InitData(HasFieldData, HasLineType, HasAxes): ...
+    class InitData(HasFieldData, HasLineStyle, HasAxes): ...
 
     def make_init_data(self, fig: Figure, ax: Axes, frame_data: Field) -> InitData:
         return self.InitData(
             data=frame_data,
             axes=ax,
-            line_type="-",
+            line_style="-",
         )
 
     def init_plot_info(self) -> PlotInfo:
