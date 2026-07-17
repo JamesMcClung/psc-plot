@@ -12,12 +12,13 @@ from lib.plotting.static_plot import StaticPlot
 
 
 def get_plot(world: DataWorld) -> Plot:
-    renderer = get_renderers(world)[0]
+    renderers = get_renderers(world)
+    n_frames = max(r.get_n_frames() for r in renderers)
 
-    if renderer.plot_target.time_dim:
-        return AnimatedPlot(renderer, renderer.get_n_frames())
+    if n_frames > 1:
+        return AnimatedPlot(renderers, n_frames)
     else:
-        return StaticPlot(renderer)
+        return StaticPlot(renderers)
 
 
 def get_renderers(world: DataWorld) -> list[Renderer]:

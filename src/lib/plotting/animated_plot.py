@@ -29,8 +29,9 @@ class AnimatedPlot(Plot):
         self.anim = FuncAnimation(self.fig, self._next_frame, frames=self.n_frames, blit=False)
 
     def _next_frame(self, frame: int):
-        self.renderer.update_plot_info(frame)
-        self.post_update_fig(DrawMessage(plot_info=self.renderer.plot_info, axes=self.fig.axes[0], frame_data=self.renderer._get_data_at_frame(frame)))
+        for renderer in self.renderers:
+            renderer.update_plot_info(frame)
+        self.post_update_fig(DrawMessage(plot_info=self.renderers[0].plot_info, axes=self.fig.axes[0], frame_data=self.renderers[0]._get_data_at_frame(frame)))
         print_progress(frame, self.n_frames)
 
     def allowed_save_formats(self) -> list[SaveFormat]:

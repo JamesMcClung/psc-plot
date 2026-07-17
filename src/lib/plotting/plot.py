@@ -15,8 +15,8 @@ type SaveFormat = Literal["mp4", "gif", "png"]
 
 
 class Plot(ABC):
-    def __init__(self, renderer: Renderer[DataWithAttrs]):
-        self.renderer = renderer
+    def __init__(self, renderers: list[Renderer[DataWithAttrs]]):
+        self.renderers = renderers
         self.hooks: list[Hook] = []
 
         self._initialized = False
@@ -26,8 +26,9 @@ class Plot(ABC):
             return
         self._initialized = True
 
-        self.fig = setup_fig(self.renderer.plot_info)
-        self.post_init_fig(DrawMessage(plot_info=self.renderer.plot_info, axes=self.fig.axes[0], frame_data=self.renderer._get_data_at_frame(0)))
+        self.fig = setup_fig([r.plot_info for r in self.renderers])
+        # TODO hooks should be per-renderer; for now, just apply them to the 1st one
+        self.post_init_fig(DrawMessage(plot_info=self.renderers[0].plot_info, axes=self.fig.axes[0], frame_data=self.renderers[0]._get_data_at_frame(0)))
 
         self.fig.tight_layout()
 
