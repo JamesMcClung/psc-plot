@@ -9,8 +9,8 @@ from matplotlib import pyplot as plt
 from lib.data.data_with_attrs import DataWithAttrs
 from lib.plotting.frame_data_traits import HasHookList
 from lib.plotting.hook import Hook
-from lib.plotting.plot_info import setup_fig
 from lib.plotting.renderer import Renderer
+from lib.plotting.setup_fig import setup_fig
 
 type SaveFormat = Literal["mp4", "gif", "png"]
 
