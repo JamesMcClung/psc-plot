@@ -16,6 +16,7 @@ class Renderer[Data: DataWithAttrs](ABC):
 
     def _get_data_at_frame(self, frame: int) -> Data:
         if self.plot_target.time_dim:
+            frame = min(frame, self.get_n_frames() - 1)
             return Idx({self.plot_target.time_dim: frame}).apply(self.full_data)
         return self.full_data
 
