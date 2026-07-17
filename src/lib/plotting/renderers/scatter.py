@@ -83,7 +83,7 @@ class ScatterRenderer(Renderer[FullList]):
         if frame_data.metadata.color_dim:
             self.scatter.set_array(df[frame_data.metadata.color_dim])
 
-    def init_plot_info(self, full_data: FullList, frame_data: FullList, init_data: InitData) -> PlotInfo:
+    def init_plot_info(self, full_data: FullList, frame_data: FullList) -> PlotInfo:
         [x_dim, y_dim] = frame_data.metadata.spatial_dims
 
         self.plot_info = ScatterInfo(

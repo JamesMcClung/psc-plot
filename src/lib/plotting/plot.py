@@ -31,12 +31,13 @@ class Plot[Data: DataWithAttrs](ABC):
         self._initialized = True
 
         initial_data = self._get_initial_data()
-        init_data = self.renderer.make_init_data(None, None, initial_data)
-        self.pre_init_fig(init_data)
-        plot_info = self.renderer.init_plot_info(self.data, initial_data, init_data)
+        plot_info = self.renderer.init_plot_info(self.data, initial_data)
         self.fig = setup_fig(plot_info)
-        init_data.axes = self.fig.axes[0]
+        init_data = self.renderer.make_init_data(None, self.fig.axes[0], initial_data)
+
+        self.pre_init_fig(init_data)
         self.post_init_fig(init_data)
+
         self.fig.tight_layout()
 
     @abstractmethod

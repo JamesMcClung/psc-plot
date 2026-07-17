@@ -57,7 +57,7 @@ class Field1dRenderer(Renderer[Field]):
 
         plt_util.update_title(ax, frame_data.metadata, [frame_data.metadata.var_infos[dim].get_coordinate_label(pos) for dim, pos in frame_data.coordss.items() if pos.shape == ()])
 
-    def init_plot_info(self, full_data: Field, frame_data: Field, init_data: InitData) -> PlotInfo:
+    def init_plot_info(self, full_data: Field, frame_data: Field) -> PlotInfo:
         [x_dim] = frame_data.metadata.spatial_dims
         y_dim = frame_data.metadata.active_key
 
