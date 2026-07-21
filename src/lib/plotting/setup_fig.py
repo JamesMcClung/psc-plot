@@ -72,6 +72,12 @@ class AxesManager(ABC):
     def setup_labels(self): ...
 
     @abstractmethod
+    def setup_scales(self): ...
+
+    @abstractmethod
+    def setup_bounds(self): ...
+
+    @abstractmethod
     def setup_data(self): ...
 
 
@@ -179,6 +185,9 @@ class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarAxes, PolarMeshInfo]):
 
     def setup_labels(self):
         # FIXME make the labels work
+        pass
+
+    def setup_bounds(self):
         pass
 
     def setup_scales(self):
