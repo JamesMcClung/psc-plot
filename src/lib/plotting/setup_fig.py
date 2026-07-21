@@ -129,6 +129,8 @@ class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
         self.setup_scales()
         self.setup_bounds()
 
+        self.ax.set_aspect(1 / self.ax.get_data_ratio())
+
 
 class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
     def setup_data(self):
@@ -159,6 +161,8 @@ class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
 
         self.setup_scales()
         self.setup_bounds()
+
+        self.ax.set_aspect(1 / self.ax.get_data_ratio())
 
 
 class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarAxes, PolarMeshInfo]):
@@ -205,11 +209,5 @@ def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
         manager.setup_title()
         manager.setup_labels()
         manager.setup_data()
-
-        assert len(infos) == 1  # TODO remove
-        [plot_info] = infos
-
-        if isinstance(plot_info, (ScatterInfo, ImageInfo)):
-            ax.set_aspect(1 / ax.get_data_ratio())
 
     return figure
