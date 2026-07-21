@@ -52,6 +52,24 @@ def _one_or_none(objs: Iterable[Any], key: AttrKey | tuple[AttrKey, DimKey] | No
     return None
 
 
+def find_widest_bounds(boundss: Iterable[tuple[float | None, float | None]]) -> tuple[float | None, float | None]:
+    lowest_bound = None
+    highest_bound = None
+
+    for bounds in boundss:
+        if lowest_bound is None:
+            lowest_bound = bounds[0]
+        elif bounds[0] is not None and lowest_bound > bounds[0]:
+            lowest_bound = bounds[0]
+
+        if highest_bound is None:
+            highest_bound = bounds[1]
+        elif bounds[1] is not None and highest_bound < bounds[1]:
+            highest_bound = bounds[1]
+
+    return (lowest_bound, highest_bound)
+
+
 class UpdateText:
     def __init__(self, text: Text, plot_info: PlotInfo):
         self.text = text
