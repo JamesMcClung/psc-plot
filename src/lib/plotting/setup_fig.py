@@ -174,15 +174,17 @@ class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarAxes, PolarMeshInfo]):
     def setup(self):
         self.setup_title()
         self.setup_labels()
+        self.setup_scales()
         self.setup_data()
 
     def setup_labels(self):
         # FIXME make the labels work
         pass
 
-    def setup_data(self):
+    def setup_scales(self):
         self.ax.set_rscale(self.info.dim_scales[self.info.r_dim].to_axis_scale())
 
+    def setup_data(self):
         image = self.ax.pcolormesh(
             *np.meshgrid(self.info.theta_vertices, self.info.r_vertices),
             self.info.data,
