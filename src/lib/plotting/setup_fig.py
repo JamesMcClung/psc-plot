@@ -91,6 +91,14 @@ class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[Axes, PI2D]):
         self.ax.set_xlabel(self.info.get_dim_label(self.info.x_dim))
         self.ax.set_ylabel(self.info.get_dim_label(self.info.y_dim))
 
+    def setup_scales(self):
+        self.ax.set_xscale(self.info.dim_scales[self.info.x_dim].to_axis_scale())
+        self.ax.set_yscale(self.info.dim_scales[self.info.y_dim].to_axis_scale())
+
+    def setup_bounds(self):
+        self.ax.set_xbound(*self.info.dim_bounds[self.info.x_dim])
+        self.ax.set_ybound(*self.info.dim_bounds[self.info.y_dim])
+
 
 class AxesManagerSingleLine(AxesManagerSingle2D[LineInfo]):
     def setup_data(self):
@@ -98,6 +106,9 @@ class AxesManagerSingleLine(AxesManagerSingle2D[LineInfo]):
         self.info._setter_callbacks["x_data"] = line.set_xdata
         self.info._setter_callbacks["y_data"] = line.set_ydata
         self.info._setter_callbacks["line_style"] = line.set_linestyle
+
+        self.setup_scales()
+        self.setup_bounds()
 
 
 class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
@@ -114,6 +125,9 @@ class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
         self.ax.figure.colorbar(image)
         data_lower, data_upper = self.info.dim_bounds[self.info.color_dim]
         plt_util.update_cbar(image, data_min_override=data_lower, data_max_override=data_upper)
+
+        self.setup_scales()
+        self.setup_bounds()
 
 
 class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
@@ -142,6 +156,9 @@ class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
         update_data = lambda _=None: scatter.set_offsets(np.array([self.info.x_data, self.info.y_data]).T)
         self.info._setter_callbacks["x_data"] = update_data
         self.info._setter_callbacks["y_data"] = update_data
+
+        self.setup_scales()
+        self.setup_bounds()
 
 
 class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarAxes, PolarMeshInfo]):
@@ -191,13 +208,6 @@ def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
 
         assert len(infos) == 1  # TODO remove
         [plot_info] = infos
-
-        if isinstance(plot_info, PlotInfo2D):
-            ax.set_xscale(plot_info.dim_scales[plot_info.x_dim].to_axis_scale())
-            ax.set_yscale(plot_info.dim_scales[plot_info.y_dim].to_axis_scale())
-
-            ax.set_xbound(*plot_info.dim_bounds[plot_info.x_dim])
-            ax.set_ybound(*plot_info.dim_bounds[plot_info.y_dim])
 
         if isinstance(plot_info, (ScatterInfo, ImageInfo)):
             ax.set_aspect(1 / ax.get_data_ratio())
