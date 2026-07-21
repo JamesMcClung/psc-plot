@@ -39,10 +39,13 @@ def _setup_axes(figure: Figure, plot_infos: list[PlotInfo]) -> dict[AxesIdx, tup
 
 
 def _one_or_none[T](objs: Iterable[T]) -> T | None:
-    vals = set(objs)
-    if len(vals) == 1:
-        return vals.pop()
-    return None
+    one = None
+    for obj in objs:
+        if one is None:
+            one = obj
+        elif obj != one:
+            return None
+    return one
 
 
 def find_widest_bounds(boundss: Iterable[tuple[float | None, float | None]]) -> tuple[float | None, float | None]:
