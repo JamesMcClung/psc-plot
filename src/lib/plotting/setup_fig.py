@@ -52,7 +52,7 @@ def _one_or_none(objs: Iterable[Any], key: AttrKey | tuple[AttrKey, DimKey] | No
     return None
 
 
-class UpdateTitle:
+class UpdateText:
     def __init__(self, text: Text, plot_info: PlotInfo):
         self.text = text
         self.plot_info = plot_info
@@ -81,7 +81,7 @@ class AxesManagerSingle[A: Axes, PI: PlotInfo](AxesManager):
         self.info = info
 
     def setup_title(self):
-        update_title = UpdateTitle(self.ax.title, self.info)
+        update_title = UpdateText(self.ax.title, self.info)
         self.info._setter_callbacks["subject"] = update_title
         self.info._setter_callbacks["dim_displays"] = update_title
         self.info._setter_callbacks["dim_units"] = update_title
