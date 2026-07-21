@@ -60,18 +60,22 @@ class UpdateTitle:
         self.text.set_text(self.plot_info.get_title())
 
 
+def setup_title(ax: Axes, infos: list[PlotInfo]):
+    if len(infos) == 1:
+        info = infos[0]
+        update_title = UpdateTitle(ax.title, info)
+        info._setter_callbacks["subject"] = update_title
+        info._setter_callbacks["dim_displays"] = update_title
+        info._setter_callbacks["dim_units"] = update_title
+        info._setter_callbacks["scalar_coord_values"] = update_title
+        update_title()
+
+
 def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
     figure = plt.figure()
 
     for ax, infos in _setup_axes(figure, plot_infos).values():
-        if len(infos) == 1:
-            info = infos[0]
-            update_title = UpdateTitle(ax.title, info)
-            info._setter_callbacks["subject"] = update_title
-            info._setter_callbacks["dim_displays"] = update_title
-            info._setter_callbacks["dim_units"] = update_title
-            info._setter_callbacks["scalar_coord_values"] = update_title
-            update_title()
+        setup_title(ax, infos)
 
         assert len(infos) == 1  # TODO remove
         [plot_info] = infos
