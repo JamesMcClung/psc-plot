@@ -42,12 +42,19 @@ class FieldLoaderBp(Loader):
             preprocess=_decode_psc,
             parallel=True,
         )
+
+        data = {key: ds[key] for key in ds.data_vars}
+        var_infos = {key: lookup(self.prefix, key) for key in ds.variables}
+
         if self.active_key is not None:
-            derive_field_variable(ds, self.active_key, self.prefix)
-        var_info = {key: lookup(self.prefix, key) for key in ds.variables}
-        metadata = FieldMetadata(
-            active_key=self.active_key,
-            prefix=self.prefix,
-            var_infos=var_info,
+            derive_field_variable(data, self.active_key, self.prefix)
+            var_infos[self.active_key] = lookup(self.prefix, self.active_key)
+
+        return Field(
+            data,
+            FieldMetadata(
+                active_key=self.active_key,
+                prefix=self.prefix,
+                var_infos=var_infos,
+            ),
         )
-        return Field(ds, metadata)

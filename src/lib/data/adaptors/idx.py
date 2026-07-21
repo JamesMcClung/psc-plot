@@ -10,7 +10,7 @@ class Idx(MetadataAdaptor):
         self.dim_names_to_isel = dim_names_to_isel
 
     def apply_field(self, data: Field) -> Field:
-        return data.assign_data(data.data.isel(self.dim_names_to_isel))
+        return data.with_active_data(data.active_data.isel(self.dim_names_to_isel))
 
     def apply_list(self, data: List) -> List:
         coordss = data.coordss.copy()

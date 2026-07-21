@@ -21,7 +21,7 @@ class DerivedFieldVariable:
         self.base_var_names = base_var_names
         self.derive = derive
 
-    def assign_to(self, ds: xr.Dataset):
+    def assign_to(self, ds: dict[str, xr.DataArray]):
         ds[self.name] = self.derive(*(ds[base_var_name] for base_var_name in self.base_var_names))
 
     def __repr__(self) -> str:
@@ -45,8 +45,8 @@ def derived_field_variable(prefix: str):
     return derived_field_variable_inner
 
 
-def derive_field_variable(ds: xr.Dataset, active_key: str, ds_prefix: str):
-    if active_key in ds.variables:
+def derive_field_variable(ds: dict[str, xr.DataArray], active_key: str, ds_prefix: str):
+    if active_key in ds:
         return
     elif active_key in DERIVED_FIELD_VARIABLES[ds_prefix]:
         derived_var = DERIVED_FIELD_VARIABLES[ds_prefix][active_key]
@@ -55,6 +55,6 @@ def derive_field_variable(ds: xr.Dataset, active_key: str, ds_prefix: str):
         derived_var.assign_to(ds)
     else:
         message = f"""No variable named '{active_key}'.
-The following variables are defined:    {list(ds.variables)}.
+The following variables are defined:    {list(ds)}.
 The following variables can be derived: {list(DERIVED_FIELD_VARIABLES[ds_prefix])}."""
         raise ValueError(message)
