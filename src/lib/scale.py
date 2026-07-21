@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from typing import Literal, Self
 
 from matplotlib.colors import Normalize, SymLogNorm
@@ -17,6 +18,7 @@ type ScaleKey = Literal["linear", "log", "symlog"]
 SCALE_KEYS: tuple[ScaleKey, ...] = ScaleKey.__value__.__args__
 
 
+@dataclass(frozen=True, unsafe_hash=True)
 class Scale:
     scale_key: ScaleKey
 
@@ -46,20 +48,23 @@ class Scale:
 SCALE_TYPES: list[Scale] = []  # automatically populated with subclasses
 
 
+@dataclass(frozen=True, unsafe_hash=True)
 class LinearScale(Scale):
-    scale_key = "linear"
+    scale_key: ScaleKey = field(init=False, default="linear")
 
 
+@dataclass(frozen=True, unsafe_hash=True)
 class LogScale(Scale):
-    scale_key = "log"
+    scale_key: ScaleKey = field(init=False, default="log")
 
 
+LINEAR_THRESHOLD_ARG_FORMAT = "linear_threshold"
+
+
+@dataclass(frozen=True, unsafe_hash=True)
 class SymLogScale(Scale):
-    scale_key = "symlog"
-    LINEAR_THRESHOLD_ARG_FORMAT = "linear_threshold"
-
-    def __init__(self, linear_threshold: float):
-        self.linear_threshold = linear_threshold
+    linear_threshold: float
+    scale_key: ScaleKey = field(init=False, default="symlog")
 
     def to_axis_scale(self) -> AxisScaleArg:
         linthresh = self.linear_threshold  # or self._choose_linear_threshold(data)
@@ -76,7 +81,7 @@ class SymLogScale(Scale):
 
     @classmethod
     def to_argparse_format(cls) -> str:
-        return f"{cls.scale_key}[{parse_util.SUBARG_DELIM}{cls.LINEAR_THRESHOLD_ARG_FORMAT}]"
+        return f"{cls.scale_key}[{parse_util.SUBARG_DELIM}{LINEAR_THRESHOLD_ARG_FORMAT}]"
 
     @classmethod
     def try_from_argparse_format(cls, arg: str) -> Self | None:
@@ -85,6 +90,9 @@ class SymLogScale(Scale):
         if scale_key_arg != cls.scale_key:
             return None
 
-        linear_threshold = parse_util.parse_optional_number(linear_threshold_arg, cls.LINEAR_THRESHOLD_ARG_FORMAT, float)
+        linear_threshold = parse_util.parse_optional_number(linear_threshold_arg, LINEAR_THRESHOLD_ARG_FORMAT, float)
 
         return cls(linear_threshold)
+
+    def __eq__(self, value):
+        return isinstance(value, SymLogScale) and value.scale_key == self.scale_key and self.linear_threshold == value.linear_threshold
