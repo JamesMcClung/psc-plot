@@ -72,8 +72,8 @@ class AxesManager(ABC):
     def setup_data(self): ...
 
 
-class AxesManagerSingle[PI: PlotInfo](AxesManager):
-    def __init__(self, ax: Axes, info: PI):
+class AxesManagerSingle[A: Axes, PI: PlotInfo](AxesManager):
+    def __init__(self, ax: A, info: PI):
         self.ax = ax
         self.info = info
 
@@ -86,7 +86,7 @@ class AxesManagerSingle[PI: PlotInfo](AxesManager):
         update_title()
 
 
-class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[PI2D]):
+class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[Axes, PI2D]):
     def setup_labels(self):
         self.ax.set_xlabel(self.info.get_dim_label(self.info.x_dim))
         self.ax.set_ylabel(self.info.get_dim_label(self.info.y_dim))
@@ -144,14 +144,12 @@ class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
         self.info._setter_callbacks["y_data"] = update_data
 
 
-class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarMeshInfo]):
+class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarAxes, PolarMeshInfo]):
     def setup_labels(self):
         # FIXME make the labels work
         pass
 
     def setup_data(self):
-        self.ax: PolarAxes
-
         self.ax.set_rscale(self.info.dim_scales[self.info.r_dim].to_axis_scale())
 
         image = self.ax.pcolormesh(
