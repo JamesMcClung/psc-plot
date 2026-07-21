@@ -1,3 +1,5 @@
+from typing import Any, Iterable, overload
+
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
@@ -6,7 +8,7 @@ from matplotlib.projections import PolarAxes
 from matplotlib.text import Text
 
 from lib.plotting import plt_util
-from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PolarMeshInfo, ScatterInfo
+from lib.plotting.plot_info import AttrKey, DimKey, ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PolarMeshInfo, ScatterInfo
 
 type AxesIdx = tuple[int, int]
 
@@ -33,6 +35,20 @@ def _setup_axes(figure: Figure, plot_infos: list[PlotInfo]) -> dict[AxesIdx, tup
         ret[idx] = (ax, infos)
 
     return ret
+
+
+@overload
+def _one_or_none[T](objs: Iterable[T], key: None = None) -> T | None: ...
+def _one_or_none(objs: Iterable[Any], key: AttrKey | tuple[AttrKey, DimKey] | None = None) -> Any | None:
+    if key is None:
+        vals = set(objs)
+    elif isinstance(key, str):
+        vals = {getattr(obj, key, None) for obj in objs}
+    else:
+        vals = {getattr(obj, key[0], {}).get(key[1], None) for obj in objs}
+    if len(vals) == 1:
+        return vals.pop()
+    return None
 
 
 class UpdateTitle:
