@@ -63,6 +63,9 @@ class UpdateTitle:
 
 class AxesManager(ABC):
     @abstractmethod
+    def setup(self): ...
+
+    @abstractmethod
     def setup_title(self): ...
 
     @abstractmethod
@@ -87,6 +90,13 @@ class AxesManagerSingle[A: Axes, PI: PlotInfo](AxesManager):
 
 
 class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[Axes, PI2D]):
+    def setup(self):
+        self.setup_title()
+        self.setup_labels()
+        self.setup_data()
+        self.setup_scales()
+        self.setup_bounds()
+
     def setup_labels(self):
         self.ax.set_xlabel(self.info.get_dim_label(self.info.x_dim))
         self.ax.set_ylabel(self.info.get_dim_label(self.info.y_dim))
@@ -107,11 +117,12 @@ class AxesManagerSingleLine(AxesManagerSingle2D[LineInfo]):
         self.info._setter_callbacks["y_data"] = line.set_ydata
         self.info._setter_callbacks["line_style"] = line.set_linestyle
 
-        self.setup_scales()
-        self.setup_bounds()
-
 
 class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
+    def setup(self):
+        super().setup()
+        self.ax.set_aspect(1 / self.ax.get_data_ratio())
+
     def setup_data(self):
         image = self.ax.imshow(
             self.info.data,
@@ -126,13 +137,12 @@ class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
         data_lower, data_upper = self.info.dim_bounds[self.info.color_dim]
         plt_util.update_cbar(image, data_min_override=data_lower, data_max_override=data_upper)
 
-        self.setup_scales()
-        self.setup_bounds()
-
-        self.ax.set_aspect(1 / self.ax.get_data_ratio())
-
 
 class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
+    def setup(self):
+        super().setup()
+        self.ax.set_aspect(1 / self.ax.get_data_ratio())
+
     def setup_data(self):
         if self.info.color_dim:
             scatter = self.ax.scatter(
@@ -159,13 +169,13 @@ class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
         self.info._setter_callbacks["x_data"] = update_data
         self.info._setter_callbacks["y_data"] = update_data
 
-        self.setup_scales()
-        self.setup_bounds()
-
-        self.ax.set_aspect(1 / self.ax.get_data_ratio())
-
 
 class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarAxes, PolarMeshInfo]):
+    def setup(self):
+        self.setup_title()
+        self.setup_labels()
+        self.setup_data()
+
     def setup_labels(self):
         # FIXME make the labels work
         pass
@@ -206,8 +216,6 @@ def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
         else:
             raise NotImplementedError("don't yet support multiple plots per axes")
 
-        manager.setup_title()
-        manager.setup_labels()
-        manager.setup_data()
+        manager.setup()
 
     return figure
