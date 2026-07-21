@@ -68,6 +68,9 @@ class AxesManager(ABC):
     @abstractmethod
     def setup_labels(self): ...
 
+    @abstractmethod
+    def setup_data(self): ...
+
 
 class AxesManagerSingle[PI: PlotInfo](AxesManager):
     def __init__(self, ax: Axes, info: PI):
@@ -89,19 +92,79 @@ class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[PI2D]):
         self.ax.set_ylabel(self.info.get_dim_label(self.info.y_dim))
 
 
-class AxesManagerSingleLine(AxesManagerSingle2D[LineInfo]): ...
+class AxesManagerSingleLine(AxesManagerSingle2D[LineInfo]):
+    def setup_data(self):
+        [line] = self.ax.plot(self.info.x_data, self.info.y_data, linestyle=self.info.line_style, scalex=False, scaley=False)
+        self.info._setter_callbacks["x_data"] = line.set_xdata
+        self.info._setter_callbacks["y_data"] = line.set_ydata
+        self.info._setter_callbacks["line_style"] = line.set_linestyle
 
 
-class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]): ...
+class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
+    def setup_data(self):
+        image = self.ax.imshow(
+            self.info.data,
+            origin="lower",
+            extent=(*self.info.dim_bounds[self.info.x_dim], *self.info.dim_bounds[self.info.y_dim]),
+            norm=self.info.dim_scales[self.info.color_dim].to_color_norm(),
+            interpolation="nearest",
+        )
+        self.info._setter_callbacks["data"] = image.set_data
+
+        self.ax.figure.colorbar(image)
+        data_lower, data_upper = self.info.dim_bounds[self.info.color_dim]
+        plt_util.update_cbar(image, data_min_override=data_lower, data_max_override=data_upper)
 
 
-class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]): ...
+class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
+    def setup_data(self):
+        if self.info.color_dim:
+            scatter = self.ax.scatter(
+                self.info.x_data,
+                self.info.y_data,
+                c=self.info.color_data,
+                norm=self.info.dim_scales[self.info.color_dim].to_color_norm(),
+                s=1,
+            )
+            self.info._setter_callbacks["color_data"] = scatter.set_array
+
+            self.ax.figure.colorbar(scatter, label=self.info.get_dim_label(self.info.color_dim))
+            data_lower, data_upper = self.info.dim_bounds[self.info.color_dim]
+            plt_util.update_cbar(scatter, data_min_override=data_lower, data_max_override=data_upper)
+        else:
+            scatter = self.ax.scatter(
+                self.info.x_data,
+                self.info.y_data,
+                color=self.ax._get_lines.get_next_color(),
+                s=0.5,
+            )
+
+        update_data = lambda _=None: scatter.set_offsets(np.array([self.info.x_data, self.info.y_data]).T)
+        self.info._setter_callbacks["x_data"] = update_data
+        self.info._setter_callbacks["y_data"] = update_data
 
 
 class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarMeshInfo]):
     def setup_labels(self):
         # FIXME make the labels work
         pass
+
+    def setup_data(self):
+        self.ax: PolarAxes
+
+        self.ax.set_rscale(self.info.dim_scales[self.info.r_dim].to_axis_scale())
+
+        image = self.ax.pcolormesh(
+            *np.meshgrid(self.info.theta_vertices, self.info.r_vertices),
+            self.info.data,
+            shading="flat",
+            norm=self.info.dim_scales[self.info.color_dim].to_color_norm(),
+        )
+        self.info._setter_callbacks["data"] = image.set_array
+
+        self.ax.figure.colorbar(image)
+        data_lower, data_upper = self.info.dim_bounds[self.info.color_dim]
+        plt_util.update_cbar(image, data_min_override=data_lower, data_max_override=data_upper)
 
 
 def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
@@ -126,55 +189,10 @@ def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
 
         manager.setup_title()
         manager.setup_labels()
+        manager.setup_data()
 
         assert len(infos) == 1  # TODO remove
         [plot_info] = infos
-
-        if isinstance(plot_info, LineInfo):
-            [line] = ax.plot(plot_info.x_data, plot_info.y_data, linestyle=plot_info.line_style, scalex=False, scaley=False)
-            plot_info._setter_callbacks["x_data"] = line.set_xdata
-            plot_info._setter_callbacks["y_data"] = line.set_ydata
-            plot_info._setter_callbacks["line_style"] = line.set_linestyle
-
-        if isinstance(plot_info, ImageInfo):
-            image = ax.imshow(
-                plot_info.data,
-                origin="lower",
-                extent=(*plot_info.dim_bounds[plot_info.x_dim], *plot_info.dim_bounds[plot_info.y_dim]),
-                norm=plot_info.dim_scales[plot_info.color_dim].to_color_norm(),
-                interpolation="nearest",
-            )
-            plot_info._setter_callbacks["data"] = image.set_data
-
-            figure.colorbar(image)
-            data_lower, data_upper = plot_info.dim_bounds[plot_info.color_dim]
-            plt_util.update_cbar(image, data_min_override=data_lower, data_max_override=data_upper)
-
-        if isinstance(plot_info, ScatterInfo):
-            if plot_info.color_dim:
-                scatter = ax.scatter(
-                    plot_info.x_data,
-                    plot_info.y_data,
-                    c=plot_info.color_data,
-                    norm=plot_info.dim_scales[plot_info.color_dim].to_color_norm(),
-                    s=1,
-                )
-                plot_info._setter_callbacks["color_data"] = scatter.set_array
-
-                figure.colorbar(scatter, label=plot_info.get_dim_label(plot_info.color_dim))
-                data_lower, data_upper = plot_info.dim_bounds[plot_info.color_dim]
-                plt_util.update_cbar(scatter, data_min_override=data_lower, data_max_override=data_upper)
-            else:
-                scatter = ax.scatter(
-                    plot_info.x_data,
-                    plot_info.y_data,
-                    color=ax._get_lines.get_next_color(),
-                    s=0.5,
-                )
-
-            update_data = lambda _=None: scatter.set_offsets(np.array([plot_info.x_data, plot_info.y_data]).T)
-            plot_info._setter_callbacks["x_data"] = update_data
-            plot_info._setter_callbacks["y_data"] = update_data
 
         if isinstance(plot_info, PlotInfo2D):
             ax.set_xscale(plot_info.dim_scales[plot_info.x_dim].to_axis_scale())
@@ -185,22 +203,5 @@ def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
 
         if isinstance(plot_info, (ScatterInfo, ImageInfo)):
             ax.set_aspect(1 / ax.get_data_ratio())
-
-        if isinstance(plot_info, PolarMeshInfo):
-            ax: PolarAxes
-
-            ax.set_rscale(plot_info.dim_scales[plot_info.r_dim].to_axis_scale())
-
-            image = ax.pcolormesh(
-                *np.meshgrid(plot_info.theta_vertices, plot_info.r_vertices),
-                plot_info.data,
-                shading="flat",
-                norm=plot_info.dim_scales[plot_info.color_dim].to_color_norm(),
-            )
-            plot_info._setter_callbacks["data"] = image.set_array
-
-            figure.colorbar(image)
-            data_lower, data_upper = plot_info.dim_bounds[plot_info.color_dim]
-            plt_util.update_cbar(image, data_min_override=data_lower, data_max_override=data_upper)
 
     return figure
