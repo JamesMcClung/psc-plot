@@ -41,6 +41,11 @@ class Latex:
     def append(self, latex: str) -> Latex:
         return Latex(self.latex + latex)
 
+    def maybe_with_dollars(self) -> str:
+        if self:
+            return f"${self}$"
+        return ""
+
     def __str__(self) -> str:
         return self.latex
 
