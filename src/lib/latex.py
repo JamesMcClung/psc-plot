@@ -12,7 +12,7 @@ def strip_latex(latex: str) -> str:
     return plain
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, unsafe_hash=True)
 class Latex:
     latex: str
     plain: str = field(init=False)
