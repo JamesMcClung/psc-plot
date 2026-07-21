@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import Any, Iterable, overload
 
 import numpy as np
@@ -60,22 +61,58 @@ class UpdateTitle:
         self.text.set_text(self.plot_info.get_title())
 
 
-def setup_title(ax: Axes, infos: list[PlotInfo]):
-    if len(infos) == 1:
-        info = infos[0]
-        update_title = UpdateTitle(ax.title, info)
-        info._setter_callbacks["subject"] = update_title
-        info._setter_callbacks["dim_displays"] = update_title
-        info._setter_callbacks["dim_units"] = update_title
-        info._setter_callbacks["scalar_coord_values"] = update_title
+class AxesManager(ABC):
+    @abstractmethod
+    def setup_title(self): ...
+
+
+class AxesManagerSingle[PI: PlotInfo](AxesManager):
+    def __init__(self, ax: Axes, info: PI):
+        self.ax = ax
+        self.info = info
+
+    def setup_title(self):
+        update_title = UpdateTitle(self.ax.title, self.info)
+        self.info._setter_callbacks["subject"] = update_title
+        self.info._setter_callbacks["dim_displays"] = update_title
+        self.info._setter_callbacks["dim_units"] = update_title
+        self.info._setter_callbacks["scalar_coord_values"] = update_title
         update_title()
+
+
+class AxesManagerSingleLine(AxesManagerSingle[LineInfo]): ...
+
+
+class AxesManagerSingleImage(AxesManagerSingle[ImageInfo]): ...
+
+
+class AxesManagerSingleScatter(AxesManagerSingle[ScatterInfo]): ...
+
+
+class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarMeshInfo]): ...
 
 
 def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
     figure = plt.figure()
 
     for ax, infos in _setup_axes(figure, plot_infos).values():
-        setup_title(ax, infos)
+        manager: AxesManager
+        if len(infos) == 1:
+            info = infos[0]
+            if isinstance(info, LineInfo):
+                manager = AxesManagerSingleLine(ax, info)
+            elif isinstance(info, ImageInfo):
+                manager = AxesManagerSingleImage(ax, info)
+            elif isinstance(info, ScatterInfo):
+                manager = AxesManagerSingleScatter(ax, info)
+            elif isinstance(info, PolarMeshInfo):
+                manager = AxesManagerSinglePolarMesh(ax, info)
+            else:
+                raise TypeError(f"unknown type: {infos.__class__!r}")
+        else:
+            raise NotImplementedError("don't yet support multiple plots per axes")
+
+        manager.setup_title()
 
         assert len(infos) == 1  # TODO remove
         [plot_info] = infos
