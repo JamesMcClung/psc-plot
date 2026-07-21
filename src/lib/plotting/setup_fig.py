@@ -65,6 +65,9 @@ class AxesManager(ABC):
     @abstractmethod
     def setup_title(self): ...
 
+    @abstractmethod
+    def setup_labels(self): ...
+
 
 class AxesManagerSingle[PI: PlotInfo](AxesManager):
     def __init__(self, ax: Axes, info: PI):
@@ -80,16 +83,25 @@ class AxesManagerSingle[PI: PlotInfo](AxesManager):
         update_title()
 
 
-class AxesManagerSingleLine(AxesManagerSingle[LineInfo]): ...
+class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[PI2D]):
+    def setup_labels(self):
+        self.ax.set_xlabel(self.info.get_dim_label(self.info.x_dim))
+        self.ax.set_ylabel(self.info.get_dim_label(self.info.y_dim))
 
 
-class AxesManagerSingleImage(AxesManagerSingle[ImageInfo]): ...
+class AxesManagerSingleLine(AxesManagerSingle2D[LineInfo]): ...
 
 
-class AxesManagerSingleScatter(AxesManagerSingle[ScatterInfo]): ...
+class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]): ...
 
 
-class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarMeshInfo]): ...
+class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]): ...
+
+
+class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarMeshInfo]):
+    def setup_labels(self):
+        # FIXME make the labels work
+        pass
 
 
 def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
@@ -113,13 +125,10 @@ def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
             raise NotImplementedError("don't yet support multiple plots per axes")
 
         manager.setup_title()
+        manager.setup_labels()
 
         assert len(infos) == 1  # TODO remove
         [plot_info] = infos
-
-        if isinstance(plot_info, PlotInfo2D):
-            ax.set_xlabel(plot_info.get_dim_label(plot_info.x_dim))
-            ax.set_ylabel(plot_info.get_dim_label(plot_info.y_dim))
 
         if isinstance(plot_info, LineInfo):
             [line] = ax.plot(plot_info.x_data, plot_info.y_data, linestyle=plot_info.line_style, scalex=False, scaley=False)
@@ -178,7 +187,6 @@ def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
             ax.set_aspect(1 / ax.get_data_ratio())
 
         if isinstance(plot_info, PolarMeshInfo):
-            # FIXME make the labels work
             ax: PolarAxes
 
             ax.set_rscale(plot_info.dim_scales[plot_info.r_dim].to_axis_scale())
