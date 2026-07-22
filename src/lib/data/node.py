@@ -76,7 +76,7 @@ class SavePlotNode(DataProcessingNode[None]):
         *,
         save_dir: Path,
         save_format: SaveFormat | None,
-        save_dpi: float,
+        save_dpi: float | None,
     ):
         super().__init__(input_node.name_fragments)
         self.input_node = input_node
@@ -87,21 +87,21 @@ class SavePlotNode(DataProcessingNode[None]):
     def pull(self) -> None:
         plot = self.input_node.pull()
 
-        format = self.save_format
-        if format not in plot.allowed_save_formats():
-            if format is not None:
-                message = f"{format} is incompatible with the data; reverting to default ({plot.default_save_format()})"
+        save_format = self.save_format
+        if save_format not in plot.allowed_save_formats():
+            if save_format is not None:
+                message = f"{save_format} is incompatible with the data; reverting to default ({plot.default_save_format()})"
                 warnings.warn(message)
 
-            format = plot.default_save_format()
+            save_format = plot.default_save_format()
 
-        if format == "mp4":
+        if save_format == "mp4":
             from matplotlib import pyplot as plt
 
             plt.rcParams["animation.ffmpeg_path"] = str(PscPlotConfig.from_env().ffmpeg_bin)
 
         self.save_dir.mkdir(exist_ok=True, parents=True)
-        path = self.save_dir / f"{self.get_save_file_stem()}.{format}"
+        path = self.save_dir / f"{self.get_save_file_stem()}.{save_format}"
         plot.save_to_path(path, dpi=self.save_dpi)
         print(f"wrote to {path}")
 
