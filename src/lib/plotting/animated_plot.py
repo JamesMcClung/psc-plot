@@ -18,8 +18,8 @@ def print_progress(current_frame: int, n_frames: int):
 
 
 class AnimatedPlot(Plot):
-    def __init__(self, renderer: Renderer[DataWithAttrs], n_frames: int):
-        super().__init__(renderer)
+    def __init__(self, renderers: list[Renderer[DataWithAttrs]], n_frames: int):
+        super().__init__(renderers)
         self.n_frames = n_frames
 
     def _initialize(self):
