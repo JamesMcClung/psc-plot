@@ -1,3 +1,5 @@
+import numpy as np
+
 from lib.data.data_with_attrs import FullList
 from lib.plotting.plot_info import PlotInfo, ScatterInfo
 from lib.plotting.renderer import Renderer
@@ -11,8 +13,7 @@ class ScatterRenderer(Renderer[FullList]):
         [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
 
         plot_info = ScatterInfo(
-            x_data=frame_data.data[x_dim],
-            y_data=frame_data.data[y_dim],
+            xy_data=np.array([frame_data.data[x_dim], frame_data.data[y_dim]]).T,
             x_dim=x_dim,
             y_dim=y_dim,
             time_dim=self.plot_target.time_dim,
@@ -57,8 +58,7 @@ class ScatterRenderer(Renderer[FullList]):
 
         [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
 
-        self.plot_info.set("x_data", frame_data.data[x_dim])
-        self.plot_info.set("y_data", frame_data.data[y_dim])
+        self.plot_info.set("xy_data", np.array([frame_data.data[x_dim], frame_data.data[y_dim]]).T)
         self.plot_info.set("scalar_coord_values", {dim: coord for dim, coord in frame_data.coordss.items() if coord.shape == ()})
 
         if color_dim := self.plot_info.color_dim:

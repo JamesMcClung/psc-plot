@@ -167,8 +167,8 @@ class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
     def setup_data(self):
         if self.info.color_dim:
             scatter = self.ax.scatter(
-                self.info.x_data,
-                self.info.y_data,
+                self.info.xy_data[:, 0],
+                self.info.xy_data[:, 1],
                 c=self.info.color_data,
                 norm=self.info.dim_scales[self.info.color_dim].to_color_norm(),
                 s=1,
@@ -180,15 +180,14 @@ class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
             plt_util.update_cbar(scatter, data_min_override=data_lower, data_max_override=data_upper)
         else:
             scatter = self.ax.scatter(
-                self.info.x_data,
-                self.info.y_data,
+                self.info.xy_data[:, 0],
+                self.info.xy_data[:, 1],
                 color=self.ax._get_lines.get_next_color(),
                 s=0.5,
             )
 
-        update_data = lambda _=None: scatter.set_offsets(np.array([self.info.x_data, self.info.y_data]).T)
-        self.info._setter_callbacks["x_data"] = update_data
-        self.info._setter_callbacks["y_data"] = update_data
+        update_data = lambda _=None: scatter.set_offsets(self.info.xy_data)
+        self.info._setter_callbacks["xy_data"] = update_data
 
 
 class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarAxes, PolarMeshInfo]):

@@ -94,8 +94,7 @@ class ImageInfo(PlotInfo2D):
 @dataclass
 class ScatterInfo(PlotInfo2D):
     _: KW_ONLY
-    x_data: np.ndarray
-    y_data: np.ndarray
+    xy_data: np.ndarray
     color_data: np.ndarray | None = None
     color_dim: DimKey | None = None
 
