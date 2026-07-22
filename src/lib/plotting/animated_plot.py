@@ -5,6 +5,7 @@ from pathlib import Path
 
 from matplotlib.animation import FFMpegWriter, FuncAnimation, PillowWriter
 
+from lib.config import PscPlotConfig
 from lib.data.data_with_attrs import DataWithAttrs
 from lib.plotting.hook import DrawMessage
 from lib.plotting.plot import Plot, SaveFormat
@@ -18,8 +19,8 @@ def print_progress(current_frame: int, n_frames: int):
 
 
 class AnimatedPlot(Plot):
-    def __init__(self, renderers: list[Renderer[DataWithAttrs]], n_frames: int):
-        super().__init__(renderers)
+    def __init__(self, renderers: list[Renderer[DataWithAttrs]], config: PscPlotConfig, n_frames: int):
+        super().__init__(renderers, config)
         self.n_frames = n_frames
 
     def _initialize(self):

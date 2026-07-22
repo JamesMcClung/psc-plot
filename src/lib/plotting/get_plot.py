@@ -16,9 +16,9 @@ def get_plot(world: DataWorld) -> Plot:
     n_frames = max(r.get_n_frames() for r in renderers)
 
     if n_frames > 1:
-        return AnimatedPlot(renderers, n_frames)
+        return AnimatedPlot(renderers, world.config, n_frames)
     else:
-        return StaticPlot(renderers)
+        return StaticPlot(renderers, world.config)
 
 
 def get_renderers(world: DataWorld) -> list[Renderer]:

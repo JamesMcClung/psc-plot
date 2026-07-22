@@ -6,6 +6,7 @@ from typing import Literal
 
 from matplotlib import pyplot as plt
 
+from lib.config import PscPlotConfig
 from lib.data.data_with_attrs import DataWithAttrs
 from lib.plotting.hook import DrawMessage, Hook
 from lib.plotting.renderer import Renderer
@@ -15,8 +16,9 @@ type SaveFormat = Literal["mp4", "gif", "png"]
 
 
 class Plot(ABC):
-    def __init__(self, renderers: list[Renderer[DataWithAttrs]]):
+    def __init__(self, renderers: list[Renderer[DataWithAttrs]], config: PscPlotConfig):
         self.renderers = renderers
+        self.config = config
         self.hooks: list[Hook] = []
 
         self._initialized = False
