@@ -61,7 +61,7 @@ class Versus(MetadataAdaptor):
     def _get_color_dim(self, data: DataWithAttrs) -> str | None:
         if isinstance(data, Field):
             if self.color_dim:
-                message = f"Can't set color dim of field data"
+                message = "Can't set color dim of field data"
                 raise ValueError(message)
             if len(self.spatial_dims) == 2:
                 return data.metadata.active_key
