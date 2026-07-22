@@ -324,7 +324,7 @@ class AxesManagerMultiLine(AxesManager):
         if (y_scale := _one_or_none(y_scales)) is not None:
             self.ax.set_yscale(y_scale.to_axis_scale())
         else:
-            raise NotImplementedError(f"y scales must all be the same, but found {x_scales}")
+            raise NotImplementedError(f"y scales must all be the same, but found {y_scales}")
 
     def setup_bounds(self):
         self.ax.set_xbound(*find_widest_bounds(info.dim_bounds[info.x_dim] for info in self.infos))
