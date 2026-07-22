@@ -88,6 +88,12 @@ def test_multiline_different_idxs():
     return make_plot("pfd --derive hx_fc_copy=hx_fc -i z=0 --display B_x -v y -w hx_fc -i z=1 -v y".split())
 
 
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_image_and_line():
+    """An image overplotted with a line from a different file."""
+    return make_plot("prt.i --bin y py=100 --nan0 --scale log --compute -v y py -w pfd::ey_ec -v y".split())
+
+
 # --- Turbulence power spectrum ---
 
 
