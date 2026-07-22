@@ -45,13 +45,19 @@ def _resolve_save_format(args: Args, config: PscPlotConfig) -> SaveFormat | None
     return "gif"
 
 
-def compile_plot_node(args: Args, config: PscPlotConfig) -> PlotNode:
+def compile_data_node(args: Args, config: PscPlotConfig):
     node = RootNode(config)
 
     node = AdaptorNode(node, get_loader(config.data_dir, args.prefix, args.variable))
 
     for adaptor in _with_versus(args.adaptors):
         node = AdaptorNode(node, adaptor)
+
+    return node
+
+
+def compile_plot_node(args: Args, config: PscPlotConfig) -> PlotNode:
+    node = compile_data_node(args, config)
 
     node = PlotNode(node, args.hooks)
 
