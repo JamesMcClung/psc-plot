@@ -231,6 +231,9 @@ class AxesManagerMultiLine(AxesManager):
         self.unique_coord_dimss: list[set[DimKey]] = [set() for _ in self.infos]
         self._update_common_scalar_coordinates()
 
+        self.common_subject: str | None = None
+        self._update_common_subject()
+
         self.lines: list[Line2D] = []  # populated later
 
     def _update_common_scalar_coordinates(self):
@@ -248,8 +251,16 @@ class AxesManagerMultiLine(AxesManager):
                     if dim in info.scalar_coord_values:
                         unique_dims.add(dim)
 
+    def _update_common_subject(self):
+        self.common_subject = _one_or_none(info.subject for info in self.infos)
+
     def _get_title(self) -> str:
-        return ", ".join(self.infos[0].get_coord_label(dim).maybe_with_dollars() for dim in self.common_coord_dims)
+        # by definition, it shouldn't matter which info we use to construct this string
+        coord_labels_str = ", ".join(self.infos[0].get_coord_label(dim).maybe_with_dollars() for dim in self.common_coord_dims)
+
+        if self.common_subject and coord_labels_str:
+            return f"{self.common_subject} ({coord_labels_str})"
+        return self.common_subject or coord_labels_str
 
     def _get_legend_labels(self) -> list[str]:
         legend_labels: list[str] = []
@@ -257,7 +268,9 @@ class AxesManagerMultiLine(AxesManager):
         for info, unique_dims in zip(self.infos, self.unique_coord_dimss):
             coord_labels_str = ", ".join(info.get_coord_label(dim).maybe_with_dollars() for dim in unique_dims)
 
-            if info.subject and coord_labels_str:
+            if self.common_subject:
+                legend_labels.append(coord_labels_str)
+            elif info.subject and coord_labels_str:
                 legend_labels.append(f"{info.subject} ({coord_labels_str})")
             else:
                 legend_labels.append(info.subject or coord_labels_str)
@@ -266,6 +279,7 @@ class AxesManagerMultiLine(AxesManager):
 
     def _update_title_and_legend(self, *_):
         self._update_common_scalar_coordinates()
+        self._update_common_subject()
         self.ax.set_title(self._get_title())
         for line, label in zip(self.lines, self._get_legend_labels()):
             line.set_label(label)
