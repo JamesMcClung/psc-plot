@@ -46,11 +46,7 @@ class FieldLoaderBp(Loader):
         data = {key: ds[key] for key in ds.data_vars}
         var_infos = {key: lookup(self.prefix, key) for key in ds.variables}
 
-        if self.active_key is not None:
-            derive_field_variable(data, self.active_key, self.prefix)
-            var_infos[self.active_key] = lookup(self.prefix, self.active_key)
-
-        return Field(
+        field = Field(
             data,
             FieldMetadata(
                 active_key=self.active_key,
@@ -58,3 +54,8 @@ class FieldLoaderBp(Loader):
                 var_infos=var_infos,
             ),
         )
+
+        if self.active_key is not None:
+            field = derive_field_variable(field, self.active_key, self.prefix)
+
+        return field
