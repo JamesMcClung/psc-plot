@@ -95,11 +95,6 @@ class SavePlotNode(DataProcessingNode[None]):
 
             save_format = plot.default_save_format()
 
-        if save_format == "mp4":
-            from matplotlib import pyplot as plt
-
-            plt.rcParams["animation.ffmpeg_path"] = str(PscPlotConfig.from_env().ffmpeg_bin)
-
         self.save_dir.mkdir(exist_ok=True, parents=True)
         path = self.save_dir / f"{self.get_save_file_stem()}.{save_format}"
         plot.save_to_path(path, dpi=self.save_dpi)

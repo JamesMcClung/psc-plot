@@ -43,5 +43,13 @@ class AnimatedPlot(Plot):
 
     def save_to_path(self, path: Path, *, dpi: float | None = None):
         self._initialize()
-        writer = PillowWriter() if path.suffix == ".gif" else FFMpegWriter()
+
+        if path.suffix == ".mp4":
+            from matplotlib import pyplot as plt
+
+            plt.rcParams["animation.ffmpeg_path"] = str(self.config.ffmpeg_bin)
+            writer = FFMpegWriter()
+        else:
+            writer = PillowWriter()
+
         self.anim.save(path, writer=writer, dpi=dpi)
