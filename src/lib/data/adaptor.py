@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
+
 import dask.dataframe as dd
 import pandas as pd
 import xarray as xr
 
 from lib.data.data_with_attrs import DataWithAttrs, Field, List, Metadata
+from lib.data.data_world import DataWorld
 from lib.has_name_fragments import HasNameFragments
 from lib.latex import Latex
 
@@ -19,14 +22,22 @@ def _fail_apply_list(adaptor_type: type[Adaptor]):
     raise RuntimeError(message)
 
 
-class Adaptor(HasNameFragments):
+class WorldAdaptor(ABC, HasNameFragments):
+    @abstractmethod
+    def apply_world(self, world: DataWorld) -> DataWorld: ...
+
+
+class Adaptor(WorldAdaptor):
+    def apply_world(self, world: DataWorld) -> DataWorld:
+        return world.with_active_data(self.apply(world.active_data))
+
     def apply(self, data: DataWithAttrs) -> DataWithAttrs:
         if isinstance(data, List):
             return self.apply_list(data)
         elif isinstance(data, Field):
             return self.apply_field(data)
         else:
-            message = f"unrecognized data type: {data.__class__:r}"
+            message = f"unrecognized data type: {data.__class__!r}"
             raise Exception(message)
 
     def apply_list(self, data: List) -> DataWithAttrs:

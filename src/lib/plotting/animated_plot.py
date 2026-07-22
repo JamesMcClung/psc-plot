@@ -3,11 +3,11 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 from matplotlib.animation import FFMpegWriter, FuncAnimation, PillowWriter
 
-from lib.data.adaptors.idx import Idx
+from lib.config import PscPlotConfig
 from lib.data.data_with_attrs import DataWithAttrs
+from lib.plotting.hook import DrawMessage
 from lib.plotting.plot import Plot, SaveFormat
 from lib.plotting.renderer import Renderer
 
@@ -18,49 +18,38 @@ def print_progress(current_frame: int, n_frames: int):
     print(f"frame {current_frame_padded}/{n_frames}", end=end)
 
 
-class AnimatedPlot[Data: DataWithAttrs](Plot[Data]):
-    def __init__(self, renderer: Renderer[Data], data: Data):
-        super().__init__(renderer, data)
-        self.time_dim: str = self.data.metadata.time_dim
-
-        self.fig, self.ax = plt.subplots(subplot_kw=renderer.subplot_kw())
-        self._initialized = False
-
-        # FIXME get blitting to work with the title
-        self.n_frames = len(data.coordss[data.metadata.time_dim])
-        self.anim = FuncAnimation(self.fig, self._next_frame, frames=self.n_frames, blit=False)
-
-    def _get_data_at_frame(self, frame: int) -> Data:
-        return Idx({self.time_dim: frame}).apply(self.data)
-
-    def _next_frame(self, frame: int):
-        frame_data = self._get_data_at_frame(frame)
-        update_data = self.renderer.make_update_data(self.ax, frame_data)
-        self.pre_update_fig(update_data)
-        self.renderer.draw(self.ax, frame_data, update_data)
-        self.post_update_fig(update_data)
-        print_progress(frame, self.n_frames)
+class AnimatedPlot(Plot):
+    def __init__(self, renderers: list[Renderer[DataWithAttrs]], config: PscPlotConfig, n_frames: int):
+        super().__init__(renderers, config)
+        self.n_frames = n_frames
 
     def _initialize(self):
-        if self._initialized:
-            return
-        self._initialized = True
+        super()._initialize()
 
-        frame_0 = self._get_data_at_frame(0)
-        init_data = self.renderer.make_init_data(self.fig, self.ax, frame_0)
-        self.pre_init_fig(init_data)
-        self.renderer.init(self.fig, self.ax, self.data, frame_0, init_data)
-        self.post_init_fig(init_data)
-        self.fig.tight_layout()
+        # FIXME get blitting to work with the title
+        self.anim = FuncAnimation(self.fig, self._next_frame, frames=self.n_frames, blit=False)
 
-    def show(self):
-        self._initialize()
-        plt.show()
+    def _next_frame(self, frame: int):
+        for renderer in self.renderers:
+            renderer.update_plot_info(frame)
+        self.post_update_fig(DrawMessage(plot_info=self.renderers[0].plot_info, axes=self.fig.axes[0], frame_data=self.renderers[0]._get_data_at_frame(frame)))
+        print_progress(frame, self.n_frames)
 
     def allowed_save_formats(self) -> list[SaveFormat]:
-        return ["mp4", "gif"]
+        if self.config.ffmpeg_bin:
+            return ["mp4", "gif"]
+        else:
+            return ["gif"]
 
     def save_to_path(self, path: Path, *, dpi: float | None = None):
         self._initialize()
-        writer = PillowWriter() if path.suffix == ".gif" else FFMpegWriter()
+
+        if path.suffix == ".mp4":
+            from matplotlib import pyplot as plt
+
+            plt.rcParams["animation.ffmpeg_path"] = str(self.config.ffmpeg_bin)
+            writer = FFMpegWriter()
+        else:
+            writer = PillowWriter()
+
         self.anim.save(path, writer=writer, dpi=dpi)

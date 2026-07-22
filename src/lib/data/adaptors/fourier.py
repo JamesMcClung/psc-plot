@@ -9,20 +9,20 @@ from lib.parsing.args_registry import arg_parser
 from lib.var_info import VarInfo
 
 
-def toggle_fourier(da: xr.DataArray, dim: VarInfo) -> xr.DataArray:
+def toggle_fourier(da: xr.DataArray, info: VarInfo) -> xr.DataArray:
     temp_prefix = "temp_"
-    f_dim = dim.toggle_fourier()
+    f_info = info.toggle_fourier()
 
     # multiply/or divide coords by 2pi to go from frequency <-> angular frequency
 
-    if dim.is_fourier():
-        da = da.assign_coords({dim.key: da.coords[dim.key] / (2 * np.pi)})
-        da = xrft.ifft(da, dim=dim.key, prefix=temp_prefix, lag=0.0)
-        da = da.rename({temp_prefix + dim.key: f_dim.key})
+    if info.is_fourier():
+        da = da.assign_coords({info.key: da.coords[info.key] / (2 * np.pi)})
+        da = xrft.ifft(da, dim=info.key, prefix=temp_prefix, lag=0.0)
+        da = da.rename({temp_prefix + info.key: f_info.key})
     else:
-        da = xrft.fft(da, dim=dim.key, prefix=temp_prefix)
-        da = da.rename({temp_prefix + dim.key: f_dim.key})
-        da = da.assign_coords({f_dim.key: da.coords[f_dim.key] * (2 * np.pi)})
+        da = xrft.fft(da, dim=info.key, prefix=temp_prefix)
+        da = da.rename({temp_prefix + info.key: f_info.key})
+        da = da.assign_coords({f_info.key: da.coords[f_info.key] * (2 * np.pi)})
 
     return da
 
@@ -37,18 +37,17 @@ class Fourier(MetadataAdaptor):
         pre_dim_latexs = [data.metadata.var_infos[key].display.latex for key in self.dim_keys]
 
         da = data.active_data
-        new_var_infos = dict(data.metadata.var_infos)
-        for key in self.dim_keys:
-            dim = new_var_infos[key]
-            f_dim = dim.toggle_fourier()
-            da = toggle_fourier(da, dim)
-            del new_var_infos[key]
-            new_var_infos[f_dim.key] = f_dim
+        new_var_infos = data.metadata.var_infos.copy()
 
-        if data.metadata.active_key is not None and data.metadata.active_key in new_var_infos:
-            old_active = new_var_infos[data.metadata.active_key]
-            new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{old_active.display}]"
-            new_var_infos[data.metadata.active_key] = old_active.assign(display=new_display)
+        for key in self.dim_keys:
+            info = new_var_infos[key]
+            f_info = info.toggle_fourier()
+            new_var_infos[f_info.key] = f_info
+            da = toggle_fourier(da, info)
+
+        old_active_info = data.metadata.active_var_info
+        new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{old_active_info.display}]"
+        new_var_infos[data.metadata.active_key] = old_active_info.assign(display=new_display)
 
         return data.with_active_data(da).assign_metadata(var_infos=new_var_infos)
 
@@ -68,6 +67,6 @@ FOURIER_FORMAT = "dim_name"
 )
 def parse_fourier(args: list[str]) -> Fourier:
     for dim_name in args:
-        parse_util.check_identifier(dim_name, "dim_name")
+        parse_util.parse_identifier(dim_name, "dim_name")
 
     return Fourier(args)

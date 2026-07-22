@@ -4,26 +4,29 @@ import typing
 
 
 def _is_identifier(val: str) -> bool:
-    return re.match(r"^\w[\d\w]*$", val)
+    return all(re.match(r"^\w[\d\w]*$", v) for v in val.split("."))
 
 
 def fail_format(arg: str, format: str):
     raise argparse.ArgumentTypeError(f"Expected value of form '{format}'; got '{arg}'")
 
 
-def check_value[T](val: T, val_name: str, valid_options: typing.Container[T]):
+def parse_value[T](val: T, val_name: str, valid_options: typing.Container[T]) -> T:
     if val not in valid_options:
         raise argparse.ArgumentTypeError(f"Expected {val_name} to be one of {set(valid_options)}; got '{val}'")
+    return val
 
 
-def check_identifier(val: str, val_name: str):
+def parse_identifier(val: str, val_name: str) -> str:
     if not _is_identifier(val):
         raise argparse.ArgumentTypeError(f"Expected {val_name} to be an identifier; got '{val}'")
+    return val
 
 
-def check_optional_identifier(val: str | None, val_name: str):
+def parse_optional_identifier(val: str | None, val_name: str) -> str | None:
     if val and not _is_identifier(val):
         raise argparse.ArgumentTypeError(f"Expected {val_name} to be an identifier or ''; got '{val}'")
+    return val
 
 
 def check_order[T](lower: T | None, upper: T | None, lower_name: str, upper_name: str):

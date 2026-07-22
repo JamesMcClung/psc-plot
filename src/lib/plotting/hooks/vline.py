@@ -1,6 +1,5 @@
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
-from lib.plotting.frame_data_traits import HasAxes, assert_impl
 from lib.plotting.hook import Hook
 
 
@@ -9,29 +8,21 @@ class VLine(Hook):
         self.pos = pos
         self.label = label
 
-    class InitData(HasAxes): ...
+    def post_init_fig(self, message):
+        if not self.label:
+            return
 
-    def pre_init_fig(self, init_data):
-        init_data = assert_impl(init_data, VLine.InitData)
+        lower_spine = message.axes.spines["bottom"]
 
-        lower_spine = init_data.axes.spines["bottom"]
-        init_data.axes.axvline(
+        message.axes.axvline(
             self.pos,
             color="lightgray",
             linewidth=lower_spine.get_linewidth(),
         )
 
-    def post_init_fig(self, init_data):
-        if not self.label:
-            return
-
-        init_data = assert_impl(init_data, VLine.InitData)
-
-        lower_spine = init_data.axes.spines["bottom"]
-
-        init_data.axes.text(
+        message.axes.text(
             self.pos,
-            init_data.axes.get_ybound()[0],
+            message.axes.get_ybound()[0],
             self.label,
             horizontalalignment="center",
             verticalalignment="baseline",

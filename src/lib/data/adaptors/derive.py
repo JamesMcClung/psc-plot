@@ -96,7 +96,7 @@ class AssignNewFieldVariable(Transformer_InPlace):
         [tok] = toks
         name = str(tok)
         ds = self._data.data
-        if name not in ds.variables:
+        if name not in ds:
             self._resolve_from_registry(name)
         return self._data.data[name]
 
@@ -129,7 +129,7 @@ class AssignNewFieldVariable(Transformer_InPlace):
 
     def assignment(self, toks: list):
         [new_variable, val] = toks
-        new_ds = self._data.data.assign({new_variable: val})
+        new_ds = self._data.data | {new_variable: val}
         dim = var_info_registry.lookup(self._data.metadata.prefix, new_variable)
         new_var_infos = {**self._data.metadata.var_infos, new_variable: dim}
         return self._data.assign(new_ds, active_key=new_variable, var_infos=new_var_infos)

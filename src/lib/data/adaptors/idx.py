@@ -10,7 +10,7 @@ class Idx(MetadataAdaptor):
         self.dim_names_to_isel = dim_names_to_isel
 
     def apply_field(self, data: Field) -> Field:
-        return data.assign_data(data.data.isel(self.dim_names_to_isel))
+        return data.with_active_data(data.active_data.isel(self.dim_names_to_isel))
 
     def apply_list(self, data: List) -> List:
         coordss = data.coordss.copy()
@@ -28,11 +28,11 @@ class Idx(MetadataAdaptor):
                     selected_steps = [selected_steps]
                 partition_indices = [p for step in selected_steps for p in range(*data.metadata.partition_ranges[step])]
                 df = df.partitions[partition_indices]
-                coordss[dim] = coordss[dim][isel] if isinstance(isel, slice) else float(coordss[dim][isel])
+                coordss[dim] = coordss[dim][isel] if isinstance(isel, slice) else coordss[dim][isel]
                 continue
 
             if isinstance(isel, int):
-                pos = float(coordss[dim][isel])
+                pos = coordss[dim][isel]
                 df = df[df[dim] == pos]
                 if len(df) == 0:
                     import warnings
@@ -42,11 +42,11 @@ class Idx(MetadataAdaptor):
                 coordss[dim] = pos
             else:
                 if isel.start not in [None, 0]:
-                    pos_lower = float(coordss[dim][isel.start])
+                    pos_lower = coordss[dim][isel.start]
                     df = df[df[dim] >= pos_lower]
 
                 if isel.stop is not None:
-                    pos_upper = float(coordss[dim][isel.stop])
+                    pos_upper = coordss[dim][isel.stop]
                     df = df[df[dim] < pos_upper]
 
                 coordss[dim] = coordss[dim][isel]
@@ -73,7 +73,7 @@ def parse_idx(args: list[str]) -> Idx:
     for arg in args:
         [dim_name, isel_arg] = parse_util.parse_assignment(arg, IDX_FORMAT)
 
-        parse_util.check_identifier(dim_name, "dim_name")
+        parse_util.parse_identifier(dim_name, "dim_name")
         if ":" in isel_arg:
             dim_names_to_isel[dim_name] = parse_util.parse_slice(isel_arg, int)
         else:

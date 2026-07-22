@@ -74,8 +74,8 @@ def parse_reduce(arg: str) -> Reduce:
     dim_names = parse_util.parse_comma_separated_list(dim_names_arg)
 
     for dim_name in dim_names:
-        parse_util.check_identifier(dim_name, "dim_name")
+        parse_util.parse_identifier(dim_name, "dim_name")
 
-    parse_util.check_value(func_name, "reduce_func", REDUCE_FUNCS)
+    parse_util.parse_value(func_name, "reduce_func", REDUCE_FUNCS)
 
     return Reduce(dim_names, func_name)

@@ -10,7 +10,6 @@ from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, FieldMetadata, List
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
-from lib.var_info import VarInfo
 
 
 def _guess_bin_edgess(data: List, varname_to_nbins: dict[str, int | None]) -> list:
@@ -81,7 +80,6 @@ class Bin(MetadataAdaptor):
         self.varname_to_nbins = varname_to_nbins
 
     def apply_field(self, data: Field) -> Field:
-        da = data.data
         dim_names_to_bin_size = {}
         for dim_name, nbins in self.varname_to_nbins.items():
             if not nbins:
@@ -95,8 +93,7 @@ class Bin(MetadataAdaptor):
 
             dim_names_to_bin_size[dim_name] = bin_size
 
-        da = da.coarsen(dim_names_to_bin_size, boundary="pad").mean()
-        return data.assign_data(da)
+        return data.with_active_data(data.active_data.coarsen(dim_names_to_bin_size, boundary="pad").mean())
 
     def apply_list(self, data: List) -> Field:
         bin_edgess = _guess_bin_edgess(data, self.varname_to_nbins)
@@ -137,7 +134,7 @@ class Bin(MetadataAdaptor):
         # want: psc-plot prt.i --derive K="ux^2+uy^2+uz^2" --bin K=128 -v K --scale log
 
         new_var_infos["f"] = f_dim
-        return Field(da.to_dataset(name="f"), FieldMetadata.create_from(data.metadata, active_key="f", var_infos=new_var_infos))
+        return Field({"f": da}, FieldMetadata.create_from(data.metadata, active_key="f", var_infos=new_var_infos))
 
     def get_name_fragments(self) -> list[str]:
         subfrags = "_".join(f"{varname}={nbins}" if nbins else varname for varname, nbins in self.varname_to_nbins.items())
@@ -163,7 +160,7 @@ def parse_bin(args: list[str]) -> Bin:
 
         if len(split_arg) == 2 and not split_arg[1]:
             # arg is "t=", i.e., disable implicit binning along t
-            parse_util.check_value(split_arg[0], "active_key", ["t"])
+            parse_util.parse_value(split_arg[0], "active_key", ["t"])
             insert_bin_t = False
             continue
         elif len(split_arg) > 2:
@@ -171,7 +168,7 @@ def parse_bin(args: list[str]) -> Bin:
 
         [active_key, nbins_arg, *_] = split_arg + [""]
 
-        parse_util.check_identifier(active_key, "active_key")
+        parse_util.parse_identifier(active_key, "active_key")
         nbins = parse_util.parse_optional_number(nbins_arg, "nbins", int)
 
         varname_to_nbins[active_key] = nbins

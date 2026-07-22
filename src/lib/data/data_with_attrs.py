@@ -20,10 +20,6 @@ from lib.var_info import VarInfo
 class Metadata:
     active_key: str | None = None
 
-    spatial_dims: list[str] = field(default_factory=list)
-    time_dim: str | None = None
-    color_dim: str | None = None
-
     var_infos: dict[str, VarInfo] = field(default_factory=dict)
     species: dict[str, SpeciesInfo] = field(default_factory=dict)
 
@@ -62,7 +58,7 @@ class Metadata:
 
 
 @dataclass(frozen=True, init=False)
-class DataWithAttrs[D: xr.DataArray | pd.DataFrame | dd.DataFrame, MD: Metadata](ABC):
+class DataWithAttrs[D: dict[str, xr.DataArray] | pd.DataFrame | dd.DataFrame, MD: Metadata](ABC):
     """A data wrapper to provide a uniform, typed, and reliable metadata interface."""
 
     # The type checker ignores type bounds when no generic argument is present, e.g. after `isinstance` (and function parameters).
@@ -70,7 +66,7 @@ class DataWithAttrs[D: xr.DataArray | pd.DataFrame | dd.DataFrame, MD: Metadata]
     # Thus, it's necessary to annotate __init__ parameters via generics and the fields themselves with concrete types.
     # Unfortunately, annotating a field in a superclass requires also annotating it in each subclass that refines that field's type.
     # And with all this, other methods still don't get type hints :(
-    data: xr.DataArray | pd.DataFrame | dd.DataFrame
+    data: dict[str, xr.DataArray] | pd.DataFrame | dd.DataFrame
     metadata: Metadata
     _caches: dict[str, dict[str, Any]]
 
@@ -119,8 +115,8 @@ class FieldMetadata(Metadata):
     prefix: str | None = None
 
 
-class Field(DataWithAttrs[xr.Dataset, FieldMetadata]):
-    data: xr.Dataset
+class Field(DataWithAttrs[dict[str, xr.DataArray], FieldMetadata]):
+    data: dict[str, xr.DataArray]
     metadata: FieldMetadata
 
     @property
@@ -130,19 +126,8 @@ class Field(DataWithAttrs[xr.Dataset, FieldMetadata]):
         return self.data[self.metadata.active_key]
 
     def with_active_data(self, new_da: xr.DataArray) -> Self:
-        """Returns a copy with the active variable replaced by `new_da`. Sibling variables that
-        are no longer compatible with the new active grid (e.g. share a dim name with different
-        coordinate values) are dropped."""
-        active_key = self.metadata.active_key
-        new_ds = new_da.to_dataset(name=active_key)
-        for sib in self.data.data_vars:
-            if sib == active_key:
-                continue
-            try:
-                new_ds = xr.merge([new_ds, self.data[[sib]]], join="exact", compat="no_conflicts")
-            except (xr.MergeError, ValueError):
-                pass
-        return self.assign_data(new_ds)
+        """Returns a shallow copy with the active variable replaced by `new_da`."""
+        return self.assign_data(self.data | {self.metadata.active_key: new_da})
 
     @cached_property
     def coordss(self) -> dict[str, np.ndarray]:
@@ -170,7 +155,7 @@ class Field(DataWithAttrs[xr.Dataset, FieldMetadata]):
         return dask.compute(np.min(active), np.max(active))
 
     def dask_collections(self) -> list:
-        return [da.data for da in self.data.data_vars.values() if dask.is_dask_collection(da.data)]
+        return [da.data for da in self.data.values() if dask.is_dask_collection(da.data)]
 
 
 @dataclass(kw_only=True, frozen=True)

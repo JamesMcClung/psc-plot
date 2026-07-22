@@ -2,12 +2,12 @@ import warnings
 from abc import abstractmethod
 from pathlib import Path
 
-from lib.data.data_source import DataSource
-from lib.file_util import get_available_steps
-from lib.has_name_fragments import HasNameFragments
+from lib.config import PscPlotConfig
+from lib.data.adaptor import WorldAdaptor
+from lib.data.data_with_attrs import DataWithAttrs
 
 
-class Loader(DataSource, HasNameFragments):
+class Loader(WorldAdaptor):
     @classmethod
     @abstractmethod
     def discover_prefixes(cls, data_dir: Path) -> list[str]:
@@ -20,7 +20,6 @@ class Loader(DataSource, HasNameFragments):
 
     def __init__(self, prefix: str, active_key: str | None = None):
         self.prefix = prefix
-        self.steps = get_available_steps(prefix + ".", "." + self.suffix())
         self.active_key = active_key
 
     def get_name_fragments(self) -> list[str]:
@@ -28,6 +27,12 @@ class Loader(DataSource, HasNameFragments):
         if self.active_key is not None:
             fragments.append(self.active_key)
         return fragments
+
+    def apply_world(self, world):
+        return world.with_active_data(self.get_data(world.config), self.prefix)
+
+    @abstractmethod
+    def get_data(self, config: PscPlotConfig) -> DataWithAttrs: ...
 
 
 LOADERS: list[type[Loader]] = []
@@ -55,3 +60,8 @@ def discover_loaders(data_dir: Path) -> dict[str, type[Loader]]:
                 )
             result[prefix] = cls
     return result
+
+
+def get_loader(data_dir: Path, prefix: str, active_key: str | None) -> Loader:
+    loader_types = discover_loaders(data_dir)
+    return loader_types[prefix](prefix, active_key)

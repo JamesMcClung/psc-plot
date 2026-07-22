@@ -3,6 +3,7 @@ must produce identical particle dataframes (up to row ordering)."""
 
 import numpy as np
 import pytest
+from conftest import CONFIG_2D
 
 from lib.data.adaptors.species_filter import SpeciesFilter
 from lib.data.loaders.particle_bp import ParticleLoaderBp
@@ -11,13 +12,13 @@ from lib.data.loaders.particle_h5 import ParticleLoaderH5
 
 def _load_and_filter_h5(species_key: str):
     loader = ParticleLoaderH5(prefix="prt", active_key=None)
-    data = loader.get_data()
+    data = loader.get_data(CONFIG_2D)
     return SpeciesFilter(species_key).apply_list(data)
 
 
 def _load_bp(species_key: str):
     loader = ParticleLoaderBp(prefix=f"prt.{species_key}", active_key=None)
-    return loader.get_data()
+    return loader.get_data(CONFIG_2D)
 
 
 @pytest.mark.parametrize("species_key", ["i", "e"])

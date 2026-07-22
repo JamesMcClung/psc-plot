@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import KW_ONLY, dataclass, field
 from typing import Literal
+
+from lib.scale import LinearScale, Scale
 
 from .latex import Latex
 
@@ -33,6 +35,7 @@ class VarInfo:
     geometry: Geometry | None = None
     _: KW_ONLY
     key: str = None
+    scale: Scale = field(default_factory=LinearScale)
 
     def __post_init__(self):
         if self.key is None:
@@ -48,11 +51,11 @@ class VarInfo:
             display = Latex(display)
         if isinstance(unit, str):
             unit = Latex(unit)
-        return VarInfo(display or self.display, unit or self.unit, self.geometry, key=self.key)
+        return VarInfo(display or self.display, unit or self.unit, self.geometry, key=self.key, scale=self.scale)
 
     def to_axis_label(self) -> str:
         if self.unit:
-            return f"${self.display}\\ [{self.unit}]$"
+            return f"${self.display}$ [${self.unit}$]"
         return f"${self.display}$"
 
     def get_coordinate_label(self, coord_val: float) -> str:
@@ -70,6 +73,6 @@ class VarInfo:
         return self.display.starts_with(FOURIER_KEY_PREFIX)
 
 
-def check_unit_compatability(dim_1: VarInfo, dim_2: VarInfo, dest_geometry: str):
+def check_unit_compatibility(dim_1: VarInfo, dim_2: VarInfo, dest_geometry: str):
     if dim_1.unit != dim_2.unit:
         raise ValueError(f"Dimensions {dim_1.display} and {dim_2.display} have incompatible units for transforming to {dest_geometry} coordinates ({dim_1.unit} and {dim_2.unit})")

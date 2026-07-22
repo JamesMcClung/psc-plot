@@ -1,18 +1,15 @@
 import argparse
 from pathlib import Path
-from typing import Iterable
 
-from lib.config import CONFIG
-from lib.data.loader import discover_loaders
 from lib.parsing.args import Args
 from lib.parsing.args_registry import CUSTOM_ARGS
 
 
-def _get_parser(prefixes: Iterable[str]) -> argparse.ArgumentParser:
+def _get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="psc-plot")
 
-    parser.add_argument("prefix", choices=prefixes, help="data file prefix (auto-discovered from the data directory)")
-    parser.add_argument("variable", nargs="?", default=None, help="field variable to work with")
+    parser.add_argument("prefix", help="initial active prefix")
+    parser.add_argument("variable", nargs="?", default=None, help="initial active variable")
     parser.add_argument(
         "-s",
         "--save",
@@ -49,9 +46,6 @@ def _get_parser(prefixes: Iterable[str]) -> argparse.ArgumentParser:
     return parser
 
 
-def get_parsed_args(args_list: list[str] | None = None) -> Args:
-    prefix_to_loader = discover_loaders(CONFIG.data_dir)
-    parser = _get_parser(prefix_to_loader.keys())
-    args = parser.parse_args(args_list, namespace=Args())
-    args.loader = prefix_to_loader[args.prefix](args.prefix, active_key=args.variable)
-    return args
+def parse_args(args_list: list[str] | None = None) -> Args:
+    parser = _get_parser()
+    return parser.parse_args(args_list, namespace=Args())

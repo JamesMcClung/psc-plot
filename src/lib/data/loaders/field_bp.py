@@ -4,7 +4,8 @@ from pathlib import Path
 import pscpy
 import xarray as xr
 
-from lib.config import CONFIG
+from lib import file_util
+from lib.config import PscPlotConfig
 from lib.data.data_with_attrs import Field, FieldMetadata
 from lib.data.loader import Loader, loader
 from lib.derived_field_variables import derive_field_variable
@@ -14,8 +15,8 @@ _KNOWN_PREFIXES = ("pfd", "pfd_moments", "gauss", "continuity")
 _STEP_BP_RE = re.compile(r"^(.+?)\.\d+\.bp$")
 
 
-def _get_path(prefix: str, step: int) -> Path:
-    return CONFIG.data_dir / f"{prefix}.{step:09}.bp"
+def _get_path(data_dir: Path, prefix: str, step: int) -> Path:
+    return data_dir / f"{prefix}.{step:09}.bp"
 
 
 def _decode_psc(ds):
@@ -33,20 +34,28 @@ class FieldLoaderBp(Loader):
     def suffix(cls):
         return "bp"
 
-    def get_data(self) -> Field:
+    def get_data(self, config: PscPlotConfig) -> Field:
         ds = xr.open_mfdataset(
-            paths=[_get_path(self.prefix, step) for step in self.steps],
+            paths=[_get_path(config.data_dir, self.prefix, step) for step in file_util.get_available_steps(config.data_dir, self.prefix + ".", ".bp")],
             combine="nested",
             concat_dim="t",
             preprocess=_decode_psc,
             parallel=True,
         )
-        if self.active_key is not None:
-            derive_field_variable(ds, self.active_key, self.prefix)
-        var_info = {key: lookup(self.prefix, key) for key in ds.variables}
-        metadata = FieldMetadata(
-            active_key=self.active_key,
-            prefix=self.prefix,
-            var_infos=var_info,
+
+        data = {key: ds[key] for key in ds.data_vars}
+        var_infos = {key: lookup(self.prefix, key) for key in ds.variables}
+
+        field = Field(
+            data,
+            FieldMetadata(
+                active_key=self.active_key,
+                prefix=self.prefix,
+                var_infos=var_infos,
+            ),
         )
-        return Field(ds, metadata)
+
+        if self.active_key is not None:
+            field = derive_field_variable(field, self.active_key, self.prefix)
+
+        return field

@@ -81,11 +81,11 @@ def parse(args: list[str]) -> Diff:
 
         dims_arg, dir_arg = parse_util.parse_assignment(arg, DIFF_FORMAT)
 
-        parse_util.check_value(dir_arg, "dir", DIR_TO_SHIFT.keys())
+        parse_util.parse_value(dir_arg, "dir", DIR_TO_SHIFT.keys())
         dir = DIR_TO_SHIFT[dir_arg]
 
         for dim in parse_util.parse_comma_separated_list(dims_arg):
-            parse_util.check_identifier(dim, "dim_key")
+            parse_util.parse_identifier(dim, "dim_key")
             diffs_1d.append(_Diff1d(dim, dir, boundary))
 
     return Diff(diffs_1d)

@@ -8,11 +8,11 @@ from lib.data.data_with_attrs import Field, List
 from lib.latex import Latex
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
-from lib.var_info import RADIAN, VarInfo, check_unit_compatability
+from lib.var_info import RADIAN, VarInfo, check_unit_compatibility
 
 
 def _build_polar_dims(dim_x: VarInfo, dim_y: VarInfo) -> tuple[VarInfo, VarInfo]:
-    check_unit_compatability(dim_x, dim_y, "polar")
+    check_unit_compatibility(dim_x, dim_y, "polar")
     r_symbol = "k" if dim_x.is_fourier() else "r"
     dim_r = VarInfo(Latex(f"{r_symbol}_\\text{{polar}}"), dim_x.unit, "polar:r", key=f"{r_symbol}_p")
     dim_theta = VarInfo(Latex("\\theta"), RADIAN, "polar:theta")
@@ -111,7 +111,7 @@ _POLAR_FORMAT = ("dim_1", "dim_2")
 )
 def parse_transform_polar(args: list[str]) -> TransformPolar:
     for i, arg in enumerate(args, start=1):
-        parse_util.check_identifier(arg, f"dim_{i}")
+        parse_util.parse_identifier(arg, f"dim_{i}")
     try:
         return TransformPolar(args[0], args[1])
     except ValueError as e:

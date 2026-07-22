@@ -1,26 +1,37 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
 
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
-
-from lib.data.data_with_attrs import DataWithAttrs
+from lib.data.adaptors.idx import Idx
+from lib.data.data_with_attrs import DataWithAttrs, Field
+from lib.data.plot_target import PlotTarget
+from lib.plotting.plot_info import PlotInfo
 
 
 class Renderer[Data: DataWithAttrs](ABC):
-    def subplot_kw(self) -> dict[str, Any]:
-        return {}
+    def __init__(self, full_data: Data, plot_target: PlotTarget):
+        self.plot_target = plot_target
+
+        if isinstance(full_data, Field):
+            self.full_data = full_data.assign_metadata(active_key=plot_target.color_dim or plot_target.spatial_dims.y_dim)
+        else:
+            self.full_data = full_data
+
+        self.plot_info = self.init_plot_info()
+
+    def _get_data_at_frame(self, frame: int) -> Data:
+        if self.plot_target.time_dim:
+            frame = min(frame, self.get_n_frames() - 1)
+            return Idx({self.plot_target.time_dim: frame}).apply(self.full_data)
+        return self.full_data
+
+    def get_n_frames(self) -> int:
+        if self.plot_target.time_dim:
+            return len(self.full_data.coordss[self.plot_target.time_dim])
+        return 1
 
     @abstractmethod
-    def make_init_data(self, fig: Figure, ax: Axes, frame_data: Data) -> Any: ...
+    def init_plot_info(self) -> PlotInfo: ...
 
     @abstractmethod
-    def init(self, fig: Figure, ax: Axes, full_data: Data, frame_data: Data, init_data: Any) -> None: ...
-
-    def make_update_data(self, ax: Axes, frame_data: Data) -> Any:
-        return None
-
-    def draw(self, ax: Axes, frame_data: Data, update_data: Any) -> None:
-        pass
+    def update_plot_info(self, frame: int): ...

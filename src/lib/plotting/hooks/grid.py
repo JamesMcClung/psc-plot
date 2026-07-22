@@ -4,11 +4,10 @@ import numpy as np
 import numpy.typing as npt
 from matplotlib.axes import Axes
 
-from lib.data.data_with_attrs import DataWithAttrs
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
-from lib.plotting.frame_data_traits import HasAxes, HasData, assert_impl
 from lib.plotting.hook import Hook
+from lib.plotting.plot_info import PlotInfo2D
 
 type DimName = str
 type MajorGridlineSpacing = float | None
@@ -36,46 +35,45 @@ class Grid(Hook):
         self.major = major
         self.minor = minor
 
-    class InitData(HasAxes, HasData): ...
-
-    def post_init_fig(self, init_data):
-        init_data = assert_impl(init_data, Grid.InitData)
-
+    def post_init_fig(self, message):
         # Ensure major lines are enabled when minor lines are present
         for dim_name in self.minor:
             self.major.setdefault(dim_name, None)
 
+        assert isinstance(message.plot_info, PlotInfo2D)
+
         # Draw major lines with the given spacing
         for dim_name, gridline_spacing in self.major.items():
-            axis_id = get_axis_id(init_data.data, dim_name)
+            axis_id = get_axis_id(message.plot_info, dim_name)
 
             if gridline_spacing is None:
                 tick_coords = None
             else:
-                tick_coords = get_tick_coords(*init_data.data.bounds(dim_name), gridline_spacing)
+                tick_coords = get_tick_coords(*message.plot_info.dim_bounds[dim_name], gridline_spacing)
 
-            set_grid(init_data.axes, "major", axis_id, tick_coords)
+            set_grid(message.axes, "major", axis_id, tick_coords)
 
         # Draw the given number of minor lines between major lines
         for dim_name, nlines in self.minor.items():
-            axis_id = get_axis_id(init_data.data, dim_name)
+            axis_id = get_axis_id(message.plot_info, dim_name)
 
             if nlines is None:
                 tick_coords = None
             else:
-                get_ticks = {"x": init_data.axes.get_xticks, "y": init_data.axes.get_yticks}[axis_id]
-                major_tick_coords = np.concat([get_ticks(minor=False), [init_data.data.upper_bound(dim_name)]])
+                get_ticks = {"x": message.axes.get_xticks, "y": message.axes.get_yticks}[axis_id]
+                major_tick_coords = np.concat([get_ticks(minor=False), [message.plot_info.dim_bounds[dim_name][1]]])
                 tick_coords = np.concat([np.linspace(left, right, nlines + 1, endpoint=False)[1:] for left, right in zip(major_tick_coords[:-1], major_tick_coords[1:])])
 
-            set_grid(init_data.axes, "minor", axis_id, tick_coords)
+            set_grid(message.axes, "minor", axis_id, tick_coords)
 
 
-def get_axis_id(data: DataWithAttrs, dim_name: str) -> Literal["x", "y"]:
-    if dim_name not in data.metadata.spatial_dims:
-        message = f"Dimension '{dim_name}' isn't being shown on an axis. Axis dimensions are: {data.metadata.spatial_dims}"
+def get_axis_id(info: PlotInfo2D, dim_name: str) -> Literal["x", "y"]:
+    id_map = {info.x_dim: "x", info.y_dim: "y"}
+    if dim_name not in id_map:
+        message = f"Dimension '{dim_name}' isn't being shown on an axis. Axis dimensions are: {id_map.keys()}"
         raise ValueError(message)
 
-    return ["x", "y"][data.metadata.spatial_dims.index(dim_name)]
+    return id_map[dim_name]
 
 
 MAJOR_MARKER = "major"

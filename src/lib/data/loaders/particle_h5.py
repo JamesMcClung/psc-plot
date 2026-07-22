@@ -8,7 +8,8 @@ import dask.dataframe as dd
 import h5py
 import numpy as np
 
-from lib.config import CONFIG
+from lib import file_util
+from lib.config import PscPlotConfig
 from lib.data.data_with_attrs import LazyList, ListMetadata
 from lib.data.loader import Loader, loader
 from lib.latex import Latex
@@ -22,12 +23,12 @@ type Charge = float
 type Mass = float
 
 
-def _get_path_at_step(prefix: str, step: int) -> pathlib.Path:
-    return CONFIG.data_dir / f"{prefix}.{step:09}.h5"
+def _get_path_at_step(data_dir: pathlib.Path, prefix: str, step: int) -> pathlib.Path:
+    return data_dir / f"{prefix}.{step:09}.h5"
 
 
-def _load_attrs_at_step(prefix: str, step: int) -> dict[str, typing.Any]:
-    data_path = _get_path_at_step(prefix, step)
+def _load_attrs_at_step(data_dir: pathlib.Path, prefix: str, step: int) -> dict[str, typing.Any]:
+    data_path = _get_path_at_step(data_dir, prefix, step)
     attrs = {}
     with h5py.File(data_path) as file:
         if "time" not in file.keys():
@@ -50,10 +51,10 @@ def _find_first_populated_cell(idx_begin_s: np.ndarray, idx_end_s: np.ndarray) -
     return int(idx_begin_s[mask].min())
 
 
-def _read_species_qm(prefix: str, step: int, missing: set[SpeciesIdx]) -> dict[SpeciesIdx, tuple[Charge, Mass]]:
+def _read_species_qm(data_dir: pathlib.Path, prefix: str, step: int, missing: set[SpeciesIdx]) -> dict[SpeciesIdx, tuple[Charge, Mass]]:
     """Open one step and return {species_index: (q, m)} for any species with particles in that step.
     Only populates entries for species-indices in `missing`; others are left untouched."""
-    with h5py.File(_get_path_at_step(prefix, step)) as f:
+    with h5py.File(_get_path_at_step(data_dir, prefix, step)) as f:
         idx_begin = f["particles/idx_begin"][...]
         idx_end = f["particles/idx_end"][...]
         particles = f[PRT_PARTICLES_KEY]
@@ -67,11 +68,11 @@ def _read_species_qm(prefix: str, step: int, missing: set[SpeciesIdx]) -> dict[S
     return found
 
 
-def _discover_species_qm(prefix: str, steps: list[int]) -> dict[SpeciesIdx, tuple[Charge, Mass]]:
+def _discover_species_qm(data_dir: pathlib.Path, prefix: str, steps: list[int]) -> dict[SpeciesIdx, tuple[Charge, Mass]]:
     """For each species index in [0, n_species), find a step where it has particles
     and read its (q, m). Tries step 0 first, then the last step, then bisects the
     remaining range. Raises if any species never appears."""
-    with h5py.File(_get_path_at_step(prefix, steps[0])) as f:
+    with h5py.File(_get_path_at_step(data_dir, prefix, steps[0])) as f:
         n_species = f["particles/idx_begin"].shape[0]
     qm: dict[SpeciesIdx, tuple[Charge, Mass]] = {}
     missing = set(range(n_species))
@@ -86,7 +87,7 @@ def _discover_species_qm(prefix: str, steps: list[int]) -> dict[SpeciesIdx, tupl
         if step in probed:
             continue
         probed.add(step)
-        found = _read_species_qm(prefix, step, missing)
+        found = _read_species_qm(data_dir, prefix, step, missing)
         qm.update(found)
         missing -= set(found.keys())
         if not missing:
@@ -176,16 +177,17 @@ class ParticleLoaderH5(Loader):
     def suffix(cls):
         return "h5"
 
-    def get_data(self) -> LazyList:
-        species_dict = _build_species_dict(_discover_species_qm(self.prefix, self.steps))
+    def get_data(self, config: PscPlotConfig) -> LazyList:
+        steps = file_util.get_available_steps(config.data_dir, self.prefix + ".", ".h5")
+        species_dict = _build_species_dict(_discover_species_qm(config.data_dir, self.prefix, steps))
 
-        attrss = [_load_attrs_at_step(self.prefix, step) for step in self.steps]
+        attrss = [_load_attrs_at_step(config.data_dir, self.prefix, step) for step in steps]
         times = np.array([attrs["time"] for attrs in attrss])
 
-        data_paths = [_get_path_at_step(self.prefix, step) for step in self.steps]
+        data_paths = [_get_path_at_step(config.data_dir, self.prefix, step) for step in steps]
         dfs_of_steps = []
         for time, data_path in zip(times, data_paths):
-            df_of_step: dd.DataFrame = dd.read_hdf(data_path, key=PRT_PARTICLES_KEY, chunksize=CONFIG.dask_chunk_size, lock=True)
+            df_of_step: dd.DataFrame = dd.read_hdf(data_path, key=PRT_PARTICLES_KEY, chunksize=config.dask_chunk_size, lock=True)
             df_of_step = df_of_step.assign(t=time)
             dfs_of_steps.append(df_of_step)
 

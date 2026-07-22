@@ -32,7 +32,7 @@ def parse(args: list[str]) -> Roll:
     for arg in args:
         [dim_name, window_size_arg] = parse_util.parse_assignment(arg, ROLL_FORMAT)
 
-        parse_util.check_identifier(dim_name, "dim_name")
+        parse_util.parse_identifier(dim_name, "dim_name")
         window_size = parse_util.parse_number(window_size_arg, "window_size", int)
 
         dim_names_to_window_size[dim_name] = window_size
