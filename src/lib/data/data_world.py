@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import KW_ONLY, dataclass, field, replace
 
 from lib.config import PscPlotConfig
