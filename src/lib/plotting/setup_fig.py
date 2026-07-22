@@ -127,8 +127,8 @@ class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[Axes, PI2D]):
         self.ax.set_yscale(self.info.dim_scales[self.info.y_dim].to_axis_scale())
 
     def setup_bounds(self):
-        self.ax.set_xbound(*self.info.dim_bounds[self.info.x_dim])
-        self.ax.set_ybound(*self.info.dim_bounds[self.info.y_dim])
+        self.ax.set_xlim(*self.info.dim_bounds[self.info.x_dim])
+        self.ax.set_ylim(*self.info.dim_bounds[self.info.y_dim])
 
 
 class AxesManagerSingleLine(AxesManagerSingle2D[LineInfo]):
