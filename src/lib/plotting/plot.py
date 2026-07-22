@@ -30,8 +30,6 @@ class Plot(ABC):
         # TODO hooks should be per-renderer; for now, just apply them to the 1st one
         self.post_init_fig(DrawMessage(plot_info=self.renderers[0].plot_info, axes=self.fig.axes[0], frame_data=self.renderers[0]._get_data_at_frame(0)))
 
-        self.fig.tight_layout()
-
     def add_hook(self, hook: Hook):
         self.hooks.append(hook)
 

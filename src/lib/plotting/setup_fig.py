@@ -342,7 +342,7 @@ class AxesManagerMultiLine(AxesManager):
 
 
 def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
-    figure = plt.figure()
+    figure = plt.figure(layout="constrained")
 
     for ax, infos in _setup_axes(figure, plot_infos).values():
         manager: AxesManager
