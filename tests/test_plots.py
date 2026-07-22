@@ -73,6 +73,21 @@ def test_static_2d_spectogram():
     return make_plot("pfd ey_ec -f y --mag --pow 2 --pos k_y=0: -v t k_y time= --nan0 --scale log".split())
 
 
+# --- Multiplots ---
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_multiline_different_vars():
+    """Two line plots of different variables."""
+    return make_plot("pfd hx_fc -v y -w hz_fc -v y".split())
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_multiline_different_idxs():
+    """Two line plots of the same variable at different slices."""
+    return make_plot("pfd --derive hx_fc_copy=hx_fc -i z=0 --display B_x -v y -w hx_fc -i z=1 -v y".split())
+
+
 # --- Turbulence power spectrum ---
 
 
