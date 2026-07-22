@@ -73,6 +73,6 @@ class VarInfo:
         return self.display.starts_with(FOURIER_KEY_PREFIX)
 
 
-def check_unit_compatability(dim_1: VarInfo, dim_2: VarInfo, dest_geometry: str):
+def check_unit_compatibility(dim_1: VarInfo, dim_2: VarInfo, dest_geometry: str):
     if dim_1.unit != dim_2.unit:
         raise ValueError(f"Dimensions {dim_1.display} and {dim_2.display} have incompatible units for transforming to {dest_geometry} coordinates ({dim_1.unit} and {dim_2.unit})")
