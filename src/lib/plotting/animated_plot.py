@@ -36,7 +36,10 @@ class AnimatedPlot(Plot):
         print_progress(frame, self.n_frames)
 
     def allowed_save_formats(self) -> list[SaveFormat]:
-        return ["mp4", "gif"]
+        if self.config.ffmpeg_bin:
+            return ["mp4", "gif"]
+        else:
+            return ["gif"]
 
     def save_to_path(self, path: Path, *, dpi: float | None = None):
         self._initialize()
