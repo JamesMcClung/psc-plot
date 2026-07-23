@@ -38,6 +38,13 @@ def test_animated_2d_derived():
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_static_2d_derived_cross_prefix():
+    """2D view of a variable derived across prefixes: the active `pfd` field `jy_ec`
+    times `pfd_moments::jy_e`, which auto-loads the `pfd_moments` prefix."""
+    return make_plot("pfd --derive electron_power=jy_ec*pfd_moments::jy_e -i t=-1 -v y z time=".split())
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_animated_2d_idx():
     """2D slice of x-component of magnetic field at the x=1 index."""
     return make_plot("pfd hx_fc -i x=1 -v y z".split(), data_dir="test-3d")
