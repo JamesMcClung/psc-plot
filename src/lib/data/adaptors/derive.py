@@ -2,8 +2,9 @@ from lark import Lark
 from lark.visitors import Transformer_InPlace
 
 from lib import var_info_registry
-from lib.data.adaptor import MetadataAdaptor
+from lib.data.adaptor import WorldAdaptor
 from lib.data.data_with_attrs import Field, List
+from lib.data.loader import get_loader
 from lib.derived_field_variables.derived_field_variable import (
     DERIVED_FIELD_VARIABLES,
     derive_field_variable,
@@ -14,21 +15,67 @@ from lib.derived_particle_variables.derived_particle_variable import (
 from lib.parsing.args_registry import arg_parser
 
 
-class Derive(MetadataAdaptor):
+class Derive(WorldAdaptor):
     def __init__(self, expression: str):
         self.expression = expression
         self.ast = _DERIVE_PARSER.parse(expression)
 
-    def apply_list(self, data: List) -> List:
-        return AssignNewVariable(data).transform(self.ast)
+    def apply_world(self, world):
+        active = world.active_data
+        scoped_prefixes = _collect_scoped_prefixes(self.ast)
 
-    def apply_field(self, data: Field) -> Field:
-        return AssignNewFieldVariable(data).transform(self.ast)
+        if isinstance(active, List):
+            if scoped_prefixes:
+                raise ValueError("--derive: cross-prefix references (prefix::key) are not supported for particle data.")
+            return world.with_active_data(AssignNewVariable(active).transform(self.ast))
+
+        if isinstance(active, Field):
+            siblings = _load_siblings(world, scoped_prefixes)
+            return world.with_active_data(AssignNewFieldVariable(active, siblings).transform(self.ast))
+
+        raise ValueError("--derive requires an active variable to derive into; specify one as a positional argument.")
 
     def get_name_fragments(self):
         if self.ast.data == "assign_default":
             return []
         return [f'derive_"{self.expression}"']
+
+
+def _collect_scoped_prefixes(ast) -> set[str]:
+    """Distinct prefixes referenced via `prefix::key` anywhere in the expression."""
+    prefixes = set()
+    for tree in ast.find_data("variable"):
+        if len(tree.children) == 2:
+            prefixes.add(str(tree.children[0]))
+    return prefixes
+
+
+def _load_siblings(world, prefixes: set[str]) -> dict[str, Field]:
+    """Resolve each scoped prefix to a loaded Field, reusing any already in the world
+    and auto-loading the rest the same way `--with` does."""
+    siblings: dict[str, Field] = {}
+    for prefix in prefixes:
+        if prefix in world.datas:
+            siblings[prefix] = world.datas[prefix]
+        else:
+            loaded = get_loader(world.config.data_dir, prefix, None).apply_world(world)
+            siblings[prefix] = loaded.datas[prefix]
+    return siblings
+
+
+def _resolve_field_variable(field: Field, key: str) -> Field:
+    """Return a Field guaranteed to contain `key`, deriving it via the prefix's
+    registry when it isn't already in the dataset."""
+    if key in field.data:
+        return field
+    prefix = field.metadata.prefix
+    if prefix is None:
+        raise ValueError(f"--derive cannot resolve '{key}': field metadata has no prefix.")
+    if key not in DERIVED_FIELD_VARIABLES.get(prefix, {}):
+        raise ValueError(
+            f"--derive: '{key}' is not in the '{prefix}' dataset and not in its derived-variable registry {list(DERIVED_FIELD_VARIABLES.get(prefix, {}))}. Note that earlier adaptors (e.g. --downsample) may have dropped variables that became incompatible with the active grid; consider moving --derive earlier in the pipeline."
+        )
+    return derive_field_variable(field, key, prefix)
 
 
 class AssignNewVariable(Transformer_InPlace):
@@ -80,8 +127,9 @@ class AssignNewVariable(Transformer_InPlace):
 
 
 class AssignNewFieldVariable(Transformer_InPlace):
-    def __init__(self, data: Field):
+    def __init__(self, data: Field, siblings: dict[str, Field]):
         self._data = data
+        self._siblings = siblings
         super().__init__(visit_tokens=True)
 
     def number(self, toks: list):
@@ -93,12 +141,14 @@ class AssignNewFieldVariable(Transformer_InPlace):
         return str(tok)
 
     def variable(self, toks: list):
-        [tok] = toks
-        name = str(tok)
-        ds = self._data.data
-        if name not in ds:
-            self._resolve_from_registry(name)
-        return self._data.data[name]
+        if len(toks) == 2:
+            prefix, key = str(toks[0]), str(toks[1])
+            sibling = _resolve_field_variable(self._siblings[prefix], key)
+            self._siblings[prefix] = sibling
+            return sibling.data[key]
+        key = str(toks[0])
+        self._data = _resolve_field_variable(self._data, key)
+        return self._data.data[key]
 
     def addition(self, toks: list):
         [lhs, rhs] = toks
@@ -122,7 +172,7 @@ class AssignNewFieldVariable(Transformer_InPlace):
 
     def assign_default(self, toks: list):
         [new_variable] = toks
-        self._resolve_from_registry(new_variable)
+        self._data = _resolve_field_variable(self._data, new_variable)
         dim = var_info_registry.lookup(self._data.metadata.prefix, new_variable)
         new_var_infos = {**self._data.metadata.var_infos, new_variable: dim}
         return self._data.assign_metadata(active_key=new_variable, var_infos=new_var_infos)
@@ -133,15 +183,6 @@ class AssignNewFieldVariable(Transformer_InPlace):
         dim = var_info_registry.lookup(self._data.metadata.prefix, new_variable)
         new_var_infos = {**self._data.metadata.var_infos, new_variable: dim}
         return self._data.assign(new_ds, active_key=new_variable, var_infos=new_var_infos)
-
-    def _resolve_from_registry(self, name: str):
-        prefix = self._data.metadata.prefix
-        if prefix is None:
-            raise ValueError(f"--derive cannot resolve '{name}': field metadata has no prefix.")
-        if name not in DERIVED_FIELD_VARIABLES.get(prefix, {}):
-            raise ValueError(f"--derive: '{name}' is not in the dataset and not in the registry for prefix '{prefix}'. Note that earlier adaptors (e.g. --downsample) may have dropped variables that became incompatible with the active grid; consider moving --derive earlier in the pipeline.")
-        # Mutates self._data.data in-place to add `name` (and any of its dependencies).
-        derive_field_variable(self._data.data, name, prefix)
 
 
 _DERIVE_GRAMMAR = r"""
@@ -171,7 +212,7 @@ division       : _expression_2 "/" _expression_1
 addition       : _expression_3 "+" _expression_2
 subtraction    : _expression_3 "-" _expression_2
 
-variable : CNAME
+variable : (CNAME "::")? CNAME
 number   : SIGNED_NUMBER
 
 %import common.SIGNED_NUMBER
@@ -184,7 +225,7 @@ number   : SIGNED_NUMBER
 _DERIVE_PARSER = Lark(_DERIVE_GRAMMAR)
 
 _DERIVE_FORMAT = "new_var_key[=expression]"
-_EXPRESSION_DESCRIPTION = "The expression can be any mathematical expression using the standard operators (+, -, *, /, ^), parentheses, signed floating point numbers, and existing variable names."
+_EXPRESSION_DESCRIPTION = "The expression can be any mathematical expression using the standard operators (+, -, *, /, ^), parentheses, signed floating point numbers, and existing variable names. A name may be scoped to another prefix as prefix::key (that prefix is auto-loaded)."
 
 
 @arg_parser(
