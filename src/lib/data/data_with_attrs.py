@@ -59,7 +59,7 @@ class Metadata:
 
 
 @dataclass(frozen=True)
-class DataWithAttrs[Data, MD: Metadata = Metadata](ABC):
+class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
     """A data wrapper to provide a uniform, typed, and reliable metadata interface."""
 
     data: Data
@@ -73,6 +73,9 @@ class DataWithAttrs[Data, MD: Metadata = Metadata](ABC):
     @property
     @abstractmethod
     def dims(self) -> list[str]: ...
+
+    @abstractmethod
+    def with_active(self, *, data: Subdata | None = None, key: str | None = None) -> Self: ...
 
     def assign_data(self, data: Data) -> Self:
         return self.__class__(data, self.metadata)
@@ -106,12 +109,20 @@ class FieldMetadata(Metadata):
     prepath: Prepath | None = None
 
 
-class Field(DataWithAttrs[dict[str, xr.DataArray], FieldMetadata]):
+class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata]):
     @property
     def active_data(self) -> xr.DataArray:
         if self.metadata.active_key is None:
             raise ValueError("no active variable; specify one as a positional argument")
         return self.data[self.metadata.active_key]
+
+    def with_active(self, *, data=None, key=None) -> Self:
+        if data is None:
+            return self.assign_metadata(active_key=key)
+
+        key = key or self.metadata.active_key
+        assert key is not None
+        return self.assign(self.data | {key: data}, active_key=key)
 
     def with_active_data(self, new_da: xr.DataArray) -> Self:
         """Returns a shallow copy with the active variable replaced by `new_da`."""
@@ -165,7 +176,7 @@ class ListMetadata(Metadata):
     `len(partition_ranges) == len(coordss[partition_dim])`."""
 
 
-class List[Data: pd.DataFrame | dd.DataFrame = pd.DataFrame | dd.DataFrame](DataWithAttrs[Data, ListMetadata]):
+class List[Data: pd.DataFrame | dd.DataFrame = pd.DataFrame | dd.DataFrame, Subdata: pd.Series | dd.Series = pd.Series | dd.Series](DataWithAttrs[Data, Subdata, ListMetadata]):
     @property
     def active_data(self) -> pd.Series | dd.Series:
         if self.metadata.active_key is None:
@@ -174,6 +185,14 @@ class List[Data: pd.DataFrame | dd.DataFrame = pd.DataFrame | dd.DataFrame](Data
 
     def with_active_data(self, series: pd.Series | dd.Series) -> Self:
         return self.assign_data(self.data.assign(**{self.metadata.active_key: series}))
+
+    def with_active(self, *, data=None, key=None) -> Self:
+        if data is None:
+            return self.assign_metadata(active_key=key)
+
+        key = key or self.metadata.active_key
+        assert key is not None
+        return self.assign(self.data.assign(**{self.metadata.active_key: data}), active_key=key)
 
     @abstractmethod
     def compute(self) -> FullList: ...
