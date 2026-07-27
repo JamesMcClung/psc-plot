@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from lib.file_util import Prepath
 from lib.latex import Latex
 from lib.species import SpeciesInfo
 from lib.var_info import VarInfo
@@ -112,7 +113,7 @@ class DataWithAttrs[D: dict[str, xr.DataArray] | pd.DataFrame | dd.DataFrame, MD
 
 @dataclass(kw_only=True, frozen=True)
 class FieldMetadata(Metadata):
-    prefix: str | None = None
+    prepath: Prepath | None = None
 
 
 class Field(DataWithAttrs[dict[str, xr.DataArray], FieldMetadata]):

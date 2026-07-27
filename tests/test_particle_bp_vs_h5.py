@@ -11,7 +11,7 @@ from lib.data.loaders.particle_h5 import ParticleLoaderH5
 
 
 def _load_and_filter_h5(species_key: str):
-    loader = ParticleLoaderH5(prefix="prt", active_key=None)
+    loader = ParticleLoaderH5(prepath="prt", active_key=None)
     data = loader.get_data(CONFIG_2D)
     return SpeciesFilter(species_key).apply_list(data)
 

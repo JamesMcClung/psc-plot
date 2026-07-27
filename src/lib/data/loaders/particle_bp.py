@@ -92,8 +92,8 @@ class ParticleLoaderBp(Loader):
         self.species_key = prefix.split(".", 1)[1]
 
     def get_data(self, config: PscPlotConfig) -> LazyList:
-        steps = file_util.get_available_steps(config.data_root, self.prefix + ".", ".bp")
-        step_attrs = [_read_attrs(_get_path(config.data_root, self.prefix, step)) for step in steps]
+        steps = file_util.get_available_steps(config.data_root / self.subdir, self.prefix + ".", ".bp")
+        step_attrs = [_read_attrs(_get_path(config.data_root / self.subdir, self.prefix, step)) for step in steps]
         times = np.array([float(a["time"]) for a in step_attrs])
 
         head = step_attrs[0]
@@ -126,7 +126,7 @@ class ParticleLoaderBp(Loader):
         partition_ranges = []
         offset = 0
         for step, time in zip(steps, times):
-            path = _get_path(config.data_root, self.prefix, step)
+            path = _get_path(config.data_root / self.subdir, self.prefix, step)
             particle_dim, n = _peek_size(path)
             n_chunks = max(1, (n + chunk_size - 1) // chunk_size)
             partition_ranges.append((offset, offset + n_chunks))

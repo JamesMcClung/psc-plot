@@ -3,7 +3,7 @@ import sys
 from lib.config import PscPlotConfig
 from lib.data.adaptor import Adaptor
 from lib.data.adaptors.versus import Versus
-from lib.data.loader import get_loader
+from lib.data.adaptors.with_ import With
 from lib.data.node import AdaptorNode, DaskGraphNode, DataProcessingNode, PlotNode, RootNode, SavePlotNode, ShowPlotNode
 from lib.parsing.args import Args
 
@@ -21,7 +21,7 @@ def _with_versus(adaptors: list[Adaptor]) -> list[Adaptor]:
 def compile_data_node(args: Args, config: PscPlotConfig):
     node = RootNode(config)
 
-    node = AdaptorNode(node, get_loader(config.data_root, args.prefix, args.variable))
+    node = AdaptorNode(node, With(args.prepath, args.variable))
 
     for adaptor in _with_versus(args.adaptors):
         node = AdaptorNode(node, adaptor)

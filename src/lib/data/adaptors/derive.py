@@ -4,6 +4,7 @@ from lark.visitors import Transformer_InPlace
 from lib import var_info_registry
 from lib.data.adaptor import WorldAdaptor
 from lib.data.data_with_attrs import Field, List
+from lib.data.data_world import DataWorld
 from lib.data.loader import get_loader
 from lib.derived_field_variables.derived_field_variable import (
     DERIVED_FIELD_VARIABLES,
@@ -50,7 +51,7 @@ def _collect_scoped_prefixes(ast) -> set[str]:
     return prefixes
 
 
-def _load_siblings(world, prefixes: set[str]) -> dict[str, Field]:
+def _load_siblings(world: DataWorld, prefixes: set[str]) -> dict[str, Field]:
     """Resolve each scoped prefix to a loaded Field, reusing any already in the world
     and auto-loading the rest the same way `--with` does."""
     siblings: dict[str, Field] = {}
@@ -58,7 +59,7 @@ def _load_siblings(world, prefixes: set[str]) -> dict[str, Field]:
         if prefix in world.datas:
             siblings[prefix] = world.datas[prefix]
         else:
-            loaded = get_loader(world.config.data_dir, prefix, None).apply_world(world)
+            loaded = get_loader(world.config.data_root, prefix, None).apply_world(world)
             siblings[prefix] = loaded.datas[prefix]
     return siblings
 
@@ -68,7 +69,7 @@ def _resolve_field_variable(field: Field, key: str) -> Field:
     registry when it isn't already in the dataset."""
     if key in field.data:
         return field
-    prefix = field.metadata.prefix
+    prefix = field.metadata.prepath
     if prefix is None:
         raise ValueError(f"--derive cannot resolve '{key}': field metadata has no prefix.")
     if key not in DERIVED_FIELD_VARIABLES.get(prefix, {}):
@@ -173,14 +174,14 @@ class AssignNewFieldVariable(Transformer_InPlace):
     def assign_default(self, toks: list):
         [new_variable] = toks
         self._data = _resolve_field_variable(self._data, new_variable)
-        dim = var_info_registry.lookup(self._data.metadata.prefix, new_variable)
+        dim = var_info_registry.lookup(self._data.metadata.prepath, new_variable)
         new_var_infos = {**self._data.metadata.var_infos, new_variable: dim}
         return self._data.assign_metadata(active_key=new_variable, var_infos=new_var_infos)
 
     def assignment(self, toks: list):
         [new_variable, val] = toks
         new_ds = self._data.data | {new_variable: val}
-        dim = var_info_registry.lookup(self._data.metadata.prefix, new_variable)
+        dim = var_info_registry.lookup(self._data.metadata.prepath, new_variable)
         new_var_infos = {**self._data.metadata.var_infos, new_variable: dim}
         return self._data.assign(new_ds, active_key=new_variable, var_infos=new_var_infos)
 
