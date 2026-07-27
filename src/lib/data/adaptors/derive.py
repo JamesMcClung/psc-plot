@@ -5,14 +5,8 @@ from lib import var_info_registry
 from lib.data.adaptor import WorldAdaptor
 from lib.data.data_with_attrs import Field, List
 from lib.data.data_world import DataWorld
+from lib.data.ensure_derived import ensure_derived
 from lib.data.loader import load
-from lib.derived_field_variables.derived_field_variable import (
-    DERIVED_FIELD_VARIABLES,
-    derive_field_variable,
-)
-from lib.derived_particle_variables.derived_particle_variable import (
-    derive_particle_variable,
-)
 from lib.file_util import Prepath
 from lib.parsing.args_registry import arg_parser
 
@@ -33,7 +27,7 @@ class Derive(WorldAdaptor):
 
         if isinstance(active, Field):
             siblings = _load_siblings(world, scoped_prefixes)
-            return world.with_active(data=AssignNewFieldVariable(active, siblings).transform(self.ast))
+            return world.with_active(data=AssignNewFieldVariable(active, siblings, world).transform(self.ast))
 
         raise ValueError("--derive requires an active variable to derive into; specify one as a positional argument.")
 
@@ -62,21 +56,6 @@ def _load_siblings(world: DataWorld, prepaths: set[Prepath]) -> dict[str, Field]
         else:
             siblings[prepath] = load(world.config, prepath)
     return siblings
-
-
-def _resolve_field_variable(field: Field, key: str) -> Field:
-    """Return a Field guaranteed to contain `key`, deriving it via the prefix's
-    registry when it isn't already in the dataset."""
-    if key in field.data:
-        return field
-    prefix = field.metadata.prepath
-    if prefix is None:
-        raise ValueError(f"--derive cannot resolve '{key}': field metadata has no prefix.")
-    if key not in DERIVED_FIELD_VARIABLES.get(prefix, {}):
-        raise ValueError(
-            f"--derive: '{key}' is not in the '{prefix}' dataset and not in its derived-variable registry {list(DERIVED_FIELD_VARIABLES.get(prefix, {}))}. Note that earlier adaptors (e.g. --downsample) may have dropped variables that became incompatible with the active grid; consider moving --derive earlier in the pipeline."
-        )
-    return derive_field_variable(field, key, prefix)
 
 
 class AssignNewVariable(Transformer_InPlace):
@@ -122,8 +101,9 @@ class AssignNewVariable(Transformer_InPlace):
 
 
 class AssignNewFieldVariable(Transformer_InPlace):
-    def __init__(self, data: Field, siblings: dict[str, Field]):
+    def __init__(self, data: Field, siblings: dict[str, Field], world: DataWorld):
         self._data = data
+        self.world = world
         # TODO: load "siblings" into the world instead of this hack
         self._siblings = siblings
         super().__init__(visit_tokens=True)
@@ -137,14 +117,25 @@ class AssignNewFieldVariable(Transformer_InPlace):
         return str(tok)
 
     def variable(self, toks: list):
-        if len(toks) == 2:
-            prefix, key = str(toks[0]), str(toks[1])
-            sibling = _resolve_field_variable(self._siblings[prefix], key)
-            self._siblings[prefix] = sibling
-            return sibling.data[key]
         key = str(toks[0])
-        self._data = _resolve_field_variable(self._data, key)
-        return self._data.data[key]
+        data = self.world.require_active_data()
+        data = ensure_derived(data, key)
+        return data[key]
+
+    def prepath(self, toks: list):
+        return "/".join(str(tok) for tok in toks)
+
+    def scoped_variable(self, toks: list):
+        [prepath, key] = [str(tok) for tok in toks]
+        if prepath not in self.world.datas:
+            data = load(self.world.config, prepath)
+        else:
+            data = self.world.datas[prepath]
+
+        data = ensure_derived(data, key)
+        self.world = self.world.with_data(prepath, data)
+
+        return data[key]
 
     def addition(self, toks: list):
         [lhs, rhs] = toks
@@ -182,6 +173,7 @@ new_variable : CNAME
 
 _expression_0 : "(" expression ")"
               | variable
+              | scoped_variable
               | number
 _expression_1 : _expression_0
               | exponentiation
@@ -198,8 +190,13 @@ division       : _expression_2 "/" _expression_1
 addition       : _expression_3 "+" _expression_2
 subtraction    : _expression_3 "-" _expression_2
 
-variable : (CNAME "::")? CNAME
-number   : SIGNED_NUMBER
+variable        : CNAME
+scoped_variable : prepath "::" CNAME
+number          : SIGNED_NUMBER
+
+prepath : (DIR "/")* PREFIX
+DIR    : /[^\/]+/
+PREFIX : /[.\w\d]+/
 
 %import common.SIGNED_NUMBER
 %import common.CNAME
