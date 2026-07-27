@@ -1,5 +1,6 @@
 from lib.config import _DATA_DIR_KEY
 from lib.data.adaptor import WorldAdaptor
+from lib.data.ensure_derived import ensure_derived
 from lib.data.loader import load
 from lib.file_util import Prepath
 from lib.parsing import parse_util
@@ -19,10 +20,10 @@ class With(WorldAdaptor):
         if self.prepath in world.datas:
             return world.with_active(prepath=self.prepath, data=world.datas[self.prepath].with_active(key=self.key))
 
-        return world.with_active(
-            prepath=self.prepath,
-            data=load(world.config, self.prepath, self.key),
-        )
+        data = load(world.config, self.prepath)
+        data = ensure_derived(data, self.prepath, self.key)
+
+        return world.with_active(prepath=self.prepath, data=data)
 
     def get_name_fragments(self) -> list[str]:
         maybe_with = "with_" if self.include_with_in_name_fragment else ""

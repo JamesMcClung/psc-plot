@@ -5,7 +5,6 @@ from pathlib import Path
 from lib.config import PscPlotConfig
 from lib.data.adaptor import WorldAdaptor
 from lib.data.data_with_attrs import DataWithAttrs
-from lib.data.ensure_derived import ensure_derived
 from lib.file_util import Prepath, split_prepath
 
 
@@ -67,9 +66,6 @@ def get_loader(data_root: Path, prepath: Prepath) -> Loader:
     return loader_types[prefix](prepath)
 
 
-def load(config: PscPlotConfig, prepath: Prepath, active_key: str | None = None) -> DataWithAttrs:
+def load(config: PscPlotConfig, prepath: Prepath) -> DataWithAttrs:
     loader = get_loader(config.data_root, prepath)
-    data = loader.get_data(config)
-    if active_key:
-        data = ensure_derived(data, prepath, active_key)
-    return data
+    return loader.get_data(config)
