@@ -36,7 +36,7 @@ class FieldLoaderBp(Loader):
 
     def get_data(self, config: PscPlotConfig) -> Field:
         ds = xr.open_mfdataset(
-            paths=[_get_path(config.data_dir, self.prefix, step) for step in file_util.get_available_steps(config.data_dir, self.prefix + ".", ".bp")],
+            paths=[_get_path(config.data_root, self.prefix, step) for step in file_util.get_available_steps(config.data_root, self.prefix + ".", ".bp")],
             combine="nested",
             concat_dim="t",
             preprocess=_decode_psc,

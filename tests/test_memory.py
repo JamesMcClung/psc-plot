@@ -27,7 +27,7 @@ def _run_pipeline(data_dir: pathlib.Path, chunksize: int, result_queue: mp.Queue
     from lib.parsing.parse import parse_args
 
     args = parse_args("prt --species i --bin y py=16 -v y py".split())
-    plot = compile_plot_node(args, PscPlotConfig(data_dir=data_dir, dask_chunk_size=chunksize)).pull()
+    plot = compile_plot_node(args, PscPlotConfig(data_root=data_dir, dask_chunk_size=chunksize)).pull()
     plot._initialize()
 
     peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss

@@ -178,13 +178,13 @@ class ParticleLoaderH5(Loader):
         return "h5"
 
     def get_data(self, config: PscPlotConfig) -> LazyList:
-        steps = file_util.get_available_steps(config.data_dir, self.prefix + ".", ".h5")
-        species_dict = _build_species_dict(_discover_species_qm(config.data_dir, self.prefix, steps))
+        steps = file_util.get_available_steps(config.data_root, self.prefix + ".", ".h5")
+        species_dict = _build_species_dict(_discover_species_qm(config.data_root, self.prefix, steps))
 
-        attrss = [_load_attrs_at_step(config.data_dir, self.prefix, step) for step in steps]
+        attrss = [_load_attrs_at_step(config.data_root, self.prefix, step) for step in steps]
         times = np.array([attrs["time"] for attrs in attrss])
 
-        data_paths = [_get_path_at_step(config.data_dir, self.prefix, step) for step in steps]
+        data_paths = [_get_path_at_step(config.data_root, self.prefix, step) for step in steps]
         dfs_of_steps = []
         for time, data_path in zip(times, data_paths):
             df_of_step: dd.DataFrame = dd.read_hdf(data_path, key=PRT_PARTICLES_KEY, chunksize=config.dask_chunk_size, lock=True)

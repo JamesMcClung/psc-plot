@@ -19,7 +19,7 @@ from lib.parsing.parse import parse_args
 def _read_keys_for_columns(args_list: list[str], data_dir: str = "test-2d") -> list[str]:
     """Optimize each dask collection produced by `args_list` and return
     the set of per-column file-read task key strings in the optimized graph."""
-    config = PscPlotConfig(data_dir=_DATA_DIR / data_dir)
+    config = PscPlotConfig(data_root=_DATA_DIR / data_dir)
     args = parse_args(args_list)
     node = compile_plot_node(args, config)
     data = node.input_node.pull().active_data

@@ -21,7 +21,7 @@ def _with_versus(adaptors: list[Adaptor]) -> list[Adaptor]:
 def compile_data_node(args: Args, config: PscPlotConfig):
     node = RootNode(config)
 
-    node = AdaptorNode(node, get_loader(config.data_dir, args.prefix, args.variable))
+    node = AdaptorNode(node, get_loader(config.data_root, args.prefix, args.variable))
 
     for adaptor in _with_versus(args.adaptors):
         node = AdaptorNode(node, adaptor)
