@@ -5,7 +5,7 @@ from lib import var_info_registry
 from lib.data.adaptor import WorldAdaptor
 from lib.data.data_with_attrs import Field, List
 from lib.data.data_world import DataWorld
-from lib.data.loader import get_loader
+from lib.data.loader import load
 from lib.derived_field_variables.derived_field_variable import (
     DERIVED_FIELD_VARIABLES,
     derive_field_variable,
@@ -13,6 +13,7 @@ from lib.derived_field_variables.derived_field_variable import (
 from lib.derived_particle_variables.derived_particle_variable import (
     derive_particle_variable,
 )
+from lib.file_util import Prepath
 from lib.parsing.args_registry import arg_parser
 
 
@@ -28,11 +29,11 @@ class Derive(WorldAdaptor):
         if isinstance(active, List):
             if scoped_prefixes:
                 raise ValueError("--derive: cross-prefix references (prefix::key) are not supported for particle data.")
-            return world.with_active_data(AssignNewVariable(active).transform(self.ast))
+            return world.with_active(data=AssignNewVariable(active).transform(self.ast))
 
         if isinstance(active, Field):
             siblings = _load_siblings(world, scoped_prefixes)
-            return world.with_active_data(AssignNewFieldVariable(active, siblings).transform(self.ast))
+            return world.with_active(data=AssignNewFieldVariable(active, siblings).transform(self.ast))
 
         raise ValueError("--derive requires an active variable to derive into; specify one as a positional argument.")
 
@@ -51,16 +52,15 @@ def _collect_scoped_prefixes(ast) -> set[str]:
     return prefixes
 
 
-def _load_siblings(world: DataWorld, prefixes: set[str]) -> dict[str, Field]:
+def _load_siblings(world: DataWorld, prepaths: set[Prepath]) -> dict[str, Field]:
     """Resolve each scoped prefix to a loaded Field, reusing any already in the world
     and auto-loading the rest the same way `--with` does."""
-    siblings: dict[str, Field] = {}
-    for prefix in prefixes:
-        if prefix in world.datas:
-            siblings[prefix] = world.datas[prefix]
+    siblings: dict[Prepath, Field] = {}
+    for prepath in prepaths:
+        if prepath in world.datas:
+            siblings[prepath] = world.datas[prepath]
         else:
-            loaded = get_loader(world.config.data_root, prefix, None).apply_world(world)
-            siblings[prefix] = loaded.datas[prefix]
+            siblings[prepath] = load(world.config, prepath)
     return siblings
 
 
@@ -130,6 +130,7 @@ class AssignNewVariable(Transformer_InPlace):
 class AssignNewFieldVariable(Transformer_InPlace):
     def __init__(self, data: Field, siblings: dict[str, Field]):
         self._data = data
+        # TODO: load "siblings" into the world instead of this hack
         self._siblings = siblings
         super().__init__(visit_tokens=True)
 

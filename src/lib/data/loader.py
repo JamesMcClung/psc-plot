@@ -4,7 +4,9 @@ from pathlib import Path
 
 from lib.config import PscPlotConfig
 from lib.data.adaptor import WorldAdaptor
-from lib.data.data_with_attrs import DataWithAttrs
+from lib.data.data_with_attrs import DataWithAttrs, Field, List
+from lib.derived_field_variables.derived_field_variable import derive_field_variable
+from lib.derived_particle_variables.derived_particle_variable import derive_particle_variable
 from lib.file_util import Prepath, split_prepath
 
 
@@ -19,19 +21,15 @@ class Loader(WorldAdaptor):
     def suffix(cls) -> str:
         """Return the suffix that this loader supports."""
 
-    def __init__(self, prepath: Prepath, active_key: str | None = None):
+    def __init__(self, prepath: Prepath):
         self.prepath = prepath
         self.subdir, self.prefix = split_prepath(prepath)
-        self.active_key = active_key
 
     def get_name_fragments(self) -> list[str]:
-        fragments = [self.prepath]
-        if self.active_key is not None:
-            fragments.append(self.active_key)
-        return fragments
+        return [self.prepath]
 
     def apply_world(self, world):
-        return world.with_active_data(self.get_data(world.config), self.prepath)
+        return world.with_data(self.prepath, self.get_data(world.config))
 
     @abstractmethod
     def get_data(self, config: PscPlotConfig) -> DataWithAttrs: ...
@@ -64,7 +62,22 @@ def discover_loaders(data_dir: Path) -> dict[str, type[Loader]]:
     return result
 
 
-def get_loader(data_root: Path, prepath: Prepath, active_key: str | None) -> Loader:
+def get_loader(data_root: Path, prepath: Prepath) -> Loader:
     subdir, prefix = split_prepath(prepath)
     loader_types = discover_loaders(data_root / subdir)
-    return loader_types[prefix](prepath, active_key)
+    return loader_types[prefix](prepath)
+
+
+def load(config: PscPlotConfig, prepath: Prepath, active_key: str | None = None) -> DataWithAttrs:
+    loader = get_loader(config.data_root, prepath)
+    data = loader.get_data(config)
+    if active_key:
+        _, prefix = split_prepath(prepath)
+        if isinstance(data, Field):
+            data = derive_field_variable(data, active_key, prefix)
+        elif isinstance(data, List):
+            data = derive_particle_variable(data, active_key, prefix)
+        else:
+            raise TypeError(data.__class__)
+        data = data.assign_metadata(active_key=active_key)
+    return data

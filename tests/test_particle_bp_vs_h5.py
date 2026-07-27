@@ -11,13 +11,13 @@ from lib.data.loaders.particle_h5 import ParticleLoaderH5
 
 
 def _load_and_filter_h5(species_key: str):
-    loader = ParticleLoaderH5(prepath="prt", active_key=None)
+    loader = ParticleLoaderH5(prepath="prt")
     data = loader.get_data(CONFIG_2D)
     return SpeciesFilter(species_key).apply_list(data)
 
 
 def _load_bp(species_key: str):
-    loader = ParticleLoaderBp(prefix=f"prt.{species_key}", active_key=None)
+    loader = ParticleLoaderBp(prepath=f"prt.{species_key}")
     return loader.get_data(CONFIG_2D)
 
 

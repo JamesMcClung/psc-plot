@@ -8,7 +8,6 @@ from lib import file_util
 from lib.config import PscPlotConfig
 from lib.data.data_with_attrs import Field, FieldMetadata
 from lib.data.loader import Loader, loader
-from lib.derived_field_variables import derive_field_variable
 from lib.var_info_registry import lookup
 
 _KNOWN_PREFIXES = ("pfd", "pfd_moments", "gauss", "continuity")
@@ -46,16 +45,10 @@ class FieldLoaderBp(Loader):
         data = {key: ds[key] for key in ds.data_vars}
         var_infos = {key: lookup(self.prefix, key) for key in ds.variables}
 
-        field = Field(
+        return Field(
             data,
             FieldMetadata(
-                active_key=self.active_key,
                 prepath=self.prepath,
                 var_infos=var_infos,
             ),
         )
-
-        if self.active_key is not None:
-            field = derive_field_variable(field, self.active_key, self.prefix)
-
-        return field

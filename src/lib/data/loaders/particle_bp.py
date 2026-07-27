@@ -87,9 +87,9 @@ class ParticleLoaderBp(Loader):
     def suffix(cls):
         return "bp"
 
-    def __init__(self, prefix: str, active_key: str | None = None):
-        super().__init__(prefix, active_key)
-        self.species_key = prefix.split(".", 1)[1]
+    def __init__(self, prepath: file_util.Prepath):
+        super().__init__(prepath)
+        self.species_key = prepath.split(".", 1)[1]
 
     def get_data(self, config: PscPlotConfig) -> LazyList:
         steps = file_util.get_available_steps(config.data_root / self.subdir, self.prefix + ".", ".bp")
@@ -160,6 +160,5 @@ class ParticleLoaderBp(Loader):
         # species suffix when looking up per-column metadata.
         var_infos = {key: lookup("prt", key) for key in data.dims}
         return data.assign_metadata(
-            active_key=self.active_key,
             var_infos=var_infos,
         )

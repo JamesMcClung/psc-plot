@@ -26,20 +26,21 @@ class DataWorld:
             return None
         return self.datas[self.active_prepath]
 
-    def with_active_data(
+    def with_active(
         self,
-        active_data: DataWithAttrs | None = None,
-        active_prepath: Prepath | None = None,
+        *,
+        data: DataWithAttrs | None = None,
+        prepath: Prepath | None = None,
     ) -> DataWorld:
-        if active_data is None:
-            return replace(self, active_prepath=active_prepath)
+        if data is None:
+            return replace(self, active_prepath=prepath)
 
-        active_prepath = active_prepath or self.active_prepath
-        assert active_prepath is not None
+        prepath = prepath or self.active_prepath
+        assert prepath is not None
 
         new_datas = self.datas.copy()
-        new_datas[active_prepath] = active_data
-        return replace(self, datas=new_datas, active_prepath=active_prepath)
+        new_datas[prepath] = data
+        return replace(self, datas=new_datas, active_prepath=prepath)
 
     def with_data(
         self,

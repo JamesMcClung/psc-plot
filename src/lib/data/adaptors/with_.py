@@ -1,6 +1,6 @@
 from lib.config import _DATA_DIR_KEY
 from lib.data.adaptor import WorldAdaptor
-from lib.data.loader import get_loader
+from lib.data.loader import load
 from lib.file_util import Prepath
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
@@ -14,13 +14,15 @@ class With(WorldAdaptor):
 
     def apply_world(self, world):
         if not self.prepath:
-            return world.with_active_data(world.active_data.assign_metadata(active_key=self.key))
+            return world.with_active(data=world.active_data.assign_metadata(active_key=self.key))
 
         if self.prepath in world.datas:
-            return world.with_active_data(world.datas[self.prepath].assign_metadata(active_key=self.key), self.prepath)
+            return world.with_active(prepath=self.prepath, data=world.datas[self.prepath].assign_metadata(active_key=self.key))
 
-        loader = get_loader(world.config.data_root, self.prepath, self.key)
-        return loader.apply_world(world)
+        return world.with_active(
+            prepath=self.prepath,
+            data=load(world.config, self.prepath, self.key),
+        )
 
     def get_name_fragments(self) -> list[str]:
         maybe_with = "with_" if self.include_with_in_name_fragment else ""

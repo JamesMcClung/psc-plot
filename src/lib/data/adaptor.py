@@ -29,7 +29,7 @@ class WorldAdaptor(ABC, HasNameFragments):
 
 class Adaptor(WorldAdaptor):
     def apply_world(self, world: DataWorld) -> DataWorld:
-        return world.with_active_data(self.apply(world.active_data))
+        return world.with_active(data=self.apply(world.active_data))
 
     def apply(self, data: DataWithAttrs) -> DataWithAttrs:
         if isinstance(data, List):
