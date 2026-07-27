@@ -76,7 +76,7 @@ class TransformPolar(MetadataAdaptor):
         new_var_infos = {k: v for k, v in data.metadata.var_infos.items() if k not in {key_x, key_y}}
         new_var_infos[key_r] = dim_r
         new_var_infos[key_theta] = dim_theta
-        return data.with_active(data=da).assign_metadata(var_infos=new_var_infos)
+        return data.with_active(data=da).assign(var_infos=new_var_infos)
 
     def apply_list(self, data: List) -> List:
         dim_x = data.metadata.var_infos[self.dim1_key]

@@ -97,18 +97,10 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
     def with_active(self, *, data: Subdata | None = None, key: str | None = None, info: VarInfo | None = None) -> Self: ...
 
     def with_info(self, key: str, info: VarInfo) -> Self:
-        return self.assign_metadata(var_infos=self.metadata.var_infos | {key: info})
+        return self.assign(var_infos=self.metadata.var_infos | {key: info})
 
-    def assign_data(self, data: Data) -> Self:
-        return self.__class__(data, self.metadata)
-
-    def assign_metadata(self, metadata: MD | None = None, /, **metadata_vals: Any) -> Self:
-        if not (metadata or metadata_vals):
-            return self
-        return self.__class__(self.data, (metadata or self.metadata).assign(**metadata_vals))
-
-    def assign(self, data: Data, metadata: MD | None = None, /, **metadata_vals: Any) -> Self:
-        return self.assign_data(data).assign_metadata(metadata, **metadata_vals)
+    def assign(self, data: Data | None = None, /, **metadata_vals: Any) -> Self:
+        return self.__class__(self.data if data is None else data, self.metadata.assign(**metadata_vals))
 
     @abstractmethod
     def bounds(self, dim_name: str) -> tuple[float, float]: ...
@@ -137,7 +129,7 @@ class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata])
 
     def with_active(self, *, data=None, key=None, info=None) -> Self:
         if data is None and info is None:
-            return self.assign_metadata(active_key=key)
+            return self.assign(active_key=key)
 
         key = key or self.metadata.active_key
         assert key is not None
@@ -147,7 +139,7 @@ class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata])
             ret = ret.assign(ret.data | {key: data}, active_key=key)
 
         if info is not None:
-            ret = ret.assign_metadata(var_infos=ret.metadata.var_infos | {key: info}, active_key=key)
+            ret = ret.assign(var_infos=ret.metadata.var_infos | {key: info}, active_key=key)
 
         return ret
 
@@ -211,7 +203,7 @@ class List[Data: pd.DataFrame | dd.DataFrame = pd.DataFrame | dd.DataFrame, Subd
 
     def with_active(self, *, data=None, key=None, info=None) -> Self:
         if data is None and info is None:
-            return self.assign_metadata(active_key=key)
+            return self.assign(active_key=key)
 
         key = key or self.metadata.active_key
         assert key is not None
@@ -221,7 +213,7 @@ class List[Data: pd.DataFrame | dd.DataFrame = pd.DataFrame | dd.DataFrame, Subd
             ret = ret.assign(ret.data.assign(**{key: data}), active_key=key)
 
         if info is not None:
-            ret = ret.assign_metadata(var_infos=ret.metadata.var_infos | {key: info}, active_key=key)
+            ret = ret.assign(var_infos=ret.metadata.var_infos | {key: info}, active_key=key)
 
         return ret
 

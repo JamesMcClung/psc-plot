@@ -12,15 +12,18 @@ class SpeciesFilter(MetadataAdaptor):
         if info is None:
             available = sorted(data.metadata.species.keys())
             raise ValueError(f"unknown species {self.species_key!r}; available: {available}")
-        data = data.assign_metadata(subject=info.display)
+
+        data = data.assign(subject=info.display)
+
         if len(data.metadata.species) == 1:
             # Dataset is already single-species (e.g. BP per-species file, or H5
             # with one species). Row filter is a no-op; skip to avoid requiring
             # q/m columns that BP data doesn't have.
             return data
+
         df = data.data
         df = df[(df["q"] == info.q) & (df["m"] == info.m)]
-        return data.assign(df, subject=info.display)
+        return data.assign(df)
 
     def get_name_fragments(self) -> list[str]:
         return [self.species_key]
