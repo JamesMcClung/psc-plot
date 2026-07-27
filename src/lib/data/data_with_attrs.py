@@ -19,6 +19,7 @@ from lib.var_info import VarInfo
 
 @dataclass(kw_only=True, frozen=True)
 class Metadata:
+    prepath: Prepath
     active_key: str | None = None
 
     var_infos: dict[str, VarInfo] = field(default_factory=dict)
@@ -120,9 +121,7 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
     def dask_collections(self) -> list: ...
 
 
-@dataclass(kw_only=True, frozen=True)
-class FieldMetadata(Metadata):
-    prepath: Prepath | None = None
+class FieldMetadata(Metadata): ...
 
 
 class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata]):

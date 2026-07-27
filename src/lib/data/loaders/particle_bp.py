@@ -147,6 +147,7 @@ class ParticleLoaderBp(Loader):
         coordss["t"] = times
 
         metadata = ListMetadata(
+            prepath=self.prepath,
             weight_key="w",
             coordss=coordss,
             species=species_dict,
