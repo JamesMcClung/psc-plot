@@ -23,20 +23,6 @@ class Versus(MetadataAdaptor):
         self.color_dim = color_dim
         self.axes_idx = axes_idx
 
-    def _get_unused_dims(self, data: DataWithAttrs) -> list[str]:
-        unused_dims = data.dims.copy()
-
-        for space_dim in self.spatial_dims:
-            unused_dims.remove(space_dim)
-
-        if time_dim := self._get_time_dim(data):
-            unused_dims.remove(time_dim)
-
-        if self.color_dim:
-            unused_dims.remove(self.color_dim)
-
-        return unused_dims
-
     def _get_time_dim(self, data: DataWithAttrs) -> str | None:
         if self.time_dim_rule != "guess":
             return self.time_dim_rule
@@ -84,18 +70,12 @@ class Versus(MetadataAdaptor):
         )
 
     def apply_field(self, data: Field) -> Field:
-        reduce = Reduce(self._get_unused_dims(data), "mean")
-        data = reduce.apply(data)
-
-        return data
+        used_dims = {*self.spatial_dims, self._get_time_dim(data), self.color_dim}
+        reduce_dims = [dim for dim in data.dims if dim not in used_dims]  # preserve order
+        reduce = Reduce(reduce_dims, "mean")
+        return reduce.apply(data)
 
     def apply_list(self, data: List) -> List:
-        data = data.assign(data.data.drop(columns=self._get_unused_dims(data)))
-
-        spatial_dims = self.spatial_dims.copy()
-        if len(spatial_dims) == 1 and data.metadata.active_key is not None and data.metadata.active_key not in spatial_dims:
-            spatial_dims.append(data.metadata.active_key)
-
         return data
 
     def get_name_fragments(self) -> list[str]:
