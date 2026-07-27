@@ -7,9 +7,10 @@ from lib.parsing.args_registry import arg_parser
 
 
 class With(WorldAdaptor):
-    def __init__(self, prepath: Prepath | None, key: str | None = None):
+    def __init__(self, prepath: Prepath | None, key: str | None = None, *, include_with_in_name_fragment: bool = True):
         self.prepath = prepath
         self.key = key
+        self.include_with_in_name_fragment = include_with_in_name_fragment
 
     def apply_world(self, world):
         if not self.prepath:
@@ -22,8 +23,9 @@ class With(WorldAdaptor):
         return loader.apply_world(world)
 
     def get_name_fragments(self) -> list[str]:
+        maybe_with = "with_" if self.include_with_in_name_fragment else ""
         maybe_prepath = f"{self.prepath}{SCOPE_OP}" if self.prepath else ""
-        return [f"with_{maybe_prepath}{self.key or ''}"]
+        return [f"{maybe_with}{maybe_prepath}{self.key or ''}"]
 
 
 SCOPE_OP = "::"
