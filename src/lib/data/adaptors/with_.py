@@ -15,13 +15,14 @@ class With(WorldAdaptor):
 
     def apply_world(self, world):
         if not self.prepath:
-            return world.with_active(data=world.active_data.with_active(key=self.key))
+            data = world.require_active_data()
+        elif self.prepath in world.datas:
+            data = world.datas[self.prepath]
+        else:
+            data = load(world.config, self.prepath)
 
-        if self.prepath in world.datas:
-            return world.with_active(prepath=self.prepath, data=world.datas[self.prepath].with_active(key=self.key))
-
-        data = load(world.config, self.prepath)
-        data = ensure_derived(data, self.prepath, self.key)
+        if self.key:
+            data = ensure_derived(data, self.prepath, self.key)
         data = data.with_active(key=self.key)
 
         return world.with_active(prepath=self.prepath, data=data)
