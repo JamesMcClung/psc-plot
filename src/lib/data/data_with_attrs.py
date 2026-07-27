@@ -124,10 +124,6 @@ class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata])
         assert key is not None
         return self.assign(self.data | {key: data}, active_key=key)
 
-    def with_active_data(self, new_da: xr.DataArray) -> Self:
-        """Returns a shallow copy with the active variable replaced by `new_da`."""
-        return self.assign_data(self.data | {self.metadata.active_key: new_da})
-
     @cached_property
     def coordss(self) -> dict[str, np.ndarray]:
         active = self.active_data
@@ -182,9 +178,6 @@ class List[Data: pd.DataFrame | dd.DataFrame = pd.DataFrame | dd.DataFrame, Subd
         if self.metadata.active_key is None:
             raise ValueError("no active variable; specify one as a positional argument")
         return self.data[self.metadata.active_key]
-
-    def with_active_data(self, series: pd.Series | dd.Series) -> Self:
-        return self.assign_data(self.data.assign(**{self.metadata.active_key: series}))
 
     def with_active(self, *, data=None, key=None) -> Self:
         if data is None:
