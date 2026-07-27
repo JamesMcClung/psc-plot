@@ -110,9 +110,6 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
     def assign(self, data: Data, metadata: MD | None = None, /, **metadata_vals: Any) -> Self:
         return self.assign_data(data).assign_metadata(metadata, **metadata_vals)
 
-    def map_data(self, func: Callable[[Data], Data]) -> Self:
-        return self.assign_data(func(self.data))
-
     @abstractmethod
     def bounds(self, dim_name: str) -> tuple[float, float]: ...
 
