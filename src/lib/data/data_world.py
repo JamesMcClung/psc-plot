@@ -40,3 +40,10 @@ class DataWorld:
         new_datas = self.datas.copy()
         new_datas[active_prepath] = active_data
         return replace(self, datas=new_datas, active_prepath=active_prepath)
+
+    def with_data(
+        self,
+        prepath: Prepath,
+        data: DataWithAttrs,
+    ) -> DataWorld:
+        return replace(self, datas=self.datas | {prepath: data})
