@@ -22,7 +22,7 @@ class With(WorldAdaptor):
             data = load(world.config, self.prepath)
 
         if self.key:
-            data = ensure_derived(data, self.prepath, self.key)
+            data = ensure_derived(data, self.key)
         data = data.with_active(key=self.key)
 
         return world.with_active(prepath=self.prepath, data=data)
