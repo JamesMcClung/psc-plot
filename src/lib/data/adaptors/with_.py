@@ -11,7 +11,7 @@ class With(WorldAdaptor):
 
     def apply_world(self, world):
         # case 1: prefix_or_key is a key within the active prefix
-        if not self.key and world.active_key and self.prefix_or_key in world.active_data.metadata.var_infos:
+        if not self.key and world.active_prepath and self.prefix_or_key in world.active_data.metadata.var_infos:
             key = self.prefix_or_key
             return world.with_active_data(world.active_data.assign_metadata(active_key=key))
 

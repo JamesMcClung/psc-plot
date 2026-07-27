@@ -72,7 +72,7 @@ class Versus(MetadataAdaptor):
     def apply_world(self, world):
         data = self.apply(world.active_data)
         new_plot_target = PlotTarget(
-            world.active_key,
+            world.active_prepath,
             spatial_dims=self._get_spatial_dims(data),
             color_dim=self._get_color_dim(data),
             time_dim=self._get_time_dim(data),
@@ -81,7 +81,7 @@ class Versus(MetadataAdaptor):
         return replace(
             world,
             plot_targets=world.plot_targets + [new_plot_target],
-            datas=world.datas | {world.active_key: data},
+            datas=world.datas | {world.active_prepath: data},
         )
 
     def apply_field(self, data: Field) -> Field:
