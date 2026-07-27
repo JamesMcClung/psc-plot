@@ -116,10 +116,6 @@ class AssignNewVariable(Transformer_InPlace):
         [lhs, rhs] = toks
         return lhs**rhs
 
-    def assign_default(self, toks: list):
-        [new_variable] = toks
-        return derive_particle_variable(self._data, new_variable, "prt")
-
     def assignment(self, toks: list):
         [new_variable, val] = toks
         return self._data.with_active(key=new_variable, data=val)
@@ -170,12 +166,6 @@ class AssignNewFieldVariable(Transformer_InPlace):
         [lhs, rhs] = toks
         return lhs**rhs
 
-    def assign_default(self, toks: list):
-        [key] = toks
-        self._data = _resolve_field_variable(self._data, key)
-        info = var_info_registry.lookup(self._data.metadata.prepath, key)
-        return self._data.with_active(key=key, info=info)
-
     def assignment(self, toks: list):
         [key, subdata] = toks
         info = var_info_registry.lookup(self._data.metadata.prepath, key)
@@ -183,11 +173,10 @@ class AssignNewFieldVariable(Transformer_InPlace):
 
 
 _DERIVE_GRAMMAR = r"""
-?start : assign_default | assignment
+?start : assignment
 
-assign_default : new_variable
-assignment     : new_variable "=" expression
-new_variable   : CNAME
+assignment   : new_variable "=" expression
+new_variable : CNAME
 
 ?expression : _expression_3
 
@@ -220,16 +209,14 @@ number   : SIGNED_NUMBER
 
 
 _DERIVE_PARSER = Lark(_DERIVE_GRAMMAR)
-
-_DERIVE_FORMAT = "new_var_key[=expression]"
-_EXPRESSION_DESCRIPTION = "The expression can be any mathematical expression using the standard operators (+, -, *, /, ^), parentheses, signed floating point numbers, and existing variable names. A name may be scoped to another prefix as prefix::key (that prefix is auto-loaded)."
+_DERIVE_FORMAT = "new_var_key=expression"
 
 
 @arg_parser(
     dest="adaptors",
     flags="--derive",
     metavar=_DERIVE_FORMAT,
-    help=f"Create a new variable with the given name. {_EXPRESSION_DESCRIPTION} If the expression is omitted, the variable is derived via the registry of derivable variables.",
+    help=f"Create a new variable with the given name. The expression can be any mathematical expression using the standard operators (+, -, *, /, ^), parentheses, signed floating point numbers, and other variable names. A name may be scoped to another prefix as `prepath::key` (similar to `--with`).",
 )
 def parse_derive(arg: str) -> Derive:
     return Derive(arg)
