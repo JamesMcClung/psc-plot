@@ -95,7 +95,7 @@ class TransformSpherical(MetadataAdaptor):
         new_var_infos[key_r] = dim_r
         new_var_infos[key_theta] = dim_theta
         new_var_infos[key_phi] = dim_phi
-        return data.with_active_data(da).assign_metadata(var_infos=new_var_infos)
+        return data.with_active(data=da).assign_metadata(var_infos=new_var_infos)
 
     def apply_list(self, data: List) -> List:
         dim_x = data.metadata.var_infos[self.dim1_key]

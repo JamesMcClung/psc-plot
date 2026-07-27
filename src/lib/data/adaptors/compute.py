@@ -13,4 +13,4 @@ class Compute(MetadataAdaptor):
         return data.compute()
 
     def apply_field(self, data: Field) -> Field:
-        return data.with_active_data(data.active_data.compute())
+        return data.with_active(data=data.active_data.compute())

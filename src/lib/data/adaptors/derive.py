@@ -122,9 +122,7 @@ class AssignNewVariable(Transformer_InPlace):
 
     def assignment(self, toks: list):
         [new_variable, val] = toks
-        df = self._data.data
-        df = df.assign(**{new_variable: val})
-        return self._data.assign_data(df)
+        return self._data.with_active(key=new_variable, data=val)
 
 
 class AssignNewFieldVariable(Transformer_InPlace):
