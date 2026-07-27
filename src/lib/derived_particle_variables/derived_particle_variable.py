@@ -6,7 +6,7 @@ import pandas as pd
 from lib import var_info_registry
 from lib.data.data_with_attrs import List
 
-__all__ = ["derived_particle_variable", "derive_particle_variable", "DERIVED_PARTICLE_VARIABLES"]
+__all__ = ["derived_particle_variable", "derive_particle_variable"]
 
 
 class DeriveParticleVariable(typing.Protocol):
@@ -45,6 +45,13 @@ def register_derived_particle_variable(prefix: str, var: DerivedParticleVariable
     DERIVED_PARTICLE_VARIABLES.setdefault(prefix, {})[var.name] = var
 
 
+def get_derived_particle_variables(prefix: str) -> dict[str, DerivedParticleVariable]:
+    if prefix.startswith("prt."):
+        # FIXME this is a hardcoded hack
+        prefix = "prt"
+    return DERIVED_PARTICLE_VARIABLES[prefix]
+
+
 def derived_particle_variable(prefix: str):
     def derived_particle_variable_inner[F: (function, DeriveParticleVariable)](derive_func: F) -> F:
         name = derive_func.__name__
@@ -58,13 +65,16 @@ def derived_particle_variable(prefix: str):
 def derive_particle_variable(data: List, active_key: str, ds_prefix: str) -> List:
     if active_key in data.dims:
         return data
-    elif active_key in DERIVED_PARTICLE_VARIABLES[ds_prefix]:
-        derived_var = DERIVED_PARTICLE_VARIABLES[ds_prefix][active_key]
+
+    derived_vars = get_derived_particle_variables(ds_prefix)
+
+    if active_key in derived_vars:
+        derived_var = derived_vars[active_key]
         for base_var_name in derived_var.base_var_names:
             data = derive_particle_variable(data, base_var_name, ds_prefix)
         return derived_var.assign_to(data)
     else:
         message = f"""No variable named '{active_key}'.
 The following variables are defined:    {data.dims}.
-The following variables can be derived: {list(DERIVED_PARTICLE_VARIABLES[ds_prefix])}."""
+The following variables can be derived: {list(derived_vars)}."""
         raise ValueError(message)
