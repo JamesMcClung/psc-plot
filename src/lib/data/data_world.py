@@ -26,6 +26,11 @@ class DataWorld:
             return None
         return self.datas[self.active_prepath]
 
+    def require_active_data(self) -> DataWithAttrs:
+        if self.active_prepath is None:
+            raise ValueError("no active dataset; specify one as a positional argument")
+        return self.datas[self.active_prepath]
+
     def with_active(
         self,
         *,
