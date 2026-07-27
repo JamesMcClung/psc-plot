@@ -58,23 +58,13 @@ class Metadata:
         return self.__class__(**updated_vals)
 
 
-@dataclass(frozen=True, init=False)
-class DataWithAttrs[D: dict[str, xr.DataArray] | pd.DataFrame | dd.DataFrame, MD: Metadata](ABC):
+@dataclass(frozen=True)
+class DataWithAttrs[Data, MD: Metadata = Metadata](ABC):
     """A data wrapper to provide a uniform, typed, and reliable metadata interface."""
 
-    # The type checker ignores type bounds when no generic argument is present, e.g. after `isinstance` (and function parameters).
-    # Specifying field data types like this makes their types known in such cases, but doesn't give type hints for the parameters of __init__.
-    # Thus, it's necessary to annotate __init__ parameters via generics and the fields themselves with concrete types.
-    # Unfortunately, annotating a field in a superclass requires also annotating it in each subclass that refines that field's type.
-    # And with all this, other methods still don't get type hints :(
-    data: dict[str, xr.DataArray] | pd.DataFrame | dd.DataFrame
-    metadata: Metadata
-    _caches: dict[str, dict[str, Any]]
-
-    def __init__(self, data: D, metadata: MD):
-        object.__setattr__(self, "data", data)
-        object.__setattr__(self, "metadata", metadata)
-        object.__setattr__(self, "_caches", {})
+    data: Data
+    metadata: MD
+    _caches: dict[str, dict[str, Any]] = field(default_factory=dict, init=False)
 
     @property
     @abstractmethod
@@ -84,7 +74,7 @@ class DataWithAttrs[D: dict[str, xr.DataArray] | pd.DataFrame | dd.DataFrame, MD
     @abstractmethod
     def dims(self) -> list[str]: ...
 
-    def assign_data(self, data: D) -> Self:
+    def assign_data(self, data: Data) -> Self:
         return self.__class__(data, self.metadata)
 
     def assign_metadata(self, metadata: MD | None = None, /, **metadata_vals: Any) -> Self:
@@ -92,10 +82,10 @@ class DataWithAttrs[D: dict[str, xr.DataArray] | pd.DataFrame | dd.DataFrame, MD
             return self
         return self.__class__(self.data, (metadata or self.metadata).assign(**metadata_vals))
 
-    def assign(self, data: D, metadata: MD | None = None, /, **metadata_vals: Any) -> Self:
+    def assign(self, data: Data, metadata: MD | None = None, /, **metadata_vals: Any) -> Self:
         return self.assign_data(data).assign_metadata(metadata, **metadata_vals)
 
-    def map_data(self, func: Callable[[D], D]) -> Self:
+    def map_data(self, func: Callable[[Data], Data]) -> Self:
         return self.assign_data(func(self.data))
 
     @abstractmethod
@@ -117,9 +107,6 @@ class FieldMetadata(Metadata):
 
 
 class Field(DataWithAttrs[dict[str, xr.DataArray], FieldMetadata]):
-    data: dict[str, xr.DataArray]
-    metadata: FieldMetadata
-
     @property
     def active_data(self) -> xr.DataArray:
         if self.metadata.active_key is None:
@@ -178,10 +165,7 @@ class ListMetadata(Metadata):
     `len(partition_ranges) == len(coordss[partition_dim])`."""
 
 
-class List[D: pd.DataFrame | dd.DataFrame](DataWithAttrs[D, ListMetadata]):
-    data: pd.DataFrame | dd.DataFrame
-    metadata: ListMetadata
-
+class List[Data: pd.DataFrame | dd.DataFrame = pd.DataFrame | dd.DataFrame](DataWithAttrs[Data, ListMetadata]):
     @property
     def active_data(self) -> pd.Series | dd.Series:
         if self.metadata.active_key is None:
@@ -204,8 +188,6 @@ class List[D: pd.DataFrame | dd.DataFrame](DataWithAttrs[D, ListMetadata]):
 
 
 class FullList(List[pd.DataFrame]):
-    data: pd.DataFrame
-
     def compute(self) -> FullList:
         return self
 
@@ -237,8 +219,6 @@ class FullList(List[pd.DataFrame]):
 
 
 class LazyList(List[dd.DataFrame]):
-    data: dd.DataFrame
-
     def compute(self) -> FullList:
         # partition_* describe the dask layout; meaningless after compute.
         return FullList(self.data.compute(), self.metadata.assign(partition_dim=None, partition_ranges=None))
