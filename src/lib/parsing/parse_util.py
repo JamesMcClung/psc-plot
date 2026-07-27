@@ -7,7 +7,7 @@ def _is_identifier(val: str) -> bool:
     return all(re.match(r"^\w[\d\w]*$", v) for v in val.split("."))
 
 
-def fail_format(arg: str, format: str):
+def fail_format(arg: str, format: str) -> typing.NoReturn:
     raise argparse.ArgumentTypeError(f"Expected value of form '{format}'; got '{arg}'")
 
 
