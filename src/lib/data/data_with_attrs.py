@@ -74,6 +74,25 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
     @abstractmethod
     def dims(self) -> list[str]: ...
 
+    @property
+    def active_key(self) -> str | None:
+        return self.metadata.active_key
+
+    @property
+    def active_subdata(self) -> Subdata | None:
+        if self.active_key is None:
+            return None
+        return self[self.active_key]
+
+    @property
+    def active_info(self) -> VarInfo | None:
+        if self.active_key is None:
+            return None
+        return self.metadata.var_infos[self.active_key]
+
+    @abstractmethod
+    def __getitem__(self, key: str) -> Subdata: ...
+
     @abstractmethod
     def with_active(self, *, data: Subdata | None = None, key: str | None = None, info: VarInfo | None = None) -> Self: ...
 
@@ -131,6 +150,9 @@ class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata])
             ret = ret.assign_metadata(var_infos=ret.metadata.var_infos | {key: info}, active_key=key)
 
         return ret
+
+    def __getitem__(self, key: str):
+        return self.data[key]
 
     @cached_property
     def coordss(self) -> dict[str, np.ndarray]:
@@ -216,6 +238,9 @@ class List[Data: pd.DataFrame | dd.DataFrame = pd.DataFrame | dd.DataFrame, Subd
 
 
 class FullList(List[pd.DataFrame]):
+    def __getitem__(self, key: str):
+        return self.data[key]
+
     def compute(self) -> FullList:
         return self
 
@@ -247,6 +272,9 @@ class FullList(List[pd.DataFrame]):
 
 
 class LazyList(List[dd.DataFrame]):
+    def __getitem__(self, key: str):
+        return self.data[key]
+
     def compute(self) -> FullList:
         # partition_* describe the dask layout; meaningless after compute.
         return FullList(self.data.compute(), self.metadata.assign(partition_dim=None, partition_ranges=None))
