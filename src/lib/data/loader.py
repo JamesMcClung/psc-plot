@@ -4,9 +4,8 @@ from pathlib import Path
 
 from lib.config import PscPlotConfig
 from lib.data.adaptor import WorldAdaptor
-from lib.data.data_with_attrs import DataWithAttrs, Field, List
-from lib.derived_field_variables.derived_field_variable import derive_field_variable
-from lib.derived_particle_variables.derived_particle_variable import derive_particle_variable
+from lib.data.data_with_attrs import DataWithAttrs
+from lib.data.ensure_derived import ensure_derived
 from lib.file_util import Prepath, split_prepath
 
 
@@ -72,12 +71,5 @@ def load(config: PscPlotConfig, prepath: Prepath, active_key: str | None = None)
     loader = get_loader(config.data_root, prepath)
     data = loader.get_data(config)
     if active_key:
-        _, prefix = split_prepath(prepath)
-        if isinstance(data, Field):
-            data = derive_field_variable(data, active_key, prefix)
-        elif isinstance(data, List):
-            data = derive_particle_variable(data, active_key, prefix)
-        else:
-            raise TypeError(data.__class__)
-        data = data.with_active(key=active_key)
+        data = ensure_derived(data, prepath, active_key)
     return data
