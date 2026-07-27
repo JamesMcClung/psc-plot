@@ -101,6 +101,15 @@ def test_image_and_line():
     return make_plot("prt.i --bin y py=100 --nan0 --scale log --compute -v y py -w pfd::ey_ec -v y".split())
 
 
+# --- Cross-subdir plots ---
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_crossdir_with():
+    """Data from two different subdirectories."""
+    return make_plot("test-2d/pfd hx_fc -v y --display \\text{2d} --with test-3d/pfd::hx_fc -v y --display \\text{3d}".split(), data_dir=".")
+
+
 # --- Turbulence power spectrum ---
 
 
