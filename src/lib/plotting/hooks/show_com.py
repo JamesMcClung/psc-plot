@@ -6,7 +6,7 @@ from lib.plotting.plot_info import PlotInfo2D
 
 def _get_center(field: Field, dim: str) -> float:
     other_dims = set(field.dims) - {dim}
-    summed = field.active_data.sum(other_dims)
+    summed = field.require_active_subdata().sum(other_dims)
     return (summed * field.coordss[dim]).sum(dim) / summed.sum(dim)
 
 

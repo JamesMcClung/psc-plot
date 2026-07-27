@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, fields
 from functools import cached_property
-from typing import Any, Callable, Self
+from typing import Any, Self
 
 import dask.array
 import dask.dataframe as dd
@@ -84,6 +84,11 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
             return None
         return self[self.active_key]
 
+    def require_active_subdata(self) -> Subdata:
+        if self.active_key is None:
+            raise ValueError("No active variable.")
+        return self[self.active_key]
+
     @property
     def active_info(self) -> VarInfo | None:
         if self.active_key is None:
@@ -121,12 +126,6 @@ class FieldMetadata(Metadata):
 
 
 class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata]):
-    @property
-    def active_data(self) -> xr.DataArray:
-        if self.metadata.active_key is None:
-            raise ValueError("no active variable; specify one as a positional argument")
-        return self.data[self.metadata.active_key]
-
     def with_active(self, *, data=None, key=None, info=None) -> Self:
         if data is None and info is None:
             return self.assign(active_key=key)
@@ -148,12 +147,12 @@ class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata])
 
     @cached_property
     def coordss(self) -> dict[str, np.ndarray]:
-        active = self.active_data
+        active = self.require_active_subdata()
         return {dim: np.array(active.coords[dim]) for dim in active.coords.keys()}
 
     @cached_property
     def dims(self) -> list[str]:
-        return list(self.active_data.dims)
+        return list(self.require_active_subdata().dims)
 
     def bounds(self, dim_name):
         return (self.lower_bound(dim_name), self.upper_bound(dim_name))
@@ -168,7 +167,7 @@ class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata])
 
     @cached_property
     def var_bounds(self) -> tuple[float, float]:
-        active = self.active_data
+        active = self.require_active_subdata()
         return dask.compute(np.min(active), np.max(active))
 
     def dask_collections(self) -> list:
@@ -195,12 +194,6 @@ class ListMetadata(Metadata):
 
 
 class List[Data: pd.DataFrame | dd.DataFrame = pd.DataFrame | dd.DataFrame, Subdata: pd.Series | dd.Series = pd.Series | dd.Series](DataWithAttrs[Data, Subdata, ListMetadata]):
-    @property
-    def active_data(self) -> pd.Series | dd.Series:
-        if self.metadata.active_key is None:
-            raise ValueError("no active variable; specify one as a positional argument")
-        return self.data[self.metadata.active_key]
-
     def with_active(self, *, data=None, key=None, info=None) -> Self:
         if data is None and info is None:
             return self.assign(active_key=key)

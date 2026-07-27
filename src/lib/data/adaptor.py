@@ -71,10 +71,10 @@ class BareAdaptor(MetadataAdaptor):
     """An adaptor that works with the raw data, no metadata required."""
 
     def apply_field(self, data: Field) -> DataWithAttrs:
-        return data.with_active(data=self.apply_field_bare(data.active_data))
+        return data.with_active(data=self.apply_field_bare(data.require_active_subdata()))
 
     def apply_list(self, data: List) -> DataWithAttrs:
-        return data.with_active(data=self.apply_list_bare(data.active_data))
+        return data.with_active(data=self.apply_list_bare(data.require_active_subdata()))
 
     def apply_field_bare(self, da: xr.DataArray) -> xr.DataArray:
         _fail_apply_field(self.__class__)

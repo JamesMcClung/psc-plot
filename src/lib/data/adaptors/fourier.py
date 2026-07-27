@@ -36,7 +36,7 @@ class Fourier(MetadataAdaptor):
     def apply_field(self, data: Field) -> Field:
         pre_dim_latexs = [data.metadata.var_infos[key].display.latex for key in self.dim_keys]
 
-        da = data.active_data
+        da = data.require_active_subdata()
         new_var_infos = data.metadata.var_infos.copy()
 
         for key in self.dim_keys:

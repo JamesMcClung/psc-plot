@@ -93,7 +93,7 @@ class Bin(MetadataAdaptor):
 
             dim_names_to_bin_size[dim_name] = bin_size
 
-        return data.with_active(data=data.active_data.coarsen(dim_names_to_bin_size, boundary="pad").mean())
+        return data.with_active(data=data.require_active_subdata().coarsen(dim_names_to_bin_size, boundary="pad").mean())
 
     def apply_list(self, data: List) -> Field:
         bin_edgess = _guess_bin_edgess(data, self.varname_to_nbins)

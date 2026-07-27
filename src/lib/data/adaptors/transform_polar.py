@@ -68,7 +68,7 @@ class TransformPolar(MetadataAdaptor):
         xgrid = xr.Variable([key_r, key_theta], xgrid)
         ygrid = xr.Variable([key_r, key_theta], ygrid)
 
-        da = data.active_data
+        da = data.require_active_subdata()
         da = da.interp({key_x: xgrid, key_y: ygrid}, assume_sorted=True)
         da = da.drop_vars([key_x, key_y])
         da = da.assign_coords({key_r: rs, key_theta: thetas})

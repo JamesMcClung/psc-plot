@@ -13,7 +13,7 @@ class Field1dRenderer(Renderer[Field]):
 
         plot_info = LineInfo(
             x_data=frame_data.coordss[x_dim],
-            y_data=frame_data.active_data,
+            y_data=frame_data.require_active_subdata(),
             x_dim=x_dim,
             y_dim=y_dim,
             time_dim=self.plot_target.time_dim,
@@ -48,5 +48,5 @@ class Field1dRenderer(Renderer[Field]):
     def update_plot_info(self, frame: int):
         frame_data = self._get_data_at_frame(frame)
 
-        self.plot_info.set("y_data", frame_data.active_data)
+        self.plot_info.set("y_data", frame_data.require_active_subdata())
         self.plot_info.set("scalar_coord_values", {dim: coord for dim, coord in frame_data.coordss.items() if coord.shape == ()})

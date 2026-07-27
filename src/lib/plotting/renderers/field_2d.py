@@ -19,7 +19,7 @@ class Field2dRenderer(Renderer[Field]):
         [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
         color_dim = self.plot_target.color_dim
 
-        data = frame_data.active_data.transpose(y_dim, x_dim)
+        data = frame_data.require_active_subdata().transpose(y_dim, x_dim)
 
         plot_info = ImageInfo(
             data=data,
@@ -63,7 +63,7 @@ class Field2dRenderer(Renderer[Field]):
         frame_data = self._get_data_at_frame(frame)
 
         [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
-        data = frame_data.active_data.transpose(y_dim, x_dim)
+        data = frame_data.require_active_subdata().transpose(y_dim, x_dim)
 
         self.plot_info.set("data", data)
         self.plot_info.set("scalar_coord_values", {dim: coord for dim, coord in frame_data.coordss.items() if coord.shape == ()})

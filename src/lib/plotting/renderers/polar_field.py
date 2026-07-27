@@ -26,7 +26,7 @@ class PolarFieldRenderer(Renderer[Field]):
             theta_vertices -= theta_vertices[1] / 2.0
 
         plot_info = PolarMeshInfo(
-            data=frame_data.active_data,
+            data=frame_data.require_active_subdata(),
             r_dim=r_dim,
             theta_dim=theta_dim,
             color_dim=color_dim,
@@ -65,5 +65,5 @@ class PolarFieldRenderer(Renderer[Field]):
     def update_plot_info(self, frame: int):
         frame_data = self._get_data_at_frame(frame)
 
-        self.plot_info.set("data", frame_data.active_data)
+        self.plot_info.set("data", frame_data.require_active_subdata())
         self.plot_info.set("scalar_coord_values", {dim: coord for dim, coord in frame_data.coordss.items() if coord.shape == ()})
