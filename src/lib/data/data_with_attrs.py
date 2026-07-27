@@ -96,6 +96,9 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
     @abstractmethod
     def with_active(self, *, data: Subdata | None = None, key: str | None = None, info: VarInfo | None = None) -> Self: ...
 
+    def with_info(self, key: str, info: VarInfo) -> Self:
+        return self.assign_metadata(var_infos=self.metadata.var_infos | {key: info})
+
     def assign_data(self, data: Data) -> Self:
         return self.__class__(data, self.metadata)
 
