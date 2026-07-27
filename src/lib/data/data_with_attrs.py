@@ -75,7 +75,7 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
     def dims(self) -> list[str]: ...
 
     @abstractmethod
-    def with_active(self, *, data: Subdata | None = None, key: str | None = None) -> Self: ...
+    def with_active(self, *, data: Subdata | None = None, key: str | None = None, info: VarInfo | None = None) -> Self: ...
 
     def assign_data(self, data: Data) -> Self:
         return self.__class__(data, self.metadata)
@@ -116,13 +116,21 @@ class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata])
             raise ValueError("no active variable; specify one as a positional argument")
         return self.data[self.metadata.active_key]
 
-    def with_active(self, *, data=None, key=None) -> Self:
-        if data is None:
+    def with_active(self, *, data=None, key=None, info=None) -> Self:
+        if data is None and info is None:
             return self.assign_metadata(active_key=key)
 
         key = key or self.metadata.active_key
         assert key is not None
-        return self.assign(self.data | {key: data}, active_key=key)
+
+        ret = self
+        if data is not None:
+            ret = ret.assign(ret.data | {key: data}, active_key=key)
+
+        if info is not None:
+            ret = ret.assign_metadata(var_infos=ret.metadata.var_infos | {key: info}, active_key=key)
+
+        return ret
 
     @cached_property
     def coordss(self) -> dict[str, np.ndarray]:
@@ -179,13 +187,21 @@ class List[Data: pd.DataFrame | dd.DataFrame = pd.DataFrame | dd.DataFrame, Subd
             raise ValueError("no active variable; specify one as a positional argument")
         return self.data[self.metadata.active_key]
 
-    def with_active(self, *, data=None, key=None) -> Self:
-        if data is None:
+    def with_active(self, *, data=None, key=None, info=None) -> Self:
+        if data is None and info is None:
             return self.assign_metadata(active_key=key)
 
         key = key or self.metadata.active_key
         assert key is not None
-        return self.assign(self.data.assign(**{self.metadata.active_key: data}), active_key=key)
+
+        ret = self
+        if data is not None:
+            ret = ret.assign(ret.data.assign(**{key: data}), active_key=key)
+
+        if info is not None:
+            ret = ret.assign_metadata(var_infos=ret.metadata.var_infos | {key: info}, active_key=key)
+
+        return ret
 
     @abstractmethod
     def compute(self) -> FullList: ...
