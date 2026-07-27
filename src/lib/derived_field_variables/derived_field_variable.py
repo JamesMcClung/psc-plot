@@ -30,7 +30,7 @@ class DerivedFieldVariable:
         da = self.derive(*(field.data[base_var_name] for base_var_name in self.base_var_names))
         new_data = field.data | {self.name: da}
         new_var_infos = field.metadata.var_infos | {key: lookup(self.prefix, key) for key in (self.name, *da.dims)}
-        return field.assign_data(new_data).assign_metadata(var_infos=new_var_infos)
+        return field.assign(new_data, var_infos=new_var_infos)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(({', '.join(self.base_var_names)}) -> {self.name}: {self.derive!r})"

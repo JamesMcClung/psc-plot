@@ -6,27 +6,25 @@ from lib.parsing.args_registry import arg_parser
 class Unit(Adaptor):
     """Override the unit-LaTeX of the active variable or of a dimension."""
 
-    def __init__(self, target: str | None, value: str):
-        self.target = target
-        self.value = value
+    def __init__(self, key: str | None, unit: str):
+        self.key = key
+        self.unit = unit
 
     def apply(self, data: DataWithAttrs) -> DataWithAttrs:
         metadata = data.metadata
 
-        target = self.target or metadata.active_key
-        if target is None:
+        key = self.key or metadata.active_key
+        if key is None:
             raise ValueError("--unit requires a target; specify a variable as a positional argument or use --unit TARGET=VALUE")
 
-        if target not in metadata.var_infos:
-            raise ValueError(f"--unit target {target!r} is not a known key ({sorted(metadata.var_infos)})")
+        if key not in metadata.var_infos:
+            raise ValueError(f"--unit target {key!r} is not a known key ({sorted(metadata.var_infos)})")
 
-        old_dim = metadata.var_infos[target]
-        new_dim = old_dim.assign(unit=self.value)
-        new_var_infos = {**metadata.var_infos, target: new_dim}
-        return data.assign_metadata(var_infos=new_var_infos)
+        info = metadata.var_infos[key].assign(unit=self.unit)
+        return data.with_info(key, info)
 
     def get_name_fragments(self) -> list[str]:
-        return [f"unit_{self.target or 'active'}={self.value}"]
+        return [f"unit_{self.key or 'active'}={self.unit}"]
 
 
 _UNIT_FORMAT = "[name=]unit_latex"
@@ -40,6 +38,6 @@ _UNIT_FORMAT = "[name=]unit_latex"
 )
 def parse_unit(arg: str) -> Unit:
     if "=" in arg:
-        name, value = arg.split("=", 1)
-        return Unit(target=name, value=value)
-    return Unit(target=None, value=arg)
+        key, unit = arg.split("=", 1)
+        return Unit(key=key, unit=unit)
+    return Unit(key=None, unit=arg)

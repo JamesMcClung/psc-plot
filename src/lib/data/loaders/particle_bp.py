@@ -138,7 +138,7 @@ class ParticleLoaderBp(Loader):
                 slices.append(slice(i * chunk_size, (i + 1) * chunk_size))
 
         meta = _build_meta(paths[0])
-        df = dd.from_map(_read_chunk, paths, step_times, particle_dims, slices, meta=meta)
+        df: dd.DataFrame = dd.from_map(_read_chunk, paths, step_times, particle_dims, slices, meta=meta)
 
         corners = np.asarray(head["corner"])
         lengths = np.asarray(head["length"])
@@ -153,12 +153,6 @@ class ParticleLoaderBp(Loader):
             subject=info.display,
             partition_dim="t",
             partition_ranges=partition_ranges,
+            var_infos={key: lookup("prt", key) for key in df.columns},
         )
-        data = LazyList(df, metadata)
-
-        # var_info registry is keyed by "prt" (not per-species), so strip the
-        # species suffix when looking up per-column metadata.
-        var_infos = {key: lookup("prt", key) for key in data.dims}
-        return data.assign_metadata(
-            var_infos=var_infos,
-        )
+        return LazyList(df, metadata)

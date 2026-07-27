@@ -60,7 +60,7 @@ class Pos(MetadataAdaptor):
                     df = df[df[dim] >= sel.start] if inc_lo else df[df[dim] > sel.start]
                 if sel.stop is not None:
                     df = df[df[dim] <= sel.stop] if inc_hi else df[df[dim] < sel.stop]
-            data = data.assign_data(df)
+            data = data.assign(df)
 
         return data
 

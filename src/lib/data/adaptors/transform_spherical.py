@@ -114,7 +114,7 @@ class TransformSpherical(MetadataAdaptor):
         new_var_infos[key_r] = dim_r
         new_var_infos[key_theta] = dim_theta
         new_var_infos[key_phi] = dim_phi
-        return data.assign_data(df).assign_metadata(var_infos=new_var_infos)
+        return data.assign(df, var_infos=new_var_infos)
 
     def get_name_fragments(self) -> list[str]:
         return [f"spherical_{self.dim1_key},{self.dim2_key},{self.dim3_key}"]

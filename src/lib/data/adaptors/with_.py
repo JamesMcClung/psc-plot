@@ -14,10 +14,10 @@ class With(WorldAdaptor):
 
     def apply_world(self, world):
         if not self.prepath:
-            return world.with_active(data=world.active_data.assign_metadata(active_key=self.key))
+            return world.with_active(data=world.active_data.with_active(key=self.key))
 
         if self.prepath in world.datas:
-            return world.with_active(prepath=self.prepath, data=world.datas[self.prepath].assign_metadata(active_key=self.key))
+            return world.with_active(prepath=self.prepath, data=world.datas[self.prepath].with_active(key=self.key))
 
         return world.with_active(
             prepath=self.prepath,

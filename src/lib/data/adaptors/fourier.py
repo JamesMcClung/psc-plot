@@ -45,7 +45,7 @@ class Fourier(MetadataAdaptor):
             new_var_infos[f_info.key] = f_info
             da = toggle_fourier(da, info)
 
-        old_active_info = data.metadata.active_var_info
+        old_active_info = data.active_info
         new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{old_active_info.display}]"
         new_var_infos[data.metadata.active_key] = old_active_info.assign(display=new_display)
 

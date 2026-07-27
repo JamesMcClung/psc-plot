@@ -13,7 +13,7 @@ class Renderer[Data: DataWithAttrs](ABC):
         self.plot_target = plot_target
 
         if isinstance(full_data, Field):
-            self.full_data = full_data.assign_metadata(active_key=plot_target.color_dim or plot_target.spatial_dims.y_dim)
+            self.full_data = full_data.with_active(key=plot_target.color_dim or plot_target.spatial_dims.y_dim)
         else:
             self.full_data = full_data
 

@@ -171,18 +171,15 @@ class AssignNewFieldVariable(Transformer_InPlace):
         return lhs**rhs
 
     def assign_default(self, toks: list):
-        [new_variable] = toks
-        self._data = _resolve_field_variable(self._data, new_variable)
-        dim = var_info_registry.lookup(self._data.metadata.prepath, new_variable)
-        new_var_infos = {**self._data.metadata.var_infos, new_variable: dim}
-        return self._data.assign_metadata(active_key=new_variable, var_infos=new_var_infos)
+        [key] = toks
+        self._data = _resolve_field_variable(self._data, key)
+        info = var_info_registry.lookup(self._data.metadata.prepath, key)
+        return self._data.with_active(key=key, info=info)
 
     def assignment(self, toks: list):
-        [new_variable, val] = toks
-        new_ds = self._data.data | {new_variable: val}
-        dim = var_info_registry.lookup(self._data.metadata.prepath, new_variable)
-        new_var_infos = {**self._data.metadata.var_infos, new_variable: dim}
-        return self._data.assign(new_ds, active_key=new_variable, var_infos=new_var_infos)
+        [key, subdata] = toks
+        info = var_info_registry.lookup(self._data.metadata.prepath, key)
+        return self._data.with_active(data=subdata, key=key, info=info)
 
 
 _DERIVE_GRAMMAR = r"""

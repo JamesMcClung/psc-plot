@@ -79,5 +79,5 @@ def load(config: PscPlotConfig, prepath: Prepath, active_key: str | None = None)
             data = derive_particle_variable(data, active_key, prefix)
         else:
             raise TypeError(data.__class__)
-        data = data.assign_metadata(active_key=active_key)
+        data = data.with_active(key=active_key)
     return data

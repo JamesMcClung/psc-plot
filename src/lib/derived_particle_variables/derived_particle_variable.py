@@ -29,7 +29,10 @@ class DerivedParticleVariable:
 
         info = var_info_registry.lookup("prt", self.name)
         new_var_infos = {**data.metadata.var_infos, self.name: info}
-        return data.assign_data(df.assign(**{self.name: self.derive(*(df[base_var_name] for base_var_name in self.base_var_names))})).assign_metadata(var_infos=new_var_infos)
+        return data.assign(
+            df.assign(**{self.name: self.derive(*(df[base_var_name] for base_var_name in self.base_var_names))}),
+            var_infos=new_var_infos,
+        )
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(({', '.join(self.base_var_names)}) -> {self.name}: {self.derive!r})"

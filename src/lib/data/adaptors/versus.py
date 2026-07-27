@@ -96,9 +96,7 @@ class Versus(MetadataAdaptor):
             dim = data.metadata.var_infos[dim_name]
             f_dim = dim.toggle_fourier()
             if f_dim.key in data.dims:
-                data = data.assign_metadata(
-                    var_infos={**data.metadata.var_infos, f_dim.key: f_dim},
-                )
+                data = data.with_info(f_dim.key, f_dim)
                 fourier = Fourier(f_dim.key)
                 data = fourier.apply(data)
                 continue
@@ -120,7 +118,7 @@ class Versus(MetadataAdaptor):
         # 2. drop unused vars
         keep_vars = self._get_retained_dim_keys(data)
         drop_vars = [active_key for active_key in data.dims if active_key not in keep_vars]
-        data = data.assign_data(data.data.drop(columns=drop_vars))
+        data = data.assign(data.data.drop(columns=drop_vars))
 
         spatial_dims = self.spatial_dims.copy()
         if len(spatial_dims) == 1 and data.metadata.active_key is not None and data.metadata.active_key not in spatial_dims:

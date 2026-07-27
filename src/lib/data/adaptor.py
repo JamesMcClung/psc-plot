@@ -59,15 +59,12 @@ class MetadataAdaptor(Adaptor):
     def apply(self, data: DataWithAttrs) -> DataWithAttrs:
         data = super().apply(data)
 
-        var_infos = data.metadata.var_infos
-        if data.metadata.active_key is not None and data.metadata.active_key in var_infos:
+        if info := data.active_info:
             display_latex = self.get_modified_display_latex(data.metadata)
             unit_latex = self.get_modified_unit_latex(data.metadata)
-            old_dim = var_infos[data.metadata.active_key]
-            new_dim = old_dim.assign(display=display_latex, unit=unit_latex)
-            var_infos = {**var_infos, data.metadata.active_key: new_dim}
+            data = data.with_active(info=info.assign(display=display_latex, unit=unit_latex))
 
-        return data.assign_metadata(var_infos=var_infos)
+        return data
 
 
 class BareAdaptor(MetadataAdaptor):

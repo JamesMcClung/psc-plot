@@ -93,7 +93,7 @@ class TransformPolar(MetadataAdaptor):
         new_var_infos = dict(data.metadata.var_infos)
         new_var_infos[key_r] = dim_r
         new_var_infos[key_theta] = dim_theta
-        return data.assign_data(df).assign_metadata(var_infos=new_var_infos)
+        return data.assign(df, var_infos=new_var_infos)
 
     def get_name_fragments(self) -> list[str]:
         return [f"polar_{self.dim1_key},{self.dim2_key}"]

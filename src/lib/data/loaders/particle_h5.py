@@ -211,12 +211,8 @@ class ParticleLoaderH5(Loader):
             species=species_dict,
             partition_dim="t",
             partition_ranges=partition_ranges,
-        )
-
-        df_with_metadata = LazyList(df, metadata)
-
-        var_infos = {key: lookup(self.prepath, key) for key in df_with_metadata.dims}
-        return df_with_metadata.assign_metadata(
-            var_infos=var_infos,
+            var_infos={key: lookup(self.prepath, key) for key in df.columns},
             subject=Latex(r"\text{Particles}"),
         )
+
+        return LazyList(df, metadata)
