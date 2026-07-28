@@ -68,7 +68,7 @@ class TransformPolar(MetadataAdaptor):
         xgrid = xr.Variable([key_r, key_theta], xgrid)
         ygrid = xr.Variable([key_r, key_theta], ygrid)
 
-        da = data.active_data
+        da = data.require_active_subdata()
         da = da.interp({key_x: xgrid, key_y: ygrid}, assume_sorted=True)
         da = da.drop_vars([key_x, key_y])
         da = da.assign_coords({key_r: rs, key_theta: thetas})
@@ -76,7 +76,7 @@ class TransformPolar(MetadataAdaptor):
         new_var_infos = {k: v for k, v in data.metadata.var_infos.items() if k not in {key_x, key_y}}
         new_var_infos[key_r] = dim_r
         new_var_infos[key_theta] = dim_theta
-        return data.with_active_data(da).assign_metadata(var_infos=new_var_infos)
+        return data.with_active(data=da).assign(var_infos=new_var_infos)
 
     def apply_list(self, data: List) -> List:
         dim_x = data.metadata.var_infos[self.dim1_key]
@@ -93,7 +93,7 @@ class TransformPolar(MetadataAdaptor):
         new_var_infos = dict(data.metadata.var_infos)
         new_var_infos[key_r] = dim_r
         new_var_infos[key_theta] = dim_theta
-        return data.assign_data(df).assign_metadata(var_infos=new_var_infos)
+        return data.assign(df, var_infos=new_var_infos)
 
     def get_name_fragments(self) -> list[str]:
         return [f"polar_{self.dim1_key},{self.dim2_key}"]

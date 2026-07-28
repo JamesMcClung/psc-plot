@@ -86,7 +86,7 @@ class TransformSpherical(MetadataAdaptor):
         ygrid = xr.Variable([key_r, key_theta, key_phi], ygrid)
         zgrid = xr.Variable([key_r, key_theta, key_phi], zgrid)
 
-        da = data.active_data
+        da = data.require_active_subdata()
         da = da.interp({key_x: xgrid, key_y: ygrid, key_z: zgrid}, assume_sorted=True)
         da = da.drop_vars([key_x, key_y, key_z])
         da = da.assign_coords({key_r: rs, key_theta: thetas, key_phi: phis})
@@ -95,7 +95,7 @@ class TransformSpherical(MetadataAdaptor):
         new_var_infos[key_r] = dim_r
         new_var_infos[key_theta] = dim_theta
         new_var_infos[key_phi] = dim_phi
-        return data.with_active_data(da).assign_metadata(var_infos=new_var_infos)
+        return data.with_active(data=da).assign(var_infos=new_var_infos)
 
     def apply_list(self, data: List) -> List:
         dim_x = data.metadata.var_infos[self.dim1_key]
@@ -114,7 +114,7 @@ class TransformSpherical(MetadataAdaptor):
         new_var_infos[key_r] = dim_r
         new_var_infos[key_theta] = dim_theta
         new_var_infos[key_phi] = dim_phi
-        return data.assign_data(df).assign_metadata(var_infos=new_var_infos)
+        return data.assign(df, var_infos=new_var_infos)
 
     def get_name_fragments(self) -> list[str]:
         return [f"spherical_{self.dim1_key},{self.dim2_key},{self.dim3_key}"]

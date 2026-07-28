@@ -27,7 +27,7 @@ def _run_h5_pipeline(data_dir: pathlib.Path, result_queue: mp.Queue) -> None:
     from lib.parsing.parse import parse_args
 
     args = parse_args("prt --species i --bin y py -v y py".split())
-    plot = compile_plot_node(args, PscPlotConfig(data_dir=data_dir)).pull()
+    plot = compile_plot_node(args, PscPlotConfig(data_root=data_dir)).pull()
     t0 = time.perf_counter()
     plot._initialize()
     elapsed = time.perf_counter() - t0
@@ -42,7 +42,7 @@ def _run_bp_pipeline(data_dir: pathlib.Path, result_queue: mp.Queue) -> None:
     from lib.parsing.parse import parse_args
 
     args = parse_args("prt.i --bin y py -v y py".split())
-    plot = compile_plot_node(args, PscPlotConfig(data_dir=data_dir)).pull()
+    plot = compile_plot_node(args, PscPlotConfig(data_root=data_dir)).pull()
     t0 = time.perf_counter()
     plot._initialize()
     elapsed = time.perf_counter() - t0

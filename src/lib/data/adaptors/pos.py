@@ -33,7 +33,7 @@ class Pos(MetadataAdaptor):
     def apply_field(self, data: Field) -> Field:
         dim_names_to_pos = {dim_name: pos for dim_name, pos in self.dim_names_to_sel.items() if isinstance(pos, float)}
         dim_names_to_slice = {dim_name: s for dim_name, s in self.dim_names_to_sel.items() if isinstance(s, slice)}
-        return data.with_active_data(data.active_data.sel(dim_names_to_pos, method="nearest").sel(dim_names_to_slice))
+        return data.with_active(data=data.require_active_subdata().sel(dim_names_to_pos, method="nearest").sel(dim_names_to_slice))
 
     def apply_list(self, data: List) -> List:
         # Lazy-import Idx to avoid a circular import via lib.plotting.animated_plot.
@@ -60,7 +60,7 @@ class Pos(MetadataAdaptor):
                     df = df[df[dim] >= sel.start] if inc_lo else df[df[dim] > sel.start]
                 if sel.stop is not None:
                     df = df[df[dim] <= sel.stop] if inc_hi else df[df[dim] < sel.stop]
-            data = data.assign_data(df)
+            data = data.assign(df)
 
         return data
 

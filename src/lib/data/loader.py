@@ -5,6 +5,7 @@ from pathlib import Path
 from lib.config import PscPlotConfig
 from lib.data.adaptor import WorldAdaptor
 from lib.data.data_with_attrs import DataWithAttrs
+from lib.file_util import Prepath, split_prepath
 
 
 class Loader(WorldAdaptor):
@@ -18,18 +19,15 @@ class Loader(WorldAdaptor):
     def suffix(cls) -> str:
         """Return the suffix that this loader supports."""
 
-    def __init__(self, prefix: str, active_key: str | None = None):
-        self.prefix = prefix
-        self.active_key = active_key
+    def __init__(self, prepath: Prepath):
+        self.prepath = prepath
+        self.subdir, self.prefix = split_prepath(prepath)
 
     def get_name_fragments(self) -> list[str]:
-        fragments = [self.prefix]
-        if self.active_key is not None:
-            fragments.append(self.active_key)
-        return fragments
+        return [self.prepath]
 
     def apply_world(self, world):
-        return world.with_active_data(self.get_data(world.config), self.prefix)
+        return world.with_data(self.prepath, self.get_data(world.config))
 
     @abstractmethod
     def get_data(self, config: PscPlotConfig) -> DataWithAttrs: ...
@@ -62,6 +60,12 @@ def discover_loaders(data_dir: Path) -> dict[str, type[Loader]]:
     return result
 
 
-def get_loader(data_dir: Path, prefix: str, active_key: str | None) -> Loader:
-    loader_types = discover_loaders(data_dir)
-    return loader_types[prefix](prefix, active_key)
+def get_loader(data_root: Path, prepath: Prepath) -> Loader:
+    subdir, prefix = split_prepath(prepath)
+    loader_types = discover_loaders(data_root / subdir)
+    return loader_types[prefix](prepath)
+
+
+def load(config: PscPlotConfig, prepath: Prepath) -> DataWithAttrs:
+    loader = get_loader(config.data_root, prepath)
+    return loader.get_data(config)

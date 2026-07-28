@@ -36,7 +36,7 @@ class Fourier(MetadataAdaptor):
     def apply_field(self, data: Field) -> Field:
         pre_dim_latexs = [data.metadata.var_infos[key].display.latex for key in self.dim_keys]
 
-        da = data.active_data
+        da = data.require_active_subdata()
         new_var_infos = data.metadata.var_infos.copy()
 
         for key in self.dim_keys:
@@ -45,11 +45,11 @@ class Fourier(MetadataAdaptor):
             new_var_infos[f_info.key] = f_info
             da = toggle_fourier(da, info)
 
-        old_active_info = data.metadata.active_var_info
+        old_active_info = data.active_info
         new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{old_active_info.display}]"
         new_var_infos[data.metadata.active_key] = old_active_info.assign(display=new_display)
 
-        return data.with_active_data(da).assign_metadata(var_infos=new_var_infos)
+        return data.with_active(data=da).assign(var_infos=new_var_infos)
 
     def get_name_fragments(self) -> list[str]:
         return [f"fourier_{','.join(self.dim_keys)}"]

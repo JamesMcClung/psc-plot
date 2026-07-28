@@ -8,7 +8,7 @@ from lib.parsing.args_registry import CUSTOM_ARGS
 def _get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="psc-plot")
 
-    parser.add_argument("prefix", help="initial active prefix")
+    parser.add_argument("prepath", help="initial active prepath")
     parser.add_argument("variable", nargs="?", default=None, help="initial active variable")
     parser.add_argument(
         "-s",

@@ -87,13 +87,13 @@ class ParticleLoaderBp(Loader):
     def suffix(cls):
         return "bp"
 
-    def __init__(self, prefix: str, active_key: str | None = None):
-        super().__init__(prefix, active_key)
-        self.species_key = prefix.split(".", 1)[1]
+    def __init__(self, prepath: file_util.Prepath):
+        super().__init__(prepath)
+        self.species_key = prepath.split(".", 1)[1]
 
     def get_data(self, config: PscPlotConfig) -> LazyList:
-        steps = file_util.get_available_steps(config.data_dir, self.prefix + ".", ".bp")
-        step_attrs = [_read_attrs(_get_path(config.data_dir, self.prefix, step)) for step in steps]
+        steps = file_util.get_available_steps(config.data_root / self.subdir, self.prefix + ".", ".bp")
+        step_attrs = [_read_attrs(_get_path(config.data_root / self.subdir, self.prefix, step)) for step in steps]
         times = np.array([float(a["time"]) for a in step_attrs])
 
         head = step_attrs[0]
@@ -126,7 +126,7 @@ class ParticleLoaderBp(Loader):
         partition_ranges = []
         offset = 0
         for step, time in zip(steps, times):
-            path = _get_path(config.data_dir, self.prefix, step)
+            path = _get_path(config.data_root / self.subdir, self.prefix, step)
             particle_dim, n = _peek_size(path)
             n_chunks = max(1, (n + chunk_size - 1) // chunk_size)
             partition_ranges.append((offset, offset + n_chunks))
@@ -138,7 +138,7 @@ class ParticleLoaderBp(Loader):
                 slices.append(slice(i * chunk_size, (i + 1) * chunk_size))
 
         meta = _build_meta(paths[0])
-        df = dd.from_map(_read_chunk, paths, step_times, particle_dims, slices, meta=meta)
+        df: dd.DataFrame = dd.from_map(_read_chunk, paths, step_times, particle_dims, slices, meta=meta)
 
         corners = np.asarray(head["corner"])
         lengths = np.asarray(head["length"])
@@ -147,19 +147,13 @@ class ParticleLoaderBp(Loader):
         coordss["t"] = times
 
         metadata = ListMetadata(
+            prepath=self.prepath,
             weight_key="w",
             coordss=coordss,
             species=species_dict,
             subject=info.display,
             partition_dim="t",
             partition_ranges=partition_ranges,
+            var_infos={key: lookup("prt", key) for key in df.columns},
         )
-        data = LazyList(df, metadata)
-
-        # var_info registry is keyed by "prt" (not per-species), so strip the
-        # species suffix when looking up per-column metadata.
-        var_infos = {key: lookup("prt", key) for key in data.dims}
-        return data.assign_metadata(
-            active_key=self.active_key,
-            var_infos=var_infos,
-        )
+        return LazyList(df, metadata)

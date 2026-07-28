@@ -1,55 +1,59 @@
+from lib.config import _DATA_DIR_KEY
 from lib.data.adaptor import WorldAdaptor
-from lib.data.loader import get_loader
+from lib.data.ensure_derived import ensure_derived
+from lib.data.loader import load
+from lib.file_util import Prepath
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
 
 class With(WorldAdaptor):
-    def __init__(self, prefix_or_key: str, key: str | None = None):
-        self.prefix_or_key = prefix_or_key
+    def __init__(self, prepath: Prepath | None, key: str | None = None, *, include_with_in_name_fragment: bool = True):
+        self.prepath = prepath
         self.key = key
+        self.include_with_in_name_fragment = include_with_in_name_fragment
 
     def apply_world(self, world):
-        # case 1: prefix_or_key is a key within the active prefix
-        if not self.key and world.active_key and self.prefix_or_key in world.active_data.metadata.var_infos:
-            key = self.prefix_or_key
-            return world.with_active_data(world.active_data.assign_metadata(active_key=key))
+        if not self.prepath:
+            data = world.require_active_data()
+        elif self.prepath in world.datas:
+            data = world.datas[self.prepath]
+        else:
+            data = load(world.config, self.prepath)
 
-        # case 2: prefix_or_key is a prefix
-        prefix = self.prefix_or_key
-        key = self.key
+        if self.key:
+            data = ensure_derived(data, self.key)
+        data = data.with_active(key=self.key)
 
-        if prefix in world.datas:
-            return world.with_active_data(world.active_data.assign_metadata(active_key=key), prefix)
-
-        loader = get_loader(world.config.data_dir, prefix, key)
-        return loader.apply_world(world)
+        return world.with_active(prepath=self.prepath, data=data)
 
     def get_name_fragments(self) -> list[str]:
-        maybe_prefix = f"{self.prefix_or_key}{SCOPE_OP}" if self.prefix_or_key else ""
-        return [f"with_{maybe_prefix}{self.key or ''}"]
+        maybe_with = "with_" if self.include_with_in_name_fragment else ""
+        maybe_prepath = f"{self.prepath}{SCOPE_OP}" if self.prepath else ""
+        return [f"{maybe_with}{maybe_prepath}{self.key or ''}"]
 
 
 SCOPE_OP = "::"
-WITH_FORMAT = f"prefix[{SCOPE_OP}[key]] | key"
+WITH_FORMAT = f"[prepath{SCOPE_OP}][var_key]"
 
 
 @arg_parser(
     dest="adaptors",
     flags=["--with", "-w"],
     metavar=WITH_FORMAT,
-    help="switch to a different prefix and/or variable",
+    help=f"Switch to a different prepath (e.g. `run1/pfd`, relative to {_DATA_DIR_KEY}) and/or variable (e.g. `ey_ec`).",
     nargs="just one",
 )
 def parse_with(arg: str) -> With:
     split_arg = arg.split(SCOPE_OP)
 
     if len(split_arg) == 2:
-        prefix = parse_util.parse_identifier(split_arg[0], "prefix")
-        key = parse_util.parse_optional_identifier(split_arg[1] or None, "key")
-        return With(prefix, key)
+        [prepath, key_arg] = split_arg
     elif len(split_arg) == 1:
-        prefix_or_key = parse_util.parse_identifier(split_arg[0], "prefix | key")
-        return With(prefix_or_key)
+        prepath = None
+        [key_arg] = split_arg
     else:
         parse_util.fail_format(arg, WITH_FORMAT)
+
+    key = parse_util.parse_optional_identifier(key_arg, "key")
+    return With(prepath, key)

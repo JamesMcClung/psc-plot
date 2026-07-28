@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, fields
 from functools import cached_property
-from typing import Any, Callable, Self
+from typing import Any, Self
 
 import dask.array
 import dask.dataframe as dd
@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from lib.file_util import Prepath
 from lib.latex import Latex
 from lib.species import SpeciesInfo
 from lib.var_info import VarInfo
@@ -18,6 +19,7 @@ from lib.var_info import VarInfo
 
 @dataclass(kw_only=True, frozen=True)
 class Metadata:
+    prepath: Prepath
     active_key: str | None = None
 
     var_infos: dict[str, VarInfo] = field(default_factory=dict)
@@ -57,23 +59,13 @@ class Metadata:
         return self.__class__(**updated_vals)
 
 
-@dataclass(frozen=True, init=False)
-class DataWithAttrs[D: dict[str, xr.DataArray] | pd.DataFrame | dd.DataFrame, MD: Metadata](ABC):
+@dataclass(frozen=True)
+class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
     """A data wrapper to provide a uniform, typed, and reliable metadata interface."""
 
-    # The type checker ignores type bounds when no generic argument is present, e.g. after `isinstance` (and function parameters).
-    # Specifying field data types like this makes their types known in such cases, but doesn't give type hints for the parameters of __init__.
-    # Thus, it's necessary to annotate __init__ parameters via generics and the fields themselves with concrete types.
-    # Unfortunately, annotating a field in a superclass requires also annotating it in each subclass that refines that field's type.
-    # And with all this, other methods still don't get type hints :(
-    data: dict[str, xr.DataArray] | pd.DataFrame | dd.DataFrame
-    metadata: Metadata
-    _caches: dict[str, dict[str, Any]]
-
-    def __init__(self, data: D, metadata: MD):
-        object.__setattr__(self, "data", data)
-        object.__setattr__(self, "metadata", metadata)
-        object.__setattr__(self, "_caches", {})
+    data: Data
+    metadata: MD
+    _caches: dict[str, dict[str, Any]] = field(default_factory=dict, init=False)
 
     @property
     @abstractmethod
@@ -83,19 +75,38 @@ class DataWithAttrs[D: dict[str, xr.DataArray] | pd.DataFrame | dd.DataFrame, MD
     @abstractmethod
     def dims(self) -> list[str]: ...
 
-    def assign_data(self, data: D) -> Self:
-        return self.__class__(data, self.metadata)
+    @property
+    def active_key(self) -> str | None:
+        return self.metadata.active_key
 
-    def assign_metadata(self, metadata: MD | None = None, /, **metadata_vals: Any) -> Self:
-        if not (metadata or metadata_vals):
-            return self
-        return self.__class__(self.data, (metadata or self.metadata).assign(**metadata_vals))
+    @property
+    def active_subdata(self) -> Subdata | None:
+        if self.active_key is None:
+            return None
+        return self[self.active_key]
 
-    def assign(self, data: D, metadata: MD | None = None, /, **metadata_vals: Any) -> Self:
-        return self.assign_data(data).assign_metadata(metadata, **metadata_vals)
+    def require_active_subdata(self) -> Subdata:
+        if self.active_key is None:
+            raise ValueError("No active variable.")
+        return self[self.active_key]
 
-    def map_data(self, func: Callable[[D], D]) -> Self:
-        return self.assign_data(func(self.data))
+    @property
+    def active_info(self) -> VarInfo | None:
+        if self.active_key is None:
+            return None
+        return self.metadata.var_infos[self.active_key]
+
+    @abstractmethod
+    def __getitem__(self, key: str) -> Subdata: ...
+
+    @abstractmethod
+    def with_active(self, *, data: Subdata | None = None, key: str | None = None, info: VarInfo | None = None) -> Self: ...
+
+    def with_info(self, key: str, info: VarInfo) -> Self:
+        return self.assign(var_infos=self.metadata.var_infos | {key: info})
+
+    def assign(self, data: Data | None = None, /, **metadata_vals: Any) -> Self:
+        return self.__class__(self.data if data is None else data, self.metadata.assign(**metadata_vals))
 
     @abstractmethod
     def bounds(self, dim_name: str) -> tuple[float, float]: ...
@@ -110,33 +121,37 @@ class DataWithAttrs[D: dict[str, xr.DataArray] | pd.DataFrame | dd.DataFrame, MD
     def dask_collections(self) -> list: ...
 
 
-@dataclass(kw_only=True, frozen=True)
-class FieldMetadata(Metadata):
-    prefix: str | None = None
+class FieldMetadata(Metadata): ...
 
 
-class Field(DataWithAttrs[dict[str, xr.DataArray], FieldMetadata]):
-    data: dict[str, xr.DataArray]
-    metadata: FieldMetadata
+class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata]):
+    def with_active(self, *, data=None, key=None, info=None) -> Self:
+        if data is None and info is None:
+            return self.assign(active_key=key)
 
-    @property
-    def active_data(self) -> xr.DataArray:
-        if self.metadata.active_key is None:
-            raise ValueError("no active variable; specify one as a positional argument")
-        return self.data[self.metadata.active_key]
+        key = key or self.metadata.active_key
+        assert key is not None
 
-    def with_active_data(self, new_da: xr.DataArray) -> Self:
-        """Returns a shallow copy with the active variable replaced by `new_da`."""
-        return self.assign_data(self.data | {self.metadata.active_key: new_da})
+        ret = self
+        if data is not None:
+            ret = ret.assign(ret.data | {key: data}, active_key=key)
+
+        if info is not None:
+            ret = ret.assign(var_infos=ret.metadata.var_infos | {key: info}, active_key=key)
+
+        return ret
+
+    def __getitem__(self, key: str):
+        return self.data[key]
 
     @cached_property
     def coordss(self) -> dict[str, np.ndarray]:
-        active = self.active_data
+        active = self.require_active_subdata()
         return {dim: np.array(active.coords[dim]) for dim in active.coords.keys()}
 
     @cached_property
     def dims(self) -> list[str]:
-        return list(self.active_data.dims)
+        return list(self.require_active_subdata().dims)
 
     def bounds(self, dim_name):
         return (self.lower_bound(dim_name), self.upper_bound(dim_name))
@@ -151,7 +166,7 @@ class Field(DataWithAttrs[dict[str, xr.DataArray], FieldMetadata]):
 
     @cached_property
     def var_bounds(self) -> tuple[float, float]:
-        active = self.active_data
+        active = self.require_active_subdata()
         return dask.compute(np.min(active), np.max(active))
 
     def dask_collections(self) -> list:
@@ -177,18 +192,22 @@ class ListMetadata(Metadata):
     `len(partition_ranges) == len(coordss[partition_dim])`."""
 
 
-class List[D: pd.DataFrame | dd.DataFrame](DataWithAttrs[D, ListMetadata]):
-    data: pd.DataFrame | dd.DataFrame
-    metadata: ListMetadata
+class List[Data: pd.DataFrame | dd.DataFrame = pd.DataFrame | dd.DataFrame, Subdata: pd.Series | dd.Series = pd.Series | dd.Series](DataWithAttrs[Data, Subdata, ListMetadata]):
+    def with_active(self, *, data=None, key=None, info=None) -> Self:
+        if data is None and info is None:
+            return self.assign(active_key=key)
 
-    @property
-    def active_data(self) -> pd.Series | dd.Series:
-        if self.metadata.active_key is None:
-            raise ValueError("no active variable; specify one as a positional argument")
-        return self.data[self.metadata.active_key]
+        key = key or self.metadata.active_key
+        assert key is not None
 
-    def with_active_data(self, series: pd.Series | dd.Series) -> Self:
-        return self.assign_data(self.data.assign(**{self.metadata.active_key: series}))
+        ret = self
+        if data is not None:
+            ret = ret.assign(ret.data.assign(**{key: data}), active_key=key)
+
+        if info is not None:
+            ret = ret.assign(var_infos=ret.metadata.var_infos | {key: info}, active_key=key)
+
+        return ret
 
     @abstractmethod
     def compute(self) -> FullList: ...
@@ -203,7 +222,8 @@ class List[D: pd.DataFrame | dd.DataFrame](DataWithAttrs[D, ListMetadata]):
 
 
 class FullList(List[pd.DataFrame]):
-    data: pd.DataFrame
+    def __getitem__(self, key: str):
+        return self.data[key]
 
     def compute(self) -> FullList:
         return self
@@ -236,7 +256,8 @@ class FullList(List[pd.DataFrame]):
 
 
 class LazyList(List[dd.DataFrame]):
-    data: dd.DataFrame
+    def __getitem__(self, key: str):
+        return self.data[key]
 
     def compute(self) -> FullList:
         # partition_* describe the dask layout; meaningless after compute.

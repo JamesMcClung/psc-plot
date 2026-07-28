@@ -2,7 +2,6 @@ from dataclasses import replace
 from typing import Literal
 
 from lib.data.adaptor import MetadataAdaptor
-from lib.data.adaptors.fourier import Fourier
 from lib.data.adaptors.reduce import Reduce
 from lib.data.data_with_attrs import DataWithAttrs, Field, List
 from lib.data.plot_target import PlotTarget, SpatialDims, SpatialDimsRTheta, SpatialDimsXY
@@ -23,20 +22,6 @@ class Versus(MetadataAdaptor):
         self.time_dim_rule = time_dim_rule
         self.color_dim = color_dim
         self.axes_idx = axes_idx
-
-    def _get_retained_dim_keys(self, data: DataWithAttrs) -> list[str]:
-        retained_dims = self.spatial_dims.copy()
-
-        if time_dim := self._get_time_dim(data):
-            retained_dims.append(time_dim)
-
-        if self.color_dim:
-            retained_dims.append(self.color_dim)
-
-        if isinstance(data, List) and data.metadata.active_key:
-            retained_dims.append(data.metadata.active_key)
-
-        return retained_dims
 
     def _get_time_dim(self, data: DataWithAttrs) -> str | None:
         if self.time_dim_rule != "guess":
@@ -72,7 +57,7 @@ class Versus(MetadataAdaptor):
     def apply_world(self, world):
         data = self.apply(world.active_data)
         new_plot_target = PlotTarget(
-            world.active_key,
+            world.active_prepath,
             spatial_dims=self._get_spatial_dims(data),
             color_dim=self._get_color_dim(data),
             time_dim=self._get_time_dim(data),
@@ -81,51 +66,16 @@ class Versus(MetadataAdaptor):
         return replace(
             world,
             plot_targets=world.plot_targets + [new_plot_target],
-            datas=world.datas | {world.active_key: data},
+            datas=world.datas | {world.active_prepath: data},
         )
 
     def apply_field(self, data: Field) -> Field:
-        # 1. apply implicit coordinate transforms, as necessary
-        retained_dims = self._get_retained_dim_keys(data)
-        for dim_name in retained_dims:
-            # 1a. already have the coordinate; do nothing
-            if dim_name in data.dims:
-                continue
-
-            # 1b. need to do a Fourier transform
-            dim = data.metadata.var_infos[dim_name]
-            f_dim = dim.toggle_fourier()
-            if f_dim.key in data.dims:
-                data = data.assign_metadata(
-                    var_infos={**data.metadata.var_infos, f_dim.key: f_dim},
-                )
-                fourier = Fourier(f_dim.key)
-                data = fourier.apply(data)
-                continue
-
-            # 1c. need to do a coordinate transform
-            # TODO
-
-        # 2. reduce remaining dimensions via arithmetic mean
-        reduce_dims = [dim for dim in data.dims if dim not in retained_dims]
+        used_dims = {*self.spatial_dims, self._get_time_dim(data), self.color_dim}
+        reduce_dims = [dim for dim in data.dims if dim not in used_dims]  # preserve order
         reduce = Reduce(reduce_dims, "mean")
-        data = reduce.apply(data)
-
-        return data
+        return reduce.apply(data)
 
     def apply_list(self, data: List) -> List:
-        # 1. coordinate transform
-        # TODO
-
-        # 2. drop unused vars
-        keep_vars = self._get_retained_dim_keys(data)
-        drop_vars = [active_key for active_key in data.dims if active_key not in keep_vars]
-        data = data.assign_data(data.data.drop(columns=drop_vars))
-
-        spatial_dims = self.spatial_dims.copy()
-        if len(spatial_dims) == 1 and data.metadata.active_key is not None and data.metadata.active_key not in spatial_dims:
-            spatial_dims.append(data.metadata.active_key)
-
         return data
 
     def get_name_fragments(self) -> list[str]:

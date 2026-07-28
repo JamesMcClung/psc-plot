@@ -38,13 +38,6 @@ def test_animated_2d_derived():
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
-def test_static_2d_derived_cross_prefix():
-    """2D view of a variable derived across prefixes: the active `pfd` field `jy_ec`
-    times `pfd_moments::jy_e`, which auto-loads the `pfd_moments` prefix."""
-    return make_plot("pfd --derive electron_power=jy_ec*pfd_moments::jy_e -i t=-1 -v y z time=".split())
-
-
-@pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_animated_2d_idx():
     """2D slice of x-component of magnetic field at the x=1 index."""
     return make_plot("pfd hx_fc -i x=1 -v y z".split(), data_dir="test-3d")
@@ -99,6 +92,24 @@ def test_multiline_different_idxs():
 def test_image_and_line():
     """An image overplotted with a line from a different file."""
     return make_plot("prt.i --bin y py=100 --nan0 --scale log --compute -v y py -w pfd::ey_ec -v y".split())
+
+
+# --- Cross-dataset plots ---
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_crossdata_derive():
+    """Power of electric field acting on ions."""
+    return make_plot("pfd --derive ipower=ey_ec*pfd_moments::jy_i".split())
+
+
+# --- Cross-subdir plots ---
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_crossdir_with():
+    """2D vs. 3D B_x(y). The "y"s aren't the same length, and that's ok."""
+    return make_plot("test-2d/pfd hx_fc -v y --display \\text{2d} --with test-3d/pfd::hx_fc -v y --display \\text{3d}".split(), data_dir=".")
 
 
 # --- Turbulence power spectrum ---
@@ -182,7 +193,7 @@ def test_static_scatter_bp():
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_hamscan():
     """Archetypal scan for hammerhead distributions ("hams")."""
-    return make_plot("prt.e -i t=-1 --derive pzx --bin y py=20 pzx=20 t= -v py pzx time=y --compute".split(), data_dir="test-2d")
+    return make_plot("prt.e -i t=-1 --with pzx --bin y py=20 pzx=20 t= -v py pzx time=y --compute".split(), data_dir="test-2d")
 
 
 # --- Particle moments ---
