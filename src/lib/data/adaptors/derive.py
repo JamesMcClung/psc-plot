@@ -26,7 +26,7 @@ class Derive(WorldAdaptor):
             return world.with_active(data=AssignNewVariable(active).transform(self.ast))
 
         if isinstance(active, Field):
-            return AssignNewFieldVariable(active, world).transform(self.ast)
+            return AssignNewFieldVariable(world).transform(self.ast)
 
         raise ValueError("--derive requires an active variable to derive into; specify one as a positional argument.")
 
@@ -88,8 +88,7 @@ class AssignNewVariable(Transformer_InPlace):
 
 
 class AssignNewFieldVariable(Transformer_InPlace):
-    def __init__(self, data: Field, world: DataWorld):
-        self._data = data
+    def __init__(self, world: DataWorld):
         self.world = world
         super().__init__(visit_tokens=True)
 
@@ -144,8 +143,10 @@ class AssignNewFieldVariable(Transformer_InPlace):
 
     def assignment(self, toks: list):
         [key, subdata] = toks
-        info = var_info_registry.lookup(self._data.metadata.prepath, key)
-        return self.world.with_active(data=self.world.require_active_data().with_active(data=subdata, key=key, info=info))
+        data = self.world.require_active_data()
+        info = var_info_registry.lookup(data.metadata.prepath, key)
+        data = data.with_active(data=subdata, key=key, info=info)
+        return self.world.with_active(data=data)
 
 
 _DERIVE_GRAMMAR = r"""
