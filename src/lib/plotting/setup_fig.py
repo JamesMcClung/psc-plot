@@ -1,5 +1,6 @@
+import math
 from abc import ABC, abstractmethod
-from typing import Iterable
+from typing import Iterable, Literal
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -37,6 +38,21 @@ def _setup_axes(figure: Figure, plot_infos: list[PlotInfo]) -> dict[AxesIdx, tup
         ret[idx] = (ax, infos)
 
     return ret
+
+
+def _get_aspect(info: PlotInfo2D) -> Literal["auto", "equal"]:
+    if info.dim_units[info.x_dim] != info.dim_units[info.y_dim]:
+        return "auto"
+
+    x_lo, x_hi = info.dim_bounds[info.x_dim]
+    y_lo, y_hi = info.dim_bounds[info.y_dim]
+    if None in [x_lo, x_hi, y_lo, y_hi]:
+        return "auto"
+
+    if math.isclose(x_hi - x_lo, y_hi - y_lo):
+        return "equal"
+
+    return "auto"
 
 
 def _one_or_none[T](objs: Iterable[T]) -> T | None:
@@ -140,10 +156,6 @@ class AxesManagerSingleLine(AxesManagerSingle2D[LineInfo]):
 
 
 class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
-    def setup(self):
-        super().setup()
-        self.ax.set_aspect(1 / self.ax.get_data_ratio())
-
     def setup_data(self):
         image = self.ax.imshow(
             self.info.data,
@@ -151,6 +163,7 @@ class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
             extent=(*self.info.dim_bounds[self.info.x_dim], *self.info.dim_bounds[self.info.y_dim]),
             norm=self.info.dim_scales[self.info.color_dim].to_color_norm(),
             interpolation="nearest",
+            aspect=_get_aspect(self.info),
         )
         self.info._setter_callbacks["data"] = image.set_data
 
@@ -160,10 +173,6 @@ class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
 
 
 class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
-    def setup(self):
-        super().setup()
-        self.ax.set_aspect(1 / self.ax.get_data_ratio())
-
     def setup_data(self):
         if self.info.color_dim:
             scatter = self.ax.scatter(
@@ -185,6 +194,7 @@ class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
                 color=self.ax._get_lines.get_next_color(),
                 s=0.5,
             )
+        self.ax.set_aspect(_get_aspect(self.info))
 
         update_data = lambda _=None: scatter.set_offsets(self.info.xy_data)
         self.info._setter_callbacks["xy_data"] = update_data
@@ -451,10 +461,10 @@ class AxesManagerImageAndLines(AxesManager):
         image = self.image_ax.imshow(
             self.image_info.data,
             origin="lower",
-            aspect="auto",
             extent=(*self.image_info.dim_bounds[self.image_info.x_dim], *self.image_info.dim_bounds[self.image_info.y_dim]),
             norm=self.image_info.dim_scales[self.image_info.color_dim].to_color_norm(),
             interpolation="nearest",
+            aspect=_get_aspect(self.image_info),
         )
         self.image_info._setter_callbacks["data"] = image.set_data
 
