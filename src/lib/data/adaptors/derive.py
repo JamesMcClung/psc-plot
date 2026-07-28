@@ -24,15 +24,6 @@ class Derive(WorldAdaptor):
         return [f'derive_"{self.expression}"']
 
 
-def _collect_scoped_prefixes(ast) -> set[str]:
-    """Distinct prefixes referenced via `prefix::key` anywhere in the expression."""
-    prefixes = set()
-    for tree in ast.find_data("variable"):
-        if len(tree.children) == 2:
-            prefixes.add(str(tree.children[0]))
-    return prefixes
-
-
 class AssignNewVariable(Transformer_InPlace):
     def __init__(self, data: List):
         self._data = data
