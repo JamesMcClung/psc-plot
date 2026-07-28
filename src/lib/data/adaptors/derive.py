@@ -18,8 +18,6 @@ class Derive(WorldAdaptor):
         return AssignNewVariable(world).transform(self.ast)
 
     def get_name_fragments(self):
-        if self.ast.data == "assign_default":
-            return []
         return [f'derive_"{self.expression}"']
 
 
