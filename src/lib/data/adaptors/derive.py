@@ -3,7 +3,6 @@ from lark.visitors import Transformer_InPlace
 
 from lib import var_info_registry
 from lib.data.adaptor import WorldAdaptor
-from lib.data.data_with_attrs import List
 from lib.data.data_world import DataWorld
 from lib.data.ensure_derived import ensure_derived
 from lib.data.loader import load
@@ -16,7 +15,7 @@ class Derive(WorldAdaptor):
         self.ast = _DERIVE_PARSER.parse(expression)
 
     def apply_world(self, world):
-        return AssignNewFieldVariable(world).transform(self.ast)
+        return AssignNewVariable(world).transform(self.ast)
 
     def get_name_fragments(self):
         if self.ast.data == "assign_default":
@@ -25,48 +24,6 @@ class Derive(WorldAdaptor):
 
 
 class AssignNewVariable(Transformer_InPlace):
-    def __init__(self, data: List):
-        self._data = data
-        super().__init__(visit_tokens=True)
-
-    def number(self, toks: list):
-        [tok] = toks
-        return float(tok)
-
-    def new_variable(self, toks: list):
-        [tok] = toks
-        return tok
-
-    def variable(self, toks: list):
-        [tok] = toks
-        return self._data.data[tok]
-
-    def addition(self, toks: list):
-        [lhs, rhs] = toks
-        return lhs + rhs
-
-    def subtraction(self, toks: list):
-        [lhs, rhs] = toks
-        return lhs - rhs
-
-    def multiplication(self, toks: list):
-        [lhs, rhs] = toks
-        return lhs * rhs
-
-    def division(self, toks: list):
-        [lhs, rhs] = toks
-        return lhs / rhs
-
-    def exponentiation(self, toks: list):
-        [lhs, rhs] = toks
-        return lhs**rhs
-
-    def assignment(self, toks: list):
-        [new_variable, val] = toks
-        return self._data.with_active(key=new_variable, data=val)
-
-
-class AssignNewFieldVariable(Transformer_InPlace):
     def __init__(self, world: DataWorld):
         self.world = world
         super().__init__(visit_tokens=True)
