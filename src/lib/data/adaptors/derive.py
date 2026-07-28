@@ -26,7 +26,7 @@ class Derive(WorldAdaptor):
             return world.with_active(data=AssignNewVariable(active).transform(self.ast))
 
         if isinstance(active, Field):
-            return world.with_active(data=AssignNewFieldVariable(active, world).transform(self.ast))
+            return AssignNewFieldVariable(active, world).transform(self.ast)
 
         raise ValueError("--derive requires an active variable to derive into; specify one as a positional argument.")
 
@@ -145,7 +145,7 @@ class AssignNewFieldVariable(Transformer_InPlace):
     def assignment(self, toks: list):
         [key, subdata] = toks
         info = var_info_registry.lookup(self._data.metadata.prepath, key)
-        return self._data.with_active(data=subdata, key=key, info=info)
+        return self.world.with_active(data=self.world.require_active_data().with_active(data=subdata, key=key, info=info))
 
 
 _DERIVE_GRAMMAR = r"""
