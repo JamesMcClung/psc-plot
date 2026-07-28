@@ -3,11 +3,10 @@ from lark.visitors import Transformer_InPlace
 
 from lib import var_info_registry
 from lib.data.adaptor import WorldAdaptor
-from lib.data.data_with_attrs import Field, List
+from lib.data.data_with_attrs import List
 from lib.data.data_world import DataWorld
 from lib.data.ensure_derived import ensure_derived
 from lib.data.loader import load
-from lib.file_util import Prepath
 from lib.parsing.args_registry import arg_parser
 
 
@@ -17,18 +16,7 @@ class Derive(WorldAdaptor):
         self.ast = _DERIVE_PARSER.parse(expression)
 
     def apply_world(self, world):
-        active = world.active_data
-        scoped_prefixes = _collect_scoped_prefixes(self.ast)
-
-        if isinstance(active, List):
-            if scoped_prefixes:
-                raise ValueError("--derive: cross-prefix references (prefix::key) are not supported for particle data.")
-            return world.with_active(data=AssignNewVariable(active).transform(self.ast))
-
-        if isinstance(active, Field):
-            return AssignNewFieldVariable(world).transform(self.ast)
-
-        raise ValueError("--derive requires an active variable to derive into; specify one as a positional argument.")
+        return AssignNewFieldVariable(world).transform(self.ast)
 
     def get_name_fragments(self):
         if self.ast.data == "assign_default":
