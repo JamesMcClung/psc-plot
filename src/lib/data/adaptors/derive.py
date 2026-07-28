@@ -194,8 +194,8 @@ variable        : CNAME
 scoped_variable : prepath "::" CNAME
 number          : SIGNED_NUMBER
 
-prepath : (DIR "/")* PREFIX
-DIR    : /[^\/]+/
+prepath : PREFIX
+# DIR    : /[^\/]+/ TODO figure out a way to make dirs work; as is, the arbitrary chars are incompatible with math symbols, especially /
 PREFIX : /[.\w\d]+/
 
 %import common.SIGNED_NUMBER
