@@ -26,8 +26,7 @@ class Derive(WorldAdaptor):
             return world.with_active(data=AssignNewVariable(active).transform(self.ast))
 
         if isinstance(active, Field):
-            siblings = _load_siblings(world, scoped_prefixes)
-            return world.with_active(data=AssignNewFieldVariable(active, siblings, world).transform(self.ast))
+            return world.with_active(data=AssignNewFieldVariable(active, world).transform(self.ast))
 
         raise ValueError("--derive requires an active variable to derive into; specify one as a positional argument.")
 
@@ -44,18 +43,6 @@ def _collect_scoped_prefixes(ast) -> set[str]:
         if len(tree.children) == 2:
             prefixes.add(str(tree.children[0]))
     return prefixes
-
-
-def _load_siblings(world: DataWorld, prepaths: set[Prepath]) -> dict[str, Field]:
-    """Resolve each scoped prefix to a loaded Field, reusing any already in the world
-    and auto-loading the rest the same way `--with` does."""
-    siblings: dict[Prepath, Field] = {}
-    for prepath in prepaths:
-        if prepath in world.datas:
-            siblings[prepath] = world.datas[prepath]
-        else:
-            siblings[prepath] = load(world.config, prepath)
-    return siblings
 
 
 class AssignNewVariable(Transformer_InPlace):
@@ -101,11 +88,9 @@ class AssignNewVariable(Transformer_InPlace):
 
 
 class AssignNewFieldVariable(Transformer_InPlace):
-    def __init__(self, data: Field, siblings: dict[str, Field], world: DataWorld):
+    def __init__(self, data: Field, world: DataWorld):
         self._data = data
         self.world = world
-        # TODO: load "siblings" into the world instead of this hack
-        self._siblings = siblings
         super().__init__(visit_tokens=True)
 
     def number(self, toks: list):
