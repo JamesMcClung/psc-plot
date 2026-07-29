@@ -94,6 +94,12 @@ def test_image_and_line():
     return make_plot("prt.i --bin y py=100 --nan0 --scale log --compute -v y py -w pfd::ey_ec -v y".split())
 
 
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_image_and_cuts():
+    """Chronotopogram of a field with some select cuts shown as lines."""
+    return make_plot("pfd ey_ec -v t y --scale symlog#.001 --copy ey_ec -i y=0 -v t --copy ey_ec -i y=-1 -v t".split())
+
+
 # --- Cross-dataset plots ---
 
 

@@ -11,7 +11,9 @@ from matplotlib.projections import PolarAxes
 from matplotlib.text import Text
 
 from lib.plotting import plt_util
-from lib.plotting.plot_info import DimKey, ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PolarMeshInfo, ScatterInfo
+from lib.plotting.labeler import TreeLabeler
+from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PolarMeshInfo, ScatterInfo
+from lib.plotting.renderer2 import Renderer2
 
 type AxesIdx = tuple[int, int]
 
@@ -94,6 +96,9 @@ class UpdateText:
 
 class AxesManager(ABC):
     @abstractmethod
+    def get_renderers(self) -> list[Renderer2]: ...
+
+    @abstractmethod
     def setup(self): ...
 
     @abstractmethod
@@ -118,12 +123,11 @@ class AxesManagerSingle[A: Axes, PI: PlotInfo](AxesManager):
         self.info = info
 
     def setup_title(self):
-        update_title = UpdateText(self.ax.title, self.info)
-        self.info._setter_callbacks["subject"] = update_title
-        self.info._setter_callbacks["dim_displays"] = update_title
-        self.info._setter_callbacks["dim_units"] = update_title
-        self.info._setter_callbacks["scalar_coord_values"] = update_title
-        update_title()
+        self.labeler = TreeLabeler(self.ax.title.set_text, self.info)
+        self.labeler.update()
+
+    def get_renderers(self):
+        return [self.labeler]
 
 
 class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[Axes, PI2D]):
@@ -235,76 +239,25 @@ class AxesManagerMultiLine(AxesManager):
     def __init__(self, ax: Axes, infos: list[LineInfo]):
         self.ax = ax
         self.infos = infos
-
-        self.common_coord_dims: set[DimKey] = set()
-        self.unique_coord_dimss: list[set[DimKey]] = [set() for _ in self.infos]
-        self._update_common_scalar_coordinates()
-
-        self.common_subject: str | None = None
-        self._update_common_subject()
-
         self.lines: list[Line2D] = []  # populated later
 
-    def _update_common_scalar_coordinates(self):
-        self.common_coord_dims.clear()
-        for unique_dims in self.unique_coord_dimss:
-            unique_dims.clear()
-
-        all_dims: set[DimKey] = {dim for info in self.infos for dim in info.scalar_coord_values}
-
-        for dim in all_dims:
-            if all(dim in info.scalar_coord_values for info in self.infos) and len({info.get_coord_label(dim) for info in self.infos}) == 1:
-                self.common_coord_dims.add(dim)
-            else:
-                for info, unique_dims in zip(self.infos, self.unique_coord_dimss):
-                    if dim in info.scalar_coord_values:
-                        unique_dims.add(dim)
-
-    def _update_common_subject(self):
-        self.common_subject = _one_or_none(info.subject for info in self.infos)
-
-    def _get_title(self) -> str:
-        # by definition, it shouldn't matter which info we use to construct this string
-        coord_labels_str = ", ".join(self.infos[0].get_coord_label(dim).maybe_with_dollars() for dim in self.common_coord_dims)
-
-        if self.common_subject and coord_labels_str:
-            return f"{self.common_subject} ({coord_labels_str})"
-        return self.common_subject or coord_labels_str
-
-    def _get_legend_labels(self) -> list[str]:
-        legend_labels: list[str] = []
-
-        for info, unique_dims in zip(self.infos, self.unique_coord_dimss):
-            coord_labels_str = ", ".join(info.get_coord_label(dim).maybe_with_dollars() for dim in unique_dims)
-
-            if self.common_subject:
-                legend_labels.append(coord_labels_str)
-            elif info.subject and coord_labels_str:
-                legend_labels.append(f"{info.subject} ({coord_labels_str})")
-            else:
-                legend_labels.append(info.subject or coord_labels_str)
-
-        return legend_labels
-
-    def _update_title_and_legend(self, *_):
-        self._update_common_scalar_coordinates()
-        self._update_common_subject()
-        self.ax.set_title(self._get_title())
-        for line, label in zip(self.lines, self._get_legend_labels()):
-            line.set_label(label)
+    def get_renderers(self):
+        return [self.labeler]
 
     def setup(self):
-        self.setup_title()
         self.setup_labels()
         self.setup_data()
+        self.setup_title()  # after data, to make sure lines is populated
         self.setup_scales()
         self.setup_bounds()
 
-        for info in self.infos:
-            info._setter_callbacks["scalar_coord_values"] = self._update_title_and_legend
-
     def setup_title(self):
-        self.ax.set_title(self._get_title())
+        self.labeler = TreeLabeler(self.ax.title.set_text)
+        for info, line in zip(self.infos, self.lines):
+            line_labeler = TreeLabeler(line.set_label, info)
+            self.labeler.add_child(line_labeler)
+        self.labeler.update()
+        self.ax.legend()
 
     def setup_labels(self):
         x_labels = [info.get_dim_label(info.x_dim) for info in self.infos]
@@ -340,14 +293,12 @@ class AxesManagerMultiLine(AxesManager):
         self.ax.set_ybound(*find_widest_bounds(info.dim_bounds[info.y_dim] for info in self.infos))
 
     def setup_data(self):
-        for info, label in zip(self.infos, self._get_legend_labels()):
-            [line] = self.ax.plot(info.x_data, info.y_data, linestyle=info.line_style, scalex=False, scaley=False, label=label)
+        for info in self.infos:
+            [line] = self.ax.plot(info.x_data, info.y_data, linestyle=info.line_style, scalex=False, scaley=False)
             info._setter_callbacks["x_data"] = line.set_xdata
             info._setter_callbacks["y_data"] = line.set_ydata
             info._setter_callbacks["line_style"] = line.set_linestyle
             self.lines.append(line)
-
-        self.ax.legend()
 
 
 class AxesManagerImageAndLines(AxesManager):
@@ -357,67 +308,27 @@ class AxesManagerImageAndLines(AxesManager):
         self.image_info = image_info
         self.line_infos = line_infos
         self.infos: list[PlotInfo2D] = [image_info, *line_infos]
-
-        self.common_coord_dims: set[DimKey] = set()
-        self.unique_coord_dimss: list[set[DimKey]] = [set() for _ in self.line_infos]
-        self._update_common_scalar_coordinates()
-
         self.lines: list[Line2D] = []  # populated later
 
-    def _update_common_scalar_coordinates(self):
-        self.common_coord_dims.clear()
-        for unique_dims in self.unique_coord_dimss:
-            unique_dims.clear()
-
-        all_dims: set[DimKey] = {dim for info in self.infos for dim in info.scalar_coord_values}
-
-        for dim in all_dims:
-            if all(dim in info.scalar_coord_values for info in self.infos) and len({info.get_coord_label(dim) for info in self.infos}) == 1:
-                self.common_coord_dims.add(dim)
-            else:
-                for info, unique_dims in zip(self.infos, self.unique_coord_dimss):
-                    if dim in info.scalar_coord_values:
-                        unique_dims.add(dim)
-
-    def _get_title(self) -> str:
-        # by definition, it shouldn't matter which info we use to construct this string
-        coord_labels_str = ", ".join(self.line_infos[0].get_coord_label(dim).maybe_with_dollars() for dim in self.common_coord_dims)
-
-        if self.image_info.subject and coord_labels_str:
-            return f"{self.image_info.subject} ({coord_labels_str})"
-        return self.image_info.subject or coord_labels_str
-
-    def _get_legend_labels(self) -> list[str]:
-        legend_labels: list[str] = []
-
-        for info, unique_dims in zip(self.line_infos, self.unique_coord_dimss):
-            coord_labels_str = ", ".join(info.get_coord_label(dim).maybe_with_dollars() for dim in unique_dims)
-
-            if info.subject and coord_labels_str:
-                legend_labels.append(f"{info.subject} ({coord_labels_str})")
-            else:
-                legend_labels.append(info.subject or coord_labels_str)
-
-        return legend_labels
-
-    def _update_title_and_legend(self, *_):
-        self._update_common_scalar_coordinates()
-        self.image_ax.set_title(self._get_title())
-        for line, label in zip(self.lines, self._get_legend_labels()):
-            line.set_label(label)
+    def get_renderers(self):
+        return [self.labeler]
 
     def setup(self):
-        self.setup_title()
         self.setup_labels()
         self.setup_data()
+        self.setup_title()  # after data to get line info and cbar
         self.setup_scales()
         self.setup_bounds()
 
-        for info in self.infos:
-            info._setter_callbacks["scalar_coord_values"] = self._update_title_and_legend
-
     def setup_title(self):
-        self.image_ax.set_title(self._get_title())
+        self.labeler = TreeLabeler(self.image_ax.title.set_text)
+
+        self.labeler.add_child(TreeLabeler(self.cbar.set_label, self.image_info))
+        for info, line in zip(self.line_infos, self.lines):
+            self.labeler.add_child(TreeLabeler(line.set_label, info))
+
+        self.labeler.update()
+        self.line_ax.legend()
 
     def setup_labels(self):
         x_labels = [info.get_dim_label(info.x_dim) for info in self.infos]
@@ -468,22 +379,21 @@ class AxesManagerImageAndLines(AxesManager):
         )
         self.image_info._setter_callbacks["data"] = image.set_data
 
-        self.image_ax.figure.colorbar(image)
+        self.cbar = self.image_ax.figure.colorbar(image)
         data_lower, data_upper = self.image_info.dim_bounds[self.image_info.color_dim]
         plt_util.update_cbar(image, data_min_override=data_lower, data_max_override=data_upper)
 
-        for info, label in zip(self.line_infos, self._get_legend_labels()):
-            [line] = self.line_ax.plot(info.x_data, info.y_data, linestyle=info.line_style, scalex=False, scaley=False, label=label)
+        for info in self.line_infos:
+            [line] = self.line_ax.plot(info.x_data, info.y_data, linestyle=info.line_style, scalex=False, scaley=False)
             info._setter_callbacks["x_data"] = line.set_xdata
             info._setter_callbacks["y_data"] = line.set_ydata
             info._setter_callbacks["line_style"] = line.set_linestyle
             self.lines.append(line)
 
-        self.line_ax.legend()
 
-
-def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
+def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, list[Renderer2]]:
     figure = plt.figure(layout="constrained")
+    renderers = []
 
     for ax, infos in _setup_axes(figure, plot_infos).values():
         manager: AxesManager
@@ -510,5 +420,6 @@ def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
                 raise NotImplementedError("don't yet support multiple non-line plots per axes")
 
         manager.setup()
+        renderers += manager.get_renderers()
 
-    return figure
+    return figure, renderers
