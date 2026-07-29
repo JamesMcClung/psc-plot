@@ -32,6 +32,7 @@ class AnimatedPlot(Plot):
     def _next_frame(self, frame: int):
         for renderer in self.renderers:
             renderer.update_plot_info(frame)
+            renderer.plot_info.trigger_listeners()
         self.post_update_fig(DrawMessage(plot_info=self.renderers[0].plot_info, axes=self.fig.axes[0], frame_data=self.renderers[0]._get_data_at_frame(frame)))
         print_progress(frame, self.n_frames)
 
