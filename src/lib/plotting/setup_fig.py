@@ -13,6 +13,7 @@ from matplotlib.text import Text
 from lib.plotting import plt_util
 from lib.plotting.labeler import TreeLabeler
 from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PolarMeshInfo, ScatterInfo
+from lib.plotting.renderer2 import Renderer2
 
 type AxesIdx = tuple[int, int]
 
@@ -95,6 +96,9 @@ class UpdateText:
 
 class AxesManager(ABC):
     @abstractmethod
+    def get_renderers(self) -> list[Renderer2]: ...
+
+    @abstractmethod
     def setup(self): ...
 
     @abstractmethod
@@ -122,6 +126,9 @@ class AxesManagerSingle[A: Axes, PI: PlotInfo](AxesManager):
         self.labeler = TreeLabeler(self.ax.title.set_text, self.info)
         self.labeler.update()
         self.info.add_listener(lambda _: self.labeler.update())
+
+    def get_renderers(self):
+        return [self.labeler]
 
 
 class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[Axes, PI2D]):
@@ -235,6 +242,9 @@ class AxesManagerMultiLine(AxesManager):
         self.infos = infos
         self.lines: list[Line2D] = []  # populated later
 
+    def get_renderers(self):
+        return [self.labeler]
+
     def setup(self):
         self.setup_labels()
         self.setup_data()
@@ -301,6 +311,9 @@ class AxesManagerImageAndLines(AxesManager):
         self.line_infos = line_infos
         self.infos: list[PlotInfo2D] = [image_info, *line_infos]
         self.lines: list[Line2D] = []  # populated later
+
+    def get_renderers(self):
+        return [self.labeler]
 
     def setup(self):
         self.setup_labels()
@@ -382,8 +395,9 @@ class AxesManagerImageAndLines(AxesManager):
             self.lines.append(line)
 
 
-def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
+def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, list[Renderer2]]:
     figure = plt.figure(layout="constrained")
+    renderers = []
 
     for ax, infos in _setup_axes(figure, plot_infos).values():
         manager: AxesManager
@@ -410,5 +424,6 @@ def setup_fig(plot_infos: list[PlotInfo]) -> Figure:
                 raise NotImplementedError("don't yet support multiple non-line plots per axes")
 
         manager.setup()
+        renderers += manager.get_renderers()
 
-    return figure
+    return figure, renderers

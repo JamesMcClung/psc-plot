@@ -28,7 +28,7 @@ class Plot(ABC):
             return
         self._initialized = True
 
-        self.fig = setup_fig([r.plot_info for r in self.renderers])
+        self.fig, self.renderer2s = setup_fig([r.plot_info for r in self.renderers])
         # TODO hooks should be per-renderer; for now, just apply them to the 1st one
         self.post_init_fig(DrawMessage(plot_info=self.renderers[0].plot_info, axes=self.fig.axes[0], frame_data=self.renderers[0]._get_data_at_frame(0)))
 
