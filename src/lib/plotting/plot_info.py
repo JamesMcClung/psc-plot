@@ -50,8 +50,11 @@ class PlotInfo:
         maybe_space = "\\ " if unit else ""
         return Latex(f"{display} = {coord_val:.3f}{maybe_space}{unit}")
 
+    def get_sublabels(self) -> list[str]:
+        return [f"${self.get_coord_label(dim)}$" for dim in self.scalar_coord_values]
+
     def get_title(self) -> str:
-        coord_labels_str = ", ".join(f"${self.get_coord_label(dim)}$" for dim in self.scalar_coord_values)
+        coord_labels_str = ", ".join(self.get_sublabels())
 
         if self.subject and coord_labels_str:
             return f"{self.subject} ({coord_labels_str})"
