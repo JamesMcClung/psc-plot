@@ -305,15 +305,18 @@ class AxesManagerImageAndLines(AxesManager):
     def setup(self):
         self.setup_labels()
         self.setup_data()
-        self.setup_title()  # after data to get line info
+        self.setup_title()  # after data to get line info and cbar
         self.setup_scales()
         self.setup_bounds()
 
     def setup_title(self):
-        self.labeler = TreeLabeler(self.image_ax.title.set_text, self.image_info)
+        self.labeler = TreeLabeler(self.image_ax.title.set_text)
+
+        self.labeler.add_child(TreeLabeler(self.cbar.set_label, self.image_info))
+        self.image_info.add_listener(lambda _: self.labeler.update())
+
         for info, line in zip(self.line_infos, self.lines):
-            line_labeler = TreeLabeler(line.set_label, info)
-            self.labeler.add_child(line_labeler)
+            self.labeler.add_child(TreeLabeler(line.set_label, info))
             info.add_listener(lambda _: self.labeler.update())
         self.labeler.update()
         self.line_ax.legend()
@@ -367,7 +370,7 @@ class AxesManagerImageAndLines(AxesManager):
         )
         self.image_info._setter_callbacks["data"] = image.set_data
 
-        self.image_ax.figure.colorbar(image)
+        self.cbar = self.image_ax.figure.colorbar(image)
         data_lower, data_upper = self.image_info.dim_bounds[self.image_info.color_dim]
         plt_util.update_cbar(image, data_min_override=data_lower, data_max_override=data_upper)
 
