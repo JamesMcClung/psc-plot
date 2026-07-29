@@ -125,7 +125,6 @@ class AxesManagerSingle[A: Axes, PI: PlotInfo](AxesManager):
     def setup_title(self):
         self.labeler = TreeLabeler(self.ax.title.set_text, self.info)
         self.labeler.update()
-        self.info.add_listener(lambda _: self.labeler.update())
 
     def get_renderers(self):
         return [self.labeler]
@@ -257,7 +256,6 @@ class AxesManagerMultiLine(AxesManager):
         for info, line in zip(self.infos, self.lines):
             line_labeler = TreeLabeler(line.set_label, info)
             self.labeler.add_child(line_labeler)
-            info.add_listener(lambda _: self.labeler.update())
         self.labeler.update()
         self.ax.legend()
 
@@ -326,11 +324,9 @@ class AxesManagerImageAndLines(AxesManager):
         self.labeler = TreeLabeler(self.image_ax.title.set_text)
 
         self.labeler.add_child(TreeLabeler(self.cbar.set_label, self.image_info))
-        self.image_info.add_listener(lambda _: self.labeler.update())
-
         for info, line in zip(self.line_infos, self.lines):
             self.labeler.add_child(TreeLabeler(line.set_label, info))
-            info.add_listener(lambda _: self.labeler.update())
+
         self.labeler.update()
         self.line_ax.legend()
 

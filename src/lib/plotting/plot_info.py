@@ -1,5 +1,5 @@
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Any, Callable, Literal, Self
+from typing import Any, Callable, Literal
 
 import numpy as np
 from matplotlib.typing import LineStyleType
@@ -28,7 +28,6 @@ class PlotInfo:
     projection: Projection = field(default="rectilinear", init=False)
 
     _setter_callbacks: dict[AttrKey | tuple[AttrKey, DimKey], Callable[[Any], None]] = field(default_factory=dict, init=False)
-    _listeners: list[Callable[[Self], None]] = field(default_factory=list, init=False)
 
     def set(self, key: AttrKey | tuple[AttrKey, DimKey], value: Any):
         if isinstance(key, str):
@@ -71,13 +70,6 @@ class PlotInfo:
             dim_label += f" [${unit}$]"
 
         return dim_label
-
-    def add_listener(self, listener: Callable[[Self], None]):
-        self._listeners.append(listener)
-
-    def trigger_listeners(self):
-        for listener in self._listeners:
-            listener(self)
 
 
 @dataclass
