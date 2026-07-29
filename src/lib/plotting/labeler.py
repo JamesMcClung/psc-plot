@@ -4,10 +4,11 @@ from dataclasses import dataclass, field
 from typing import Callable
 
 from lib.plotting.plot_info import PlotInfo
+from lib.plotting.renderer2 import Renderer2
 
 
 @dataclass
-class TreeLabeler:
+class TreeLabeler(Renderer2):
     """Manages the labels associated with one or more datasets within a figure. A label comprises an optional subject
     (variable name) and any number of sublabels (e.g. scalar coordinates). When multiple datasets are plotted within
     the same figure, common label components can be "factored out" to a higher label location, e.g. from a legend to
