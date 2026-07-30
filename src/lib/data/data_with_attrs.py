@@ -221,7 +221,7 @@ class List[Data: pd.DataFrame | dd.DataFrame = pd.DataFrame | dd.DataFrame, Subd
         return list(self.data.columns)
 
 
-class FullList(List[pd.DataFrame]):
+class FullList(List[pd.DataFrame, pd.Series]):
     def __getitem__(self, key: str):
         return self.data[key]
 
@@ -237,7 +237,7 @@ class FullList(List[pd.DataFrame]):
             if key in self.coordss:
                 cache[key] = self.coordss[key][0]
             else:
-                cache[key] = self.data[key].min(skipna=True)
+                cache[key] = self[key].min(skipna=True)
         return cache[key]
 
     def upper_bound(self, key) -> float:
@@ -248,15 +248,15 @@ class FullList(List[pd.DataFrame]):
                 delta = coords[1] - coords[0]
                 cache[key] = coords[-1] + delta
             else:
-                cache[key] = self.data[key].max(skipna=True)
+                cache[key] = self[key].max(skipna=True)
         return cache[key]
 
     def dask_collections(self) -> list:
         return []
 
 
-class LazyList(List[dd.DataFrame]):
-    def __getitem__(self, key: str):
+class LazyList(List[dd.DataFrame, dd.Series]):
+    def __getitem__(self, key) -> dd.Series:
         return self.data[key]
 
     def compute(self) -> FullList:
@@ -273,7 +273,7 @@ class LazyList(List[dd.DataFrame]):
                 upper = coords[-1] + delta
                 cache[key] = (lower, upper)
             else:
-                cache[key] = dask.array.compute(self.data[key].min(skipna=True), self.data[key].max(skipna=True))
+                cache[key] = dask.array.compute(self[key].min(skipna=True), self[key].max(skipna=True))
         return cache[key]
 
     def lower_bound(self, key) -> float:
