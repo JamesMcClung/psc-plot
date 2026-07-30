@@ -6,4 +6,5 @@ type VarKey = SubdataKey | DimKey
 
 type SpeciesKey = str
 
+type Bounds = tuple[float, float]
 type Coords = np.ndarray

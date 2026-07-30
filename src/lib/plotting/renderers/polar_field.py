@@ -39,7 +39,7 @@ class PolarFieldRenderer(Renderer[Field]):
                 color_dim: frame_data.metadata.var_infos[color_dim].scale,
             },
             dim_bounds={
-                color_dim: full_data.var_bounds,
+                color_dim: full_data.bounds(color_dim),
             },
             dim_displays={
                 r_dim: frame_data.metadata.var_infos[r_dim].display,

@@ -24,7 +24,7 @@ class Field1dRenderer(Renderer[Field]):
             },
             dim_bounds={
                 x_dim: (frame_data.coordss()[x_dim][0], frame_data.coordss()[x_dim][-1]),
-                y_dim: plt_util.symmetrize_bounds(*full_data.var_bounds),
+                y_dim: plt_util.symmetrize_bounds(*full_data.bounds(y_dim)),
             },
             dim_displays={
                 x_dim: frame_data.metadata.var_infos[x_dim].display,

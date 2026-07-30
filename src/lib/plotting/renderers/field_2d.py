@@ -36,7 +36,7 @@ class Field2dRenderer(Renderer[Field]):
             dim_bounds={
                 x_dim: get_extent(data, x_dim),
                 y_dim: get_extent(data, y_dim),
-                color_dim: full_data.var_bounds,
+                color_dim: full_data.bounds(color_dim),
             },
             dim_displays={
                 x_dim: frame_data.metadata.var_infos[x_dim].display,
