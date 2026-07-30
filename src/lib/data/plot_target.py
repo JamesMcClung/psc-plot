@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import KW_ONLY, dataclass, field
 
-type DimKey = str
+from lib.data.types import VarKey
 
 
 @dataclass
@@ -9,13 +9,13 @@ class SpatialDims(ABC):
     ndims: int
 
     @abstractmethod
-    def unpack(self) -> tuple[DimKey, DimKey]: ...
+    def unpack(self) -> tuple[VarKey, VarKey]: ...
 
 
 @dataclass
 class SpatialDimsXY(SpatialDims):
-    x_dim: DimKey
-    y_dim: DimKey
+    x_dim: VarKey
+    y_dim: VarKey
     ndims: int = field(default=2, init=False)
 
     def unpack(self):
@@ -24,8 +24,8 @@ class SpatialDimsXY(SpatialDims):
 
 @dataclass
 class SpatialDimsRTheta(SpatialDims):
-    r_dim: DimKey
-    theta_dim: DimKey
+    r_dim: VarKey
+    theta_dim: VarKey
     ndims: int = field(default=2, init=False)
 
     def unpack(self):
@@ -37,7 +37,7 @@ class PlotTarget:
     prefix: str
     _: KW_ONLY
     spatial_dims: SpatialDims
-    color_dim: DimKey | None = None
-    time_dim: DimKey | None = None
+    color_dim: VarKey | None = None
+    time_dim: VarKey | None = None
 
     axes_index: tuple[int, int] = (1, 1)  # 1-based

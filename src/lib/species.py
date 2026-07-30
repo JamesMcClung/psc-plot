@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from lib.data.types import SpeciesKey
 from lib.latex import Latex
 
 
 @dataclass(frozen=True)
 class SpeciesInfo:
-    species_key: str
+    species_key: SpeciesKey
     display: Latex
     q: float
     m: float

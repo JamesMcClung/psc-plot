@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from lib.data.types import DimKey, SpeciesKey, SubdataKey, VarKey
 from lib.file_util import Prepath
 from lib.latex import Latex
 from lib.species import SpeciesInfo
@@ -22,10 +23,10 @@ type Coords = np.ndarray
 @dataclass(kw_only=True, frozen=True)
 class Metadata:
     prepath: Prepath
-    active_key: str | None = None
+    active_key: SubdataKey | None = None
 
-    var_infos: dict[str, VarInfo] = field(default_factory=dict)
-    species: dict[str, SpeciesInfo] = field(default_factory=dict)
+    var_infos: dict[VarKey, VarInfo] = field(default_factory=dict)
+    species: dict[SpeciesKey, SpeciesInfo] = field(default_factory=dict)
 
     @property
     def active_var_info(self) -> VarInfo:
@@ -95,28 +96,28 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
         return self.metadata.var_infos[self.active_key]
 
     @abstractmethod
-    def __getitem__(self, key: str) -> Subdata: ...
+    def __getitem__(self, key: SubdataKey) -> Subdata: ...
 
     @abstractmethod
-    def with_active(self, *, data: Subdata | None = None, key: str | None = None, info: VarInfo | None = None) -> Self: ...
+    def with_active(self, *, data: Subdata | None = None, key: SubdataKey | None = None, info: VarInfo | None = None) -> Self: ...
 
-    def with_info(self, key: str, info: VarInfo) -> Self:
+    def with_info(self, key: VarKey, info: VarInfo) -> Self:
         return self.assign(var_infos=self.metadata.var_infos | {key: info})
 
     def assign(self, data: Data | None = None, /, **metadata_vals: Any) -> Self:
         return self.__class__(self.data if data is None else data, self.metadata.assign(**metadata_vals))
 
     @abstractmethod
-    def bounds(self, key: str) -> tuple[float, float]: ...
+    def bounds(self, key: DimKey) -> tuple[float, float]: ...
 
     @abstractmethod
-    def lower_bound(self, key: str) -> float: ...
+    def lower_bound(self, key: DimKey) -> float: ...
 
     @abstractmethod
-    def upper_bound(self, key: str) -> float: ...
+    def upper_bound(self, key: DimKey) -> float: ...
 
     @abstractmethod
-    def coordss(self, key: str | None = None) -> dict[str, Coords]: ...
+    def coordss(self, key: SubdataKey | None = None) -> dict[DimKey, Coords]: ...
 
     @abstractmethod
     def dask_collections(self) -> list: ...
@@ -142,10 +143,10 @@ class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata])
 
         return ret
 
-    def __getitem__(self, key: str):
+    def __getitem__(self, key):
         return self.data[key]
 
-    def coordss(self, key: str | None = None) -> dict[str, Coords]:
+    def coordss(self, key: SubdataKey | None = None) -> dict[DimKey, Coords]:
         subdata = self[key or self.active_key]
         return {dim: np.array(subdata.coords[dim]) for dim in subdata.coords.keys()}
 
@@ -175,13 +176,13 @@ class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata])
 
 @dataclass(kw_only=True, frozen=True)
 class ListMetadata(Metadata):
-    coordss: dict[str, np.ndarray] = field(default_factory=dict)
-    weight_key: str | None = None
+    coordss: dict[DimKey, np.ndarray] = field(default_factory=dict)
+    weight_key: SubdataKey | None = None
 
     subject: Latex | None = None
     """The `subject` is essentially the (display) name of the list's implicit index dimension."""
 
-    partition_dim: str | None = None
+    partition_dim: SubdataKey | None = None
     """If set, the dim along which partitions of `data` are laid out. Each
     value of this dim corresponds to a contiguous range of partitions given
     by `partition_ranges`. Used by `Idx` to do dask-native partition pruning
@@ -212,16 +213,16 @@ class List[Data: pd.DataFrame | dd.DataFrame = pd.DataFrame | dd.DataFrame, Subd
     @abstractmethod
     def compute(self) -> FullList: ...
 
-    def coordss(self, key: str | None = None) -> dict[str, Coords]:
+    def coordss(self, key: SubdataKey | None = None) -> dict[DimKey, Coords]:
         return self.metadata.coordss
 
     @property
-    def dims(self) -> list[str]:
+    def dims(self) -> list[VarKey]:
         return list(self.data.columns)
 
 
 class FullList(List[pd.DataFrame, pd.Series]):
-    def __getitem__(self, key: str):
+    def __getitem__(self, key):
         return self.data[key]
 
     def compute(self) -> FullList:
