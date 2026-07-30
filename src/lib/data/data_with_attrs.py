@@ -93,8 +93,8 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
             return None
         return self.metadata.var_infos[self.active_key]
 
-    @abstractmethod
-    def __getitem__(self, key: SubdataKey) -> Subdata: ...
+    def __getitem__(self, key) -> dd.Series:
+        return self.data[key]
 
     @abstractmethod
     def with_active(self, *, data: Subdata | None = None, key: SubdataKey | None = None, info: VarInfo | None = None) -> Self: ...
@@ -135,9 +135,6 @@ class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata])
             ret = ret.assign(var_infos=ret.metadata.var_infos | {key: info}, active_key=key)
 
         return ret
-
-    def __getitem__(self, key):
-        return self.data[key]
 
     def coordss(self, key: SubdataKey | None = None) -> dict[DimKey, Coords]:
         subdata = self[key or self.active_key]
@@ -222,9 +219,6 @@ class List[Data: pd.DataFrame | dd.DataFrame = pd.DataFrame | dd.DataFrame, Subd
 
 
 class FullList(List[pd.DataFrame, pd.Series]):
-    def __getitem__(self, key):
-        return self.data[key]
-
     def compute(self) -> FullList:
         return self
 
@@ -233,9 +227,6 @@ class FullList(List[pd.DataFrame, pd.Series]):
 
 
 class LazyList(List[dd.DataFrame, dd.Series]):
-    def __getitem__(self, key) -> dd.Series:
-        return self.data[key]
-
     def compute(self) -> FullList:
         # partition_* describe the dask layout; meaningless after compute.
         return FullList(self.data.compute(), self.metadata.assign(partition_dim=None, partition_ranges=None))
