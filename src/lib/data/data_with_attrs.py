@@ -109,13 +109,13 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
         return self.__class__(self.data if data is None else data, self.metadata.assign(**metadata_vals))
 
     @abstractmethod
-    def bounds(self, dim_name: str) -> tuple[float, float]: ...
+    def bounds(self, key: str) -> tuple[float, float]: ...
 
     @abstractmethod
-    def lower_bound(self, dim_name: str) -> float: ...
+    def lower_bound(self, key: str) -> float: ...
 
     @abstractmethod
-    def upper_bound(self, dim_name: str) -> float: ...
+    def upper_bound(self, key: str) -> float: ...
 
     @abstractmethod
     def dask_collections(self) -> list: ...
@@ -153,14 +153,14 @@ class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata])
     def dims(self) -> list[str]:
         return list(self.require_active_subdata().dims)
 
-    def bounds(self, dim_name):
-        return (self.lower_bound(dim_name), self.upper_bound(dim_name))
+    def bounds(self, key):
+        return (self.lower_bound(key), self.upper_bound(key))
 
-    def lower_bound(self, dim_name) -> float:
-        return self.coordss[dim_name][0]
+    def lower_bound(self, key) -> float:
+        return self.coordss[key][0]
 
-    def upper_bound(self, dim_name) -> float:
-        coords = self.coordss[dim_name]
+    def upper_bound(self, key) -> float:
+        coords = self.coordss[key]
         delta = coords[1] - coords[0]
         return coords[-1] + delta
 
@@ -228,28 +228,28 @@ class FullList(List[pd.DataFrame]):
     def compute(self) -> FullList:
         return self
 
-    def bounds(self, dim_name):
-        return (self.lower_bound(dim_name), self.upper_bound(dim_name))
+    def bounds(self, key):
+        return (self.lower_bound(key), self.upper_bound(key))
 
-    def lower_bound(self, dim_name) -> float:
+    def lower_bound(self, key) -> float:
         cache = self._caches.setdefault("lower_bound", {})
-        if dim_name not in cache:
-            if dim_name in self.coordss:
-                cache[dim_name] = self.coordss[dim_name][0]
+        if key not in cache:
+            if key in self.coordss:
+                cache[key] = self.coordss[key][0]
             else:
-                cache[dim_name] = self.data[dim_name].min(skipna=True)
-        return cache[dim_name]
+                cache[key] = self.data[key].min(skipna=True)
+        return cache[key]
 
-    def upper_bound(self, dim_name) -> float:
+    def upper_bound(self, key) -> float:
         cache = self._caches.setdefault("upper_bound", {})
-        if dim_name not in cache:
-            if dim_name in self.coordss:
-                coords = self.coordss[dim_name]
+        if key not in cache:
+            if key in self.coordss:
+                coords = self.coordss[key]
                 delta = coords[1] - coords[0]
-                cache[dim_name] = coords[-1] + delta
+                cache[key] = coords[-1] + delta
             else:
-                cache[dim_name] = self.data[dim_name].max(skipna=True)
-        return cache[dim_name]
+                cache[key] = self.data[key].max(skipna=True)
+        return cache[key]
 
     def dask_collections(self) -> list:
         return []
@@ -263,24 +263,24 @@ class LazyList(List[dd.DataFrame]):
         # partition_* describe the dask layout; meaningless after compute.
         return FullList(self.data.compute(), self.metadata.assign(partition_dim=None, partition_ranges=None))
 
-    def bounds(self, dim_name):
+    def bounds(self, key):
         cache = self._caches.setdefault("bounds", {})
-        if dim_name not in cache:
-            if dim_name in self.coordss:
-                coords = self.coordss[dim_name]
+        if key not in cache:
+            if key in self.coordss:
+                coords = self.coordss[key]
                 lower = coords[0]
                 delta = coords[1] - coords[0]
                 upper = coords[-1] + delta
-                cache[dim_name] = (lower, upper)
+                cache[key] = (lower, upper)
             else:
-                cache[dim_name] = dask.array.compute(self.data[dim_name].min(skipna=True), self.data[dim_name].max(skipna=True))
-        return cache[dim_name]
+                cache[key] = dask.array.compute(self.data[key].min(skipna=True), self.data[key].max(skipna=True))
+        return cache[key]
 
-    def lower_bound(self, dim_name) -> float:
-        return self.bounds(dim_name)[0]
+    def lower_bound(self, key) -> float:
+        return self.bounds(key)[0]
 
-    def upper_bound(self, dim_name) -> float:
-        return self.bounds(dim_name)[1]
+    def upper_bound(self, key) -> float:
+        return self.bounds(key)[1]
 
     def dask_collections(self) -> list:
         return [self.data]
