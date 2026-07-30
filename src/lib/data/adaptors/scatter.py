@@ -13,7 +13,7 @@ class Scatter(MetadataAdaptor):
         self.subject = subject
 
     def apply_field(self, data: Field) -> LazyList:
-        coordss = data.coordss
+        coordss = data.coordss()
         ordered_coordss = [coordss[dim] for dim in data.dims]
         coord_grids = np.meshgrid(*ordered_coordss, indexing="ij")
 

@@ -37,7 +37,7 @@ class ScatterRenderer(Renderer[FullList]):
             axes_index=self.plot_target.axes_index,
         )
 
-        for dim, coord in frame_data.coordss.items():
+        for dim, coord in frame_data.coordss().items():
             if coord.shape == ():
                 plot_info.scalar_coord_values[dim] = coord
                 plot_info.dim_displays[dim] = frame_data.metadata.var_infos[dim].display
@@ -59,7 +59,7 @@ class ScatterRenderer(Renderer[FullList]):
         [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
 
         self.plot_info.set("xy_data", np.array([frame_data.data[x_dim], frame_data.data[y_dim]]).T)
-        self.plot_info.set("scalar_coord_values", {dim: coord for dim, coord in frame_data.coordss.items() if coord.shape == ()})
+        self.plot_info.set("scalar_coord_values", {dim: coord for dim, coord in frame_data.coordss().items() if coord.shape == ()})
 
         if color_dim := self.plot_info.color_dim:
             self.plot_info.set("color_data", frame_data.data[color_dim])

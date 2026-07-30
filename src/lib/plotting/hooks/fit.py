@@ -52,7 +52,7 @@ class Fit(Hook):
         slicer = Pos({x_dim: self.subdomain})
         data = slicer.apply(data)
         if isinstance(data, Field):
-            return (data.coordss[x_dim], data.data[y_dim])
+            return (data.coordss()[x_dim], data.data[y_dim])
         elif isinstance(data, List):
             return (data.data[x_dim], data.data[y_dim])
 

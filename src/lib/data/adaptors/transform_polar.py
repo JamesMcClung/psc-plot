@@ -44,8 +44,8 @@ class TransformPolar(MetadataAdaptor):
         key_x, key_y = dim_x.key, dim_y.key
         key_r, key_theta = dim_r.key, dim_theta.key
 
-        coords_x = data.coordss[key_x]
-        coords_y = data.coordss[key_y]
+        coords_x = data.coordss()[key_x]
+        coords_y = data.coordss()[key_y]
 
         max_x = float(abs(coords_x).max())
         max_y = float(abs(coords_y).max())

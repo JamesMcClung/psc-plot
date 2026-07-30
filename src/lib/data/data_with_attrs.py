@@ -16,6 +16,8 @@ from lib.latex import Latex
 from lib.species import SpeciesInfo
 from lib.var_info import VarInfo
 
+type Coords = np.ndarray
+
 
 @dataclass(kw_only=True, frozen=True)
 class Metadata:
@@ -69,10 +71,6 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
 
     @property
     @abstractmethod
-    def coordss(self) -> dict[str, np.ndarray]: ...
-
-    @property
-    @abstractmethod
     def dims(self) -> list[str]: ...
 
     @property
@@ -118,6 +116,9 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
     def upper_bound(self, key: str) -> float: ...
 
     @abstractmethod
+    def coordss(self, key: str | None = None) -> dict[str, Coords]: ...
+
+    @abstractmethod
     def dask_collections(self) -> list: ...
 
 
@@ -144,10 +145,9 @@ class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata])
     def __getitem__(self, key: str):
         return self.data[key]
 
-    @cached_property
-    def coordss(self) -> dict[str, np.ndarray]:
-        active = self.require_active_subdata()
-        return {dim: np.array(active.coords[dim]) for dim in active.coords.keys()}
+    def coordss(self, key: str | None = None) -> dict[str, Coords]:
+        subdata = self[key or self.active_key]
+        return {dim: np.array(subdata.coords[dim]) for dim in subdata.coords.keys()}
 
     @cached_property
     def dims(self) -> list[str]:
@@ -157,10 +157,10 @@ class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata])
         return (self.lower_bound(key), self.upper_bound(key))
 
     def lower_bound(self, key) -> float:
-        return self.coordss[key][0]
+        return self.coordss()[key][0]
 
     def upper_bound(self, key) -> float:
-        coords = self.coordss[key]
+        coords = self.coordss()[key]
         delta = coords[1] - coords[0]
         return coords[-1] + delta
 
@@ -212,8 +212,7 @@ class List[Data: pd.DataFrame | dd.DataFrame = pd.DataFrame | dd.DataFrame, Subd
     @abstractmethod
     def compute(self) -> FullList: ...
 
-    @property
-    def coordss(self) -> dict[str, np.ndarray]:
+    def coordss(self, key: str | None = None) -> dict[str, Coords]:
         return self.metadata.coordss
 
     @property
@@ -234,8 +233,8 @@ class FullList(List[pd.DataFrame, pd.Series]):
     def lower_bound(self, key) -> float:
         cache = self._caches.setdefault("lower_bound", {})
         if key not in cache:
-            if key in self.coordss:
-                cache[key] = self.coordss[key][0]
+            if key in self.coordss():
+                cache[key] = self.coordss()[key][0]
             else:
                 cache[key] = self[key].min(skipna=True)
         return cache[key]
@@ -243,8 +242,8 @@ class FullList(List[pd.DataFrame, pd.Series]):
     def upper_bound(self, key) -> float:
         cache = self._caches.setdefault("upper_bound", {})
         if key not in cache:
-            if key in self.coordss:
-                coords = self.coordss[key]
+            if key in self.coordss():
+                coords = self.coordss()[key]
                 delta = coords[1] - coords[0]
                 cache[key] = coords[-1] + delta
             else:
@@ -266,8 +265,8 @@ class LazyList(List[dd.DataFrame, dd.Series]):
     def bounds(self, key):
         cache = self._caches.setdefault("bounds", {})
         if key not in cache:
-            if key in self.coordss:
-                coords = self.coordss[key]
+            if key in self.coordss():
+                coords = self.coordss()[key]
                 lower = coords[0]
                 delta = coords[1] - coords[0]
                 upper = coords[-1] + delta

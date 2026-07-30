@@ -13,9 +13,9 @@ class PolarFieldRenderer(Renderer[Field]):
         [r_dim, theta_dim] = self.plot_target.spatial_dims.unpack()
         color_dim = self.plot_target.color_dim
 
-        theta_vertices = frame_data.coordss[theta_dim]
+        theta_vertices = frame_data.coordss()[theta_dim]
         theta_vertices = np.concat([theta_vertices, [theta_vertices[-1] + theta_vertices[1] - theta_vertices[0]]])
-        r_vertices = list(frame_data.coordss[r_dim])
+        r_vertices = list(frame_data.coordss()[r_dim])
         r_vertices = np.concat([r_vertices, [r_vertices[-1] + r_vertices[1] - r_vertices[0]]])
         if theta_vertices[0] == 0.0:
             # FIXME hacky check for interpolated values
@@ -54,7 +54,7 @@ class PolarFieldRenderer(Renderer[Field]):
             axes_index=self.plot_target.axes_index,
         )
 
-        for dim, coord in frame_data.coordss.items():
+        for dim, coord in frame_data.coordss().items():
             if coord.shape == ():
                 plot_info.scalar_coord_values[dim] = coord
                 plot_info.dim_displays[dim] = frame_data.metadata.var_infos[dim].display
@@ -66,4 +66,4 @@ class PolarFieldRenderer(Renderer[Field]):
         frame_data = self._get_data_at_frame(frame)
 
         self.plot_info.set("data", frame_data.require_active_subdata())
-        self.plot_info.set("scalar_coord_values", {dim: coord for dim, coord in frame_data.coordss.items() if coord.shape == ()})
+        self.plot_info.set("scalar_coord_values", {dim: coord for dim, coord in frame_data.coordss().items() if coord.shape == ()})

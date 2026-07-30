@@ -27,7 +27,7 @@ class Renderer[Data: DataWithAttrs](ABC):
 
     def get_n_frames(self) -> int:
         if self.plot_target.time_dim:
-            return len(self.full_data.coordss[self.plot_target.time_dim])
+            return len(self.full_data.coordss()[self.plot_target.time_dim])
         return 1
 
     @abstractmethod

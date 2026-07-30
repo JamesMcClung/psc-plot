@@ -13,7 +13,7 @@ class Idx(MetadataAdaptor):
         return data.with_active(data=data.require_active_subdata().isel(self.dim_names_to_isel))
 
     def apply_list(self, data: List) -> List:
-        coordss = data.coordss.copy()
+        coordss = data.coordss().copy()
         df = data.data
 
         for dim, isel in self.dim_names_to_isel.items():

@@ -12,7 +12,7 @@ class Field1dRenderer(Renderer[Field]):
         [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
 
         plot_info = LineInfo(
-            x_data=frame_data.coordss[x_dim],
+            x_data=frame_data.coordss()[x_dim],
             y_data=frame_data.require_active_subdata(),
             x_dim=x_dim,
             y_dim=y_dim,
@@ -23,7 +23,7 @@ class Field1dRenderer(Renderer[Field]):
                 y_dim: frame_data.metadata.var_infos[y_dim].scale,
             },
             dim_bounds={
-                x_dim: (frame_data.coordss[x_dim][0], frame_data.coordss[x_dim][-1]),
+                x_dim: (frame_data.coordss()[x_dim][0], frame_data.coordss()[x_dim][-1]),
                 y_dim: plt_util.symmetrize_bounds(*full_data.var_bounds),
             },
             dim_displays={
@@ -37,7 +37,7 @@ class Field1dRenderer(Renderer[Field]):
             axes_index=self.plot_target.axes_index,
         )
 
-        for dim, coord in frame_data.coordss.items():
+        for dim, coord in frame_data.coordss().items():
             if coord.shape == ():
                 plot_info.scalar_coord_values[dim] = coord
                 plot_info.dim_displays[dim] = frame_data.metadata.var_infos[dim].display
@@ -49,4 +49,4 @@ class Field1dRenderer(Renderer[Field]):
         frame_data = self._get_data_at_frame(frame)
 
         self.plot_info.set("y_data", frame_data.require_active_subdata())
-        self.plot_info.set("scalar_coord_values", {dim: coord for dim, coord in frame_data.coordss.items() if coord.shape == ()})
+        self.plot_info.set("scalar_coord_values", {dim: coord for dim, coord in frame_data.coordss().items() if coord.shape == ()})

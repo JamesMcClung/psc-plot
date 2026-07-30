@@ -51,7 +51,7 @@ class Field2dRenderer(Renderer[Field]):
             axes_index=self.plot_target.axes_index,
         )
 
-        for dim, coord in frame_data.coordss.items():
+        for dim, coord in frame_data.coordss().items():
             if coord.shape == ():
                 plot_info.scalar_coord_values[dim] = coord
                 plot_info.dim_displays[dim] = frame_data.metadata.var_infos[dim].display
@@ -66,4 +66,4 @@ class Field2dRenderer(Renderer[Field]):
         data = frame_data.require_active_subdata().transpose(y_dim, x_dim)
 
         self.plot_info.set("data", data)
-        self.plot_info.set("scalar_coord_values", {dim: coord for dim, coord in frame_data.coordss.items() if coord.shape == ()})
+        self.plot_info.set("scalar_coord_values", {dim: coord for dim, coord in frame_data.coordss().items() if coord.shape == ()})
