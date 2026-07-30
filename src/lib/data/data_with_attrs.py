@@ -11,13 +11,11 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from lib.data.types import DimKey, SpeciesKey, SubdataKey, VarKey
+from lib.data.types import Coords, DimKey, SpeciesKey, SubdataKey, VarKey
 from lib.file_util import Prepath
 from lib.latex import Latex
 from lib.species import SpeciesInfo
 from lib.var_info import VarInfo
-
-type Coords = np.ndarray
 
 
 @dataclass(kw_only=True, frozen=True)
