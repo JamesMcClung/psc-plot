@@ -66,7 +66,6 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
 
     data: Data
     metadata: MD
-    _caches: dict[str, dict[str, Any]] = field(default_factory=dict, init=False)
 
     @property
     @abstractmethod
