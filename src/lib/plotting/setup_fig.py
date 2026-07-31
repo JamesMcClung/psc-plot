@@ -85,15 +85,6 @@ def find_widest_bounds(boundss: Iterable[tuple[float | None, float | None]]) -> 
     return (lowest_bound, highest_bound)
 
 
-class UpdateText:
-    def __init__(self, text: Text, plot_info: PlotInfo):
-        self.text = text
-        self.plot_info = plot_info
-
-    def __call__(self, *_):
-        self.text.set_text(self.plot_info.get_title())
-
-
 class AxesManager(ABC):
     @abstractmethod
     def get_renderers(self) -> list[Renderer2]: ...
