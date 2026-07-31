@@ -52,16 +52,6 @@ class PlotInfo:
     def get_sublabels(self) -> list[str]:
         return [f"${self.get_coord_label(dim)}$" for dim in self.scalar_coord_values]
 
-    def get_title(self) -> str:
-        coord_labels_str = ", ".join(self.get_sublabels())
-
-        if self.subject and coord_labels_str:
-            return f"{self.subject} ({coord_labels_str})"
-        elif self.subject:
-            return self.subject
-        else:
-            return coord_labels_str
-
     def get_dim_label(self, dim: VarKey) -> str:
         dim_label = f"${self.dim_displays.get(dim, f'\\text{{{dim}}}')}$"
 
