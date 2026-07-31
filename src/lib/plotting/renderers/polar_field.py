@@ -7,11 +7,11 @@ from lib.plotting.renderer import Renderer
 
 class PolarFieldRenderer(Renderer[Field]):
     def init_plot_info(self) -> PlotInfo:
-        full_data = self.full_data
-        frame_data = self._get_data_at_frame(0)
-
         [r_dim, theta_dim] = self.plot_target.spatial_dims.unpack()
         color_dim = self.plot_target.color_dim
+
+        self.full_data = self.full_data.with_active(key=color_dim)  # FIXME hack, set this in init
+        frame_data = self._get_data_at_frame(0)
 
         theta_vertices = frame_data.coordss()[theta_dim]
         theta_vertices = np.concat([theta_vertices, [theta_vertices[-1] + theta_vertices[1] - theta_vertices[0]]])
@@ -39,7 +39,7 @@ class PolarFieldRenderer(Renderer[Field]):
                 color_dim: frame_data.metadata.var_infos[color_dim].scale,
             },
             dim_bounds={
-                color_dim: full_data.bounds(color_dim),
+                color_dim: self.full_data.bounds(color_dim),
             },
             dim_displays={
                 r_dim: frame_data.metadata.var_infos[r_dim].display,

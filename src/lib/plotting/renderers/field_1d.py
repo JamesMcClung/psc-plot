@@ -6,10 +6,10 @@ from lib.plotting.renderer import Renderer
 
 class Field1dRenderer(Renderer[Field]):
     def init_plot_info(self) -> PlotInfo:
-        full_data = self.full_data
-        frame_data = self._get_data_at_frame(0)
-
         [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
+
+        self.full_data = self.full_data.with_active(key=y_dim)  # FIXME hack, set this in init
+        frame_data = self._get_data_at_frame(0)
 
         plot_info = LineInfo(
             x_data=frame_data.coordss()[x_dim],
@@ -24,7 +24,7 @@ class Field1dRenderer(Renderer[Field]):
             },
             dim_bounds={
                 x_dim: (frame_data.coordss()[x_dim][0], frame_data.coordss()[x_dim][-1]),
-                y_dim: plt_util.symmetrize_bounds(*full_data.bounds(y_dim)),
+                y_dim: plt_util.symmetrize_bounds(*self.full_data.bounds(y_dim)),
             },
             dim_displays={
                 x_dim: frame_data.metadata.var_infos[x_dim].display,
