@@ -109,8 +109,8 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
         return self.__class__(self.data if data is None else data, self.metadata.assign(**metadata_vals))
 
     @abstractmethod
-    def bounds(self, key: VarKey) -> Bounds:
-        """Determine the lower and upper bounds for the given variable. A variable's coordinates, if present, are prioritized over the data itself."""
+    def bounds(self, key: VarKey | None = None) -> Bounds:
+        """Determine the lower and upper bounds for the given variable (default=active). A variable's coordinates, if present, are prioritized over the data itself."""
 
     @abstractmethod
     def coordss(self, key: SubdataKey | None = None) -> dict[DimKey, Coords]: ...
@@ -147,7 +147,8 @@ class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata])
     def dims(self) -> list[str]:
         return list(self.require_active_subdata().dims)
 
-    def bounds(self, key: VarKey) -> Bounds:
+    def bounds(self, key: VarKey | None = None) -> Bounds:
+        key = key or self.require_active_key()
         if (active := self.active_subdata) is not None and key in active.coords:
             coords = active.coords[key]
             delta = coords[1] - coords[0]
@@ -205,7 +206,8 @@ class List[Data: pd.DataFrame | dd.DataFrame = pd.DataFrame | dd.DataFrame, Subd
     def coordss(self, key: SubdataKey | None = None) -> dict[DimKey, Coords]:
         return self.metadata.coordss
 
-    def bounds(self, key: VarKey) -> Bounds:
+    def bounds(self, key: VarKey | None = None) -> Bounds:
+        key = key or self.require_active_key()
         if key in self.coordss():
             coords = self.coordss()[key]
             delta = coords[1] - coords[0]
