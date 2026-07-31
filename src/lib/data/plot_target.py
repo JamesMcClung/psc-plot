@@ -33,10 +33,10 @@ class SpatialDimsRTheta(SpatialDims):
 
 
 @dataclass
-class PlotTarget:
+class PlotTarget[SD: SpatialDims = SpatialDims]:
     prefix: str
     _: KW_ONLY
-    spatial_dims: SpatialDims
+    spatial_dims: SD
     color_dim: VarKey | None = None
     time_dim: VarKey | None = None
 

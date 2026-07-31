@@ -1,11 +1,12 @@
 import numpy as np
 
 from lib.data.data_with_attrs import Field
+from lib.data.plot_target import SpatialDimsRTheta
 from lib.plotting.plot_info import PlotInfo, PolarMeshInfo
 from lib.plotting.renderer import Renderer
 
 
-class PolarFieldRenderer(Renderer[Field]):
+class PolarFieldRenderer(Renderer[Field, SpatialDimsRTheta]):
     def init_plot_info(self) -> PlotInfo:
         [r_dim, theta_dim] = self.plot_target.spatial_dims.unpack()
         color_dim = self.plot_target.color_dim
