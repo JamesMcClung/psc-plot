@@ -2,7 +2,7 @@ import xarray as xr
 
 from lib.data.data_with_attrs import Field
 from lib.data.plot_target import SpatialDimsXY
-from lib.plotting.plot_info import ImageInfo, PlotInfo
+from lib.plotting.plot_info import ImageInfo
 from lib.plotting.renderer import Renderer
 
 
@@ -12,8 +12,8 @@ def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
     return (float(lower), float(upper))
 
 
-class Field2dRenderer(Renderer[Field, SpatialDimsXY]):
-    def init_plot_info(self) -> PlotInfo:
+class Field2dRenderer(Renderer[Field, SpatialDimsXY, ImageInfo]):
+    def init_plot_info(self) -> ImageInfo:
         [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
         color_dim = self.plot_target.color_dim
 

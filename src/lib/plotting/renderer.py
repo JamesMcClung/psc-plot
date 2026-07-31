@@ -8,7 +8,7 @@ from lib.data.plot_target import PlotTarget, SpatialDims
 from lib.plotting.plot_info import PlotInfo
 
 
-class Renderer[Data: DataWithAttrs, SD: SpatialDims](ABC):
+class Renderer[Data: DataWithAttrs = DataWithAttrs, SD: SpatialDims = SpatialDims, PI: PlotInfo = PlotInfo](ABC):
     def __init__(self, full_data: Data, plot_target: PlotTarget[SD]):
         self.plot_target = plot_target
         self.full_data = full_data
@@ -26,7 +26,7 @@ class Renderer[Data: DataWithAttrs, SD: SpatialDims](ABC):
         return 1
 
     @abstractmethod
-    def init_plot_info(self) -> PlotInfo: ...
+    def init_plot_info(self) -> PI: ...
 
     @abstractmethod
     def update_plot_info(self, frame: int): ...

@@ -2,12 +2,12 @@ import numpy as np
 
 from lib.data.data_with_attrs import FullList
 from lib.data.plot_target import SpatialDimsXY
-from lib.plotting.plot_info import PlotInfo, ScatterInfo
+from lib.plotting.plot_info import ScatterInfo
 from lib.plotting.renderer import Renderer
 
 
-class ScatterRenderer(Renderer[FullList, SpatialDimsXY]):
-    def init_plot_info(self) -> PlotInfo:
+class ScatterRenderer(Renderer[FullList, SpatialDimsXY, ScatterInfo]):
+    def init_plot_info(self) -> ScatterInfo:
         frame_data = self._get_data_at_frame(0)
 
         [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
