@@ -82,10 +82,13 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
             return None
         return self[self.active_key]
 
-    def require_active_subdata(self) -> Subdata:
+    def require_active_key(self) -> SubdataKey:
         if self.active_key is None:
             raise ValueError("No active variable.")
-        return self[self.active_key]
+        return self.active_key
+
+    def require_active_subdata(self) -> Subdata:
+        return self[self.require_active_key()]
 
     @property
     def active_info(self) -> VarInfo | None:
