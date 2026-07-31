@@ -70,10 +70,10 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
 
     @property
     @abstractmethod
-    def dims(self) -> list[str]: ...
+    def dims(self) -> list[VarKey]: ...
 
     @property
-    def active_key(self) -> str | None:
+    def active_key(self) -> SubdataKey | None:
         return self.metadata.active_key
 
     @property
