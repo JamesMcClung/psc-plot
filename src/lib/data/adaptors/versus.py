@@ -84,6 +84,8 @@ class Versus(MetadataAdaptor):
             dims += f";{_TIME_PREFIX}{self.time_dim_rule or ''}"
         if self.color_dim:
             dims += f";{_COLOR_PREFIX}{self.color_dim}"
+        if self.axes_loc != (1, 1):
+            dims += f";{_AXES_LOC_PREFIX}{self.axes_loc[0]},{self.axes_loc[1]}"
         return [f"v_{dims}"]
 
 
