@@ -41,4 +41,4 @@ class PlotTarget[SD: SpatialDims = SpatialDims]:
     color_dim: VarKey | None = None
     time_dim: VarKey | None = None
 
-    axes_index: tuple[int, int] = (1, 1)  # 1-based
+    axes_loc: tuple[int, int] = (1, 1)  # 1-based

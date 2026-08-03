@@ -55,7 +55,7 @@ class PolarFieldRenderer(Renderer[Field, SpatialDimsRTheta, PolarMeshInfo]):
                 theta_dim: frame_data.metadata.var_infos[theta_dim].unit,
                 color_dim: frame_data.metadata.var_infos[color_dim].unit,
             },
-            axes_index=self.plot_target.axes_index,
+            axes_index=self.plot_target.axes_loc,
         )
 
         for dim, coord in frame_data.coordss().items():

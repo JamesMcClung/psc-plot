@@ -61,7 +61,7 @@ class Versus(MetadataAdaptor):
             spatial_dims=self._get_spatial_dims(data),
             color_dim=self._get_color_dim(data),
             time_dim=self._get_time_dim(data),
-            axes_index=self.axes_idx,
+            axes_loc=self.axes_idx,
         )
         return replace(
             world,
