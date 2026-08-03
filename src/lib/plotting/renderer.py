@@ -11,7 +11,7 @@ from lib.plotting.plot_info import PlotInfo
 class Renderer[Data: DataWithAttrs = DataWithAttrs, SD: SpatialDims = SpatialDims, PI: PlotInfo = PlotInfo](ABC):
     def __init__(self, full_data: Data, plot_target: PlotTarget[SD]):
         self.plot_target = plot_target
-        self._full_data = full_data
+        self._full_data = self._select_data(plot_target, full_data)
         self.plot_info = self._init_plot_info()
 
     def _get_data_at_frame(self, frame: int) -> Data:
@@ -24,6 +24,10 @@ class Renderer[Data: DataWithAttrs = DataWithAttrs, SD: SpatialDims = SpatialDim
         if self.plot_target.time_dim:
             return len(self._full_data.coordss()[self.plot_target.time_dim])
         return 1
+
+    @classmethod
+    @abstractmethod
+    def _select_data(cls, plot_target: PlotTarget[SD], full_data: Data) -> Data: ...
 
     @abstractmethod
     def _init_plot_info(self) -> PI: ...

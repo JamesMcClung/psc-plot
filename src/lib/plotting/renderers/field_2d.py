@@ -13,11 +13,14 @@ def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
 
 
 class Field2dRenderer(Renderer[Field, SpatialDimsXY, ImageInfo]):
+    @classmethod
+    def _select_data(cls, plot_target, full_data):
+        return full_data.with_active(key=plot_target.color_dim)
+
     def _init_plot_info(self) -> ImageInfo:
         [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
         color_dim = self.plot_target.color_dim
 
-        self._full_data = self._full_data.with_active(key=color_dim)  # FIXME hack, set this in init
         frame_data = self._get_data_at_frame(0)
 
         data = frame_data.require_active_subdata().transpose(y_dim, x_dim)

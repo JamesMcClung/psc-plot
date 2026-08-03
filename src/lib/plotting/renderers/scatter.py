@@ -7,6 +7,10 @@ from lib.plotting.renderer import Renderer
 
 
 class ScatterRenderer(Renderer[FullList, SpatialDimsXY, ScatterInfo]):
+    @classmethod
+    def _select_data(cls, plot_target, full_data):
+        return full_data.with_active(key=None)
+
     def _init_plot_info(self) -> ScatterInfo:
         frame_data = self._get_data_at_frame(0)
 
