@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import KW_ONLY, dataclass, field
 
 from lib.data.types import VarKey
+from lib.file_util import Prepath
 
 
 @dataclass
@@ -34,7 +35,7 @@ class SpatialDimsRTheta(SpatialDims):
 
 @dataclass
 class PlotTarget[SD: SpatialDims = SpatialDims]:
-    prefix: str
+    prepath: Prepath
     _: KW_ONLY
     spatial_dims: SD
     color_dim: VarKey | None = None

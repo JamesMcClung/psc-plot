@@ -25,7 +25,7 @@ def get_renderers(world: DataWorld) -> list[Renderer]:
     renderers = []
 
     for target in world.plot_targets:
-        data = world.datas[target.prefix]
+        data = world.datas[target.prepath]
 
         if isinstance(data, Field):
             if not target.color_dim:
