@@ -12,7 +12,7 @@ class Renderer[Data: DataWithAttrs = DataWithAttrs, SD: SpatialDims = SpatialDim
     def __init__(self, full_data: Data, plot_target: PlotTarget[SD]):
         self.plot_target = plot_target
         self._full_data = full_data
-        self.plot_info = self.init_plot_info()
+        self.plot_info = self._init_plot_info()
 
     def _get_data_at_frame(self, frame: int) -> Data:
         if self.plot_target.time_dim:
@@ -26,7 +26,7 @@ class Renderer[Data: DataWithAttrs = DataWithAttrs, SD: SpatialDims = SpatialDim
         return 1
 
     @abstractmethod
-    def init_plot_info(self) -> PI: ...
+    def _init_plot_info(self) -> PI: ...
 
     @abstractmethod
     def update_plot_info(self, frame: int): ...

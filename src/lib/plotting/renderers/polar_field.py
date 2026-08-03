@@ -7,7 +7,7 @@ from lib.plotting.renderer import Renderer
 
 
 class PolarFieldRenderer(Renderer[Field, SpatialDimsRTheta, PolarMeshInfo]):
-    def init_plot_info(self) -> PolarMeshInfo:
+    def _init_plot_info(self) -> PolarMeshInfo:
         [r_dim, theta_dim] = self.plot_target.spatial_dims.unpack()
         color_dim = self.plot_target.color_dim
 
