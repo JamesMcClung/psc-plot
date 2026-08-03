@@ -11,7 +11,7 @@ class PolarFieldRenderer(Renderer[Field, SpatialDimsRTheta, PolarMeshInfo]):
         [r_dim, theta_dim] = self.plot_target.spatial_dims.unpack()
         color_dim = self.plot_target.color_dim
 
-        self.full_data = self.full_data.with_active(key=color_dim)  # FIXME hack, set this in init
+        self._full_data = self._full_data.with_active(key=color_dim)  # FIXME hack, set this in init
         frame_data = self._get_data_at_frame(0)
 
         theta_vertices = frame_data.coordss()[theta_dim]
@@ -40,7 +40,7 @@ class PolarFieldRenderer(Renderer[Field, SpatialDimsRTheta, PolarMeshInfo]):
                 color_dim: frame_data.metadata.var_infos[color_dim].scale,
             },
             dim_bounds={
-                color_dim: self.full_data.bounds(color_dim),
+                color_dim: self._full_data.bounds(color_dim),
             },
             dim_displays={
                 r_dim: frame_data.metadata.var_infos[r_dim].display,

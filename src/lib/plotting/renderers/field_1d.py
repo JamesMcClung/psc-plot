@@ -9,7 +9,7 @@ class Field1dRenderer(Renderer[Field, SpatialDimsXY, LineInfo]):
     def init_plot_info(self) -> LineInfo:
         [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
 
-        self.full_data = self.full_data.with_active(key=y_dim)  # FIXME hack, set this in init
+        self._full_data = self._full_data.with_active(key=y_dim)  # FIXME hack, set this in init
         frame_data = self._get_data_at_frame(0)
 
         plot_info = LineInfo(
@@ -25,7 +25,7 @@ class Field1dRenderer(Renderer[Field, SpatialDimsXY, LineInfo]):
             },
             dim_bounds={
                 x_dim: (frame_data.coordss()[x_dim][0], frame_data.coordss()[x_dim][-1]),
-                y_dim: plt_util.symmetrize_bounds(*self.full_data.bounds(y_dim)),
+                y_dim: plt_util.symmetrize_bounds(*self._full_data.bounds(y_dim)),
             },
             dim_displays={
                 x_dim: frame_data.metadata.var_infos[x_dim].display,
