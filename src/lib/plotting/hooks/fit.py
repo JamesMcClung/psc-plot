@@ -15,7 +15,7 @@ class Fit(Hook):
 
     def post_init_fig(self, message):
         if isinstance(message.plot_info, LineInfo) and message.plot_info.line_style == "-":
-            message.plot_info.set("line_style", ".")
+            message.plot_info.line_style = "."
 
         assert isinstance(message.plot_info, (LineInfo, ScatterInfo))
 

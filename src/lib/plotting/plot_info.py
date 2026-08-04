@@ -26,22 +26,6 @@ class PlotInfo:
     axes_index: tuple[int, int] = (1, 1)
     projection: Projection = field(default="rectilinear", init=False)
 
-    _setter_callbacks: dict[AttrKey | tuple[AttrKey, VarKey], Callable[[Any], None]] = field(default_factory=dict, init=False)
-
-    def set(self, key: AttrKey | tuple[AttrKey, VarKey], value: Any):
-        if isinstance(key, str):
-            attr_key = key
-            setattr(self, key, value)
-        else:
-            attr_key, dim_key = key
-            getattr(self, attr_key)[dim_key] = value
-
-            if key in self._setter_callbacks:
-                self._setter_callbacks[key](value)
-
-        if attr_key in self._setter_callbacks:
-            self._setter_callbacks[attr_key](value)
-
     def get_coord_label(self, dim: VarKey) -> Latex:
         display = self.dim_displays.get(dim, f"\\text{{{dim}}}")
         coord_val = self.scalar_coord_values[dim]

@@ -64,6 +64,5 @@ class PolarFieldRenderer(Renderer[Field, SpatialDimsRTheta, PolarMeshInfo]):
 
     def update_plot_info(self, frame: int):
         frame_data = self._get_data_at_frame(frame)
-
-        self.plot_info.set("data", frame_data.require_active_subdata())
-        self.plot_info.set("scalar_coord_values", {dim: coord for dim, coord in frame_data.coordss().items() if coord.shape == ()})
+        self.plot_info.data = frame_data.require_active_subdata()
+        self.plot_info.scalar_coord_values = {dim: coord for dim, coord in frame_data.coordss().items() if coord.shape == ()}
