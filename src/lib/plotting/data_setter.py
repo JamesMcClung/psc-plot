@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from matplotlib.collections import PathCollection
+from matplotlib.collections import PathCollection, QuadMesh
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 
-from lib.plotting.plot_info import ImageInfo, LineInfo, ScatterInfo
+from lib.plotting.plot_info import ImageInfo, LineInfo, PolarMeshInfo, ScatterInfo
 from lib.plotting.renderer2 import Renderer2
 
 
@@ -38,3 +38,12 @@ class ScatterSetter(Renderer2):
     def update(self):
         self.scatter.set_array(self.info.color_data)
         self.scatter.set_offsets(self.info.xy_data)
+
+
+@dataclass
+class PolarMeshSetter(Renderer2):
+    mesh: QuadMesh
+    info: PolarMeshInfo
+
+    def update(self):
+        self.mesh.set_array(self.info.data)

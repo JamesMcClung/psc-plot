@@ -11,7 +11,7 @@ from matplotlib.lines import Line2D
 from matplotlib.projections import PolarAxes
 
 from lib.plotting import plt_util
-from lib.plotting.data_setter import ImageSetter, LineSetter, ScatterSetter
+from lib.plotting.data_setter import ImageSetter, LineSetter, PolarMeshSetter, ScatterSetter
 from lib.plotting.labeler import TreeLabeler
 from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PolarMeshInfo, ScatterInfo
 from lib.plotting.renderer2 import Renderer2
@@ -208,17 +208,17 @@ class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarAxes, PolarMeshInfo]):
         self.ax.set_rscale(self.info.dim_scales[self.info.r_dim].to_axis_scale())
 
     def setup_data(self):
-        image = self.ax.pcolormesh(
+        mesh = self.ax.pcolormesh(
             *np.meshgrid(self.info.theta_vertices, self.info.r_vertices),
             self.info.data,
             shading="flat",
             norm=self.info.dim_scales[self.info.color_dim].to_color_norm(),
         )
-        self.info._setter_callbacks["data"] = image.set_array
+        self.renderers.append(PolarMeshSetter(mesh, self.info))
 
-        self.ax.figure.colorbar(image)
+        self.ax.figure.colorbar(mesh)
         data_lower, data_upper = self.info.dim_bounds[self.info.color_dim]
-        plt_util.update_cbar(image, data_min_override=data_lower, data_max_override=data_upper)
+        plt_util.update_cbar(mesh, data_min_override=data_lower, data_max_override=data_upper)
 
 
 @dataclass
