@@ -144,9 +144,7 @@ class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[Axes, PI2D]):
 class AxesManagerSingleLine(AxesManagerSingle2D[LineInfo]):
     def setup_data(self):
         [line] = self.ax.plot(self.info.x_data, self.info.y_data, linestyle=self.info.line_style, scalex=False, scaley=False)
-        self.info._setter_callbacks["x_data"] = line.set_xdata
-        self.info._setter_callbacks["y_data"] = line.set_ydata
-        self.info._setter_callbacks["line_style"] = line.set_linestyle
+        self.renderers.append(LineSetter(line, self.info))
 
 
 class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
@@ -284,9 +282,7 @@ class AxesManagerMultiLine(AxesManager):
     def setup_data(self):
         for info in self.infos:
             [line] = self.ax.plot(info.x_data, info.y_data, linestyle=info.line_style, scalex=False, scaley=False)
-            info._setter_callbacks["x_data"] = line.set_xdata
-            info._setter_callbacks["y_data"] = line.set_ydata
-            info._setter_callbacks["line_style"] = line.set_linestyle
+            self.renderers.append(LineSetter(line, info))
             self.lines.append(line)
 
 
@@ -378,9 +374,7 @@ class AxesManagerImageAndLines(AxesManager):
 
         for info in self.line_infos:
             [line] = self.line_ax.plot(info.x_data, info.y_data, linestyle=info.line_style, scalex=False, scaley=False)
-            info._setter_callbacks["x_data"] = line.set_xdata
-            info._setter_callbacks["y_data"] = line.set_ydata
-            info._setter_callbacks["line_style"] = line.set_linestyle
+            self.renderers.append(LineSetter(line, info))
             self.lines.append(line)
 
 
