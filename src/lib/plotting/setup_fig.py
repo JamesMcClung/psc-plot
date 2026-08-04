@@ -11,7 +11,7 @@ from matplotlib.lines import Line2D
 from matplotlib.projections import PolarAxes
 
 from lib.plotting import plt_util
-from lib.plotting.data_setter import LineSetter
+from lib.plotting.data_setter import ImageSetter, LineSetter
 from lib.plotting.labeler import TreeLabeler
 from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PolarMeshInfo, ScatterInfo
 from lib.plotting.renderer2 import Renderer2
@@ -157,7 +157,7 @@ class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
             interpolation="nearest",
             aspect=_get_aspect(self.info),
         )
-        self.info._setter_callbacks["data"] = image.set_data
+        self.renderers.append(ImageSetter(image, self.info))
 
         self.ax.figure.colorbar(image)
         data_lower, data_upper = self.info.dim_bounds[self.info.color_dim]
@@ -366,7 +366,7 @@ class AxesManagerImageAndLines(AxesManager):
             interpolation="nearest",
             aspect=_get_aspect(self.image_info),
         )
-        self.image_info._setter_callbacks["data"] = image.set_data
+        self.renderers.append(ImageSetter(image, self.image_info))
 
         self.cbar = self.image_ax.figure.colorbar(image)
         data_lower, data_upper = self.image_info.dim_bounds[self.image_info.color_dim]
