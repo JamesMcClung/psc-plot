@@ -39,8 +39,6 @@ Required environment (see `src/lib/config.py`):
 
 Inspect data files directly with `bpls <file.bp>` (ADIOS2) and `h5ls <file.h5>` (HDF5); pass `-l` to `bpls` or `-r` to `h5ls` for more detail.
 
-Use `.venv/bin/pytest`, `.venv/bin/pip`, etc. — system Python is 3.10 and can't install this package (requires 3.13+).
-
 Package management is via `pyproject.toml` (setuptools backend).
 
 ## Testing
