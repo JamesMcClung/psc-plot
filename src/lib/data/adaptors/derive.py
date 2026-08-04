@@ -6,6 +6,7 @@ from lib.data.adaptor import WorldAdaptor
 from lib.data.data_world import DataWorld
 from lib.data.ensure_derived import ensure_derived
 from lib.data.loader import load
+from lib.file_util import split_prepath
 from lib.parsing.args_registry import arg_parser
 
 
@@ -78,7 +79,8 @@ class AssignNewVariable(Transformer_InPlace):
     def assignment(self, toks: list):
         [key, subdata] = toks
         data = self.world.require_active_data()
-        info = var_info_registry.lookup(data.metadata.prepath, key)
+        _, prefix = split_prepath(data.metadata.prepath)
+        info = var_info_registry.lookup(prefix, key)
         data = data.with_active(data=subdata, key=key, info=info)
         return self.world.with_active(data=data)
 
