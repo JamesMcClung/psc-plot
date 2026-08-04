@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from matplotlib.collections import PathCollection
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 
-from lib.plotting.plot_info import ImageInfo, LineInfo
+from lib.plotting.plot_info import ImageInfo, LineInfo, ScatterInfo
 from lib.plotting.renderer2 import Renderer2
 
 
@@ -27,3 +28,13 @@ class ImageSetter(Renderer2):
 
     def update(self):
         self.image.set_data(self.info.data)
+
+
+@dataclass
+class ScatterSetter(Renderer2):
+    scatter: PathCollection
+    info: ScatterInfo
+
+    def update(self):
+        self.scatter.set_array(self.info.color_data)
+        self.scatter.set_offsets(self.info.xy_data)

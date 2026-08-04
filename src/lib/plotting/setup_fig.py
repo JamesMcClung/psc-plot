@@ -11,7 +11,7 @@ from matplotlib.lines import Line2D
 from matplotlib.projections import PolarAxes
 
 from lib.plotting import plt_util
-from lib.plotting.data_setter import ImageSetter, LineSetter
+from lib.plotting.data_setter import ImageSetter, LineSetter, ScatterSetter
 from lib.plotting.labeler import TreeLabeler
 from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PolarMeshInfo, ScatterInfo
 from lib.plotting.renderer2 import Renderer2
@@ -174,7 +174,6 @@ class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
                 norm=self.info.dim_scales[self.info.color_dim].to_color_norm(),
                 s=1,
             )
-            self.info._setter_callbacks["color_data"] = scatter.set_array
 
             self.ax.figure.colorbar(scatter, label=self.info.get_dim_label(self.info.color_dim))
             data_lower, data_upper = self.info.dim_bounds[self.info.color_dim]
@@ -188,8 +187,7 @@ class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
             )
         self.ax.set_aspect(_get_aspect(self.info))
 
-        update_data = lambda _=None: scatter.set_offsets(self.info.xy_data)
-        self.info._setter_callbacks["xy_data"] = update_data
+        self.renderers.append(ScatterSetter(scatter, self.info))
 
 
 class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarAxes, PolarMeshInfo]):
