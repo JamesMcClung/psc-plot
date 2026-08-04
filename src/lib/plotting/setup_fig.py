@@ -112,13 +112,15 @@ class AxesManagerSingle[A: Axes, PI: PlotInfo](AxesManager):
     def __init__(self, ax: A, info: PI):
         self.ax = ax
         self.info = info
+        self.renderers: list[Renderer2] = []
 
     def setup_title(self):
-        self.labeler = TreeLabeler(self.ax.title.set_text, self.info)
-        self.labeler.update()
+        labeler = TreeLabeler(self.ax.title.set_text, self.info)
+        labeler.update()
+        self.renderers.append(labeler)
 
     def get_renderers(self):
-        return [self.labeler]
+        return self.renderers
 
 
 class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[Axes, PI2D]):
