@@ -91,7 +91,7 @@ def test_multiline_different_idxs():
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_image_and_line():
     """An image overplotted with a line from a different file."""
-    return make_plot("prt.i --bin y py=100 --nan0 --scale log --compute -v y py -w pfd::ey_ec -v y".split())
+    return make_plot("prt.i --bin y py=100 --nan0 --scale log -cv y py -w pfd::ey_ec -v y".split())
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
@@ -129,8 +129,8 @@ def test_spectrum_1d():
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_spectrum_3d():
-    """Total power spectrum of the magnetic field. The builtin `hhat2` is the sum of the squares of the Fourier-transformed copmonents of the magnetic field. The combination of `--scatter` and `--transform-spherical` avoids interpolating onto a grid when doing the coordinate transformation. Note `--pos` removes the 0-mode. This is the current intended use case for `--fit`, which fits a power law index, but also necessitates `--compute` due to a bug."""
-    return make_plot("pfd hhat2 --scatter --transform-spherical k_y k_z k_x --pos k_s=1e-8: --scale hhat2=log --compute -v k_s hhat2 --fit 25:45".split(), data_dir="test-3d")
+    """Total power spectrum of the magnetic field. The builtin `hhat2` is the sum of the squares of the Fourier-transformed copmonents of the magnetic field. The combination of `--scatter` and `--transform-spherical` avoids interpolating onto a grid when doing the coordinate transformation. Note `--pos` removes the 0-mode. This is the current intended use case for `--fit`, which fits a power law index, but also necessitates `--compute` (the `-c` in `-cv`) due to a bug."""
+    return make_plot("pfd hhat2 --scatter --transform-spherical k_y k_z k_x --pos k_s=1e-8: --scale hhat2=log -cv k_s hhat2 --fit 25:45".split(), data_dir="test-3d")
 
 
 # --- Particles ---
@@ -144,8 +144,8 @@ def test_animated_scatter_electron_positions():
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_animated_scatter_ion_phase():
-    """A phase-space scatter plot of ions. Color is used to show pz, but requires `--compute` due to a bug."""
-    return make_plot("prt --species i -v y py color=pz --compute".split())
+    """A phase-space scatter plot of ions. Color is used to show pz, but requires `--compute` (the `-c` in `-cv`) due to a bug."""
+    return make_plot("prt --species i -cv y py color=pz".split())
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
@@ -181,7 +181,7 @@ def test_animated_scatter_mul():
 @pytest.mark.mpl_image_compare(filename="test_animated_scatter_ion_phase.png", **MPL_KWARGS)
 def test_animated_scatter_ion_phase_bp():
     """BP twin of test_animated_scatter_ion_phase."""
-    return make_plot("prt.i --compute -v y py color=pz".split())
+    return make_plot("prt.i -cv y py color=pz".split())
 
 
 @pytest.mark.mpl_image_compare(filename="test_animated_2d_binned_phase.png", **MPL_KWARGS)
@@ -199,7 +199,7 @@ def test_static_scatter_bp():
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_hamscan():
     """Archetypal scan for hammerhead distributions ("hams")."""
-    return make_plot("prt.e -i t=-1 --with pzx --bin y py=20 pzx=20 t= --compute -v py pzx time=y".split(), data_dir="test-2d")
+    return make_plot("prt.e -i t=-1 --with pzx --bin y py=20 pzx=20 t= -cv py pzx time=y".split(), data_dir="test-2d")
 
 
 # --- Particle moments ---
