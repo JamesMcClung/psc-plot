@@ -70,7 +70,7 @@ def test_animated_1d_rolling():
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_static_2d_spectogram():
     """Spectrogram of wavenumber vs. time."""
-    return make_plot("pfd ey_ec -f y --mag --pow 2 --pos k_y=0: -v t k_y time= --nan0 --scale log".split())
+    return make_plot("pfd ey_ec -f y --mag --pow 2 --pos k_y=0: --nan0 --scale log -v t k_y time=".split())
 
 
 # --- Multiplots ---
@@ -97,7 +97,7 @@ def test_image_and_line():
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_image_and_cuts():
     """Chronotopogram of a field with some select cuts shown as lines."""
-    return make_plot("pfd ey_ec -v t y --scale symlog#.001 --copy ey_ec -i y=0 -v t --copy ey_ec -i y=-1 -v t".split())
+    return make_plot("pfd ey_ec --scale symlog#.001 -v t y --copy ey_ec -i y=0 -v t --copy ey_ec -i y=-1 -v t".split())
 
 
 # --- Cross-dataset plots ---
@@ -115,7 +115,7 @@ def test_crossdata_derive():
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_crossdir_with():
     """2D vs. 3D B_x(y). The "y"s aren't the same length, and that's ok."""
-    return make_plot("test-2d/pfd hx_fc -v y --display \\text{2d} --with test-3d/pfd::hx_fc -v y --display \\text{3d}".split(), data_dir=".")
+    return make_plot("test-2d/pfd hx_fc --display \\text{2d} -v y --with test-3d/pfd::hx_fc --display \\text{3d} -v y".split(), data_dir=".")
 
 
 # --- Turbulence power spectrum ---
@@ -124,13 +124,13 @@ def test_crossdir_with():
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_spectrum_1d():
     """1D power spectrum of the x-component of the magnetic field. Note `--pos` and `-i` to remove negative and 0-mode, respectively. The `--mul 2` recovers the (symmetric) power of negative modes."""
-    return make_plot("pfd hx_fc -f y z --mag --pow 2 -v k_y --pos k_y=0: -i k_y=1: --mul 2 --scale log k_y=log".split())
+    return make_plot("pfd hx_fc -f y z --mag --pow 2 --pos k_y=0: -i k_y=1: --mul 2 --scale log k_y=log -v k_y".split())
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_spectrum_3d():
     """Total power spectrum of the magnetic field. The builtin `hhat2` is the sum of the squares of the Fourier-transformed copmonents of the magnetic field. The combination of `--scatter` and `--transform-spherical` avoids interpolating onto a grid when doing the coordinate transformation. Note `--pos` removes the 0-mode. This is the current intended use case for `--fit`, which fits a power law index, but also necessitates `--compute` due to a bug."""
-    return make_plot("pfd hhat2 --scatter --transform-spherical k_y k_z k_x --pos k_s=1e-8: -v k_s hhat2 --scale hhat2=log --compute --fit 25:45".split(), data_dir="test-3d")
+    return make_plot("pfd hhat2 --scatter --transform-spherical k_y k_z k_x --pos k_s=1e-8: --scale hhat2=log --compute -v k_s hhat2 --fit 25:45".split(), data_dir="test-3d")
 
 
 # --- Particles ---
@@ -151,7 +151,7 @@ def test_animated_scatter_ion_phase():
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_animated_2d_binned_phase():
     """A clearer way to see phase space distributions for many particles. Since y is a dimension with coordinates, those coordinates are automatically used as bin edges. The combination of `--nan0` and `--scale log` makes faint phase-space structures very easy to see."""
-    return make_plot("prt --species i --bin y py=16 -v y py --nan0 --scale log".split())
+    return make_plot("prt --species i --bin y py=16 --nan0 --scale log -v y py".split())
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
@@ -181,13 +181,13 @@ def test_animated_scatter_mul():
 @pytest.mark.mpl_image_compare(filename="test_animated_scatter_ion_phase.png", **MPL_KWARGS)
 def test_animated_scatter_ion_phase_bp():
     """BP twin of test_animated_scatter_ion_phase."""
-    return make_plot("prt.i -v y py color=pz --compute".split())
+    return make_plot("prt.i --compute -v y py color=pz".split())
 
 
 @pytest.mark.mpl_image_compare(filename="test_animated_2d_binned_phase.png", **MPL_KWARGS)
 def test_animated_2d_binned_phase_bp():
     """BP twin of test_animated_2d_binned_phase."""
-    return make_plot("prt.i --bin y py=16 -v y py --nan0 --scale log".split())
+    return make_plot("prt.i --bin y py=16 --nan0 --scale log -v y py".split())
 
 
 @pytest.mark.mpl_image_compare(filename="test_static_scatter.png", **MPL_KWARGS)
@@ -199,7 +199,7 @@ def test_static_scatter_bp():
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_hamscan():
     """Archetypal scan for hammerhead distributions ("hams")."""
-    return make_plot("prt.e -i t=-1 --with pzx --bin y py=20 pzx=20 t= -v py pzx time=y --compute".split(), data_dir="test-2d")
+    return make_plot("prt.e -i t=-1 --with pzx --bin y py=20 pzx=20 t= --compute -v py pzx time=y".split(), data_dir="test-2d")
 
 
 # --- Particle moments ---
@@ -229,13 +229,13 @@ def test_static_1d_rho():
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_gauss_spatial():
     """Maximum absolute error in Gauss' law. Note `mag` (magnitude, or absolute value) before `--reduce`. As usual, `--nan0` and `--scale log` play well together."""
-    return make_plot("gauss error --mag --reduce x,z=max -v y --nan0 --scale log".split(), data_dir="test-3d")
+    return make_plot("gauss error --mag --reduce x,z=max --nan0 --scale log -v y".split(), data_dir="test-3d")
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_gauss_temporal():
     """Maximum absolte error in Gauss' law as a function of time. Note `time=` in `-v` to disable the default behavior of `time=t`."""
-    return make_plot("gauss error --mag --reduce x,y,z=max -v t time= --nan0 --scale log".split(), data_dir="test-3d")
+    return make_plot("gauss error --mag --reduce x,y,z=max --nan0 --scale log -v t time=".split(), data_dir="test-3d")
 
 
 # --- Misc ---
@@ -250,7 +250,7 @@ def test_vline():
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_scale_symlog():
     """Symlog scale with specific linear threshold."""
-    return make_plot("pfd hx_fc -v y z --scale symlog#.01".split())
+    return make_plot("pfd hx_fc --scale symlog#.01 -v y z".split())
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
@@ -271,25 +271,25 @@ def test_static_polar():
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_display_override():
     """`--display NAME=VALUE` overrides the LaTeX rendering of the named variable."""
-    return make_plot("pfd hx_fc -v y --display hx_fc=\\text{test}".split())
+    return make_plot("pfd hx_fc --display hx_fc=\\text{test} -v y".split())
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_display_override_dim():
     """`--display DIM=VALUE` overrides the LaTeX rendering of a dimension's axis label."""
-    return make_plot("pfd hx_fc -v y --display y=\\chi".split())
+    return make_plot("pfd hx_fc --display y=\\chi -v y".split())
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_unit_override():
     """`--unit NAME=VALUE` appends a unit bracket to the axis label."""
-    return make_plot("pfd hx_fc -v y --unit hx_fc=\\text{test}".split())
+    return make_plot("pfd hx_fc --unit hx_fc=\\text{test} -v y".split())
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_unit_override_dim():
     """`--unit DIM=VALUE` overrides the unit shown in a dimension's axis label."""
-    return make_plot("pfd hx_fc -v y --unit y=\\text{test}".split())
+    return make_plot("pfd hx_fc --unit y=\\text{test} -v y".split())
 
 
 def test_field_units_lookup_covers_test_data():

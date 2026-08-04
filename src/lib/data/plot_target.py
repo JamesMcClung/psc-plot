@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import KW_ONLY, dataclass, field
 
+from lib.data.data_with_attrs import DataWithAttrs
 from lib.data.types import VarKey
-from lib.file_util import Prepath
 
 
 @dataclass
@@ -34,8 +34,8 @@ class SpatialDimsRTheta(SpatialDims):
 
 
 @dataclass
-class PlotTarget[SD: SpatialDims = SpatialDims]:
-    prepath: Prepath
+class PlotTarget[D: DataWithAttrs = DataWithAttrs, SD: SpatialDims = SpatialDims]:
+    data: D
     _: KW_ONLY
     spatial_dims: SD
     color_dim: VarKey | None = None

@@ -25,25 +25,23 @@ def get_renderers(world: DataWorld) -> list[Renderer]:
     renderers = []
 
     for target in world.plot_targets:
-        data = world.datas[target.prepath]
-
-        if isinstance(data, Field):
+        if isinstance(target.data, Field):
             if not target.color_dim:
-                renderers.append(Field1dRenderer(data, target))
+                renderers.append(Field1dRenderer(target.data, target))
             elif isinstance(target.spatial_dims, SpatialDimsRTheta):
-                renderers.append(PolarFieldRenderer(data, target))
+                renderers.append(PolarFieldRenderer(target.data, target))
             elif isinstance(target.spatial_dims, SpatialDimsXY):
-                renderers.append(Field2dRenderer(data, target))
+                renderers.append(Field2dRenderer(target.data, target))
             else:
                 raise NotImplementedError("don't have 3D field plots yet")
 
-        elif isinstance(data, List):
+        elif isinstance(target.data, List):
             if target.spatial_dims.ndims == 2:
-                renderers.append(ScatterRenderer(data, target))
+                renderers.append(ScatterRenderer(target.data, target))
             else:
                 raise NotImplementedError(f"don't have {target.spatial_dims.ndims}D scatter plots yet")
 
         else:
-            raise TypeError(f"unexpected data type: {type(data)}")
+            raise TypeError(f"unexpected data type: {type(target.data)}")
 
     return renderers
