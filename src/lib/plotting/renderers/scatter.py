@@ -7,10 +7,6 @@ from lib.plotting.renderer import Renderer
 
 
 class ScatterRenderer(Renderer[FullList, SpatialDimsXY, ScatterInfo]):
-    @classmethod
-    def _select_data(cls, plot_target, full_data):
-        return full_data.with_active(key=None)
-
     def _init_plot_info(self) -> ScatterInfo:
         frame_data = self._get_data_at_frame(0)
 
@@ -27,8 +23,8 @@ class ScatterRenderer(Renderer[FullList, SpatialDimsXY, ScatterInfo]):
                 y_dim: frame_data.metadata.var_infos[y_dim].scale,
             },
             dim_bounds={
-                x_dim: self._full_data.bounds(x_dim),
-                y_dim: self._full_data.bounds(y_dim),
+                x_dim: self.plot_target.data.bounds(x_dim),
+                y_dim: self.plot_target.data.bounds(y_dim),
             },
             dim_displays={
                 x_dim: frame_data.metadata.var_infos[x_dim].display,
@@ -51,7 +47,7 @@ class ScatterRenderer(Renderer[FullList, SpatialDimsXY, ScatterInfo]):
             plot_info.color_dim = color_dim
             plot_info.color_data = frame_data.data[color_dim]
             plot_info.dim_scales[color_dim] = frame_data.metadata.var_infos[color_dim].scale
-            plot_info.dim_bounds[color_dim] = self._full_data.bounds(color_dim)
+            plot_info.dim_bounds[color_dim] = self.plot_target.data.bounds(color_dim)
             plot_info.dim_displays[color_dim] = frame_data.metadata.var_infos[color_dim].display
             plot_info.dim_units[color_dim] = frame_data.metadata.var_infos[color_dim].unit
 

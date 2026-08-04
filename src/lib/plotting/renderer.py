@@ -8,26 +8,21 @@ from lib.data.plot_target import PlotTarget, SpatialDims
 from lib.plotting.plot_info import PlotInfo
 
 
-class Renderer[Data: DataWithAttrs = DataWithAttrs, SD: SpatialDims = SpatialDims, PI: PlotInfo = PlotInfo](ABC):
-    def __init__(self, full_data: Data, plot_target: PlotTarget[SD]):
+class Renderer[D: DataWithAttrs = DataWithAttrs, SD: SpatialDims = SpatialDims, PI: PlotInfo = PlotInfo](ABC):
+    def __init__(self, plot_target: PlotTarget[D, SD]):
         self.plot_target = plot_target
-        self._full_data = self._select_data(plot_target, full_data)
         self.plot_info = self._init_plot_info()
 
-    def _get_data_at_frame(self, frame: int) -> Data:
+    def _get_data_at_frame(self, frame: int) -> D:
         if self.plot_target.time_dim:
             frame = min(frame, self.get_n_frames() - 1)
-            return Idx({self.plot_target.time_dim: frame}).apply(self._full_data)
-        return self._full_data
+            return Idx({self.plot_target.time_dim: frame}).apply(self.plot_target.data)
+        return self.plot_target.data
 
     def get_n_frames(self) -> int:
         if self.plot_target.time_dim:
-            return len(self._full_data.coordss()[self.plot_target.time_dim])
+            return len(self.plot_target.data.coordss()[self.plot_target.time_dim])
         return 1
-
-    @classmethod
-    @abstractmethod
-    def _select_data(cls, plot_target: PlotTarget[SD], full_data: Data) -> Data: ...
 
     @abstractmethod
     def _init_plot_info(self) -> PI: ...

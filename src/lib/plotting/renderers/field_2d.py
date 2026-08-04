@@ -13,10 +13,6 @@ def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
 
 
 class Field2dRenderer(Renderer[Field, SpatialDimsXY, ImageInfo]):
-    @classmethod
-    def _select_data(cls, plot_target, full_data):
-        return full_data.with_active(key=plot_target.color_dim)
-
     def _init_plot_info(self) -> ImageInfo:
         [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
         color_dim = self.plot_target.color_dim
@@ -40,7 +36,7 @@ class Field2dRenderer(Renderer[Field, SpatialDimsXY, ImageInfo]):
             dim_bounds={
                 x_dim: get_extent(data, x_dim),
                 y_dim: get_extent(data, y_dim),
-                color_dim: self._full_data.bounds(color_dim),
+                color_dim: self.plot_target.data.bounds(color_dim),
             },
             dim_displays={
                 x_dim: frame_data.metadata.var_infos[x_dim].display,

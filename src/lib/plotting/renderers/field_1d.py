@@ -6,10 +6,6 @@ from lib.plotting.renderer import Renderer
 
 
 class Field1dRenderer(Renderer[Field, SpatialDimsXY, LineInfo]):
-    @classmethod
-    def _select_data(cls, plot_target, full_data):
-        return full_data.with_active(key=plot_target.spatial_dims.y_dim)
-
     def _init_plot_info(self) -> LineInfo:
         [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
 
@@ -28,7 +24,7 @@ class Field1dRenderer(Renderer[Field, SpatialDimsXY, LineInfo]):
             },
             dim_bounds={
                 x_dim: (frame_data.coordss()[x_dim][0], frame_data.coordss()[x_dim][-1]),
-                y_dim: plt_util.symmetrize_bounds(*self._full_data.bounds(y_dim)),
+                y_dim: plt_util.symmetrize_bounds(*self.plot_target.data.bounds(y_dim)),
             },
             dim_displays={
                 x_dim: frame_data.metadata.var_infos[x_dim].display,
