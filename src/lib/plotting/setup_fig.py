@@ -1,5 +1,6 @@
 import math
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from typing import Iterable, Literal
 
 import numpy as np
@@ -8,9 +9,9 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 from matplotlib.projections import PolarAxes
-from matplotlib.text import Text
 
 from lib.plotting import plt_util
+from lib.plotting.data_setter import LineSetter
 from lib.plotting.labeler import TreeLabeler
 from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PolarMeshInfo, ScatterInfo
 from lib.plotting.renderer2 import Renderer2
@@ -85,9 +86,9 @@ def find_widest_bounds(boundss: Iterable[tuple[float | None, float | None]]) -> 
     return (lowest_bound, highest_bound)
 
 
+@dataclass
 class AxesManager(ABC):
-    @abstractmethod
-    def get_renderers(self) -> list[Renderer2]: ...
+    renderers: list[Renderer2] = field(init=False, default_factory=list)
 
     @abstractmethod
     def setup(self): ...
@@ -108,19 +109,15 @@ class AxesManager(ABC):
     def setup_data(self): ...
 
 
+@dataclass
 class AxesManagerSingle[A: Axes, PI: PlotInfo](AxesManager):
-    def __init__(self, ax: A, info: PI):
-        self.ax = ax
-        self.info = info
-        self.renderers: list[Renderer2] = []
+    ax: A
+    info: PI
 
     def setup_title(self):
         labeler = TreeLabeler(self.ax.title.set_text, self.info)
         labeler.update()
         self.renderers.append(labeler)
-
-    def get_renderers(self):
-        return self.renderers
 
 
 class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[Axes, PI2D]):
@@ -228,14 +225,11 @@ class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarAxes, PolarMeshInfo]):
         plt_util.update_cbar(image, data_min_override=data_lower, data_max_override=data_upper)
 
 
+@dataclass
 class AxesManagerMultiLine(AxesManager):
-    def __init__(self, ax: Axes, infos: list[LineInfo]):
-        self.ax = ax
-        self.infos = infos
-        self.lines: list[Line2D] = []  # populated later
-
-    def get_renderers(self):
-        return [self.labeler]
+    ax: Axes
+    infos: list[LineInfo]
+    lines: list[Line2D] = field(init=False, default_factory=list)
 
     def setup(self):
         self.setup_labels()
@@ -245,11 +239,13 @@ class AxesManagerMultiLine(AxesManager):
         self.setup_bounds()
 
     def setup_title(self):
-        self.labeler = TreeLabeler(self.ax.title.set_text)
+        labeler = TreeLabeler(self.ax.title.set_text)
         for info, line in zip(self.infos, self.lines):
             line_labeler = TreeLabeler(line.set_label, info)
-            self.labeler.add_child(line_labeler)
-        self.labeler.update()
+            labeler.add_child(line_labeler)
+        labeler.update()
+        self.renderers.append(labeler)
+
         self.ax.legend()
 
     def setup_labels(self):
@@ -294,17 +290,19 @@ class AxesManagerMultiLine(AxesManager):
             self.lines.append(line)
 
 
+@dataclass
 class AxesManagerImageAndLines(AxesManager):
-    def __init__(self, ax: Axes, image_info: ImageInfo, line_infos: list[LineInfo]):
-        self.image_ax = ax
-        self.line_ax = ax.twinx()
-        self.image_info = image_info
-        self.line_infos = line_infos
-        self.infos: list[PlotInfo2D] = [image_info, *line_infos]
-        self.lines: list[Line2D] = []  # populated later
+    image_ax: Axes
+    image_info: ImageInfo
+    line_infos: list[LineInfo]
+    lines: list[Line2D] = field(init=False, default_factory=list)
 
-    def get_renderers(self):
-        return [self.labeler]
+    line_ax: Axes = field(init=False)
+    infos: list[PlotInfo2D] = field(init=False)
+
+    def __post_init__(self):
+        self.line_ax = self.image_ax.twinx()
+        self.infos = [self.image_info, *self.line_infos]
 
     def setup(self):
         self.setup_labels()
@@ -314,13 +312,15 @@ class AxesManagerImageAndLines(AxesManager):
         self.setup_bounds()
 
     def setup_title(self):
-        self.labeler = TreeLabeler(self.image_ax.title.set_text)
+        labeler = TreeLabeler(self.image_ax.title.set_text)
 
-        self.labeler.add_child(TreeLabeler(self.cbar.set_label, self.image_info))
+        labeler.add_child(TreeLabeler(self.cbar.set_label, self.image_info))
         for info, line in zip(self.line_infos, self.lines):
-            self.labeler.add_child(TreeLabeler(line.set_label, info))
+            labeler.add_child(TreeLabeler(line.set_label, info))
 
-        self.labeler.update()
+        labeler.update()
+        self.renderers.append(labeler)
+
         self.line_ax.legend()
 
     def setup_labels(self):
@@ -413,6 +413,6 @@ def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, list[Renderer2]]:
                 raise NotImplementedError("don't yet support multiple non-line plots per axes")
 
         manager.setup()
-        renderers += manager.get_renderers()
+        renderers += manager.renderers
 
     return figure, renderers
