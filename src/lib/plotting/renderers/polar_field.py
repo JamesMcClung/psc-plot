@@ -1,21 +1,21 @@
 import numpy as np
 
 from lib.data.data_with_attrs import Field
-from lib.plotting.plot_info import PlotInfo, PolarMeshInfo
+from lib.data.plot_target import SpatialDimsRTheta
+from lib.plotting.plot_info import PolarMeshInfo
 from lib.plotting.renderer import Renderer
 
 
-class PolarFieldRenderer(Renderer[Field]):
-    def init_plot_info(self) -> PlotInfo:
-        full_data = self.full_data
-        frame_data = self._get_data_at_frame(0)
-
+class PolarFieldRenderer(Renderer[Field, SpatialDimsRTheta, PolarMeshInfo]):
+    def _init_plot_info(self) -> PolarMeshInfo:
         [r_dim, theta_dim] = self.plot_target.spatial_dims.unpack()
         color_dim = self.plot_target.color_dim
 
-        theta_vertices = frame_data.coordss[theta_dim]
+        frame_data = self._get_data_at_frame(0)
+
+        theta_vertices = frame_data.coordss()[theta_dim]
         theta_vertices = np.concat([theta_vertices, [theta_vertices[-1] + theta_vertices[1] - theta_vertices[0]]])
-        r_vertices = list(frame_data.coordss[r_dim])
+        r_vertices = list(frame_data.coordss()[r_dim])
         r_vertices = np.concat([r_vertices, [r_vertices[-1] + r_vertices[1] - r_vertices[0]]])
         if theta_vertices[0] == 0.0:
             # FIXME hacky check for interpolated values
@@ -39,7 +39,7 @@ class PolarFieldRenderer(Renderer[Field]):
                 color_dim: frame_data.metadata.var_infos[color_dim].scale,
             },
             dim_bounds={
-                color_dim: full_data.var_bounds,
+                color_dim: self.plot_target.data.bounds(color_dim),
             },
             dim_displays={
                 r_dim: frame_data.metadata.var_infos[r_dim].display,
@@ -51,10 +51,10 @@ class PolarFieldRenderer(Renderer[Field]):
                 theta_dim: frame_data.metadata.var_infos[theta_dim].unit,
                 color_dim: frame_data.metadata.var_infos[color_dim].unit,
             },
-            axes_index=self.plot_target.axes_index,
+            axes_index=self.plot_target.axes_loc,
         )
 
-        for dim, coord in frame_data.coordss.items():
+        for dim, coord in frame_data.coordss().items():
             if coord.shape == ():
                 plot_info.scalar_coord_values[dim] = coord
                 plot_info.dim_displays[dim] = frame_data.metadata.var_infos[dim].display
@@ -64,6 +64,5 @@ class PolarFieldRenderer(Renderer[Field]):
 
     def update_plot_info(self, frame: int):
         frame_data = self._get_data_at_frame(frame)
-
-        self.plot_info.set("data", frame_data.require_active_subdata())
-        self.plot_info.set("scalar_coord_values", {dim: coord for dim, coord in frame_data.coordss.items() if coord.shape == ()})
+        self.plot_info.data = frame_data.require_active_subdata()
+        self.plot_info.scalar_coord_values = {dim: coord for dim, coord in frame_data.coordss().items() if coord.shape == ()}

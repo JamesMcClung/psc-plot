@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import KW_ONLY, dataclass, field
 from typing import Literal
 
+from lib.data.types import VarKey
 from lib.scale import LinearScale, Scale
 
 from .latex import Latex
@@ -34,7 +35,7 @@ class VarInfo:
     unit: Latex
     geometry: Geometry | None = None
     _: KW_ONLY
-    key: str = None
+    key: VarKey = None
     scale: Scale = field(default_factory=LinearScale)
 
     def __post_init__(self):

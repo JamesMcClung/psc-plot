@@ -212,7 +212,7 @@ class ParticleLoaderH5(Loader):
             species=species_dict,
             partition_dim="t",
             partition_ranges=partition_ranges,
-            var_infos={key: lookup(self.prepath, key) for key in df.columns},
+            var_infos={key: lookup(self.prefix, key) for key in df.columns},
             subject=Latex(r"\text{Particles}"),
         )
 

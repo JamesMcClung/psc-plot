@@ -1,13 +1,13 @@
 import numpy as np
 
 from lib.data.data_with_attrs import FullList
-from lib.plotting.plot_info import PlotInfo, ScatterInfo
+from lib.data.plot_target import SpatialDimsXY
+from lib.plotting.plot_info import ScatterInfo
 from lib.plotting.renderer import Renderer
 
 
-class ScatterRenderer(Renderer[FullList]):
-    def init_plot_info(self) -> PlotInfo:
-        full_data = self.full_data
+class ScatterRenderer(Renderer[FullList, SpatialDimsXY, ScatterInfo]):
+    def _init_plot_info(self) -> ScatterInfo:
         frame_data = self._get_data_at_frame(0)
 
         [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
@@ -23,8 +23,8 @@ class ScatterRenderer(Renderer[FullList]):
                 y_dim: frame_data.metadata.var_infos[y_dim].scale,
             },
             dim_bounds={
-                x_dim: full_data.bounds(x_dim),
-                y_dim: full_data.bounds(y_dim),
+                x_dim: self.plot_target.data.bounds(x_dim),
+                y_dim: self.plot_target.data.bounds(y_dim),
             },
             dim_displays={
                 x_dim: frame_data.metadata.var_infos[x_dim].display,
@@ -34,10 +34,10 @@ class ScatterRenderer(Renderer[FullList]):
                 x_dim: frame_data.metadata.var_infos[x_dim].unit,
                 y_dim: frame_data.metadata.var_infos[y_dim].unit,
             },
-            axes_index=self.plot_target.axes_index,
+            axes_index=self.plot_target.axes_loc,
         )
 
-        for dim, coord in frame_data.coordss.items():
+        for dim, coord in frame_data.coordss().items():
             if coord.shape == ():
                 plot_info.scalar_coord_values[dim] = coord
                 plot_info.dim_displays[dim] = frame_data.metadata.var_infos[dim].display
@@ -47,7 +47,7 @@ class ScatterRenderer(Renderer[FullList]):
             plot_info.color_dim = color_dim
             plot_info.color_data = frame_data.data[color_dim]
             plot_info.dim_scales[color_dim] = frame_data.metadata.var_infos[color_dim].scale
-            plot_info.dim_bounds[color_dim] = full_data.bounds(color_dim)
+            plot_info.dim_bounds[color_dim] = self.plot_target.data.bounds(color_dim)
             plot_info.dim_displays[color_dim] = frame_data.metadata.var_infos[color_dim].display
             plot_info.dim_units[color_dim] = frame_data.metadata.var_infos[color_dim].unit
 
@@ -58,8 +58,8 @@ class ScatterRenderer(Renderer[FullList]):
 
         [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
 
-        self.plot_info.set("xy_data", np.array([frame_data.data[x_dim], frame_data.data[y_dim]]).T)
-        self.plot_info.set("scalar_coord_values", {dim: coord for dim, coord in frame_data.coordss.items() if coord.shape == ()})
+        self.plot_info.xy_data = np.array([frame_data.data[x_dim], frame_data.data[y_dim]]).T
+        self.plot_info.scalar_coord_values = {dim: coord for dim, coord in frame_data.coordss().items() if coord.shape == ()}
 
         if color_dim := self.plot_info.color_dim:
-            self.plot_info.set("color_data", frame_data.data[color_dim])
+            self.plot_info.color_data = frame_data.data[color_dim]

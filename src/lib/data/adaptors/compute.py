@@ -5,7 +5,7 @@ from lib.parsing.args_registry import const_arg
 
 @const_arg(
     dest="adaptors",
-    flags="--compute",
+    flags=["--compute", "-c"],
     help="force full computation of the data (recommended when possible for significant speed improvements)",
 )
 class Compute(MetadataAdaptor):

@@ -1,7 +1,8 @@
 import xarray as xr
 
 from lib.data.data_with_attrs import Field
-from lib.plotting.plot_info import ImageInfo, PlotInfo
+from lib.data.plot_target import SpatialDimsXY
+from lib.plotting.plot_info import ImageInfo
 from lib.plotting.renderer import Renderer
 
 
@@ -11,13 +12,12 @@ def get_extent(da: xr.DataArray, dim: str) -> tuple[float, float]:
     return (float(lower), float(upper))
 
 
-class Field2dRenderer(Renderer[Field]):
-    def init_plot_info(self) -> PlotInfo:
-        full_data = self.full_data
-        frame_data = self._get_data_at_frame(0)
-
+class Field2dRenderer(Renderer[Field, SpatialDimsXY, ImageInfo]):
+    def _init_plot_info(self) -> ImageInfo:
         [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
         color_dim = self.plot_target.color_dim
+
+        frame_data = self._get_data_at_frame(0)
 
         data = frame_data.require_active_subdata().transpose(y_dim, x_dim)
 
@@ -36,7 +36,7 @@ class Field2dRenderer(Renderer[Field]):
             dim_bounds={
                 x_dim: get_extent(data, x_dim),
                 y_dim: get_extent(data, y_dim),
-                color_dim: full_data.var_bounds,
+                color_dim: self.plot_target.data.bounds(color_dim),
             },
             dim_displays={
                 x_dim: frame_data.metadata.var_infos[x_dim].display,
@@ -48,10 +48,10 @@ class Field2dRenderer(Renderer[Field]):
                 y_dim: frame_data.metadata.var_infos[y_dim].unit,
                 color_dim: frame_data.metadata.var_infos[color_dim].unit,
             },
-            axes_index=self.plot_target.axes_index,
+            axes_index=self.plot_target.axes_loc,
         )
 
-        for dim, coord in frame_data.coordss.items():
+        for dim, coord in frame_data.coordss().items():
             if coord.shape == ():
                 plot_info.scalar_coord_values[dim] = coord
                 plot_info.dim_displays[dim] = frame_data.metadata.var_infos[dim].display
@@ -65,5 +65,5 @@ class Field2dRenderer(Renderer[Field]):
         [x_dim, y_dim] = self.plot_target.spatial_dims.unpack()
         data = frame_data.require_active_subdata().transpose(y_dim, x_dim)
 
-        self.plot_info.set("data", data)
-        self.plot_info.set("scalar_coord_values", {dim: coord for dim, coord in frame_data.coordss.items() if coord.shape == ()})
+        self.plot_info.data = data
+        self.plot_info.scalar_coord_values = {dim: coord for dim, coord in frame_data.coordss().items() if coord.shape == ()}

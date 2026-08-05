@@ -51,9 +51,9 @@ class TransformSpherical(MetadataAdaptor):
         key_x, key_y, key_z = dim_x.key, dim_y.key, dim_z.key
         key_r, key_theta, key_phi = dim_r.key, dim_theta.key, dim_phi.key
 
-        coords_x = data.coordss[key_x]
-        coords_y = data.coordss[key_y]
-        coords_z = data.coordss[key_z]
+        coords_x = data.coordss()[key_x]
+        coords_y = data.coordss()[key_y]
+        coords_z = data.coordss()[key_z]
 
         max_x = float(abs(coords_x).max())
         max_y = float(abs(coords_y).max())

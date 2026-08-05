@@ -42,8 +42,8 @@ class Pos(MetadataAdaptor):
         coord_isels: dict[str, int | slice] = {}
         value_sels: dict[str, slice] = {}
         for dim, sel in self.dim_names_to_sel.items():
-            if dim in data.coordss:
-                coord_isels[dim] = _sel_to_isel(data.coordss[dim], sel, self.dim_names_to_include_bounds[dim])
+            if dim in data.coordss():
+                coord_isels[dim] = _sel_to_isel(data.coordss()[dim], sel, self.dim_names_to_include_bounds[dim])
             elif isinstance(sel, slice):
                 value_sels[dim] = sel
             else:

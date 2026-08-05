@@ -5,12 +5,13 @@ from dataclasses import dataclass, field, fields
 from functools import cached_property
 from typing import Any, Self
 
-import dask.array
+import dask
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 import xarray as xr
 
+from lib.data.types import Bounds, Coords, DimKey, SpeciesKey, SubdataKey, VarKey
 from lib.file_util import Prepath
 from lib.latex import Latex
 from lib.species import SpeciesInfo
@@ -20,10 +21,10 @@ from lib.var_info import VarInfo
 @dataclass(kw_only=True, frozen=True)
 class Metadata:
     prepath: Prepath
-    active_key: str | None = None
+    active_key: SubdataKey | None = None
 
-    var_infos: dict[str, VarInfo] = field(default_factory=dict)
-    species: dict[str, SpeciesInfo] = field(default_factory=dict)
+    var_infos: dict[VarKey, VarInfo] = field(default_factory=dict)
+    species: dict[SpeciesKey, SpeciesInfo] = field(default_factory=dict)
 
     @property
     def active_var_info(self) -> VarInfo:
@@ -65,18 +66,13 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
 
     data: Data
     metadata: MD
-    _caches: dict[str, dict[str, Any]] = field(default_factory=dict, init=False)
 
     @property
     @abstractmethod
-    def coordss(self) -> dict[str, np.ndarray]: ...
+    def dims(self) -> list[VarKey]: ...
 
     @property
-    @abstractmethod
-    def dims(self) -> list[str]: ...
-
-    @property
-    def active_key(self) -> str | None:
+    def active_key(self) -> SubdataKey | None:
         return self.metadata.active_key
 
     @property
@@ -85,10 +81,13 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
             return None
         return self[self.active_key]
 
-    def require_active_subdata(self) -> Subdata:
+    def require_active_key(self) -> SubdataKey:
         if self.active_key is None:
             raise ValueError("No active variable.")
-        return self[self.active_key]
+        return self.active_key
+
+    def require_active_subdata(self) -> Subdata:
+        return self[self.require_active_key()]
 
     @property
     def active_info(self) -> VarInfo | None:
@@ -96,26 +95,24 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
             return None
         return self.metadata.var_infos[self.active_key]
 
-    @abstractmethod
-    def __getitem__(self, key: str) -> Subdata: ...
+    def __getitem__(self, key) -> dd.Series:
+        return self.data[key]
 
     @abstractmethod
-    def with_active(self, *, data: Subdata | None = None, key: str | None = None, info: VarInfo | None = None) -> Self: ...
+    def with_active(self, *, data: Subdata | None = None, key: SubdataKey | None = None, info: VarInfo | None = None) -> Self: ...
 
-    def with_info(self, key: str, info: VarInfo) -> Self:
+    def with_info(self, key: VarKey, info: VarInfo) -> Self:
         return self.assign(var_infos=self.metadata.var_infos | {key: info})
 
     def assign(self, data: Data | None = None, /, **metadata_vals: Any) -> Self:
         return self.__class__(self.data if data is None else data, self.metadata.assign(**metadata_vals))
 
     @abstractmethod
-    def bounds(self, dim_name: str) -> tuple[float, float]: ...
+    def bounds(self, key: VarKey | None = None) -> Bounds:
+        """Determine the lower and upper bounds for the given variable (default=active). A variable's coordinates, if present, are prioritized over the data itself."""
 
     @abstractmethod
-    def lower_bound(self, dim_name: str) -> float: ...
-
-    @abstractmethod
-    def upper_bound(self, dim_name: str) -> float: ...
+    def coordss(self, key: SubdataKey | None = None) -> dict[DimKey, Coords]: ...
 
     @abstractmethod
     def dask_collections(self) -> list: ...
@@ -141,33 +138,26 @@ class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata])
 
         return ret
 
-    def __getitem__(self, key: str):
-        return self.data[key]
-
-    @cached_property
-    def coordss(self) -> dict[str, np.ndarray]:
-        active = self.require_active_subdata()
-        return {dim: np.array(active.coords[dim]) for dim in active.coords.keys()}
+    def coordss(self, key: SubdataKey | None = None) -> dict[DimKey, Coords]:
+        subdata = self[key or self.active_key]
+        return {dim: np.array(subdata.coords[dim]) for dim in subdata.coords.keys()}
 
     @cached_property
     def dims(self) -> list[str]:
         return list(self.require_active_subdata().dims)
 
-    def bounds(self, dim_name):
-        return (self.lower_bound(dim_name), self.upper_bound(dim_name))
-
-    def lower_bound(self, dim_name) -> float:
-        return self.coordss[dim_name][0]
-
-    def upper_bound(self, dim_name) -> float:
-        coords = self.coordss[dim_name]
-        delta = coords[1] - coords[0]
-        return coords[-1] + delta
-
-    @cached_property
-    def var_bounds(self) -> tuple[float, float]:
-        active = self.require_active_subdata()
-        return dask.compute(np.min(active), np.max(active))
+    def bounds(self, key: VarKey | None = None) -> Bounds:
+        key = key or self.require_active_key()
+        if (active := self.active_subdata) is not None and key in active.coords:
+            coords = active.coords[key]
+            delta = coords[1] - coords[0]
+            return coords[0], coords[-1] + delta
+        elif key in self.data:
+            subdata = self[key]
+            lower, upper = dask.compute(subdata.min(skipna=True), subdata.max(skipna=True), traverse=False)
+            return lower[()], upper[()]
+        else:
+            raise RuntimeError(f"unknown key {key}")
 
     def dask_collections(self) -> list:
         return [da.data for da in self.data.values() if dask.is_dask_collection(da.data)]
@@ -175,13 +165,13 @@ class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata])
 
 @dataclass(kw_only=True, frozen=True)
 class ListMetadata(Metadata):
-    coordss: dict[str, np.ndarray] = field(default_factory=dict)
-    weight_key: str | None = None
+    coordss: dict[DimKey, np.ndarray] = field(default_factory=dict)
+    weight_key: SubdataKey | None = None
 
     subject: Latex | None = None
     """The `subject` is essentially the (display) name of the list's implicit index dimension."""
 
-    partition_dim: str | None = None
+    partition_dim: SubdataKey | None = None
     """If set, the dim along which partitions of `data` are laid out. Each
     value of this dim corresponds to a contiguous range of partitions given
     by `partition_ranges`. Used by `Idx` to do dask-native partition pruning
@@ -212,75 +202,38 @@ class List[Data: pd.DataFrame | dd.DataFrame = pd.DataFrame | dd.DataFrame, Subd
     @abstractmethod
     def compute(self) -> FullList: ...
 
-    @property
-    def coordss(self) -> dict[str, np.ndarray]:
+    def coordss(self, key: SubdataKey | None = None) -> dict[DimKey, Coords]:
         return self.metadata.coordss
 
+    def bounds(self, key: VarKey | None = None) -> Bounds:
+        key = key or self.require_active_key()
+        if key in self.coordss():
+            coords = self.coordss()[key]
+            delta = coords[1] - coords[0]
+            return coords[0], coords[-1] + delta
+        elif key in self.data:
+            subdata = self[key]
+            return dask.compute(subdata.min(skipna=True), subdata.max(skipna=True), traverse=False)
+        else:
+            raise RuntimeError(f"unknown key {key}")
+
     @property
-    def dims(self) -> list[str]:
+    def dims(self) -> list[VarKey]:
         return list(self.data.columns)
 
 
-class FullList(List[pd.DataFrame]):
-    def __getitem__(self, key: str):
-        return self.data[key]
-
+class FullList(List[pd.DataFrame, pd.Series]):
     def compute(self) -> FullList:
         return self
-
-    def bounds(self, dim_name):
-        return (self.lower_bound(dim_name), self.upper_bound(dim_name))
-
-    def lower_bound(self, dim_name) -> float:
-        cache = self._caches.setdefault("lower_bound", {})
-        if dim_name not in cache:
-            if dim_name in self.coordss:
-                cache[dim_name] = self.coordss[dim_name][0]
-            else:
-                cache[dim_name] = self.data[dim_name].min(skipna=True)
-        return cache[dim_name]
-
-    def upper_bound(self, dim_name) -> float:
-        cache = self._caches.setdefault("upper_bound", {})
-        if dim_name not in cache:
-            if dim_name in self.coordss:
-                coords = self.coordss[dim_name]
-                delta = coords[1] - coords[0]
-                cache[dim_name] = coords[-1] + delta
-            else:
-                cache[dim_name] = self.data[dim_name].max(skipna=True)
-        return cache[dim_name]
 
     def dask_collections(self) -> list:
         return []
 
 
-class LazyList(List[dd.DataFrame]):
-    def __getitem__(self, key: str):
-        return self.data[key]
-
+class LazyList(List[dd.DataFrame, dd.Series]):
     def compute(self) -> FullList:
         # partition_* describe the dask layout; meaningless after compute.
         return FullList(self.data.compute(), self.metadata.assign(partition_dim=None, partition_ranges=None))
-
-    def bounds(self, dim_name):
-        cache = self._caches.setdefault("bounds", {})
-        if dim_name not in cache:
-            if dim_name in self.coordss:
-                coords = self.coordss[dim_name]
-                lower = coords[0]
-                delta = coords[1] - coords[0]
-                upper = coords[-1] + delta
-                cache[dim_name] = (lower, upper)
-            else:
-                cache[dim_name] = dask.array.compute(self.data[dim_name].min(skipna=True), self.data[dim_name].max(skipna=True))
-        return cache[dim_name]
-
-    def lower_bound(self, dim_name) -> float:
-        return self.bounds(dim_name)[0]
-
-    def upper_bound(self, dim_name) -> float:
-        return self.bounds(dim_name)[1]
 
     def dask_collections(self) -> list:
         return [self.data]

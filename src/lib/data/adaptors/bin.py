@@ -26,8 +26,8 @@ def _guess_bin_edgess(data: List, varname_to_nbins: dict[str, int | None]) -> li
     # Calculate edges using metadata when possible
 
     for varname, nbins in varname_to_nbins.items():
-        if varname in data.coordss:
-            coords = data.coordss[varname]
+        if varname in data.coordss():
+            coords = data.coordss()[varname]
             if nbins is None:
                 nbins = len(coords)
                 # note: use inf as right edge for convenience; it gets sliced out later
@@ -85,7 +85,7 @@ class Bin(MetadataAdaptor):
             if not nbins:
                 continue
 
-            dim_len = len(data.coordss[dim_name])
+            dim_len = len(data.coordss()[dim_name])
             bin_size = dim_len // nbins
 
             if bin_size < 1:
