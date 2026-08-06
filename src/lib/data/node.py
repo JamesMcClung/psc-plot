@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from functools import cache
 from pathlib import Path
 
+from lib import file_util
 from lib.config import PscPlotConfig
 from lib.data.adaptor import Adaptor
 from lib.data.data_world import DataWorld
@@ -20,7 +21,9 @@ class DataProcessingNode[D](ABC):
     def pull(self) -> D: ...
 
     def get_save_file_stem(self) -> str:
-        return "-".join(self.name_fragments)
+        stem = "-".join(self.name_fragments)
+        stem = file_util.sanitize_stem(stem)
+        return stem
 
 
 class AdaptorNode(DataProcessingNode[DataWorld]):
