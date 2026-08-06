@@ -20,3 +20,7 @@ def split_prepath(prepath: Prepath) -> tuple[Path, str]:
     if len(components) == 1:
         return (Path("."), components[0])
     return Path(components[0]), components[1]
+
+
+def sanitize_stem(stem: str) -> str:
+    return stem.replace("/", "__").replace(":", "_")
