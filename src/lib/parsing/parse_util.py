@@ -24,9 +24,11 @@ def parse_identifier(val: str, val_name: str) -> str:
 
 
 def parse_optional_identifier(val: str | None, val_name: str) -> str | None:
-    if val and not _is_identifier(val):
-        raise argparse.ArgumentTypeError(f"Expected {val_name} to be an identifier or ''; got '{val}'")
-    return val
+    if not val:
+        return None
+    if _is_identifier(val):
+        return val
+    raise argparse.ArgumentTypeError(f"Expected {val_name} to be an identifier or ''; got '{val}'")
 
 
 def check_order[T](lower: T | None, upper: T | None, lower_name: str, upper_name: str):
