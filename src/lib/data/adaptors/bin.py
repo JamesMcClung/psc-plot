@@ -7,7 +7,7 @@ import xarray as xr
 
 from lib import var_info_registry
 from lib.data.adaptor import MetadataAdaptor
-from lib.data.data_with_attrs import Field, FieldMetadata, List
+from lib.data.data_with_attrs import Field, FieldMetadata, LazyList, List
 from lib.data.types import VarKey
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
@@ -99,20 +99,19 @@ class Bin(MetadataAdaptor):
     def apply_list(self, data: List) -> Field:
         bin_edgess = _guess_bin_edgess(data, self.keys_to_nbins)
 
-        df = data.data
-        if isinstance(df, dd.DataFrame):
+        if isinstance(data, LazyList):
             binned_data, _ = dask.array.histogramdd(
-                [df[active_key].to_dask_array() for active_key in self.keys_to_nbins],
+                [data[key].to_dask_array() for key in self.keys_to_nbins],
                 bin_edgess,
                 density=False,
-                weights=df[data.metadata.weight_key].to_dask_array() if data.metadata.weight_key else None,
+                weights=data[data.metadata.weight_key].to_dask_array() if data.metadata.weight_key else None,
             )
         else:
             binned_data, _ = np.histogramdd(
-                [df[active_key] for active_key in self.keys_to_nbins],
+                [data[key] for key in self.keys_to_nbins],
                 bin_edgess,
                 density=False,
-                weights=df[data.metadata.weight_key] if data.metadata.weight_key else None,
+                weights=data[data.metadata.weight_key] if data.metadata.weight_key else None,
             )
 
         # note: the slice removes any infs
