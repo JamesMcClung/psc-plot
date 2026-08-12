@@ -38,6 +38,18 @@ def get_combine_args_action(combiner: typing.Callable[[list[Any]], Any]) -> Acti
     return CombineArgs
 
 
+def get_store_combined_args_action(combiner: typing.Callable[[list[Any]], Any]) -> Action:
+    """Like get_combine_args_action, but stores the combined value instead of appending
+    it to a list — for single-instance args such as --save. Paired with nargs="*" and
+    default=None, this distinguishes "flag absent" (None) from "flag with no args"."""
+
+    class StoreCombinedArgs(Action):
+        def __call__(self, parser, namespace, values, option_string=None):
+            setattr(namespace, self.dest, _combine(parser, self, combiner, _normalize_values(values)))
+
+    return StoreCombinedArgs
+
+
 type ArgparseNArgs = int | typing.Literal["+", "*", "?"] | None
 type NArgs = ArgparseNArgs | typing.Literal["just one"]
 
