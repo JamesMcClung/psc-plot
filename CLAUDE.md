@@ -25,7 +25,7 @@ Or directly via `py src/main.py <prepath> [variable] [options]` (backward-compat
 Where `<prepath>` is a **path relative to `PSC_PLOT_DATA_DIR`, ending in the file prefix** — e.g. `pfd` (data root itself) or `run5/pfd` (subdirectory). The prefix part selects the data source: field prefixes (`pfd`, `pfd_moments`, `gauss`, `continuity`) or particle prefixes (`prt`). `Prepath` is just a `str` alias (`src/lib/file_util.py`); `split_prepath()` splits it into `(subdir, prefix)`. Examples live in `plots/check.sh` and `plots/check2.sh` and serve as the de-facto smoke tests / usage reference.
 
 Common flags:
-- `-q` quiet (don't show interactively), `-s [dir]` save output (defaults to `.` if dir omitted)
+- `-q` quiet (don't show interactively), `-s`/`--save` save output — each argument is either a path fragment `[dir/][stem][.ext]` or one of `dir=`/`name=`/`format=`; bare `-s` means cwd, a stem derived from `name_fragments`, and the default format. `--save-dpi` is deliberately separate, pending a `--dpi` that would apply to live figures too
 - `-w`/`--with [prepath::][var_key]` switch the active dataset and/or variable mid-pipeline (loads the prepath if not already in the world); `--copy [new=old|old]` duplicate a variable + its metadata; `-c`/`--compute` force full computation
 - Adaptor flags such as `--roll`, `--reduce`, `--bin`, `--scatter [name]`, `--mag`, `--nan0`, `--scale`, `--fourier`/`-f`, `--pos`, `--species`, `--transform-spherical`, `-v` (versus, sets axes), `-b` (bin)
 
