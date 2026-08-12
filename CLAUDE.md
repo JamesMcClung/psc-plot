@@ -58,7 +58,7 @@ pytest --mpl
 
 The figure tests live in `tests/test_plots.py` and use `pytest-mpl` for image comparison against baseline PNGs in `tests/baseline/`. Each test runs the full CLI pipeline (parsing → loading → adaptors → plotting) against small test datasets in `tests/data/` (test-2d: x=1,y=8,z=16; test-3d: x=4,y=4,z=4).
 
-Other suites (plain `pytest`, no `--mpl` needed): `test_save.py`/`test_save_filename.py` (save formats and the `name_fragments`-derived filename), `test_idx_efficient.py` (asserts `Idx` prunes dask partitions instead of filtering), `test_particle_bp_vs_h5.py` + `test_h5_species_discovery.py` (loader parity/species discovery), `test_memory.py`, `test_particle_bp_perf.py`, `test_dask_graph.py`, and `test_synthetic_particles.py` (with the `synthetic_particles.py` generator).
+Other suites (plain `pytest`, no `--mpl` needed): `test_save.py` (everything about saving, in three sections: the `--save` argument grammar via `parse_save`, the `name_fragments`-derived filename, and end-to-end pipeline saves), `test_parse_util.py`/`test_parse_errors.py` (parsing helpers and argparse error rendering), `test_idx_efficient.py` (asserts `Idx` prunes dask partitions instead of filtering), `test_particle_bp_vs_h5.py` + `test_h5_species_discovery.py` (loader parity/species discovery), `test_memory.py`, `test_particle_bp_perf.py`, `test_dask_graph.py`, and `test_synthetic_particles.py` (with the `synthetic_particles.py` generator).
 
 To regenerate baselines after intentional visual changes:
 
