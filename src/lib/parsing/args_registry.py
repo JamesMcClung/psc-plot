@@ -1,24 +1,35 @@
 from __future__ import annotations
 
 import typing
-from argparse import Action, ArgumentParser
+from argparse import Action, ArgumentParser, ArgumentTypeError
 from dataclasses import dataclass
 from typing import Any, Callable
 
 CUSTOM_ARGS: list[ArgparseArgAdder] = []
 
 
+def _normalize_values(values: Any) -> list[Any]:
+    if values is None:
+        return []
+    if isinstance(values, str):
+        return [values]
+    return list(values)
+
+
+def _combine(parser: ArgumentParser, action: Action, combiner: typing.Callable[[list[Any]], Any], values: list[Any]) -> Any:
+    # argparse only turns ArgumentTypeError into a clean error message inside its own
+    # `type=` conversion (_get_value). One raised here, inside an Action, would escape
+    # as an uncaught traceback, so route it through parser.error ourselves.
+    try:
+        return combiner(values)
+    except ArgumentTypeError as e:
+        parser.error(f"argument {'/'.join(reversed(action.option_strings))}: {e}")
+
+
 def get_combine_args_action(combiner: typing.Callable[[list[Any]], Any]) -> Action:
     class CombineArgs(Action):
         def __call__(self, parser, namespace, values, option_string=None):
-            if values is None:
-                values = []
-            elif isinstance(values, str):
-                values = [values]
-            else:
-                values = list(values)
-
-            combined_value = combiner(values)
+            combined_value = _combine(parser, self, combiner, _normalize_values(values))
 
             items = getattr(namespace, self.dest, [])
             items.append(combined_value)
