@@ -23,7 +23,7 @@ def _combine(parser: ArgumentParser, action: Action, combiner: typing.Callable[[
     try:
         return combiner(values)
     except ArgumentTypeError as e:
-        parser.error(f"argument {'/'.join(reversed(action.option_strings))}: {e}")
+        parser.error(f"argument {'/'.join(action.option_strings)}: {e}")
 
 
 def get_combine_args_action(combiner: typing.Callable[[list[Any]], Any]) -> Action:
