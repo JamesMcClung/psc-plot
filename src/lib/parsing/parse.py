@@ -1,8 +1,8 @@
 import argparse
-from pathlib import Path
 
 from lib.parsing.args import Args
-from lib.parsing.args_registry import CUSTOM_ARGS
+from lib.parsing.args_registry import CUSTOM_ARGS, get_store_combined_args_action
+from lib.parsing.parse_save import SAVE_METAVAR, parse_save
 
 
 def _get_parser() -> argparse.ArgumentParser:
@@ -13,22 +13,14 @@ def _get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-s",
         "--save",
-        action="store",
-        dest="save_dir",
-        metavar="dir",
-        nargs="?",
+        action=get_store_combined_args_action(parse_save),
+        dest="save",
+        metavar=SAVE_METAVAR,
+        nargs="*",
         default=None,
-        const=".",
-        help="save the figure (to the given dir, if present)",
-        type=Path,
+        help="save the figure. Each argument is either a path fragment '[dir/][stem][.ext]' or one of 'dir=<dir>', 'name=<stem>', 'format=<ext>'. With no arguments, saves to the current directory using a filename derived from the pipeline and the default format for the data.",
     )
     parser.add_argument("-q", "--quiet", action="store_false", dest="show", help="don't show the figure")
-    parser.add_argument(
-        "--save-format",
-        choices=["mp4", "gif"],
-        default=None,
-        help="format for saved animations (default: mp4, falls back to gif if ffmpeg unavailable)",
-    )
     parser.add_argument(
         "--save-dpi",
         type=float,
