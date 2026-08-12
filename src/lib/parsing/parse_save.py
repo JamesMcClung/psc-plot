@@ -81,10 +81,12 @@ def parse_save(args: list[str]) -> SaveSpec:
                 if "/" in value or not _is_valid_stem(value):
                     raise argparse.ArgumentTypeError(f"Expected name to be a stem with no '/' and at least one non-'.' character; got '{value}'")
                 set_component("name", value)
-            else:
+            elif key == "format":
                 if not value or "." in value or "/" in value:
                     raise argparse.ArgumentTypeError(f"Expected format to be a nonempty extension with no '.' or '/'; got '{value}'")
                 set_component("format", value)
+            else:
+                raise AssertionError(key)
         else:
             if seen_fragment:
                 raise argparse.ArgumentTypeError(f"Expected at most one path fragment; got a second one: '{arg}'")
