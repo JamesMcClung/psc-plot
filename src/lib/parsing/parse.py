@@ -14,6 +14,7 @@ def _get_parser() -> argparse.ArgumentParser:
         "-s",
         "--save",
         action="store",
+        dest="save_dir",
         metavar="dir",
         nargs="?",
         default=None,

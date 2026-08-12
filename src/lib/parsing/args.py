@@ -11,7 +11,7 @@ class Args(argparse.Namespace):
     adaptors: list[Adaptor]
     hooks: list[Hook]
     show: bool
-    save: Path | None
+    save_dir: Path | None
     save_format: str | None
     save_dpi: float | None
     dask_graph: bool

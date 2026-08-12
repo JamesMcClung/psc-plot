@@ -42,13 +42,13 @@ def compile_action_nodes(args: Args, config: PscPlotConfig) -> list[DataProcessi
     action_nodes = []
 
     if args.dask_graph:
-        action_nodes.append(DaskGraphNode(plot_node.input_node, save_dir=args.save, show=args.show))
+        action_nodes.append(DaskGraphNode(plot_node.input_node, save_dir=args.save_dir, show=args.show))
         return action_nodes
 
     if args.show:
         action_nodes.append(ShowPlotNode(plot_node))
 
-    if args.save is None and args.save_format:
+    if args.save_dir is None and args.save_format:
         print("error: --save-format requires --save", file=sys.stderr)
         sys.exit(1)
 
@@ -56,11 +56,11 @@ def compile_action_nodes(args: Args, config: PscPlotConfig) -> list[DataProcessi
         print("error: --save-format mp4 requires ffmpeg", file=sys.stderr)
         sys.exit(1)
 
-    if args.save is not None:
+    if args.save_dir is not None:
         action_nodes.append(
             SavePlotNode(
                 plot_node,
-                save_dir=args.save,
+                save_dir=args.save_dir,
                 save_format=args.save_format,
                 save_dpi=args.save_dpi,
             )
