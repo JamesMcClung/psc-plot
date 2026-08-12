@@ -35,6 +35,12 @@ from lib.parsing.parse_save import SaveSpec, parse_save
         # key detection: a non-identifier before "=" means it is a fragment
         (["out/fig=x"], SaveSpec(dir=Path("out"), name="fig=x")),
         (["a-b=c"], SaveSpec(name="a-b=c")),
+        # a leading "~" expands; bash does not do it after "=" or inside quotes
+        (["dir=~/figs"], SaveSpec(dir=Path.home() / "figs")),
+        (["dir=~"], SaveSpec(dir=Path.home())),
+        (["~/figs/"], SaveSpec(dir=Path.home() / "figs")),
+        # "~" naming no real user stays literal rather than raising
+        (["dir=~nosuchuser42/x"], SaveSpec(dir=Path("~nosuchuser42/x"))),
     ],
 )
 def test_parse_save(args, expected):

@@ -27,6 +27,18 @@ def _is_valid_stem(val: str) -> bool:
     return bool(val) and any(char != "." for char in val)
 
 
+def _parse_dir(val: str) -> Path:
+    """Expand a leading '~'. bash leaves it alone after a '=' (dir=~/figs) and
+    inside quotes, so without this the save dir would be a literal '~'. A path
+    like './~foo' normalizes to '~foo', which expanduser() rejects outright when
+    no such user exists — keep it literal there, as os.path.expanduser does."""
+    path = Path(val)
+    try:
+        return path.expanduser()
+    except RuntimeError:
+        return path
+
+
 def _split_fragment(fragment: str) -> tuple[Path | None, str | None, str | None]:
     """Parse a bare '[dir/][stem][.ext]' fragment right-to-left, claiming each
     component only if it is valid. Returns (dir, stem, ext)."""
@@ -50,7 +62,7 @@ def _split_fragment(fragment: str) -> tuple[Path | None, str | None, str | None]
         rest = rest[: slash_idx + 1]
 
     # dir: whatever remains; Path() strips the trailing slash
-    dir = Path(rest) if rest else None
+    dir = _parse_dir(rest) if rest else None
 
     return dir, name, ext
 
@@ -76,7 +88,7 @@ def parse_save(args: list[str]) -> SaveSpec:
             if key == "dir":
                 if not value:
                     raise argparse.ArgumentTypeError("Expected dir to be a nonempty path; got ''")
-                set_component("dir", Path(value))
+                set_component("dir", _parse_dir(value))
             elif key == "name":
                 if "/" in value or not _is_valid_stem(value):
                     raise argparse.ArgumentTypeError(f"Expected name to be a stem with no '/' and at least one non-'.' character; got '{value}'")
