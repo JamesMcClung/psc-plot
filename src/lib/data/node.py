@@ -8,9 +8,10 @@ from lib import file_util
 from lib.config import PscPlotConfig
 from lib.data.adaptor import Adaptor
 from lib.data.data_world import DataWorld
+from lib.parsing.parse_save import SaveSpec
 from lib.plotting.get_plot import get_plot
 from lib.plotting.hook import Hook
-from lib.plotting.plot import Plot, SaveFormat
+from lib.plotting.plot import Plot
 
 
 class DataProcessingNode[D](ABC):
@@ -77,20 +78,18 @@ class SavePlotNode(DataProcessingNode[None]):
         self,
         input_node: DataProcessingNode[Plot],
         *,
-        save_dir: Path,
-        save_format: SaveFormat | None,
+        save: SaveSpec,
         save_dpi: float | None,
     ):
         super().__init__(input_node.name_fragments)
         self.input_node = input_node
-        self.save_dir = save_dir
-        self.save_format = save_format
+        self.save = save
         self.save_dpi = save_dpi
 
     def pull(self) -> None:
         plot = self.input_node.pull()
 
-        save_format = self.save_format
+        save_format = self.save.format
         if save_format not in plot.allowed_save_formats():
             if save_format is not None:
                 message = f"{save_format} is incompatible with the data; reverting to default ({plot.default_save_format()})"
@@ -98,8 +97,9 @@ class SavePlotNode(DataProcessingNode[None]):
 
             save_format = plot.default_save_format()
 
-        self.save_dir.mkdir(exist_ok=True, parents=True)
-        path = self.save_dir / f"{self.get_save_file_stem()}.{save_format}"
+        save_dir = self.save.dir or Path(".")
+        save_dir.mkdir(exist_ok=True, parents=True)
+        path = save_dir / f"{self.save.name or self.get_save_file_stem()}.{save_format}"
         plot.save_to_path(path, dpi=self.save_dpi)
         print(f"wrote to {path}")
 
@@ -109,12 +109,12 @@ class DaskGraphNode(DataProcessingNode[None]):
         self,
         input_node: DataProcessingNode[DataWorld],
         *,
-        save_dir: Path | None,
+        save: SaveSpec | None,
         show: bool,
     ):
         super().__init__(input_node.name_fragments)
         self.input_node = input_node
-        self.save_dir = save_dir or Path.cwd()
+        self.save = save or SaveSpec()
         self.show = show
 
     def pull(self) -> None:
@@ -139,8 +139,10 @@ class DaskGraphNode(DataProcessingNode[None]):
 
         import dask
 
-        self.save_dir.mkdir(exist_ok=True, parents=True)
-        path = self.save_dir / f"{self.get_save_file_stem()}.daskgraph.svg"
+        # save.format is ignored: the extension here is always .daskgraph.svg
+        save_dir = self.save.dir or Path.cwd()
+        save_dir.mkdir(exist_ok=True, parents=True)
+        path = save_dir / f"{self.save.name or self.get_save_file_stem()}.daskgraph.svg"
         # dask.visualize's optimize_graph flag only lowers legacy HLG collections
         # (e.g. dask Arrays), not new-style Expr ones (dask DataFrames) — without
         # pre-optimizing the latter, un-lowered nodes (e.g. Concat from dd.concat)

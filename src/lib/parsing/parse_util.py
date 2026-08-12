@@ -3,7 +3,7 @@ import re
 import typing
 
 
-def _is_identifier(val: str) -> bool:
+def is_identifier(val: str) -> bool:
     return all(re.match(r"^\w[\d\w]*$", v) for v in val.split("."))
 
 
@@ -18,15 +18,17 @@ def parse_value[T](val: T, val_name: str, valid_options: typing.Container[T]) ->
 
 
 def parse_identifier(val: str, val_name: str) -> str:
-    if not _is_identifier(val):
+    if not is_identifier(val):
         raise argparse.ArgumentTypeError(f"Expected {val_name} to be an identifier; got '{val}'")
     return val
 
 
 def parse_optional_identifier(val: str | None, val_name: str) -> str | None:
-    if val and not _is_identifier(val):
-        raise argparse.ArgumentTypeError(f"Expected {val_name} to be an identifier or ''; got '{val}'")
-    return val
+    if not val:
+        return None
+    if is_identifier(val):
+        return val
+    raise argparse.ArgumentTypeError(f"Expected {val_name} to be an identifier or ''; got '{val}'")
 
 
 def check_order[T](lower: T | None, upper: T | None, lower_name: str, upper_name: str):

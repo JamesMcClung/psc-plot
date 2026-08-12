@@ -1,7 +1,7 @@
 import argparse
-from pathlib import Path
 
 from lib.data.adaptor import Adaptor
+from lib.parsing.parse_save import SaveSpec
 from lib.plotting.hook import Hook
 
 
@@ -11,7 +11,6 @@ class Args(argparse.Namespace):
     adaptors: list[Adaptor]
     hooks: list[Hook]
     show: bool
-    save: Path | None
-    save_format: str | None
+    save: SaveSpec | None
     save_dpi: float | None
     dask_graph: bool
