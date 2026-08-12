@@ -39,3 +39,11 @@ def test_save_name_is_not_sanitized(tmp_path):
 def test_save_format_flag_is_gone():
     with pytest.raises(SystemExit):
         parse_args([*_BASE, "--save-format", "gif"])
+
+
+def test_save_incompatible_format_falls_back_to_default(tmp_path):
+    """A static plot only allows 'png'; requesting 'jpg' should warn and fall back."""
+    [node] = compile_action_nodes(parse_args([*_BASE, "-s", f"{tmp_path}/", "name=myfig", "format=jpg"]), CONFIG_2D)
+    with pytest.warns(UserWarning, match="jpg is incompatible with the data; reverting to default"):
+        node.pull()
+    assert (tmp_path / "myfig.png").exists()
