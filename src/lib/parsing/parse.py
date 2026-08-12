@@ -18,7 +18,7 @@ def _get_parser() -> argparse.ArgumentParser:
         metavar=SAVE_METAVAR,
         nargs="*",
         default=None,
-        help="save the figure. Each argument is either a path fragment '[dir/][stem][.ext]' or one of 'dir=<dir>', 'name=<stem>', 'format=<ext>'. With no arguments, saves to the current directory using a filename derived from the pipeline and the default format for the data.",
+        help="save the figure. Each argument is either a path fragment '[dir/][stem][.ext]' or one of 'dir=<dir>', 'name=<stem>', 'format=<ext>'. With no arguments, saves to the current directory using a filename derived from the pipeline and the default format for the data. A bare fragment naming a directory must end in '/' (or use dir=), otherwise it is taken as the filename stem.",
     )
     parser.add_argument("-q", "--quiet", action="store_false", dest="show", help="don't show the figure")
     parser.add_argument(
