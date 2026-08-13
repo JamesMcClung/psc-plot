@@ -57,3 +57,9 @@ def parse_with(arg: str) -> With:
 
     key = parse_util.parse_optional_identifier(key_arg, "key")
     return With(prepath, key)
+
+
+def parse_initial_with(arg: str) -> With:
+    with_ = parse_with(arg)
+    with_.include_with_in_name_fragment = False
+    return with_
