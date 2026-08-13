@@ -11,7 +11,7 @@ def _get_parser() -> argparse.ArgumentParser:
 
     parser.add_argument(
         help="initial active prepath and variable (identical to --with)",
-        nargs="?",
+        nargs="*",
         metavar=WITH_FORMAT,
         type=parse_initial_with,
         dest="adaptors",
