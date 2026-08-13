@@ -1,5 +1,6 @@
 import argparse
 
+from lib.data.adaptors.with_ import WITH_FORMAT, parse_with
 from lib.parsing.args import Args
 from lib.parsing.args_registry import CUSTOM_ARGS, get_store_combined_args_action
 from lib.parsing.parse_save import SAVE_METAVAR, parse_save
@@ -8,8 +9,14 @@ from lib.parsing.parse_save import SAVE_METAVAR, parse_save
 def _get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="psc-plot")
 
-    parser.add_argument("prepath", help="initial active prepath")
-    parser.add_argument("variable", nargs="?", default=None, help="initial active variable")
+    parser.add_argument(
+        help="initial active prepath",
+        nargs="?",
+        metavar=WITH_FORMAT,
+        type=parse_with,
+        dest="adaptors",
+        action="extend",
+    )
     parser.add_argument(
         "-s",
         "--save",
