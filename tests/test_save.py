@@ -93,10 +93,10 @@ def test_parse_save_errors(args, message_fragment):
 @pytest.mark.parametrize(
     "args_list, expected_stem",
     [
-        (["pfd", "hx_fc"], "pfd__hx_fc-v_y,z"),
-        (["pfd", "hx_fc", "--nan0"], "pfd__hx_fc-nan0-v_y,z"),
-        (["pfd", "hx_fc", "--scale", "log"], "pfd__hx_fc-scale_log-v_y,z"),
-        (["pfd", "hx_fc", "-v", "y", "z", "time="], "pfd__hx_fc-v_y,z;time="),
+        (["pfd", "hx_fc"], "pfd-hx_fc-v_y,z"),
+        (["pfd", "hx_fc", "--nan0"], "pfd-hx_fc-nan0-v_y,z"),
+        (["pfd", "hx_fc", "--scale", "log"], "pfd-hx_fc-scale_log-v_y,z"),
+        (["pfd", "hx_fc", "-v", "y", "z", "time="], "pfd-hx_fc-v_y,z;time="),
     ],
 )
 def test_save_file_stem(args_list, expected_stem):

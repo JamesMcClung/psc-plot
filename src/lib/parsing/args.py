@@ -6,8 +6,6 @@ from lib.plotting.hook import Hook
 
 
 class Args(argparse.Namespace):
-    prepath: str
-    variable: str | None
     adaptors: list[Adaptor]
     hooks: list[Hook]
     show: bool

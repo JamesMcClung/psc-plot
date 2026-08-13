@@ -95,8 +95,11 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
             return None
         return self.metadata.var_infos[self.active_key]
 
-    def __getitem__(self, key) -> dd.Series:
+    def __getitem__(self, key: SubdataKey) -> Subdata:
         return self.data[key]
+
+    def __contains__(self, key: SubdataKey) -> bool:
+        return key in self.data
 
     @abstractmethod
     def with_active(self, *, data: Subdata | None = None, key: SubdataKey | None = None, info: VarInfo | None = None) -> Self: ...
