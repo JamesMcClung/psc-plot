@@ -2,13 +2,14 @@ from lib.config import _DATA_DIR_KEY
 from lib.data.adaptor import WorldAdaptor
 from lib.data.ensure_derived import ensure_derived
 from lib.data.loader import load
+from lib.data.types import SubdataKey
 from lib.file_util import Prepath
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 
 
 class With(WorldAdaptor):
-    def __init__(self, prepath: Prepath | None, key: str | None = None, *, include_with_in_name_fragment: bool = True):
+    def __init__(self, prepath: Prepath | None, key: SubdataKey | None = None, *, include_with_in_name_fragment: bool = True):
         self.prepath = prepath
         self.key = key
         self.include_with_in_name_fragment = include_with_in_name_fragment
