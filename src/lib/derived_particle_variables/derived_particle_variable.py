@@ -5,6 +5,7 @@ import pandas as pd
 
 from lib import var_info_registry
 from lib.data.data_with_attrs import List
+from lib.data.types import SubdataKey
 
 __all__ = ["derived_particle_variable", "derive_particle_variable"]
 
@@ -16,36 +17,36 @@ class DeriveParticleVariable(typing.Protocol):
 class DerivedParticleVariable:
     def __init__(
         self,
-        name: str,
-        base_var_names: list[str],
+        key: SubdataKey,
+        base_var_keys: list[SubdataKey],
         derive: DeriveParticleVariable,
     ):
-        self.name = name
-        self.base_var_names = base_var_names
+        self.key = key
+        self.base_var_key = base_var_keys
         self.derive = derive
 
     def assign_to(self, data: List) -> List:
         df = data.data
 
-        info = var_info_registry.lookup("prt", self.name)
-        new_var_infos = {**data.metadata.var_infos, self.name: info}
+        info = var_info_registry.lookup("prt", self.key)
+        new_var_infos = {**data.metadata.var_infos, self.key: info}
         return data.assign(
-            df.assign(**{self.name: self.derive(*(df[base_var_name] for base_var_name in self.base_var_names))}),
+            df.assign(**{self.key: self.derive(*(df[base_var_name] for base_var_name in self.base_var_key))}),
             var_infos=new_var_infos,
         )
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(({', '.join(self.base_var_names)}) -> {self.name}: {self.derive!r})"
+        return f"{self.__class__.__name__}(({', '.join(self.base_var_key)}) -> {self.key}: {self.derive!r})"
 
 
-DERIVED_PARTICLE_VARIABLES: dict[str, dict[str, DerivedParticleVariable]] = {}
+DERIVED_PARTICLE_VARIABLES: dict[str, dict[SubdataKey, DerivedParticleVariable]] = {}
 
 
 def register_derived_particle_variable(prefix: str, var: DerivedParticleVariable):
-    DERIVED_PARTICLE_VARIABLES.setdefault(prefix, {})[var.name] = var
+    DERIVED_PARTICLE_VARIABLES.setdefault(prefix, {})[var.key] = var
 
 
-def get_derived_particle_variables(prefix: str) -> dict[str, DerivedParticleVariable]:
+def get_derived_particle_variables(prefix: str) -> dict[SubdataKey, DerivedParticleVariable]:
     if prefix.startswith("prt."):
         # FIXME this is a hardcoded hack
         prefix = "prt"
@@ -62,15 +63,15 @@ def derived_particle_variable(prefix: str):
     return derived_particle_variable_inner
 
 
-def derive_particle_variable(data: List, active_key: str, ds_prefix: str) -> List:
-    if active_key in data.dims:
+def derive_particle_variable(data: List, active_key: SubdataKey, ds_prefix: str) -> List:
+    if active_key in data:
         return data
 
     derived_vars = get_derived_particle_variables(ds_prefix)
 
     if active_key in derived_vars:
         derived_var = derived_vars[active_key]
-        for base_var_name in derived_var.base_var_names:
+        for base_var_name in derived_var.base_var_key:
             data = derive_particle_variable(data, base_var_name, ds_prefix)
         return derived_var.assign_to(data)
     else:
