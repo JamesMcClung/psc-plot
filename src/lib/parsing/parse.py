@@ -1,6 +1,6 @@
 import argparse
 
-from lib.data.adaptors.with_ import WITH_FORMAT, parse_with
+from lib.data.adaptors.with_ import WITH_FORMAT, parse_initial_with
 from lib.parsing.args import Args
 from lib.parsing.args_registry import CUSTOM_ARGS, get_store_combined_args_action
 from lib.parsing.parse_save import SAVE_METAVAR, parse_save
@@ -13,7 +13,7 @@ def _get_parser() -> argparse.ArgumentParser:
         help="initial active prepath and variable (identical to --with)",
         nargs="?",
         metavar=WITH_FORMAT,
-        type=parse_with,
+        type=parse_initial_with,
         dest="adaptors",
         action="extend",
     )
