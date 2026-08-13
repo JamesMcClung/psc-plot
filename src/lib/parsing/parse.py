@@ -10,7 +10,7 @@ def _get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="psc-plot")
 
     parser.add_argument(
-        help="initial active prepath",
+        help="initial active prepath and variable (identical to --with)",
         nargs="?",
         metavar=WITH_FORMAT,
         type=parse_with,
