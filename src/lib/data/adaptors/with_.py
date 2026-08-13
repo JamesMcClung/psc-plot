@@ -9,10 +9,10 @@ from lib.parsing.args_registry import arg_parser
 
 
 class With(WorldAdaptor):
-    def __init__(self, prepath: Prepath | None, key: SubdataKey | None = None, *, include_with_in_name_fragment: bool = True):
+    def __init__(self, prepath: Prepath | None, key: SubdataKey | None = None):
         self.prepath = prepath
         self.key = key
-        self.include_with_in_name_fragment = include_with_in_name_fragment
+        self.include_with_in_name_fragment = True
 
     def apply_world(self, world):
         if not self.prepath:
