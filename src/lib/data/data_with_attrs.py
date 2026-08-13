@@ -95,7 +95,7 @@ class DataWithAttrs[Data, Subdata, MD: Metadata = Metadata](ABC):
             return None
         return self.metadata.var_infos[self.active_key]
 
-    def __getitem__(self, key) -> dd.Series:
+    def __getitem__(self, key: SubdataKey) -> Subdata:
         return self.data[key]
 
     @abstractmethod
