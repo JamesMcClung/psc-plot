@@ -378,9 +378,10 @@ class AxesManagerImageAndLines(AxesManager):
 
 def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, list[Renderer2]]:
     figure = plt.figure(layout="constrained")
-    renderers = []
+    renderers: list[Renderer2] = []
 
-    for ax, infos in _setup_axes(figure, plot_infos).values():
+    loc_to_ax = _setup_axes(figure, plot_infos)
+    for ax, infos in loc_to_ax.values():
         manager: AxesManager
         if len(infos) == 1:
             info = infos[0]
@@ -406,5 +407,11 @@ def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, list[Renderer2]]:
 
         manager.setup()
         renderers += manager.renderers
+
+    # lift labels to title
+    suptitle_labeler = TreeLabeler(figure.suptitle("").set_text)
+    for renderer in renderers:
+        if isinstance(renderer, TreeLabeler):
+            suptitle_labeler.add_child(renderer)
 
     return figure, renderers
