@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from lib.config import _DATA_DIR_KEY
 from lib.data.adaptor import WorldAdaptor
 from lib.data.data_world import DataWorld
-from lib.data.ensure_derived import ensure_derived
+from lib.data.ensure_derived import ensure_derived, get_derivable_keys
 from lib.data.loader import load
 from lib.data.types import SubdataKey
 from lib.file_util import Prepath
@@ -61,7 +61,7 @@ class With1(With):
     prepath_or_key: Prepath | SubdataKey
 
     def get_prepath_and_key(self, world):
-        if (data := world.active_data) is not None and self.prepath_or_key in data:
+        if (data := world.active_data) is not None and (self.prepath_or_key in data or self.prepath_or_key in get_derivable_keys(data)):
             return None, self.prepath_or_key
         return self.prepath_or_key, None
 
