@@ -409,9 +409,12 @@ def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, list[Renderer2]]:
         renderers += manager.renderers
 
     # lift labels to title
-    suptitle_labeler = TreeLabeler(figure.suptitle("").set_text)
-    for renderer in renderers:
-        if isinstance(renderer, TreeLabeler):
-            suptitle_labeler.add_child(renderer)
+    if len(loc_to_ax) > 1:
+        suptitle_labeler = TreeLabeler(figure.suptitle("").set_text)
+        for renderer in renderers:
+            if isinstance(renderer, TreeLabeler):
+                suptitle_labeler.add_child(renderer)
+        renderers.append(suptitle_labeler)
+        suptitle_labeler.update()
 
     return figure, renderers
