@@ -103,7 +103,7 @@ def test_image_and_cuts():
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_suptitle():
     """Particle densities for electrons and ions in the same figure."""
-    return make_plot("prt.i --bin y z -v y z --with prt.e --bin y z -v y z loc=1,2".split())
+    return make_plot("prt.i -i t=1: --bin y z -v y z --with prt.e -i t=1: --bin y z -v y z loc=1,2".split())
 
 
 # --- Cross-dataset plots ---
