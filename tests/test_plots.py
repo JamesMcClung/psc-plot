@@ -100,6 +100,12 @@ def test_image_and_cuts():
     return make_plot("pfd ey_ec --scale symlog#.001 -v t y --copy ey_ec -i y=0 -v t --copy ey_ec -i y=-1 -v t".split())
 
 
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_suptitle():
+    """Particle densities for electrons and ions in the same figure."""
+    return make_plot("prt.i -i t=1: --bin y z -v y z --with prt.e -i t=1: --bin y z -v y z loc=1,2".split())
+
+
 # --- Cross-dataset plots ---
 
 

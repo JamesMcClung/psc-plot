@@ -18,7 +18,7 @@ def ensure_derived[D: DataWithAttrs](data: D, key: SubdataKey) -> D:
 def get_derivable_keys(data: DataWithAttrs) -> list[SubdataKey]:
     _, prefix = split_prepath(data.metadata.prepath)
     if isinstance(data, Field):
-        return list(DERIVED_FIELD_VARIABLES[prefix].keys())
+        return list(DERIVED_FIELD_VARIABLES.get(prefix, {}).keys())
     elif isinstance(data, List):
         return list(get_derived_particle_variables(prefix).keys())
     else:
