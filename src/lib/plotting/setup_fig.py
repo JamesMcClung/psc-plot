@@ -89,7 +89,6 @@ def find_widest_bounds(boundss: Iterable[tuple[float | None, float | None]]) -> 
 
 @dataclass
 class AxesManager(ABC):
-    renderers: list[Renderer2] = field(init=False, default_factory=list)
     panel: Panel = field(init=False, default_factory=Panel)
 
     @abstractmethod
