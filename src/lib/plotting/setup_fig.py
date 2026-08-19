@@ -13,6 +13,7 @@ from matplotlib.projections import PolarAxes
 from lib.plotting import plt_util
 from lib.plotting.data_setter import ImageSetter, LineSetter, PolarMeshSetter, ScatterSetter
 from lib.plotting.labeler import TreeLabeler
+from lib.plotting.panel import Panel
 from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PolarMeshInfo, ScatterInfo
 from lib.plotting.renderer2 import Renderer2
 
@@ -89,9 +90,10 @@ def find_widest_bounds(boundss: Iterable[tuple[float | None, float | None]]) -> 
 @dataclass
 class AxesManager(ABC):
     renderers: list[Renderer2] = field(init=False, default_factory=list)
+    panel: Panel = field(init=False, default_factory=Panel)
 
     @abstractmethod
-    def setup(self): ...
+    def setup(self) -> Panel: ...
 
     @abstractmethod
     def setup_title(self): ...
@@ -117,7 +119,7 @@ class AxesManagerSingle[A: Axes, PI: PlotInfo](AxesManager):
     def setup_title(self):
         labeler = TreeLabeler(self.ax.title.set_text, self.info)
         labeler.update()
-        self.renderers.append(labeler)
+        self.panel.subject_labeler = labeler
 
 
 class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[Axes, PI2D]):
@@ -127,6 +129,7 @@ class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[Axes, PI2D]):
         self.setup_data()
         self.setup_scales()
         self.setup_bounds()
+        return self.panel
 
     def setup_labels(self):
         self.ax.set_xlabel(self.info.get_dim_label(self.info.x_dim))
@@ -144,7 +147,7 @@ class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[Axes, PI2D]):
 class AxesManagerSingleLine(AxesManagerSingle2D[LineInfo]):
     def setup_data(self):
         [line] = self.ax.plot(self.info.x_data, self.info.y_data, linestyle=self.info.line_style, scalex=False, scaley=False)
-        self.renderers.append(LineSetter(line, self.info))
+        self.panel.data_setters.append(LineSetter(line, self.info))
 
 
 class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
@@ -157,7 +160,7 @@ class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
             interpolation="nearest",
             aspect=_get_aspect(self.info),
         )
-        self.renderers.append(ImageSetter(image, self.info))
+        self.panel.data_setters.append(ImageSetter(image, self.info))
 
         self.ax.figure.colorbar(image)
         data_lower, data_upper = self.info.dim_bounds[self.info.color_dim]
@@ -187,7 +190,7 @@ class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
             )
         self.ax.set_aspect(_get_aspect(self.info))
 
-        self.renderers.append(ScatterSetter(scatter, self.info))
+        self.panel.data_setters.append(ScatterSetter(scatter, self.info))
 
 
 class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarAxes, PolarMeshInfo]):
@@ -196,6 +199,7 @@ class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarAxes, PolarMeshInfo]):
         self.setup_labels()
         self.setup_scales()
         self.setup_data()
+        return self.panel
 
     def setup_labels(self):
         # FIXME make the labels work
@@ -214,7 +218,7 @@ class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarAxes, PolarMeshInfo]):
             shading="flat",
             norm=self.info.dim_scales[self.info.color_dim].to_color_norm(),
         )
-        self.renderers.append(PolarMeshSetter(mesh, self.info))
+        self.panel.data_setters.append(PolarMeshSetter(mesh, self.info))
 
         self.ax.figure.colorbar(mesh)
         data_lower, data_upper = self.info.dim_bounds[self.info.color_dim]
@@ -233,6 +237,7 @@ class AxesManagerMultiLine(AxesManager):
         self.setup_title()  # after data, to make sure lines is populated
         self.setup_scales()
         self.setup_bounds()
+        return self.panel
 
     def setup_title(self):
         labeler = TreeLabeler(self.ax.title.set_text)
@@ -240,7 +245,7 @@ class AxesManagerMultiLine(AxesManager):
             line_labeler = TreeLabeler(line.set_label, info)
             labeler.add_child(line_labeler)
         labeler.update()
-        self.renderers.append(labeler)
+        self.panel.subject_labeler = labeler
 
         self.ax.legend()
 
@@ -280,7 +285,7 @@ class AxesManagerMultiLine(AxesManager):
     def setup_data(self):
         for info in self.infos:
             [line] = self.ax.plot(info.x_data, info.y_data, linestyle=info.line_style, scalex=False, scaley=False)
-            self.renderers.append(LineSetter(line, info))
+            self.panel.data_setters.append(LineSetter(line, info))
             self.lines.append(line)
 
 
@@ -304,6 +309,7 @@ class AxesManagerImageAndLines(AxesManager):
         self.setup_title()  # after data to get line info and cbar
         self.setup_scales()
         self.setup_bounds()
+        return self.panel
 
     def setup_title(self):
         labeler = TreeLabeler(self.image_ax.title.set_text)
@@ -313,7 +319,7 @@ class AxesManagerImageAndLines(AxesManager):
             labeler.add_child(TreeLabeler(line.set_label, info))
 
         labeler.update()
-        self.renderers.append(labeler)
+        self.panel.subject_labeler = labeler
 
         self.line_ax.legend()
 
@@ -364,7 +370,7 @@ class AxesManagerImageAndLines(AxesManager):
             interpolation="nearest",
             aspect=_get_aspect(self.image_info),
         )
-        self.renderers.append(ImageSetter(image, self.image_info))
+        self.panel.data_setters.append(ImageSetter(image, self.image_info))
 
         self.cbar = self.image_ax.figure.colorbar(image)
         data_lower, data_upper = self.image_info.dim_bounds[self.image_info.color_dim]
@@ -372,7 +378,7 @@ class AxesManagerImageAndLines(AxesManager):
 
         for info in self.line_infos:
             [line] = self.line_ax.plot(info.x_data, info.y_data, linestyle=info.line_style, scalex=False, scaley=False)
-            self.renderers.append(LineSetter(line, info))
+            self.panel.data_setters.append(LineSetter(line, info))
             self.lines.append(line)
 
 
@@ -405,8 +411,8 @@ def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, list[Renderer2]]:
             else:
                 raise NotImplementedError("don't yet support multiple non-line plots per axes")
 
-        manager.setup()
-        renderers += manager.renderers
+        panel = manager.setup()
+        renderers += [panel.subject_labeler, *panel.data_setters]
 
     # lift labels to title
     if len(loc_to_ax) > 1:
