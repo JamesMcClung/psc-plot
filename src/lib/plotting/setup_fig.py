@@ -14,7 +14,7 @@ from matplotlib.projections import PolarAxes
 from lib.plotting import plt_util
 from lib.plotting.data_setter import PolarMeshSetter, ScatterSetter
 from lib.plotting.grid import Grid
-from lib.plotting.labeler import SubjectLabeler
+from lib.plotting.labeler import SubjectLabeler, UnitLabeler
 from lib.plotting.panel import Panel
 from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor, PolarMeshInfo, ScatterInfo
 from lib.plotting.renderer2 import Renderer2
@@ -134,7 +134,7 @@ class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
             )
 
             cbar = setup_colorbar(self.ax, scatter, self.info)
-            cbar.set_label(self.info.get_dim_label(self.info.color_dim))
+            UnitLabeler(cbar.set_label, "color", [self.info]).update()
         else:
             scatter = self.ax.scatter(
                 self.info.xy_data[:, 0],
@@ -199,20 +199,8 @@ class AxesManagerMultiLine(AxesManager):
         self.ax.legend()
 
     def setup_labels(self):
-        x_labels = [info.get_dim_label(info.x_dim) for info in self.infos]
-        if (x_label := _one_or_none(x_labels)) is not None:
-            self.ax.set_xlabel(x_label)
-        else:
-            raise NotImplementedError(f"x labels must all be the same, but found {x_labels}")
-
-        y_labels = [info.get_dim_label(info.y_dim) for info in self.infos]
-        y_units = [info.dim_units[info.y_dim] for info in self.infos]
-        if (y_label := _one_or_none(y_labels)) is not None:
-            self.ax.set_ylabel(y_label)
-        elif (y_unit := _one_or_none(y_units)) is not None:
-            self.ax.set_ylabel(y_unit.maybe_with_dollars())
-        else:
-            raise NotImplementedError(f"y labels must all be the same unit, but found {y_units}")
+        UnitLabeler(self.ax.set_xlabel, "x", self.infos).update()
+        UnitLabeler(self.ax.set_ylabel, "y", self.infos, require_display_match=False).update()
 
     def setup_scales(self):
         x_scales = [info.dim_scales[info.x_dim] for info in self.infos]
@@ -268,22 +256,9 @@ class AxesManagerImageAndLines(AxesManager):
         self.line_ax.legend()
 
     def setup_labels(self):
-        x_labels = [info.get_dim_label(info.x_dim) for info in self.infos]
-        if (x_label := _one_or_none(x_labels)) is not None:
-            self.image_ax.set_xlabel(x_label)
-        else:
-            raise NotImplementedError(f"x labels must all be the same, but found {x_labels}")
-
-        self.image_ax.set_ylabel(self.image_info.get_dim_label(self.image_info.y_dim))
-
-        y_labels = [info.get_dim_label(info.y_dim) for info in self.line_infos]
-        y_units = [info.dim_units[info.y_dim] for info in self.line_infos]
-        if (y_label := _one_or_none(y_labels)) is not None:
-            self.line_ax.set_ylabel(y_label)
-        elif (y_unit := _one_or_none(y_units)) is not None:
-            self.line_ax.set_ylabel(y_unit.maybe_with_dollars())
-        else:
-            raise NotImplementedError(f"line y labels must all be the same unit, but found {y_units}")
+        UnitLabeler(self.image_ax.set_xlabel, "x", self.infos).update()
+        UnitLabeler(self.image_ax.set_ylabel, "y", [self.image_info]).update()
+        UnitLabeler(self.line_ax.set_ylabel, "y", self.line_infos, require_display_match=False).update()
 
     def setup_scales(self):
         x_scales = [info.dim_scales[info.x_dim] for info in self.infos]
