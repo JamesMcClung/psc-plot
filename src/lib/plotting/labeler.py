@@ -14,20 +14,20 @@ class Labeler(Renderer2):
 
 
 @dataclass
-class TreeLabeler(Labeler):
-    """Manages the labels associated with one or more datasets within a figure. A label comprises an optional subject
-    (variable name) and any number of sublabels (e.g. scalar coordinates). When multiple datasets are plotted within
-    the same figure, common label components can be "factored out" to a higher label location, e.g. from a legend to
-    an axis title. Label locations are well-described by a tree structure, where common label components propagate
-    from the leaves to the root."""
+class SubjectLabeler(Labeler):
+    """Manages the subject labels associated with one or more datasets within a figure. A subject label comprises an
+    optional subject (variable name) and any number of sublabels (e.g. scalar coordinates). When multiple datasets are
+    plotted within the same figure, common label components can be "factored out" to a higher label location, e.g.
+    from a legend to an axis title. Label locations are well-described by a tree structure, where common label
+    components propagate from the leaves to the root."""
 
-    children: list[TreeLabeler] = field(default_factory=list, init=False)
-    parent: TreeLabeler | None = field(default=None, init=False)
+    children: list[SubjectLabeler] = field(default_factory=list, init=False)
+    parent: SubjectLabeler | None = field(default=None, init=False)
 
     _subject: str | None = field(default=None, init=False)
     _sublabels: list[str] = field(default_factory=list, init=False)
 
-    def add_child(self, child: TreeLabeler):
+    def add_child(self, child: SubjectLabeler):
         assert child.parent is None
         child.parent = self
         self.children.append(child)

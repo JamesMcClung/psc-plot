@@ -14,7 +14,7 @@ from matplotlib.projections import PolarAxes
 from lib.plotting import plt_util
 from lib.plotting.data_setter import PolarMeshSetter, ScatterSetter
 from lib.plotting.grid import Grid
-from lib.plotting.labeler import TreeLabeler
+from lib.plotting.labeler import SubjectLabeler
 from lib.plotting.panel import Panel
 from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor, PolarMeshInfo, ScatterInfo
 from lib.plotting.renderer2 import Renderer2
@@ -348,9 +348,9 @@ def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, list[Renderer2]]:
 
     # lift labels to title
     if len(grid.infos) > 1:
-        suptitle_labeler = TreeLabeler(figure.suptitle("").set_text)
+        suptitle_labeler = SubjectLabeler(figure.suptitle("").set_text)
         for renderer in renderers:
-            if isinstance(renderer, TreeLabeler):
+            if isinstance(renderer, SubjectLabeler):
                 suptitle_labeler.add_child(renderer)
         renderers.append(suptitle_labeler)
         suptitle_labeler.update()
