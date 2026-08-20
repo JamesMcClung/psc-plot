@@ -10,7 +10,6 @@ from lib.plotting.renderer2 import Renderer2
 @dataclass
 class Labeler(Renderer2):
     set_text: Callable[[str], None]
-    source: PlotInfo | None = None
 
 
 @dataclass
@@ -20,6 +19,8 @@ class SubjectLabeler(Labeler):
     plotted within the same figure, common label components can be "factored out" to a higher label location, e.g.
     from a legend to an axis title. Label locations are well-described by a tree structure, where common label
     components propagate from the leaves to the root."""
+
+    source: PlotInfo | None = None
 
     children: list[SubjectLabeler] = field(default_factory=list, init=False)
     parent: SubjectLabeler | None = field(default=None, init=False)
