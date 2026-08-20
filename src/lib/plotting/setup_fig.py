@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 from matplotlib.projections import PolarAxes
 
@@ -61,6 +62,17 @@ def find_widest_bounds(boundss: Iterable[tuple[float | None, float | None]]) -> 
             highest_bound = bounds[1]
 
     return (lowest_bound, highest_bound)
+
+
+def setup_image(ax: Axes, info: ImageInfo) -> AxesImage:
+    return ax.imshow(
+        info.data,
+        origin="lower",
+        extent=(*info.dim_bounds[info.x_dim], *info.dim_bounds[info.y_dim]),
+        norm=info.dim_scales[info.color_dim].to_color_norm(),
+        interpolation="nearest",
+        aspect=_get_aspect(info),
+    )
 
 
 @dataclass
@@ -126,14 +138,7 @@ class AxesManagerSingleLine(AxesManagerSingle2D[LineInfo]):
 
 class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
     def setup_data(self):
-        image = self.ax.imshow(
-            self.info.data,
-            origin="lower",
-            extent=(*self.info.dim_bounds[self.info.x_dim], *self.info.dim_bounds[self.info.y_dim]),
-            norm=self.info.dim_scales[self.info.color_dim].to_color_norm(),
-            interpolation="nearest",
-            aspect=_get_aspect(self.info),
-        )
+        image = setup_image(self.ax, self.info)
         self.panel.data_setters.append(ImageSetter(image, self.info))
 
         self.ax.figure.colorbar(image)
@@ -331,14 +336,7 @@ class AxesManagerImageAndLines(AxesManager):
         self.line_ax.set_ylim(*find_widest_bounds(info.dim_bounds[info.y_dim] for info in self.line_infos))
 
     def setup_data(self):
-        image = self.image_ax.imshow(
-            self.image_info.data,
-            origin="lower",
-            extent=(*self.image_info.dim_bounds[self.image_info.x_dim], *self.image_info.dim_bounds[self.image_info.y_dim]),
-            norm=self.image_info.dim_scales[self.image_info.color_dim].to_color_norm(),
-            interpolation="nearest",
-            aspect=_get_aspect(self.image_info),
-        )
+        image = setup_image(self.image_ax, self.image_info)
         self.panel.data_setters.append(ImageSetter(image, self.image_info))
 
         self.cbar = self.image_ax.figure.colorbar(image)
