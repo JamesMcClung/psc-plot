@@ -5,6 +5,8 @@ from typing import Iterable
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
+from matplotlib.cm import ScalarMappable
+from matplotlib.colorbar import Colorbar
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 from matplotlib.projections import PolarAxes
@@ -14,7 +16,7 @@ from lib.plotting.data_setter import PolarMeshSetter, ScatterSetter
 from lib.plotting.grid import Grid
 from lib.plotting.labeler import TreeLabeler
 from lib.plotting.panel import Panel
-from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PolarMeshInfo, ScatterInfo
+from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor, PolarMeshInfo, ScatterInfo
 from lib.plotting.renderer2 import Renderer2
 
 
@@ -44,6 +46,14 @@ def find_widest_bounds(boundss: Iterable[tuple[float | None, float | None]]) -> 
             highest_bound = bounds[1]
 
     return (lowest_bound, highest_bound)
+
+
+def setup_colorbar(ax: Axes, target: ScalarMappable, info: PlotInfoColor | PlotInfoMaybeColor) -> Colorbar:
+    assert info.color_dim
+    cbar = ax.figure.colorbar(target)
+    data_lower, data_upper = info.dim_bounds[info.color_dim]
+    plt_util.update_cbar(target, data_min_override=data_lower, data_max_override=data_upper)
+    return cbar
 
 
 @dataclass
@@ -109,10 +119,7 @@ class AxesManagerSingleLine(AxesManagerSingle2D[LineInfo]):
 class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
     def setup_data(self):
         image = self.panel.setup_and_wire_image(self.ax, self.info)
-
-        self.ax.figure.colorbar(image)
-        data_lower, data_upper = self.info.dim_bounds[self.info.color_dim]
-        plt_util.update_cbar(image, data_min_override=data_lower, data_max_override=data_upper)
+        setup_colorbar(self.ax, image, self.info)
 
 
 class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
@@ -126,9 +133,8 @@ class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
                 s=1,
             )
 
-            self.ax.figure.colorbar(scatter, label=self.info.get_dim_label(self.info.color_dim))
-            data_lower, data_upper = self.info.dim_bounds[self.info.color_dim]
-            plt_util.update_cbar(scatter, data_min_override=data_lower, data_max_override=data_upper)
+            cbar = setup_colorbar(self.ax, scatter, self.info)
+            cbar.set_label(self.info.get_dim_label(self.info.color_dim))
         else:
             scatter = self.ax.scatter(
                 self.info.xy_data[:, 0],
@@ -167,10 +173,7 @@ class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarAxes, PolarMeshInfo]):
             norm=self.info.dim_scales[self.info.color_dim].to_color_norm(),
         )
         self.panel.data_setters.append(PolarMeshSetter(mesh, self.info))
-
-        self.ax.figure.colorbar(mesh)
-        data_lower, data_upper = self.info.dim_bounds[self.info.color_dim]
-        plt_util.update_cbar(mesh, data_min_override=data_lower, data_max_override=data_upper)
+        setup_colorbar(self.ax, mesh, self.info)
 
 
 @dataclass
@@ -304,10 +307,7 @@ class AxesManagerImageAndLines(AxesManager):
 
     def setup_data(self):
         image = self.panel.setup_and_wire_image(self.image_ax, self.image_info)
-
-        self.cbar = self.image_ax.figure.colorbar(image)
-        data_lower, data_upper = self.image_info.dim_bounds[self.image_info.color_dim]
-        plt_util.update_cbar(image, data_min_override=data_lower, data_max_override=data_upper)
+        self.cbar = setup_colorbar(self.image_ax, image, self.image_info)
 
         for info in self.line_infos:
             self.lines.append(self.panel.setup_and_wire_line(self.line_ax, info))
