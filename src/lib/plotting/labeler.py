@@ -135,3 +135,37 @@ class UnitLabeler(Labeler):
             return units.pop()
 
         raise ValueError(f"{self.axis_name} units must all be the same, but found {units}")
+
+
+@dataclass(init=False)
+class SubjectAndUnitLabeler(Labeler):
+    def __init__(self, set_text: Callable[[str], None], axis_name: Literal["x", "y", "color"], source: PlotInfo):
+        super().__init__(set_text)
+        self._subject = ""
+        self._unit = ""
+
+        self.subject_labeler = SubjectLabeler(self._set_subject, source)
+        self.unit_labeler = UnitLabeler(self._set_unit, axis_name, [source])
+
+    def update(self):
+        """Update sublabelers, which call `_set_subject` and/or `_set_unit` and thus `set_text` (twice, possibly)."""
+        if self.subject_labeler:
+            self.subject_labeler.update()
+
+        if self.unit_labeler:
+            self.unit_labeler.update()
+
+    def _get_label(self) -> str:
+        if self._subject and self._unit:
+            return self._subject + " " + self._unit
+        return self._subject or self._unit
+
+    def _set_subject(self, subject: str):
+        """Intended to be passed to a `SubjectLabeler`."""
+        self._subject = subject
+        self.set_text(self._get_label())
+
+    def _set_unit(self, unit: str):
+        """Intended to be passed to a `UnitLabeler`."""
+        self._unit = unit
+        self.set_text(self._get_label())
