@@ -35,10 +35,10 @@ class PlotInfo:
         return Latex(f"{display} = {coord_val:.3f}{maybe_space}{unit}")
 
     def get_sublabels(self) -> list[str]:
-        return [f"${self.get_coord_label(dim)}$" for dim in self.scalar_coord_values]
+        return [self.get_coord_label(dim).maybe_with_dollars() for dim in self.scalar_coord_values]
 
     def get_dim_label(self, dim: VarKey) -> str:
-        dim_label = f"${self.dim_displays.get(dim, f'\\text{{{dim}}}')}$"
+        dim_label = self.dim_displays.get(dim, Latex(f"\\text{{{dim}}}")).maybe_with_dollars()
 
         if unit := self.dim_units.get(dim):
             dim_label += f" [${unit}$]"
