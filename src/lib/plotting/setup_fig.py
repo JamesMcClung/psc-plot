@@ -6,12 +6,11 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 from matplotlib.projections import PolarAxes
 
 from lib.plotting import plt_util
-from lib.plotting.data_setter import ImageSetter, LineSetter, PolarMeshSetter, ScatterSetter
+from lib.plotting.data_setter import LineSetter, PolarMeshSetter, ScatterSetter
 from lib.plotting.grid import Grid
 from lib.plotting.labeler import TreeLabeler
 from lib.plotting.panel import Panel
@@ -45,17 +44,6 @@ def find_widest_bounds(boundss: Iterable[tuple[float | None, float | None]]) -> 
             highest_bound = bounds[1]
 
     return (lowest_bound, highest_bound)
-
-
-def setup_image(ax: Axes, info: ImageInfo) -> AxesImage:
-    return ax.imshow(
-        info.data,
-        origin="lower",
-        extent=(*info.dim_bounds[info.x_dim], *info.dim_bounds[info.y_dim]),
-        norm=info.dim_scales[info.color_dim].to_color_norm(),
-        interpolation="nearest",
-        aspect=info.get_aspect(),
-    )
 
 
 @dataclass
@@ -121,8 +109,7 @@ class AxesManagerSingleLine(AxesManagerSingle2D[LineInfo]):
 
 class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
     def setup_data(self):
-        image = setup_image(self.ax, self.info)
-        self.panel.data_setters.append(ImageSetter(image, self.info))
+        image = self.panel.setup_and_wire_image(self.ax, self.info)
 
         self.ax.figure.colorbar(image)
         data_lower, data_upper = self.info.dim_bounds[self.info.color_dim]
@@ -319,8 +306,7 @@ class AxesManagerImageAndLines(AxesManager):
         self.line_ax.set_ylim(*find_widest_bounds(info.dim_bounds[info.y_dim] for info in self.line_infos))
 
     def setup_data(self):
-        image = setup_image(self.image_ax, self.image_info)
-        self.panel.data_setters.append(ImageSetter(image, self.image_info))
+        image = self.panel.setup_and_wire_image(self.image_ax, self.image_info)
 
         self.cbar = self.image_ax.figure.colorbar(image)
         data_lower, data_upper = self.image_info.dim_bounds[self.image_info.color_dim]
