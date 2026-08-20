@@ -8,15 +8,18 @@ from lib.plotting.renderer2 import Renderer2
 
 
 @dataclass
-class TreeLabeler(Renderer2):
+class Labeler(Renderer2):
+    set_text: Callable[[str], None]
+    source: PlotInfo | None = None
+
+
+@dataclass
+class TreeLabeler(Labeler):
     """Manages the labels associated with one or more datasets within a figure. A label comprises an optional subject
     (variable name) and any number of sublabels (e.g. scalar coordinates). When multiple datasets are plotted within
     the same figure, common label components can be "factored out" to a higher label location, e.g. from a legend to
     an axis title. Label locations are well-described by a tree structure, where common label components propagate
     from the leaves to the root."""
-
-    set_text: Callable[[str], None]
-    source: PlotInfo | None = None
 
     children: list[TreeLabeler] = field(default_factory=list, init=False)
     parent: TreeLabeler | None = field(default=None, init=False)
