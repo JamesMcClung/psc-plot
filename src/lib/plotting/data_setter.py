@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Self
 
+from matplotlib.axes import Axes
 from matplotlib.collections import PathCollection, QuadMesh
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
@@ -28,6 +30,18 @@ class ImageSetter(Renderer2):
 
     def update(self):
         self.image.set_data(self.info.data)
+
+    @classmethod
+    def setup(cls, ax: Axes, info: ImageInfo) -> Self:
+        image = ax.imshow(
+            info.data,
+            origin="lower",
+            extent=(*info.dim_bounds[info.x_dim], *info.dim_bounds[info.y_dim]),
+            norm=info.dim_scales[info.color_dim].to_color_norm(),
+            interpolation="nearest",
+            aspect=info.get_aspect(),
+        )
+        return cls(image, info)
 
 
 @dataclass
