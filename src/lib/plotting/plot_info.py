@@ -1,5 +1,6 @@
+import math
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Any, Callable, Literal
+from typing import Literal
 
 import numpy as np
 from matplotlib.typing import LineStyleType
@@ -50,6 +51,20 @@ class PlotInfo2D(PlotInfo):
     _: KW_ONLY
     x_dim: VarKey
     y_dim: VarKey
+
+    def get_aspect(self) -> Literal["auto", "equal"]:
+        if self.dim_units[self.x_dim] != self.dim_units[self.y_dim]:
+            return "auto"
+
+        x_lo, x_hi = self.dim_bounds[self.x_dim]
+        y_lo, y_hi = self.dim_bounds[self.y_dim]
+        if None in [x_lo, x_hi, y_lo, y_hi]:
+            return "auto"
+
+        if math.isclose(x_hi - x_lo, y_hi - y_lo):
+            return "equal"
+
+        return "auto"
 
 
 @dataclass
