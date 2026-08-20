@@ -1,11 +1,9 @@
-import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Iterable, Literal
+from typing import Iterable
 
 import numpy as np
 from matplotlib import pyplot as plt
-from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.image import AxesImage
@@ -19,21 +17,6 @@ from lib.plotting.labeler import TreeLabeler
 from lib.plotting.panel import Panel
 from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PolarMeshInfo, ScatterInfo
 from lib.plotting.renderer2 import Renderer2
-
-
-def _get_aspect(info: PlotInfo2D) -> Literal["auto", "equal"]:
-    if info.dim_units[info.x_dim] != info.dim_units[info.y_dim]:
-        return "auto"
-
-    x_lo, x_hi = info.dim_bounds[info.x_dim]
-    y_lo, y_hi = info.dim_bounds[info.y_dim]
-    if None in [x_lo, x_hi, y_lo, y_hi]:
-        return "auto"
-
-    if math.isclose(x_hi - x_lo, y_hi - y_lo):
-        return "equal"
-
-    return "auto"
 
 
 def _one_or_none[T](objs: Iterable[T]) -> T | None:
@@ -71,7 +54,7 @@ def setup_image(ax: Axes, info: ImageInfo) -> AxesImage:
         extent=(*info.dim_bounds[info.x_dim], *info.dim_bounds[info.y_dim]),
         norm=info.dim_scales[info.color_dim].to_color_norm(),
         interpolation="nearest",
-        aspect=_get_aspect(info),
+        aspect=info.get_aspect(),
     )
 
 
@@ -167,7 +150,7 @@ class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
                 color=self.ax._get_lines.get_next_color(),
                 s=0.5,
             )
-        self.ax.set_aspect(_get_aspect(self.info))
+        self.ax.set_aspect(self.info.get_aspect())
 
         self.panel.data_setters.append(ScatterSetter(scatter, self.info))
 
