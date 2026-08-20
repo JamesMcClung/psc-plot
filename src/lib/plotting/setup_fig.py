@@ -86,23 +86,14 @@ class AxesManager(ABC):
     def setup_data(self): ...
 
 
-def setup_title(ax: Axes, info: PlotInfo) -> TreeLabeler:
-    return TreeLabeler(ax.title.set_text, info)
-
-
-def setup_legend_label(artist: Artist, info: PlotInfo) -> TreeLabeler:
-    return TreeLabeler(artist.set_label, info)
-
-
 @dataclass
 class AxesManagerSingle[A: Axes, PI: PlotInfo](AxesManager):
     ax: A
     info: PI
 
     def setup_title(self):
-        labeler = setup_title(self.ax, self.info)
-        labeler.update()
-        self.panel.title_labeler = labeler
+        self.panel.wire_title(self.ax.title, self.info)
+        self.panel.title_labeler.update()
 
 
 class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[Axes, PI2D]):
@@ -223,12 +214,10 @@ class AxesManagerMultiLine(AxesManager):
         return self.panel
 
     def setup_title(self):
-        labeler = TreeLabeler(self.ax.title.set_text)
         for info, line in zip(self.infos, self.lines):
-            line_labeler = setup_legend_label(line, info)
-            labeler.add_child(line_labeler)
-        labeler.update()
-        self.panel.title_labeler = labeler
+            self.panel.wire_legend_label(line, info)
+        self.panel.wire_title(self.ax.title)
+        self.panel.title_labeler.update()
 
         self.ax.legend()
 
@@ -295,14 +284,11 @@ class AxesManagerImageAndLines(AxesManager):
         return self.panel
 
     def setup_title(self):
-        labeler = TreeLabeler(self.image_ax.title.set_text)
-
-        labeler.add_child(TreeLabeler(self.cbar.set_label, self.image_info))
         for info, line in zip(self.line_infos, self.lines):
-            labeler.add_child(TreeLabeler(line.set_label, info))
-
-        labeler.update()
-        self.panel.title_labeler = labeler
+            self.panel.wire_legend_label(line, info)
+        self.panel.wire_cbar_label(self.cbar, self.image_info)
+        self.panel.wire_title(self.image_ax.title)
+        self.panel.title_labeler.update()
 
         self.line_ax.legend()
 
