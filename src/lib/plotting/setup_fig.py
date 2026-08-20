@@ -99,8 +99,8 @@ class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[Axes, PI2D]):
         return self.panel
 
     def setup_labels(self):
-        self.ax.set_xlabel(self.info.get_dim_label(self.info.x_dim))
-        self.ax.set_ylabel(self.info.get_dim_label(self.info.y_dim))
+        UnitLabeler(self.ax.set_xlabel, "x", [self.info]).update()
+        UnitLabeler(self.ax.set_ylabel, "y", [self.info]).update()
 
     def setup_scales(self):
         self.ax.set_xscale(self.info.dim_scales[self.info.x_dim].to_axis_scale())
