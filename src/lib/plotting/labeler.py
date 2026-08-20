@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Callable
+from typing import Callable, Literal
 
-from lib.plotting.plot_info import PlotInfo
+from lib.data.types import VarKey
+from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor
 from lib.plotting.renderer2 import Renderer2
 
 
@@ -94,3 +95,43 @@ class SubjectLabeler(Labeler):
         for child in self.children:
             for sublabel in self._sublabels:
                 child._sublabels.remove(sublabel)
+
+
+@dataclass
+class UnitLabeler(Labeler):
+    axis_name: Literal["x", "y", "color"]
+    sources: list[PlotInfo] = field(default_factory=list)
+
+    require_display_match: bool = field(kw_only=True, default=True)
+    """If false, sources only have to agree on the unit. Otherwise, all sources must agree on display and unit."""
+
+    def update(self):
+        self.set_text(self._get_label())
+
+    def _get_key(self, info: PlotInfo) -> VarKey:
+        match self.axis_name:
+            case "x":
+                assert isinstance(info, PlotInfo2D)
+                return info.x_dim
+            case "y":
+                assert isinstance(info, PlotInfo2D)
+                return info.y_dim
+            case "color":
+                assert isinstance(info, (PlotInfoColor, PlotInfoMaybeColor)) and info.color_dim
+                return info.color_dim
+
+    def _get_label(self) -> str:
+        keys = [self._get_key(info) for info in self.sources]
+
+        labels = {info.get_dim_label(key) for info, key in zip(self.sources, keys)}
+        if len(labels) == 1:
+            return labels.pop()
+
+        if self.require_display_match:
+            raise ValueError(f"{self.axis_name} labels must all be the same, but found {labels}")
+
+        units = {info.dim_units[key].maybe_with_dollars() for info, key in zip(self.sources, keys)}
+        if len(units) == 1:
+            return units.pop()
+
+        raise ValueError(f"{self.axis_name} units must all be the same, but found {units}")
