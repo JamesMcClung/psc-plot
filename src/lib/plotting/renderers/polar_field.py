@@ -44,7 +44,7 @@ class PolarFieldRenderer(Renderer[Field, SpatialDimsRTheta, PolarMeshInfo]):
             dim_displays={
                 r_dim: frame_data.metadata.var_infos[r_dim].display,
                 theta_dim: frame_data.metadata.var_infos[theta_dim].display,
-                color_dim: None,
+                color_dim: frame_data.metadata.var_infos[color_dim].display,
             },
             dim_units={
                 r_dim: frame_data.metadata.var_infos[r_dim].unit,
