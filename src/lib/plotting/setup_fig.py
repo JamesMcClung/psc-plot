@@ -134,7 +134,8 @@ class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
             )
 
             cbar = setup_colorbar(self.ax, scatter, self.info)
-            UnitLabeler(cbar.set_label, "color", [self.info]).update()
+            self.panel.wire_cbar_label(cbar, self.info)
+            self.panel.cbar_labeler.update()
         else:
             scatter = self.ax.scatter(
                 self.info.xy_data[:, 0],
