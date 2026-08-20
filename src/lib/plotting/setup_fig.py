@@ -5,6 +5,7 @@ from typing import Iterable, Literal
 
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
@@ -87,6 +88,10 @@ class AxesManager(ABC):
 
 def setup_title(ax: Axes, info: PlotInfo) -> TreeLabeler:
     return TreeLabeler(ax.title.set_text, info)
+
+
+def setup_legend_label(artist: Artist, info: PlotInfo) -> TreeLabeler:
+    return TreeLabeler(artist.set_label, info)
 
 
 @dataclass
@@ -220,7 +225,7 @@ class AxesManagerMultiLine(AxesManager):
     def setup_title(self):
         labeler = TreeLabeler(self.ax.title.set_text)
         for info, line in zip(self.infos, self.lines):
-            line_labeler = TreeLabeler(line.set_label, info)
+            line_labeler = setup_legend_label(line, info)
             labeler.add_child(line_labeler)
         labeler.update()
         self.panel.subject_labeler = labeler
