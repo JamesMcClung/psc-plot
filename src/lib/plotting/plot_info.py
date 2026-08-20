@@ -68,6 +68,19 @@ class PlotInfo2D(PlotInfo):
 
 
 @dataclass
+class PlotInfoColor(PlotInfo):
+    _: KW_ONLY
+    color_dim: VarKey
+
+
+@dataclass
+class PlotInfoMaybeColor(PlotInfo):
+    _: KW_ONLY
+    color_data: np.ndarray | None = None
+    color_dim: VarKey | None = None
+
+
+@dataclass
 class LineInfo(PlotInfo2D):
     _: KW_ONLY
     x_data: np.ndarray
@@ -76,27 +89,23 @@ class LineInfo(PlotInfo2D):
 
 
 @dataclass
-class ImageInfo(PlotInfo2D):
+class ImageInfo(PlotInfo2D, PlotInfoColor):
     _: KW_ONLY
     data: np.ndarray
-    color_dim: VarKey
 
 
 @dataclass
-class ScatterInfo(PlotInfo2D):
+class ScatterInfo(PlotInfo2D, PlotInfoMaybeColor):
     _: KW_ONLY
     xy_data: np.ndarray
-    color_data: np.ndarray | None = None
-    color_dim: VarKey | None = None
 
 
 @dataclass
-class PolarMeshInfo(PlotInfo):
+class PolarMeshInfo(PlotInfoColor):
     _: KW_ONLY
     data: np.ndarray
     r_vertices: np.ndarray
     theta_vertices: np.ndarray
     r_dim: VarKey
     theta_dim: VarKey
-    color_dim: VarKey
     projection: Projection = field(default="polar", init=False)
