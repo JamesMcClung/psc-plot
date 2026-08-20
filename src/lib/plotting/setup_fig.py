@@ -10,7 +10,7 @@ from matplotlib.lines import Line2D
 from matplotlib.projections import PolarAxes
 
 from lib.plotting import plt_util
-from lib.plotting.data_setter import LineSetter, PolarMeshSetter, ScatterSetter
+from lib.plotting.data_setter import PolarMeshSetter, ScatterSetter
 from lib.plotting.grid import Grid
 from lib.plotting.labeler import TreeLabeler
 from lib.plotting.panel import Panel
@@ -103,8 +103,7 @@ class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[Axes, PI2D]):
 
 class AxesManagerSingleLine(AxesManagerSingle2D[LineInfo]):
     def setup_data(self):
-        [line] = self.ax.plot(self.info.x_data, self.info.y_data, linestyle=self.info.line_style, scalex=False, scaley=False)
-        self.panel.data_setters.append(LineSetter(line, self.info))
+        self.panel.setup_and_wire_line(self.ax, self.info)
 
 
 class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
@@ -231,9 +230,7 @@ class AxesManagerMultiLine(AxesManager):
 
     def setup_data(self):
         for info in self.infos:
-            [line] = self.ax.plot(info.x_data, info.y_data, linestyle=info.line_style, scalex=False, scaley=False)
-            self.panel.data_setters.append(LineSetter(line, info))
-            self.lines.append(line)
+            self.lines.append(self.panel.setup_and_wire_line(self.ax, info))
 
 
 @dataclass
@@ -313,9 +310,7 @@ class AxesManagerImageAndLines(AxesManager):
         plt_util.update_cbar(image, data_min_override=data_lower, data_max_override=data_upper)
 
         for info in self.line_infos:
-            [line] = self.line_ax.plot(info.x_data, info.y_data, linestyle=info.line_style, scalex=False, scaley=False)
-            self.panel.data_setters.append(LineSetter(line, info))
-            self.lines.append(line)
+            self.lines.append(self.panel.setup_and_wire_line(self.line_ax, info))
 
 
 def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, list[Renderer2]]:
