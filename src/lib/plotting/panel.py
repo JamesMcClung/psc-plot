@@ -1,11 +1,14 @@
 from dataclasses import dataclass, field
 
 from matplotlib.artist import Artist
+from matplotlib.axes import Axes
 from matplotlib.colorbar import Colorbar
+from matplotlib.image import AxesImage
 from matplotlib.text import Text
 
+from lib.plotting.data_setter import ImageSetter
 from lib.plotting.labeler import TreeLabeler
-from lib.plotting.plot_info import PlotInfo
+from lib.plotting.plot_info import ImageInfo, PlotInfo
 from lib.plotting.renderer2 import Renderer2
 
 
@@ -33,3 +36,8 @@ class Panel:
         self.cbar_labeler = TreeLabeler(cbar.set_label, info)
         if self.title_labeler:
             self.title_labeler.add_child(self.cbar_labeler)
+
+    def setup_and_wire_image(self, ax: Axes, info: ImageInfo) -> AxesImage:
+        setter = ImageSetter.setup(ax, info)
+        self.data_setters.append(setter)
+        return setter.image
