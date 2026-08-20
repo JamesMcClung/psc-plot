@@ -85,13 +85,17 @@ class AxesManager(ABC):
     def setup_data(self): ...
 
 
+def setup_title(ax: Axes, info: PlotInfo) -> TreeLabeler:
+    return TreeLabeler(ax.title.set_text, info)
+
+
 @dataclass
 class AxesManagerSingle[A: Axes, PI: PlotInfo](AxesManager):
     ax: A
     info: PI
 
     def setup_title(self):
-        labeler = TreeLabeler(self.ax.title.set_text, self.info)
+        labeler = setup_title(self.ax, self.info)
         labeler.update()
         self.panel.subject_labeler = labeler
 
