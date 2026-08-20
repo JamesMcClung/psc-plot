@@ -12,36 +12,11 @@ from matplotlib.projections import PolarAxes
 
 from lib.plotting import plt_util
 from lib.plotting.data_setter import ImageSetter, LineSetter, PolarMeshSetter, ScatterSetter
+from lib.plotting.grid import Grid
 from lib.plotting.labeler import TreeLabeler
 from lib.plotting.panel import Panel
 from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PolarMeshInfo, ScatterInfo
 from lib.plotting.renderer2 import Renderer2
-
-type AxesIdx = tuple[int, int]
-
-
-def _flatten_idx(axes_idx: tuple[int, int], ncols: int) -> int:
-    return ncols * (axes_idx[1] - 1) + axes_idx[0]
-
-
-def _setup_axes(figure: Figure, plot_infos: list[PlotInfo]) -> dict[AxesIdx, tuple[Axes, list[PlotInfo]]]:
-    idx_to_infos: dict[AxesIdx, list[PlotInfo]] = {}
-    for info in plot_infos:
-        idx_to_infos.setdefault(info.axes_index, []).append(info)
-
-    ncols = max(idx[0] for idx in idx_to_infos)
-    nrows = max(idx[1] for idx in idx_to_infos)
-
-    ret: dict[AxesIdx, tuple[Axes, list[PlotInfo]]] = {}
-    for idx, infos in idx_to_infos.items():
-        projection = infos[0].projection
-        for info in infos[1:]:
-            if info.projection != projection:
-                raise ValueError("incompatible plots (TODO: better error message)")
-        ax = figure.add_subplot(nrows, ncols, _flatten_idx(idx, ncols), projection=projection)
-        ret[idx] = (ax, infos)
-
-    return ret
 
 
 def _get_aspect(info: PlotInfo2D) -> Literal["auto", "equal"]:
@@ -385,8 +360,9 @@ def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, list[Renderer2]]:
     figure = plt.figure(layout="constrained")
     renderers: list[Renderer2] = []
 
-    loc_to_ax = _setup_axes(figure, plot_infos)
-    for ax, infos in loc_to_ax.values():
+    grid = Grid(figure, plot_infos)
+    for loc, infos in grid.infos.items():
+        ax = grid.setup_ax(loc)
         manager: AxesManager
         if len(infos) == 1:
             info = infos[0]
@@ -414,7 +390,7 @@ def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, list[Renderer2]]:
         renderers += [panel.subject_labeler, *panel.data_setters]
 
     # lift labels to title
-    if len(loc_to_ax) > 1:
+    if len(grid.infos) > 1:
         suptitle_labeler = TreeLabeler(figure.suptitle("").set_text)
         for renderer in renderers:
             if isinstance(renderer, TreeLabeler):
