@@ -102,7 +102,7 @@ class AxesManagerSingle[A: Axes, PI: PlotInfo](AxesManager):
     def setup_title(self):
         labeler = setup_title(self.ax, self.info)
         labeler.update()
-        self.panel.subject_labeler = labeler
+        self.panel.title_labeler = labeler
 
 
 class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[Axes, PI2D]):
@@ -228,7 +228,7 @@ class AxesManagerMultiLine(AxesManager):
             line_labeler = setup_legend_label(line, info)
             labeler.add_child(line_labeler)
         labeler.update()
-        self.panel.subject_labeler = labeler
+        self.panel.title_labeler = labeler
 
         self.ax.legend()
 
@@ -302,7 +302,7 @@ class AxesManagerImageAndLines(AxesManager):
             labeler.add_child(TreeLabeler(line.set_label, info))
 
         labeler.update()
-        self.panel.subject_labeler = labeler
+        self.panel.title_labeler = labeler
 
         self.line_ax.legend()
 
@@ -396,7 +396,7 @@ def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, list[Renderer2]]:
                 raise NotImplementedError("don't yet support multiple non-line plots per axes")
 
         panel = manager.setup()
-        renderers += [panel.subject_labeler, *panel.data_setters]
+        renderers += [panel.title_labeler, *panel.data_setters]
 
     # lift labels to title
     if len(grid.infos) > 1:
