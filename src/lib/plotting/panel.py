@@ -4,11 +4,12 @@ from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.colorbar import Colorbar
 from matplotlib.image import AxesImage
+from matplotlib.lines import Line2D
 from matplotlib.text import Text
 
-from lib.plotting.data_setter import ImageSetter
+from lib.plotting.data_setter import ImageSetter, LineSetter
 from lib.plotting.labeler import TreeLabeler
-from lib.plotting.plot_info import ImageInfo, PlotInfo
+from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo
 from lib.plotting.renderer2 import Renderer2
 
 
@@ -41,3 +42,8 @@ class Panel:
         setter = ImageSetter.setup(ax, info)
         self.data_setters.append(setter)
         return setter.image
+
+    def setup_and_wire_line(self, ax: Axes, info: LineInfo) -> Line2D:
+        setter = LineSetter.setup(ax, info)
+        self.data_setters.append(setter)
+        return setter.line
