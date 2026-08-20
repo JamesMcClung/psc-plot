@@ -8,7 +8,7 @@ from matplotlib.lines import Line2D
 from matplotlib.text import Text
 
 from lib.plotting.data_setter import ImageSetter, LineSetter
-from lib.plotting.labeler import SubjectLabeler
+from lib.plotting.labeler import SubjectAndUnitLabeler, SubjectLabeler
 from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo
 from lib.plotting.renderer2 import Renderer2
 
@@ -17,7 +17,7 @@ from lib.plotting.renderer2 import Renderer2
 class Panel:
     title_labeler: SubjectLabeler | None = field(init=False, default=None)
     legend_labelers: list[SubjectLabeler] = field(init=False, default_factory=list)
-    cbar_labeler: SubjectLabeler | None = field(init=False, default=None)
+    cbar_labeler: SubjectAndUnitLabeler | None = field(init=False, default=None)
     data_setters: list[Renderer2] = field(init=False, default_factory=list)
 
     def wire_title(self, title: Text, info: PlotInfo | None = None):
@@ -25,7 +25,7 @@ class Panel:
         for legend_labeler in self.legend_labelers:
             self.title_labeler.add_child(legend_labeler)
         if self.cbar_labeler:
-            self.title_labeler.add_child(self.cbar_labeler)
+            self.title_labeler.add_child(self.cbar_labeler.subject_labeler)
 
     def wire_legend_label(self, artist: Artist, info: PlotInfo):
         legend_labeler = SubjectLabeler(artist.set_label, info)
@@ -34,9 +34,9 @@ class Panel:
             self.title_labeler.add_child(legend_labeler)
 
     def wire_cbar_label(self, cbar: Colorbar, info: PlotInfo):
-        self.cbar_labeler = SubjectLabeler(cbar.set_label, info)
+        self.cbar_labeler = SubjectAndUnitLabeler(cbar.set_label, "color", info)
         if self.title_labeler:
-            self.title_labeler.add_child(self.cbar_labeler)
+            self.title_labeler.add_child(self.cbar_labeler.subject_labeler)
 
     def setup_and_wire_image(self, ax: Axes, info: ImageInfo) -> AxesImage:
         setter = ImageSetter.setup(ax, info)
