@@ -22,6 +22,11 @@ class LineSetter(Renderer2):
         self.line.set_ydata(self.info.y_data)
         self.line.set_linestyle(self.info.line_style)
 
+    @classmethod
+    def setup(cls, ax: Axes, info: LineInfo) -> Self:
+        [line] = ax.plot(info.x_data, info.y_data, linestyle=info.line_style, scalex=False, scaley=False)
+        return cls(line, info)
+
 
 @dataclass
 class ImageSetter(Renderer2):
