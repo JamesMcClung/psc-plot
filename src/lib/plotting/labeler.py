@@ -102,6 +102,8 @@ class UnitLabeler(Labeler):
     axis_name: Literal["x", "y", "color"]
     sources: list[PlotInfo] = field(default_factory=list)
 
+    include_display: bool = field(kw_only=True, default=True)
+    """Include the display in the label. If false, show unit only. Independent of `require_display_match`."""
     require_display_match: bool = field(kw_only=True, default=True)
     """If false, sources only have to agree on the unit. Otherwise, all sources must agree on display and unit."""
 
@@ -123,18 +125,20 @@ class UnitLabeler(Labeler):
     def _get_label(self) -> str:
         keys = [self._get_key(info) for info in self.sources]
 
-        labels = {info.get_dim_label(key) for info, key in zip(self.sources, keys)}
-        if len(labels) == 1:
-            return labels.pop()
+        displays = {info.dim_displays[key] for info, key in zip(self.sources, keys)}
+        if self.require_display_match and len(displays) > 1:
+            raise ValueError(f"{self.axis_name} displays must all be the same, but found {displays}")
 
-        if self.require_display_match:
-            raise ValueError(f"{self.axis_name} labels must all be the same, but found {labels}")
+        units = {info.dim_units[key] for info, key in zip(self.sources, keys)}
+        if len(units) > 1:
+            raise ValueError(f"{self.axis_name} units must all be the same, but found {units}")
 
-        units = {info.dim_units[key].maybe_with_dollars() for info, key in zip(self.sources, keys)}
-        if len(units) == 1:
-            return units.pop()
+        display = displays.pop().maybe_with_dollars() if self.include_display and len(displays) == 1 else ""
+        unit = units.pop().maybe_with_dollars() if len(units) == 1 else ""
 
-        raise ValueError(f"{self.axis_name} units must all be the same, but found {units}")
+        if display and unit:
+            return f"{display} [{unit}]"
+        return display or unit and f"[{unit}]"
 
 
 @dataclass(init=False)
@@ -145,7 +149,7 @@ class SubjectAndUnitLabeler(Labeler):
         self._unit = ""
 
         self.subject_labeler = SubjectLabeler(self._set_subject, source)
-        self.unit_labeler = UnitLabeler(self._set_unit, axis_name, [source])
+        self.unit_labeler = UnitLabeler(self._set_unit, axis_name, [source], include_display=False, require_display_match=False)
 
     def update(self):
         """Update sublabelers, which call `_set_subject` and/or `_set_unit` and thus `set_text` (twice, possibly)."""
