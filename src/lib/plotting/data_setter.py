@@ -58,6 +58,25 @@ class ScatterSetter(Renderer2):
         self.scatter.set_array(self.info.color_data)
         self.scatter.set_offsets(self.info.xy_data)
 
+    @classmethod
+    def setup(cls, ax: Axes, info: ScatterInfo) -> Self:
+        if info.color_dim:
+            scatter = ax.scatter(
+                info.xy_data[:, 0],
+                info.xy_data[:, 1],
+                c=info.color_data,
+                norm=info.dim_scales[info.color_dim].to_color_norm(),
+                s=1,
+            )
+        else:
+            scatter = ax.scatter(
+                info.xy_data[:, 0],
+                info.xy_data[:, 1],
+                color=ax._get_lines.get_next_color(),
+                s=0.5,
+            )
+        return cls(scatter, info)
+
 
 @dataclass
 class PolarMeshSetter(Renderer2):
