@@ -2,15 +2,15 @@ from dataclasses import dataclass, field
 
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
-from matplotlib.collections import PathCollection
+from matplotlib.collections import PathCollection, QuadMesh
 from matplotlib.colorbar import Colorbar
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 from matplotlib.text import Text
 
-from lib.plotting.data_setter import ImageSetter, LineSetter, ScatterSetter
+from lib.plotting.data_setter import ImageSetter, LineSetter, PolarMeshSetter, ScatterSetter
 from lib.plotting.labeler import Labeler, SubjectAndUnitLabeler, SubjectLabeler, UnitLabeler
-from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfoColor, ScatterInfo
+from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfoColor, PolarMeshInfo, ScatterInfo
 from lib.plotting.renderer2 import Renderer2
 
 
@@ -57,3 +57,8 @@ class Panel:
         setter = ScatterSetter.setup(ax, info)
         self.data_setters.append(setter)
         return setter.scatter
+
+    def setup_and_wire_polar_mesh(self, ax: Axes, info: PolarMeshInfo) -> QuadMesh:
+        setter = PolarMeshSetter.setup(ax, info)
+        self.data_setters.append(setter)
+        return setter.mesh

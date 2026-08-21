@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Iterable
 
-import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.cm import ScalarMappable
@@ -12,7 +11,6 @@ from matplotlib.lines import Line2D
 from matplotlib.projections import PolarAxes
 
 from lib.plotting import plt_util
-from lib.plotting.data_setter import PolarMeshSetter
 from lib.plotting.grid import Grid
 from lib.plotting.labeler import SubjectLabeler, UnitLabeler
 from lib.plotting.panel import Panel
@@ -157,14 +155,10 @@ class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarAxes, PolarMeshInfo]):
         self.ax.set_rscale(self.info.dim_scales[self.info.r_dim].to_axis_scale())
 
     def setup_data(self):
-        mesh = self.ax.pcolormesh(
-            *np.meshgrid(self.info.theta_vertices, self.info.r_vertices),
-            self.info.data,
-            shading="flat",
-            norm=self.info.dim_scales[self.info.color_dim].to_color_norm(),
-        )
-        self.panel.data_setters.append(PolarMeshSetter(mesh, self.info))
-        setup_colorbar(self.ax, mesh, self.info)
+        mesh = self.panel.setup_and_wire_polar_mesh(self.ax, self.info)
+        cbar = setup_colorbar(self.ax, mesh, self.info)
+        self.panel.wire_cbar_label(cbar, self.info)
+        self.panel.cbar_labeler.update()
 
 
 @dataclass

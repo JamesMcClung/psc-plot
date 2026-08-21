@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Self
 
+import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.collections import PathCollection, QuadMesh
 from matplotlib.image import AxesImage
@@ -85,3 +86,13 @@ class PolarMeshSetter(Renderer2):
 
     def update(self):
         self.mesh.set_array(self.info.data)
+
+    @classmethod
+    def setup(cls, ax: Axes, info: PolarMeshInfo) -> Self:
+        mesh = ax.pcolormesh(
+            *np.meshgrid(info.theta_vertices, info.r_vertices),
+            info.data,
+            shading="flat",
+            norm=info.dim_scales[info.color_dim].to_color_norm(),
+        )
+        return cls(mesh, info)
