@@ -117,9 +117,14 @@ class AxesManagerSingleLine(AxesManagerSingle2D[LineInfo]):
 
 
 class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
+    def setup_title(self):
+        self.panel.wire_title(self.ax.title)
+
     def setup_data(self):
         image = self.panel.setup_and_wire_image(self.ax, self.info)
-        setup_colorbar(self.ax, image, self.info)
+        cbar = setup_colorbar(self.ax, image, self.info)
+        self.panel.wire_cbar_label(cbar, self.info, is_subject=True)
+        self.panel.cbar_labeler.update()
 
 
 class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
@@ -134,7 +139,7 @@ class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
             )
 
             cbar = setup_colorbar(self.ax, scatter, self.info)
-            self.panel.wire_cbar_label(cbar, self.info)
+            self.panel.wire_cbar_label(cbar, self.info, is_subject=False)
             self.panel.cbar_labeler.update()
         else:
             scatter = self.ax.scatter(
@@ -250,7 +255,7 @@ class AxesManagerImageAndLines(AxesManager):
     def setup_title(self):
         for info, line in zip(self.line_infos, self.lines):
             self.panel.wire_legend_label(line, info)
-        self.panel.wire_cbar_label(self.cbar, self.image_info)
+        self.panel.wire_cbar_label(self.cbar, self.image_info, is_subject=True)
         self.panel.wire_title(self.image_ax.title)
         self.panel.title_labeler.update()
 
