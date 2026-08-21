@@ -2,14 +2,15 @@ from dataclasses import dataclass, field
 
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
+from matplotlib.collections import PathCollection
 from matplotlib.colorbar import Colorbar
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 from matplotlib.text import Text
 
-from lib.plotting.data_setter import ImageSetter, LineSetter
+from lib.plotting.data_setter import ImageSetter, LineSetter, ScatterSetter
 from lib.plotting.labeler import Labeler, SubjectAndUnitLabeler, SubjectLabeler, UnitLabeler
-from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfoColor
+from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfoColor, ScatterInfo
 from lib.plotting.renderer2 import Renderer2
 
 
@@ -51,3 +52,8 @@ class Panel:
         setter = LineSetter.setup(ax, info)
         self.data_setters.append(setter)
         return setter.line
+
+    def setup_and_wire_scatter(self, ax: Axes, info: ScatterInfo) -> PathCollection:
+        setter = ScatterSetter.setup(ax, info)
+        self.data_setters.append(setter)
+        return setter.scatter
