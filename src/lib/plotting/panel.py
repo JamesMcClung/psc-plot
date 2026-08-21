@@ -9,7 +9,7 @@ from matplotlib.text import Text
 
 from lib.plotting.data_setter import ImageSetter, LineSetter
 from lib.plotting.labeler import Labeler, SubjectAndUnitLabeler, SubjectLabeler, UnitLabeler
-from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo
+from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfoColor
 from lib.plotting.renderer2 import Renderer2
 
 
@@ -33,7 +33,8 @@ class Panel:
         if self.title_labeler:
             self.title_labeler.add_child(legend_labeler)
 
-    def wire_cbar_label(self, cbar: Colorbar, info: PlotInfo, *, is_subject: bool):
+    def wire_cbar_label(self, cbar: Colorbar, info: PlotInfoColor):
+        is_subject = info.dim_displays[info.color_dim].maybe_with_dollars() == info.subject
         if is_subject:
             self.cbar_labeler = SubjectAndUnitLabeler(cbar.set_label, "color", info)
             if self.title_labeler:
