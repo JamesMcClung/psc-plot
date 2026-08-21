@@ -12,7 +12,7 @@ from matplotlib.lines import Line2D
 from matplotlib.projections import PolarAxes
 
 from lib.plotting import plt_util
-from lib.plotting.data_setter import PolarMeshSetter, ScatterSetter
+from lib.plotting.data_setter import PolarMeshSetter
 from lib.plotting.grid import Grid
 from lib.plotting.labeler import SubjectLabeler, UnitLabeler
 from lib.plotting.panel import Panel
@@ -129,28 +129,13 @@ class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
 
 class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
     def setup_data(self):
+        scatter = self.panel.setup_and_wire_scatter(self.ax, self.info)
         if self.info.color_dim:
-            scatter = self.ax.scatter(
-                self.info.xy_data[:, 0],
-                self.info.xy_data[:, 1],
-                c=self.info.color_data,
-                norm=self.info.dim_scales[self.info.color_dim].to_color_norm(),
-                s=1,
-            )
-
             cbar = setup_colorbar(self.ax, scatter, self.info)
             self.panel.wire_cbar_label(cbar, self.info)
             self.panel.cbar_labeler.update()
-        else:
-            scatter = self.ax.scatter(
-                self.info.xy_data[:, 0],
-                self.info.xy_data[:, 1],
-                color=self.ax._get_lines.get_next_color(),
-                s=0.5,
-            )
-        self.ax.set_aspect(self.info.get_aspect())
 
-        self.panel.data_setters.append(ScatterSetter(scatter, self.info))
+        self.ax.set_aspect(self.info.get_aspect())
 
 
 class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarAxes, PolarMeshInfo]):
