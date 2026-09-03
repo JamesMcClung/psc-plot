@@ -295,7 +295,6 @@ def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, Grid]:
         panel = manager.setup()
         grid.set_panel(loc, panel)
 
-    grid.wire_suptitle()
     grid.update_labels()
 
     return figure, grid

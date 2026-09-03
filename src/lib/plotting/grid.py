@@ -17,7 +17,7 @@ class Grid:
         self.fig = fig
         self.infos: dict[AxesIdx, list[PlotInfo]] = {}
         self.panels: dict[AxesIdx, Panel] = {}
-        self.suptitle_labeler: SubjectLabeler | None = None
+        self.suptitle_labeler = SubjectLabeler(self.fig.suptitle("").set_text)
 
         for info in infos:
             self.infos.setdefault(info.axes_index, []).append(info)
@@ -34,14 +34,18 @@ class Grid:
         return self.fig.add_subplot(self.nrows, self.ncols, _flatten_idx(loc, self.ncols), projection=projection)
 
     def set_panel(self, loc: AxesIdx, panel: Panel):
+        if len(self.panels) == 1:
+            first_panel = list(self.panels.values())[0]  # next() isn't typed for some reason
+            self._wire_suptitle(first_panel)
+
+        if len(self.panels) >= 1:
+            self._wire_suptitle(panel)
+
         self.panels[loc] = panel
 
-    def wire_suptitle(self):
-        if len(self.panels) >= 2:
-            self.suptitle_labeler = SubjectLabeler(self.fig.suptitle("").set_text)
-            for panel in self.panels.values():
-                for subject_labeler in panel.get_subject_labelers(toplevel_only=True):
-                    self.suptitle_labeler.add_child(subject_labeler)
+    def _wire_suptitle(self, panel: Panel):
+        for subject_labeler in panel.get_subject_labelers(toplevel_only=True):
+            self.suptitle_labeler.add_child(subject_labeler)
 
     def update_labels(self):
         for panel in self.panels.values():
