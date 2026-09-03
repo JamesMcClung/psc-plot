@@ -84,7 +84,6 @@ class AxesManagerSingle[A: Axes, PI: PlotInfo](AxesManager):
 
     def setup_title(self):
         self.panel.wire_title(self.ax.title, self.info)
-        self.panel.title_labeler.update()
 
 
 class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[Axes, PI2D]):
@@ -122,7 +121,6 @@ class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
         image = self.panel.setup_and_wire_image(self.ax, self.info)
         cbar = setup_colorbar(self.ax, image, self.info)
         self.panel.wire_cbar_label(cbar, self.info)
-        self.panel.cbar_labeler.update()
 
 
 class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
@@ -131,7 +129,6 @@ class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
         if self.info.color_dim:
             cbar = setup_colorbar(self.ax, scatter, self.info)
             self.panel.wire_cbar_label(cbar, self.info)
-            self.panel.cbar_labeler.update()
 
         self.ax.set_aspect(self.info.get_aspect())
 
@@ -158,7 +155,6 @@ class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarAxes, PolarMeshInfo]):
         mesh = self.panel.setup_and_wire_polar_mesh(self.ax, self.info)
         cbar = setup_colorbar(self.ax, mesh, self.info)
         self.panel.wire_cbar_label(cbar, self.info)
-        self.panel.cbar_labeler.update()
 
 
 @dataclass
@@ -179,9 +175,6 @@ class AxesManagerMultiLine(AxesManager):
         for info, line in zip(self.infos, self.lines):
             self.panel.wire_legend_label(line, info)
         self.panel.wire_title(self.ax.title)
-        self.panel.title_labeler.update()
-
-        self.ax.legend()
 
     def setup_labels(self):
         UnitLabeler(self.ax.set_xlabel, "x", self.infos).update()
@@ -236,9 +229,6 @@ class AxesManagerImageAndLines(AxesManager):
             self.panel.wire_legend_label(line, info)
         self.panel.wire_cbar_label(self.cbar, self.image_info)
         self.panel.wire_title(self.image_ax.title)
-        self.panel.title_labeler.update()
-
-        self.line_ax.legend()
 
     def setup_labels(self):
         UnitLabeler(self.image_ax.set_xlabel, "x", self.infos).update()
@@ -304,6 +294,7 @@ def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, list[Renderer2]]:
                 raise NotImplementedError("don't yet support multiple non-line plots per axes")
 
         panel = manager.setup()
+        panel.update_labels()
         renderers += [panel.title_labeler, *panel.data_setters]
 
     # lift labels to title
