@@ -45,8 +45,17 @@ class Grid:
 
             self.suptitle_labeler.update()
 
-    def update(self):
+    def update_labels(self):
         for panel in self.panels.values():
-            panel.update()
+            panel.update_labels()
+
         if self.suptitle_labeler:
             self.suptitle_labeler.update()
+
+    def update_data(self):
+        for panel in self.panels.values():
+            panel.update_data()
+
+    def update(self):
+        self.update_data()
+        self.update_labels()
