@@ -41,6 +41,27 @@ class Panel(Renderer2):
         if self.cbar_labeler:
             self.cbar_labeler.update()
 
+    def get_labelers(self) -> list[Labeler]:
+        maybe_labelers = [
+            self.title_labeler,
+            self.cbar_labeler,
+            *(legend_labeler for labelers in self.legend_labelers_per_axes.values() for legend_labeler in labelers),
+        ]
+        return [labeler for labeler in maybe_labelers if labeler]
+
+    def get_subject_labelers(self, *, toplevel_only: bool = False) -> list[SubjectLabeler]:
+        subject_labelers: list[SubjectLabeler] = []
+
+        for labeler in self.get_labelers():
+            if isinstance(labeler, SubjectLabeler):
+                subject_labelers.append(labeler)
+            elif isinstance(labeler, SubjectAndUnitLabeler):
+                subject_labelers.append(labeler.subject_labeler)
+
+        if toplevel_only:
+            return [labeler for labeler in subject_labelers if labeler.parent is None]
+        return subject_labelers
+
     def wire_title(self, title: Text, info: PlotInfo | None = None):
         self.title_labeler = SubjectLabeler(title.set_text, info)
         for legend_labelers in self.legend_labelers_per_axes.values():
