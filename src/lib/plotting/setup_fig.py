@@ -293,9 +293,9 @@ def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, Grid]:
                 raise NotImplementedError("don't yet support multiple non-line plots per axes")
 
         panel = manager.setup()
-        panel.update_labels()
         grid.set_panel(loc, panel)
 
     grid.wire_suptitle()
+    grid.update_labels()
 
     return figure, grid
