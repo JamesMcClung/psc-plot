@@ -17,20 +17,25 @@ from lib.plotting.renderer2 import Renderer2
 @dataclass
 class Panel:
     title_labeler: SubjectLabeler | None = field(init=False, default=None)
-    legend_labelers: list[SubjectLabeler] = field(init=False, default_factory=list)
+    legend_labelers_per_axes: dict[Axes, list[SubjectLabeler]] = field(init=False, default_factory=dict)
     cbar_labeler: Labeler | None = field(init=False, default=None)
     data_setters: list[Renderer2] = field(init=False, default_factory=list)
 
     def wire_title(self, title: Text, info: PlotInfo | None = None):
         self.title_labeler = SubjectLabeler(title.set_text, info)
-        for legend_labeler in self.legend_labelers:
-            self.title_labeler.add_child(legend_labeler)
+        for legend_labelers in self.legend_labelers_per_axes.values():
+            for legend_labeler in legend_labelers:
+                self.title_labeler.add_child(legend_labeler)
         if self.cbar_labeler and isinstance(self.cbar_labeler, SubjectAndUnitLabeler):
             self.title_labeler.add_child(self.cbar_labeler.subject_labeler)
 
     def wire_legend_label(self, artist: Artist, info: PlotInfo):
         legend_labeler = SubjectLabeler(artist.set_label, info)
-        self.legend_labelers.append(legend_labeler)
+
+        axes = artist.axes
+        assert axes is not None
+        self.legend_labelers_per_axes.setdefault(axes, []).append(legend_labeler)
+
         if self.title_labeler:
             self.title_labeler.add_child(legend_labeler)
 
