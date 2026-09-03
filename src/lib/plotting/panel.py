@@ -15,15 +15,11 @@ from lib.plotting.renderer2 import Renderer2
 
 
 @dataclass
-class Panel(Renderer2):
+class Panel:
     title_labeler: SubjectLabeler | None = field(init=False, default=None)
     legend_labelers_per_axes: dict[Axes, list[SubjectLabeler]] = field(init=False, default_factory=dict)
     cbar_labeler: Labeler | None = field(init=False, default=None)
     data_setters: list[Renderer2] = field(init=False, default_factory=list)
-
-    def update(self):
-        self.update_data()
-        self.update_labels()
 
     def update_data(self):
         for data_setter in self.data_setters:
