@@ -43,8 +43,6 @@ class Grid:
                 for subject_labeler in panel.get_subject_labelers(toplevel_only=True):
                     self.suptitle_labeler.add_child(subject_labeler)
 
-            self.suptitle_labeler.update()
-
     def update_labels(self):
         for panel in self.panels.values():
             panel.update_labels()
