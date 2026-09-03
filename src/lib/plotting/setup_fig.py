@@ -263,9 +263,8 @@ class AxesManagerImageAndLines(AxesManager):
             self.lines.append(self.panel.setup_and_wire_line(self.line_ax, info))
 
 
-def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, list[Renderer2]]:
+def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, Grid]:
     figure = plt.figure(layout="constrained")
-    renderers: list[Renderer2] = []
 
     grid = Grid(figure, plot_infos)
     for loc, infos in grid.infos.items():
@@ -295,15 +294,8 @@ def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, list[Renderer2]]:
 
         panel = manager.setup()
         panel.update_labels()
-        renderers += [panel.title_labeler, *panel.data_setters]
+        grid.set_panel(loc, panel)
 
-    # lift labels to title
-    if len(grid.infos) > 1:
-        suptitle_labeler = SubjectLabeler(figure.suptitle("").set_text)
-        for renderer in renderers:
-            if isinstance(renderer, SubjectLabeler):
-                suptitle_labeler.add_child(renderer)
-        renderers.append(suptitle_labeler)
-        suptitle_labeler.update()
+    grid.wire_suptitle()
 
-    return figure, renderers
+    return figure, grid
