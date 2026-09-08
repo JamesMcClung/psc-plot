@@ -263,36 +263,40 @@ class AxesManagerImageAndLines(AxesManager):
             self.lines.append(self.panel.setup_and_wire_line(self.line_ax, info))
 
 
+def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
+    manager: AxesManager
+    if len(infos) == 1:
+        info = infos[0]
+        if isinstance(info, LineInfo):
+            manager = AxesManagerSingleLine(ax, info)
+        elif isinstance(info, ImageInfo):
+            manager = AxesManagerSingleImage(ax, info)
+        elif isinstance(info, ScatterInfo):
+            manager = AxesManagerSingleScatter(ax, info)
+        elif isinstance(info, PolarMeshInfo):
+            manager = AxesManagerSinglePolarMesh(ax, info)
+        else:
+            raise TypeError(f"unknown type: {infos.__class__!r}")
+    else:
+        image_infos = [info for info in infos if isinstance(info, ImageInfo)]
+        line_infos = [info for info in infos if isinstance(info, LineInfo)]
+        if not image_infos:
+            manager = AxesManagerMultiLine(ax, line_infos)
+        elif len(image_infos) == 1:
+            manager = AxesManagerImageAndLines(ax, image_infos[0], line_infos)
+        else:
+            raise NotImplementedError("don't yet support multiple non-line plots per axes")
+
+    return manager.setup()
+
+
 def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, Grid]:
     figure = plt.figure(layout="constrained")
 
     grid = Grid(figure, plot_infos)
     for loc, infos in grid.infos.items():
         ax = grid.setup_ax(loc)
-        manager: AxesManager
-        if len(infos) == 1:
-            info = infos[0]
-            if isinstance(info, LineInfo):
-                manager = AxesManagerSingleLine(ax, info)
-            elif isinstance(info, ImageInfo):
-                manager = AxesManagerSingleImage(ax, info)
-            elif isinstance(info, ScatterInfo):
-                manager = AxesManagerSingleScatter(ax, info)
-            elif isinstance(info, PolarMeshInfo):
-                manager = AxesManagerSinglePolarMesh(ax, info)
-            else:
-                raise TypeError(f"unknown type: {infos.__class__!r}")
-        else:
-            image_infos = [info for info in infos if isinstance(info, ImageInfo)]
-            line_infos = [info for info in infos if isinstance(info, LineInfo)]
-            if not image_infos:
-                manager = AxesManagerMultiLine(ax, line_infos)
-            elif len(image_infos) == 1:
-                manager = AxesManagerImageAndLines(ax, image_infos[0], line_infos)
-            else:
-                raise NotImplementedError("don't yet support multiple non-line plots per axes")
-
-        panel = manager.setup()
+        panel = setup_panel(ax, infos)
         grid.set_panel(loc, panel)
 
     grid.update_labels()
