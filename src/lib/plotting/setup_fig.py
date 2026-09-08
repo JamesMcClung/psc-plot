@@ -114,9 +114,6 @@ class AxesManagerSingleLine(AxesManagerSingle2D[LineInfo]):
 
 
 class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
-    def setup_title(self):
-        self.panel.wire_title(self.ax.title)
-
     def setup_data(self):
         image = self.panel.setup_and_wire_image(self.ax, self.info)
         cbar = setup_colorbar(self.ax, image, self.info)
