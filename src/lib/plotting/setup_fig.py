@@ -264,30 +264,30 @@ class AxesManagerImageAndLines(AxesManager):
 
 
 def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
-    manager: AxesManager
+    panel: Panel
     if len(infos) == 1:
         info = infos[0]
         if isinstance(info, LineInfo):
-            manager = AxesManagerSingleLine(ax, info)
+            panel = AxesManagerSingleLine(ax, info).setup()
         elif isinstance(info, ImageInfo):
-            manager = AxesManagerSingleImage(ax, info)
+            panel = AxesManagerSingleImage(ax, info).setup()
         elif isinstance(info, ScatterInfo):
-            manager = AxesManagerSingleScatter(ax, info)
+            panel = AxesManagerSingleScatter(ax, info).setup()
         elif isinstance(info, PolarMeshInfo):
-            manager = AxesManagerSinglePolarMesh(ax, info)
+            panel = AxesManagerSinglePolarMesh(ax, info).setup()
         else:
             raise TypeError(f"unknown type: {infos.__class__!r}")
     else:
         image_infos = [info for info in infos if isinstance(info, ImageInfo)]
         line_infos = [info for info in infos if isinstance(info, LineInfo)]
         if not image_infos:
-            manager = AxesManagerMultiLine(ax, line_infos)
+            panel = AxesManagerMultiLine(ax, line_infos).setup()
         elif len(image_infos) == 1:
-            manager = AxesManagerImageAndLines(ax, image_infos[0], line_infos)
+            panel = AxesManagerImageAndLines(ax, image_infos[0], line_infos).setup()
         else:
             raise NotImplementedError("don't yet support multiple non-line plots per axes")
 
-    return manager.setup()
+    return panel
 
 
 def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, Grid]:
