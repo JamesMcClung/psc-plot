@@ -77,81 +77,64 @@ class AxesManager(ABC):
     def setup_data(self): ...
 
 
-@dataclass
-class AxesManagerSingle[A: Axes, PI: PlotInfo](AxesManager):
-    ax: A
-    info: PI
-
-    def setup_title(self):
-        self.panel.wire_title(self.ax.title, self.info)
+def setup_title(panel: Panel, ax: Axes, info: PlotInfo):
+    panel.wire_title(ax.title, info)
 
 
-class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[Axes, PI2D]):
-    def setup(self):
-        self.setup_title()
-        self.setup_labels()
-        self.setup_data()
-        self.setup_scales()
-        self.setup_bounds()
-        return self.panel
-
-    def setup_labels(self):
-        UnitLabeler(self.ax.set_xlabel, "x", [self.info]).update()
-        UnitLabeler(self.ax.set_ylabel, "y", [self.info]).update()
-
-    def setup_scales(self):
-        self.ax.set_xscale(self.info.dim_scales[self.info.x_dim].to_axis_scale())
-        self.ax.set_yscale(self.info.dim_scales[self.info.y_dim].to_axis_scale())
-
-    def setup_bounds(self):
-        self.ax.set_xlim(*self.info.dim_bounds[self.info.x_dim])
-        self.ax.set_ylim(*self.info.dim_bounds[self.info.y_dim])
-
-
-class AxesManagerSingleLine(AxesManagerSingle2D[LineInfo]):
-    def setup_data(self):
-        self.panel.setup_and_wire_line(self.ax, self.info)
-
-
-class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
-    def setup_data(self):
-        image = self.panel.setup_and_wire_image(self.ax, self.info)
-        cbar = setup_colorbar(self.ax, image, self.info)
-        self.panel.wire_cbar_label(cbar, self.info)
-
-
-class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
-    def setup_data(self):
-        scatter = self.panel.setup_and_wire_scatter(self.ax, self.info)
-        if self.info.color_dim:
-            cbar = setup_colorbar(self.ax, scatter, self.info)
-            self.panel.wire_cbar_label(cbar, self.info)
-
-        self.ax.set_aspect(self.info.get_aspect())
-
-
-class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarAxes, PolarMeshInfo]):
-    def setup(self):
-        self.setup_title()
-        self.setup_labels()
-        self.setup_scales()
-        self.setup_data()
-        return self.panel
-
-    def setup_labels(self):
-        # FIXME make the labels work
+def setup_labels(ax: Axes, info: PlotInfo):
+    if isinstance(info, PlotInfo2D):
+        UnitLabeler(ax.set_xlabel, "x", [info]).update()
+        UnitLabeler(ax.set_ylabel, "y", [info]).update()
+    elif isinstance(info, PolarMeshInfo):
         pass
+    else:
+        assert False
 
-    def setup_bounds(self):
+
+def setup_scales(ax: Axes, info: PlotInfo):
+    if isinstance(info, PlotInfo2D):
+        ax.set_xscale(info.dim_scales[info.x_dim].to_axis_scale())
+        ax.set_yscale(info.dim_scales[info.y_dim].to_axis_scale())
+    elif isinstance(info, PolarMeshInfo):
+        assert isinstance(ax, PolarAxes)
+        ax.set_rscale(info.dim_scales[info.r_dim].to_axis_scale())
+    else:
+        assert False
+
+
+def setup_bounds(ax: Axes, info: PlotInfo):
+    if isinstance(info, PlotInfo2D):
+        ax.set_xlim(*info.dim_bounds[info.x_dim])
+        ax.set_ylim(*info.dim_bounds[info.y_dim])
+    elif isinstance(info, PolarMeshInfo):
         pass
+    else:
+        assert False
 
-    def setup_scales(self):
-        self.ax.set_rscale(self.info.dim_scales[self.info.r_dim].to_axis_scale())
 
-    def setup_data(self):
-        mesh = self.panel.setup_and_wire_polar_mesh(self.ax, self.info)
-        cbar = setup_colorbar(self.ax, mesh, self.info)
-        self.panel.wire_cbar_label(cbar, self.info)
+def setup_lone_line(panel: Panel, ax: Axes, info: LineInfo):
+    panel.setup_and_wire_line(ax, info)
+
+
+def setup_lone_image(panel: Panel, ax: Axes, info: ImageInfo):
+    image = panel.setup_and_wire_image(ax, info)
+    cbar = setup_colorbar(ax, image, info)
+    panel.wire_cbar_label(cbar, info)
+
+
+def setup_lone_scatter(panel: Panel, ax: Axes, info: ScatterInfo):
+    scatter = panel.setup_and_wire_scatter(ax, info)
+    if info.color_dim:
+        cbar = setup_colorbar(ax, scatter, info)
+        panel.wire_cbar_label(cbar, info)
+
+    ax.set_aspect(info.get_aspect())
+
+
+def setup_lone_polar_mesh(panel: Panel, ax: PolarAxes, info: PolarMeshInfo):
+    mesh = panel.setup_and_wire_polar_mesh(ax, info)
+    cbar = setup_colorbar(ax, mesh, info)
+    panel.wire_cbar_label(cbar, info)
 
 
 @dataclass
@@ -264,14 +247,21 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
     panel: Panel
     if len(infos) == 1:
         info = infos[0]
+        panel = Panel()
+
+        setup_title(panel, ax, info)
+        setup_labels(ax, info)
+        setup_scales(ax, info)
+        setup_bounds(ax, info)
+
         if isinstance(info, LineInfo):
-            panel = AxesManagerSingleLine(ax, info).setup()
+            setup_lone_line(panel, ax, info)
         elif isinstance(info, ImageInfo):
-            panel = AxesManagerSingleImage(ax, info).setup()
+            setup_lone_image(panel, ax, info)
         elif isinstance(info, ScatterInfo):
-            panel = AxesManagerSingleScatter(ax, info).setup()
+            setup_lone_scatter(panel, ax, info)
         elif isinstance(info, PolarMeshInfo):
-            panel = AxesManagerSinglePolarMesh(ax, info).setup()
+            setup_lone_polar_mesh(panel, ax, info)
         else:
             raise TypeError(f"unknown type: {infos.__class__!r}")
     else:
