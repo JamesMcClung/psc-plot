@@ -26,16 +26,11 @@ class Panel:
             data_setter.update()
 
     def update_labels(self):
-        if self.title_labeler:
-            self.title_labeler.update()
+        for labeler in self.get_labelers():
+            labeler.update()
 
-        for axes, labelers in self.legend_labelers_per_axes.items():
-            for labeler in labelers:
-                labeler.update()
-            axes.legend()
-
-        if self.cbar_labeler:
-            self.cbar_labeler.update()
+        for axes in self.legend_labelers_per_axes:
+            axes.legend()  # required for label redraw
 
     def get_labelers(self) -> list[Labeler]:
         maybe_labelers = [
