@@ -76,10 +76,6 @@ class AxesManager(ABC):
     def setup_data(self): ...
 
 
-def setup_title(panel: Panel, ax: Axes, info: PlotInfo):
-    panel.wire_title(ax.title, info)
-
-
 def setup_labels(ax: Axes, infos: list[PlotInfo]):
     if all(isinstance(info, PlotInfo2D) for info in infos):
         UnitLabeler(ax.set_xlabel, "x", infos).update()
@@ -228,7 +224,7 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
         info = infos[0]
         panel = Panel()
 
-        setup_title(panel, ax, info)
+        panel.wire_title(ax.title, info)
         setup_labels(ax, infos)
         setup_scales(ax, infos)
         setup_bounds(ax, infos)
