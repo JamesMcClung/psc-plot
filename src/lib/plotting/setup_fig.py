@@ -12,10 +12,9 @@ from matplotlib.projections import PolarAxes
 
 from lib.plotting import plt_util
 from lib.plotting.grid import Grid
-from lib.plotting.labeler import SubjectLabeler, UnitLabeler
+from lib.plotting.labeler import UnitLabeler
 from lib.plotting.panel import Panel
 from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor, PolarMeshInfo, ScatterInfo
-from lib.plotting.renderer2 import Renderer2
 
 
 def _one_or_none[T](objs: Iterable[T]) -> T | None:
@@ -81,32 +80,57 @@ def setup_title(panel: Panel, ax: Axes, info: PlotInfo):
     panel.wire_title(ax.title, info)
 
 
-def setup_labels(ax: Axes, info: PlotInfo):
-    if isinstance(info, PlotInfo2D):
-        UnitLabeler(ax.set_xlabel, "x", [info]).update()
-        UnitLabeler(ax.set_ylabel, "y", [info]).update()
-    elif isinstance(info, PolarMeshInfo):
+def setup_labels(ax: Axes, infos: list[PlotInfo]):
+    if all(isinstance(info, PlotInfo2D) for info in infos):
+        UnitLabeler(ax.set_xlabel, "x", infos).update()
+        UnitLabeler(ax.set_ylabel, "y", infos, require_display_match=False).update()
+    elif all(isinstance(info, PolarMeshInfo) for info in infos):
         pass
     else:
         assert False
 
 
-def setup_scales(ax: Axes, info: PlotInfo):
-    if isinstance(info, PlotInfo2D):
-        ax.set_xscale(info.dim_scales[info.x_dim].to_axis_scale())
-        ax.set_yscale(info.dim_scales[info.y_dim].to_axis_scale())
-    elif isinstance(info, PolarMeshInfo):
+def setup_scales_xy(ax: Axes, infos: list[PlotInfo2D]):
+    x_scales = [info.dim_scales[info.x_dim] for info in infos]
+    if (x_scale := _one_or_none(x_scales)) is not None:
+        ax.set_xscale(x_scale.to_axis_scale())
+    else:
+        raise NotImplementedError(f"x scales must all be the same, but found {x_scales}")
+
+    y_scales = [info.dim_scales[info.y_dim] for info in infos]
+    if (y_scale := _one_or_none(y_scales)) is not None:
+        ax.set_yscale(y_scale.to_axis_scale())
+    else:
+        raise NotImplementedError(f"y scales must all be the same, but found {y_scales}")
+
+
+def setup_scales_rtheta(ax: PolarAxes, infos: list[PolarMeshInfo]):
+    r_scales = [info.dim_scales[info.r_dim] for info in infos]
+    if (r_scale := _one_or_none(r_scales)) is not None:
+        ax.set_rscale(r_scale.to_axis_scale())
+    else:
+        raise NotImplementedError(f"r scales must all be the same, but found {r_scales}")
+
+
+def setup_scales(ax: Axes, infos: list[PlotInfo]):
+    if all(isinstance(info, PlotInfo2D) for info in infos):
+        return setup_scales_xy(ax, infos)
+    elif all(isinstance(info, PolarMeshInfo) for info in infos):
         assert isinstance(ax, PolarAxes)
-        ax.set_rscale(info.dim_scales[info.r_dim].to_axis_scale())
+        return setup_scales_rtheta(ax, infos)
     else:
         assert False
 
 
-def setup_bounds(ax: Axes, info: PlotInfo):
-    if isinstance(info, PlotInfo2D):
-        ax.set_xlim(*info.dim_bounds[info.x_dim])
-        ax.set_ylim(*info.dim_bounds[info.y_dim])
-    elif isinstance(info, PolarMeshInfo):
+def setup_bounds_xy(ax: Axes, infos: list[PlotInfo2D]):
+    ax.set_xlim(*find_widest_bounds(info.dim_bounds[info.x_dim] for info in infos))
+    ax.set_ylim(*find_widest_bounds(info.dim_bounds[info.y_dim] for info in infos))
+
+
+def setup_bounds(ax: Axes, infos: list[PlotInfo]):
+    if all(isinstance(info, PlotInfo2D) for info in infos):
+        setup_bounds_xy(ax, infos)
+    elif all(isinstance(info, PolarMeshInfo) for info in infos):
         pass
     else:
         assert False
@@ -135,51 +159,6 @@ def setup_lone_polar_mesh(panel: Panel, ax: PolarAxes, info: PolarMeshInfo):
     mesh = panel.setup_and_wire_polar_mesh(ax, info)
     cbar = setup_colorbar(ax, mesh, info)
     panel.wire_cbar_label(cbar, info)
-
-
-@dataclass
-class AxesManagerMultiLine(AxesManager):
-    ax: Axes
-    infos: list[LineInfo]
-    lines: list[Line2D] = field(init=False, default_factory=list)
-
-    def setup(self):
-        self.setup_labels()
-        self.setup_data()
-        self.setup_title()  # after data, to make sure lines is populated
-        self.setup_scales()
-        self.setup_bounds()
-        return self.panel
-
-    def setup_title(self):
-        for info, line in zip(self.infos, self.lines):
-            self.panel.wire_legend_label(line, info)
-        self.panel.wire_title(self.ax.title)
-
-    def setup_labels(self):
-        UnitLabeler(self.ax.set_xlabel, "x", self.infos).update()
-        UnitLabeler(self.ax.set_ylabel, "y", self.infos, require_display_match=False).update()
-
-    def setup_scales(self):
-        x_scales = [info.dim_scales[info.x_dim] for info in self.infos]
-        if (x_scale := _one_or_none(x_scales)) is not None:
-            self.ax.set_xscale(x_scale.to_axis_scale())
-        else:
-            raise NotImplementedError(f"x scales must all be the same, but found {x_scales}")
-
-        y_scales = [info.dim_scales[info.y_dim] for info in self.infos]
-        if (y_scale := _one_or_none(y_scales)) is not None:
-            self.ax.set_yscale(y_scale.to_axis_scale())
-        else:
-            raise NotImplementedError(f"y scales must all be the same, but found {y_scales}")
-
-    def setup_bounds(self):
-        self.ax.set_xbound(*find_widest_bounds(info.dim_bounds[info.x_dim] for info in self.infos))
-        self.ax.set_ybound(*find_widest_bounds(info.dim_bounds[info.y_dim] for info in self.infos))
-
-    def setup_data(self):
-        for info in self.infos:
-            self.lines.append(self.panel.setup_and_wire_line(self.ax, info))
 
 
 @dataclass
@@ -250,9 +229,9 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
         panel = Panel()
 
         setup_title(panel, ax, info)
-        setup_labels(ax, info)
-        setup_scales(ax, info)
-        setup_bounds(ax, info)
+        setup_labels(ax, infos)
+        setup_scales(ax, infos)
+        setup_bounds(ax, infos)
 
         if isinstance(info, LineInfo):
             setup_lone_line(panel, ax, info)
@@ -267,8 +246,20 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
     else:
         image_infos = [info for info in infos if isinstance(info, ImageInfo)]
         line_infos = [info for info in infos if isinstance(info, LineInfo)]
+
         if not image_infos:
-            panel = AxesManagerMultiLine(ax, line_infos).setup()
+            panel = Panel()
+
+            setup_labels(ax, line_infos)
+
+            for info in line_infos:
+                line = panel.setup_and_wire_line(ax, info)
+                panel.wire_legend_label(line, info)
+
+            panel.wire_title(ax.title)
+
+            setup_scales(ax, line_infos)
+            setup_bounds(ax, infos)
         elif len(image_infos) == 1:
             panel = AxesManagerImageAndLines(ax, image_infos[0], line_infos).setup()
         else:
