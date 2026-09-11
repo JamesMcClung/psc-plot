@@ -11,7 +11,6 @@ from matplotlib.text import Text
 from lib.plotting.data_setter import DataSetter, ImageSetter, LineSetter, PolarMeshSetter, ScatterSetter
 from lib.plotting.labeler import Labeler, SubjectAndUnitLabeler, SubjectLabeler, UnitLabeler
 from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfoColor, PolarMeshInfo, ScatterInfo
-from lib.plotting.renderer2 import Renderer2
 
 
 @dataclass
@@ -19,7 +18,7 @@ class Panel:
     title_labeler: SubjectLabeler | None = field(init=False, default=None)
     legend_labelers_per_axes: dict[Axes, list[SubjectLabeler]] = field(init=False, default_factory=dict)
     cbar_labeler: Labeler | None = field(init=False, default=None)
-    data_setters: list[Renderer2] = field(init=False, default_factory=list)
+    data_setters: list[DataSetter] = field(init=False, default_factory=list)
 
     def update_data(self):
         for data_setter in self.data_setters:
