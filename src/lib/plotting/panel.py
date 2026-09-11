@@ -83,19 +83,19 @@ class Panel:
     def setup_and_wire_image(self, ax: Axes, info: ImageInfo) -> AxesImage:
         setter = ImageSetter.setup(ax, info)
         self.data_setters.append(setter)
-        return setter.image
+        return setter.artist
 
     def setup_and_wire_line(self, ax: Axes, info: LineInfo) -> Line2D:
         setter = LineSetter.setup(ax, info)
         self.data_setters.append(setter)
-        return setter.line
+        return setter.artist
 
     def setup_and_wire_scatter(self, ax: Axes, info: ScatterInfo) -> PathCollection:
         setter = ScatterSetter.setup(ax, info)
         self.data_setters.append(setter)
-        return setter.scatter
+        return setter.artist
 
     def setup_and_wire_polar_mesh(self, ax: Axes, info: PolarMeshInfo) -> QuadMesh:
         setter = PolarMeshSetter.setup(ax, info)
         self.data_setters.append(setter)
-        return setter.mesh
+        return setter.artist

@@ -1,27 +1,36 @@
 from __future__ import annotations
 
+from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Self
 
 import numpy as np
+from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.collections import PathCollection, QuadMesh
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 
-from lib.plotting.plot_info import ImageInfo, LineInfo, PolarMeshInfo, ScatterInfo
+from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PolarMeshInfo, ScatterInfo
 from lib.plotting.renderer2 import Renderer2
 
 
 @dataclass
-class LineSetter(Renderer2):
-    line: Line2D
-    info: LineInfo
+class DataSetter[A: Artist = Artist, I: PlotInfo = PlotInfo](Renderer2):
+    artist: A
+    info: I
 
+    @classmethod
+    @abstractmethod
+    def setup(cls, ax: Axes, info: I) -> Self: ...
+
+
+@dataclass
+class LineSetter(DataSetter[Line2D, LineInfo]):
     def update(self):
-        self.line.set_xdata(self.info.x_data)
-        self.line.set_ydata(self.info.y_data)
-        self.line.set_linestyle(self.info.line_style)
+        self.artist.set_xdata(self.info.x_data)
+        self.artist.set_ydata(self.info.y_data)
+        self.artist.set_linestyle(self.info.line_style)
 
     @classmethod
     def setup(cls, ax: Axes, info: LineInfo) -> Self:
@@ -30,12 +39,9 @@ class LineSetter(Renderer2):
 
 
 @dataclass
-class ImageSetter(Renderer2):
-    image: AxesImage
-    info: ImageInfo
-
+class ImageSetter(DataSetter[AxesImage, ImageInfo]):
     def update(self):
-        self.image.set_data(self.info.data)
+        self.artist.set_data(self.info.data)
 
     @classmethod
     def setup(cls, ax: Axes, info: ImageInfo) -> Self:
@@ -51,13 +57,10 @@ class ImageSetter(Renderer2):
 
 
 @dataclass
-class ScatterSetter(Renderer2):
-    scatter: PathCollection
-    info: ScatterInfo
-
+class ScatterSetter(DataSetter[PathCollection, ScatterInfo]):
     def update(self):
-        self.scatter.set_array(self.info.color_data)
-        self.scatter.set_offsets(self.info.xy_data)
+        self.artist.set_array(self.info.color_data)
+        self.artist.set_offsets(self.info.xy_data)
 
     @classmethod
     def setup(cls, ax: Axes, info: ScatterInfo) -> Self:
@@ -80,12 +83,9 @@ class ScatterSetter(Renderer2):
 
 
 @dataclass
-class PolarMeshSetter(Renderer2):
-    mesh: QuadMesh
-    info: PolarMeshInfo
-
+class PolarMeshSetter(DataSetter[QuadMesh, PolarMeshInfo]):
     def update(self):
-        self.mesh.set_array(self.info.data)
+        self.artist.set_array(self.info.data)
 
     @classmethod
     def setup(cls, ax: Axes, info: PolarMeshInfo) -> Self:
