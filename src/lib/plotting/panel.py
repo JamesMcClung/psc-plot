@@ -8,7 +8,7 @@ from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 from matplotlib.text import Text
 
-from lib.plotting.data_setter import ImageSetter, LineSetter, PolarMeshSetter, ScatterSetter
+from lib.plotting.data_setter import DataSetter, ImageSetter, LineSetter, PolarMeshSetter, ScatterSetter
 from lib.plotting.labeler import Labeler, SubjectAndUnitLabeler, SubjectLabeler, UnitLabeler
 from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfoColor, PolarMeshInfo, ScatterInfo
 from lib.plotting.renderer2 import Renderer2
@@ -79,6 +79,11 @@ class Panel:
                 self.title_labeler.add_child(self.cbar_labeler.subject_labeler)
         else:
             self.cbar_labeler = UnitLabeler(cbar.set_label, "color", [info])
+
+    def setup_and_wire[A, I](self, ax: Axes, info: I, setter_type: type[DataSetter[A, I]]) -> A:
+        setter = setter_type.setup(ax, info)
+        self.data_setters.append(setter)
+        return setter.artist
 
     def setup_and_wire_image(self, ax: Axes, info: ImageInfo) -> AxesImage:
         setter = ImageSetter.setup(ax, info)
