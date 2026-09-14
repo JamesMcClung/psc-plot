@@ -11,6 +11,7 @@ from matplotlib.lines import Line2D
 from matplotlib.projections import PolarAxes
 
 from lib.plotting import plt_util
+from lib.plotting.data_setter import DataSetter
 from lib.plotting.grid import Grid
 from lib.plotting.labeler import UnitLabeler
 from lib.plotting.panel import Panel
@@ -132,29 +133,37 @@ def setup_bounds(ax: Axes, infos: list[PlotInfo]):
         assert False
 
 
-def setup_lone_line(panel: Panel, ax: Axes, info: LineInfo):
-    panel.setup_and_wire_line(ax, info)
+def setup_line(panel: Panel, ax: Axes, info: LineInfo):
+    setter = DataSetter.dispatch_init(ax, info)
+    panel.wire_data_setter(setter)
+    return setter
 
 
-def setup_lone_image(panel: Panel, ax: Axes, info: ImageInfo):
-    image = panel.setup_and_wire_image(ax, info)
-    cbar = setup_colorbar(ax, image, info)
+def setup_image(panel: Panel, ax: Axes, info: ImageInfo):
+    setter = DataSetter.dispatch_init(ax, info)
+    panel.wire_data_setter(setter)
+    cbar = setup_colorbar(ax, setter.artist, info)
     panel.wire_cbar_label(cbar, info)
+    return setter
 
 
-def setup_lone_scatter(panel: Panel, ax: Axes, info: ScatterInfo):
-    scatter = panel.setup_and_wire_scatter(ax, info)
+def setup_scatter(panel: Panel, ax: Axes, info: ScatterInfo):
+    setter = DataSetter.dispatch_init(ax, info)
+    panel.wire_data_setter(setter)
     if info.color_dim:
-        cbar = setup_colorbar(ax, scatter, info)
+        cbar = setup_colorbar(ax, setter.artist, info)
         panel.wire_cbar_label(cbar, info)
 
     ax.set_aspect(info.get_aspect())
+    return setter
 
 
-def setup_lone_polar_mesh(panel: Panel, ax: PolarAxes, info: PolarMeshInfo):
-    mesh = panel.setup_and_wire_polar_mesh(ax, info)
-    cbar = setup_colorbar(ax, mesh, info)
+def setup_polar_mesh(panel: Panel, ax: PolarAxes, info: PolarMeshInfo):
+    setter = DataSetter.dispatch_init(ax, info)
+    panel.wire_data_setter(setter)
+    cbar = setup_colorbar(ax, setter.artist, info)
     panel.wire_cbar_label(cbar, info)
+    return setter
 
 
 @dataclass
@@ -182,7 +191,6 @@ class AxesManagerImageAndLines(AxesManager):
     def setup_title(self):
         for info, line in zip(self.line_infos, self.lines):
             self.panel.wire_legend_label(line, info)
-        self.panel.wire_cbar_label(self.cbar, self.image_info)
         self.panel.wire_title(self.image_ax.title)
 
     def setup_labels(self):
@@ -211,11 +219,10 @@ class AxesManagerImageAndLines(AxesManager):
         self.line_ax.set_ylim(*find_widest_bounds(info.dim_bounds[info.y_dim] for info in self.line_infos))
 
     def setup_data(self):
-        image = self.panel.setup_and_wire_image(self.image_ax, self.image_info)
-        self.cbar = setup_colorbar(self.image_ax, image, self.image_info)
+        setup_image(self.panel, self.image_ax, self.image_info)
 
         for info in self.line_infos:
-            self.lines.append(self.panel.setup_and_wire_line(self.line_ax, info))
+            self.lines.append(setup_line(self.panel, self.line_ax, info).artist)
 
 
 def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
@@ -230,13 +237,13 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
         setup_bounds(ax, infos)
 
         if isinstance(info, LineInfo):
-            setup_lone_line(panel, ax, info)
+            setup_line(panel, ax, info)
         elif isinstance(info, ImageInfo):
-            setup_lone_image(panel, ax, info)
+            setup_image(panel, ax, info)
         elif isinstance(info, ScatterInfo):
-            setup_lone_scatter(panel, ax, info)
+            setup_scatter(panel, ax, info)
         elif isinstance(info, PolarMeshInfo):
-            setup_lone_polar_mesh(panel, ax, info)
+            setup_polar_mesh(panel, ax, info)
         else:
             raise TypeError(f"unknown type: {infos.__class__!r}")
     else:
@@ -249,7 +256,7 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
             setup_labels(ax, line_infos)
 
             for info in line_infos:
-                line = panel.setup_and_wire_line(ax, info)
+                line = setup_line(panel, ax, info).artist
                 panel.wire_legend_label(line, info)
 
             panel.wire_title(ax.title)
