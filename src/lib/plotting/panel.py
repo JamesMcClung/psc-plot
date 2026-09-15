@@ -6,6 +6,7 @@ from matplotlib.colorbar import Colorbar
 from matplotlib.text import Text
 
 from lib.plotting.axis_id import AxisId
+from lib.plotting.bounds_setter import BoundsSetter
 from lib.plotting.data_setter import DataSetter
 from lib.plotting.labeler import Labeler, SubjectAndUnitLabeler, SubjectLabeler, UnitLabeler
 from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor
@@ -18,10 +19,15 @@ class Panel:
     cbar_labeler: Labeler | None = field(init=False, default=None)
     data_setters: list[DataSetter] = field(init=False, default_factory=list)
     units_per_axis_per_axes: dict[Axes, dict[AxisId, UnitLabeler]] = field(init=False, default_factory=dict)
+    bounds_setters: list[BoundsSetter] = field(init=False, default_factory=list)
 
     def update_data(self):
         for data_setter in self.data_setters:
             data_setter.update()
+
+    def update_bounds(self):
+        for bounds_setter in self.bounds_setters:
+            bounds_setter.update()
 
     def update_labels(self):
         for labeler in self.get_labelers():
@@ -85,6 +91,9 @@ class Panel:
 
     def wire_data_setter(self, data_setter: DataSetter):
         self.data_setters.append(data_setter)
+
+    def wire_bounds_setter(self, bounds_setter: BoundsSetter):
+        self.bounds_setters.append(bounds_setter)
 
     def wire_units(self, ax: Axes, axis_id: AxisId, infos: list[PlotInfo2D], *, require_display_match: bool = True):
         units_per_axis = self.units_per_axis_per_axes.setdefault(ax, {})
