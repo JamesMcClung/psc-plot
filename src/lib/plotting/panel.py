@@ -1,16 +1,14 @@
 from dataclasses import dataclass, field
-from typing import Literal
 
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.colorbar import Colorbar
 from matplotlib.text import Text
 
+from lib.plotting.axis_id import AxisId
 from lib.plotting.data_setter import DataSetter
 from lib.plotting.labeler import Labeler, SubjectAndUnitLabeler, SubjectLabeler, UnitLabeler
 from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor
-
-type AxisId = Literal["x", "y"]
 
 
 @dataclass
