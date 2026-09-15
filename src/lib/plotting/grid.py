@@ -58,6 +58,11 @@ class Grid:
         for panel in self.panels.values():
             panel.update_data()
 
+    def update_bounds(self):
+        for panel in self.panels.values():
+            panel.update_bounds()
+
     def update(self):
         self.update_data()
+        self.update_bounds()
         self.update_labels()
