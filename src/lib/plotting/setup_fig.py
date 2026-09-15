@@ -145,19 +145,9 @@ class AxesManagerImageAndLines(AxesManager):
         self.panel.wire_units(self.line_ax, "y", self.line_infos, require_display_match=False)
 
     def setup_scales(self):
-        x_scales = [info.dim_scales[info.x_dim] for info in self.infos]
-        if (x_scale := _one_or_none(x_scales)) is not None:
-            self.image_ax.set_xscale(x_scale.to_axis_scale())
-        else:
-            raise NotImplementedError(f"x scales must all be the same, but found {x_scales}")
-
-        self.image_ax.set_yscale(self.image_info.dim_scales[self.image_info.y_dim].to_axis_scale())
-
-        y_scales = [info.dim_scales[info.y_dim] for info in self.line_infos]
-        if (y_scale := _one_or_none(y_scales)) is not None:
-            self.line_ax.set_yscale(y_scale.to_axis_scale())
-        else:
-            raise NotImplementedError(f"y scales must all be the same, but found {y_scales}")
+        set_scales_xy(self.image_ax, "x", self.infos)
+        set_scales_xy(self.image_ax, "y", [self.image_info])
+        set_scales_xy(self.line_ax, "y", self.line_infos)
 
     def setup_bounds(self):
         self.panel.wire_bounds_setter_xy(self.image_ax, "x", self.infos)
