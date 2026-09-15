@@ -116,12 +116,11 @@ def setup_polar_mesh(panel: Panel, ax: PolarAxes, info: PolarMeshInfo):
 
 
 def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
-    panel: Panel
+    panel = Panel()
+    panel.wire_title(ax.title)
+
     if len(infos) == 1:
         info = infos[0]
-        panel = Panel()
-
-        panel.wire_title(ax.title)
 
         if isinstance(info, PlotInfo2D):
             panel.wire_units(ax, "x", infos)
@@ -149,45 +148,26 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
         image_infos = [info for info in infos if isinstance(info, ImageInfo)]
         line_infos = [info for info in infos if isinstance(info, LineInfo)]
 
-        if not image_infos:
-            panel = Panel()
+        line_ax = ax.twinx() if image_infos else ax
 
-            panel.wire_units(ax, "x", infos)
-            panel.wire_units(ax, "y", infos, require_display_match=False)
+        set_scales_xy(ax, "x", infos)
+        panel.wire_bounds_setter_xy(ax, "x", infos)
+        panel.wire_units(ax, "x", infos)
 
-            for info in line_infos:
-                setup_line(panel, ax, info)
+        set_scales_xy(line_ax, "y", line_infos)
+        panel.wire_bounds_setter_xy(line_ax, "y", line_infos)
+        panel.wire_units(line_ax, "y", line_infos, require_display_match=False)
 
-            panel.wire_title(ax.title)
+        for info in line_infos:
+            setup_line(panel, line_ax, info)
 
-            set_scales_xy(ax, "x", infos)
-            set_scales_xy(ax, "y", infos)
-
-            panel.wire_bounds_setter_xy(ax, "x", infos)
-            panel.wire_bounds_setter_xy(ax, "y", infos)
-        elif len(image_infos) == 1:
-            panel = Panel()
-
-            line_ax = ax.twinx()
-
-            panel.wire_units(ax, "x", infos)
+        if len(image_infos) == 1:
+            set_scales_xy(ax, "y", image_infos)
+            panel.wire_bounds_setter_xy(ax, "y", image_infos)
             panel.wire_units(ax, "y", image_infos)
-            panel.wire_units(line_ax, "y", line_infos, require_display_match=False)
 
             setup_image(panel, ax, image_infos[0])
-            for info in line_infos:
-                setup_line(panel, line_ax, info)
-
-            panel.wire_title(ax.title)
-
-            set_scales_xy(ax, "x", infos)
-            set_scales_xy(ax, "y", image_infos)
-            set_scales_xy(line_ax, "y", line_infos)
-
-            panel.wire_bounds_setter_xy(ax, "x", infos)
-            panel.wire_bounds_setter_xy(ax, "y", image_infos)
-            panel.wire_bounds_setter_xy(line_ax, "y", line_infos)
-        else:
+        elif image_infos:
             raise NotImplementedError("don't yet support multiple non-line plots per axes")
 
     return panel
