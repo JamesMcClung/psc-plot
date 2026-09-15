@@ -25,8 +25,12 @@ class Panel:
         for labeler in self.get_labelers():
             labeler.update()
 
-        for axes in self.legend_labelers_per_axes:
-            axes.legend()  # required for label redraw
+        for axes, labelers in self.legend_labelers_per_axes.items():
+            if not any(labeler._get_label() for labeler in labelers):
+                if legend := axes.get_legend():
+                    legend.remove()
+            else:
+                axes.legend()  # required for label redraw
 
     def get_labelers(self) -> list[Labeler]:
         maybe_labelers = [
