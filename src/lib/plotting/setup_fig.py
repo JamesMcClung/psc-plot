@@ -10,7 +10,6 @@ from matplotlib.figure import Figure
 from matplotlib.projections import PolarAxes
 
 from lib.plotting import plt_util
-from lib.plotting.bounds_setter import BoundsSetter
 from lib.plotting.data_setter import DataSetter
 from lib.plotting.grid import Grid
 from lib.plotting.panel import Panel
@@ -213,8 +212,8 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
         setup_scales(ax, infos)
 
         if isinstance(info, PlotInfo2D):
-            panel.wire_bounds_setter(BoundsSetter.create_x_bounds_setter(ax, infos))
-            panel.wire_bounds_setter(BoundsSetter.create_y_bounds_setter(ax, infos))
+            panel.wire_bounds_setter_xy(ax, "x", infos)
+            panel.wire_bounds_setter_xy(ax, "y", infos)
 
         if isinstance(info, LineInfo):
             setup_line(panel, ax, info)
@@ -242,8 +241,8 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
             panel.wire_title(ax.title)
 
             setup_scales(ax, line_infos)
-            panel.wire_bounds_setter(BoundsSetter.create_x_bounds_setter(ax, infos))
-            panel.wire_bounds_setter(BoundsSetter.create_y_bounds_setter(ax, infos))
+            panel.wire_bounds_setter_xy(ax, "x", infos)
+            panel.wire_bounds_setter_xy(ax, "y", infos)
         elif len(image_infos) == 1:
             panel = AxesManagerImageAndLines(ax, image_infos[0], line_infos).setup()
         else:
