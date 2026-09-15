@@ -10,6 +10,7 @@ from matplotlib.figure import Figure
 from matplotlib.projections import PolarAxes
 
 from lib.plotting import plt_util
+from lib.plotting.bounds_setter import BoundsSetter
 from lib.plotting.data_setter import DataSetter
 from lib.plotting.grid import Grid
 from lib.plotting.panel import Panel
@@ -103,20 +104,6 @@ def setup_scales(ax: Axes, infos: list[PlotInfo]):
     elif all(isinstance(info, PolarMeshInfo) for info in infos):
         assert isinstance(ax, PolarAxes)
         return setup_scales_rtheta(ax, infos)
-    else:
-        assert False
-
-
-def setup_bounds_xy(ax: Axes, infos: list[PlotInfo2D]):
-    ax.set_xlim(*find_widest_bounds(info.dim_bounds[info.x_dim] for info in infos))
-    ax.set_ylim(*find_widest_bounds(info.dim_bounds[info.y_dim] for info in infos))
-
-
-def setup_bounds(ax: Axes, infos: list[PlotInfo]):
-    if all(isinstance(info, PlotInfo2D) for info in infos):
-        setup_bounds_xy(ax, infos)
-    elif all(isinstance(info, PolarMeshInfo) for info in infos):
-        pass
     else:
         assert False
 
@@ -224,7 +211,10 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
             panel.wire_units(ax, "y", infos)
 
         setup_scales(ax, infos)
-        setup_bounds(ax, infos)
+
+        if isinstance(info, PlotInfo2D):
+            panel.wire_bounds_setter(BoundsSetter.create_x_bounds_setter(ax, infos))
+            panel.wire_bounds_setter(BoundsSetter.create_y_bounds_setter(ax, infos))
 
         if isinstance(info, LineInfo):
             setup_line(panel, ax, info)
@@ -252,7 +242,8 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
             panel.wire_title(ax.title)
 
             setup_scales(ax, line_infos)
-            setup_bounds(ax, infos)
+            panel.wire_bounds_setter(BoundsSetter.create_x_bounds_setter(ax, infos))
+            panel.wire_bounds_setter(BoundsSetter.create_y_bounds_setter(ax, infos))
         elif len(image_infos) == 1:
             panel = AxesManagerImageAndLines(ax, image_infos[0], line_infos).setup()
         else:
@@ -271,5 +262,6 @@ def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, Grid]:
         grid.set_panel(loc, panel)
 
     grid.update_labels()
+    grid.update_bounds()
 
     return figure, grid
