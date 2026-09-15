@@ -115,24 +115,21 @@ def setup_polar_mesh(panel: Panel, ax: PolarAxes, info: PolarMeshInfo):
     return setter
 
 
-def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
+def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
     panel = Panel()
     panel.wire_title(ax.title)
 
     if len(infos) == 1:
         info = infos[0]
 
-        if isinstance(info, PlotInfo2D):
-            panel.wire_units(ax, "x", infos)
-            panel.wire_units(ax, "y", infos)
+        panel.wire_units(ax, "x", infos)
+        panel.wire_units(ax, "y", infos)
 
-            set_scales_xy(ax, "x", infos)
-            set_scales_xy(ax, "y", infos)
+        set_scales_xy(ax, "x", infos)
+        set_scales_xy(ax, "y", infos)
 
-            panel.wire_bounds_setter_xy(ax, "x", infos)
-            panel.wire_bounds_setter_xy(ax, "y", infos)
-        else:
-            set_scales_rtheta(ax, infos)
+        panel.wire_bounds_setter_xy(ax, "x", infos)
+        panel.wire_bounds_setter_xy(ax, "y", infos)
 
         if isinstance(info, LineInfo):
             setup_line(panel, ax, info)
@@ -140,8 +137,6 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
             setup_image(panel, ax, info)
         elif isinstance(info, ScatterInfo):
             setup_scatter(panel, ax, info)
-        elif isinstance(info, PolarMeshInfo):
-            setup_polar_mesh(panel, ax, info)
         else:
             raise TypeError(f"unknown type: {infos.__class__!r}")
     else:
@@ -171,6 +166,36 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
             raise NotImplementedError("don't yet support multiple non-line plots per axes")
 
     return panel
+
+
+def setup_panel_polar(ax: Axes, infos: list[PolarMeshInfo]) -> Panel:
+    polar_mesh_infos = infos
+
+    panel = Panel()
+    panel.wire_title(ax.title)
+
+    if len(polar_mesh_infos) > 1:
+        raise NotImplementedError("don't yet support overplotting polar meshes")
+
+    [info] = polar_mesh_infos
+
+    set_scales_rtheta(ax, infos)
+    setup_polar_mesh(panel, ax, info)
+
+    return panel
+
+
+def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
+    infos_2d = [info for info in infos if isinstance(info, PlotInfo2D)]
+    infos_polar = [info for info in infos if isinstance(info, PolarMeshInfo)]
+
+    if infos_2d and infos_polar:
+        raise Exception("can't combine Cartesian and polar plots")
+
+    if infos_2d:
+        return setup_panel_xy(ax, infos)
+    if infos_polar:
+        return setup_panel_polar(ax, infos)
 
 
 def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, Grid]:
