@@ -115,51 +115,6 @@ def setup_polar_mesh(panel: Panel, ax: PolarAxes, info: PolarMeshInfo):
     return setter
 
 
-@dataclass
-class AxesManagerImageAndLines(AxesManager):
-    image_ax: Axes
-    image_info: ImageInfo
-    line_infos: list[LineInfo]
-
-    line_ax: Axes = field(init=False)
-    infos: list[PlotInfo2D] = field(init=False)
-
-    def __post_init__(self):
-        self.line_ax = self.image_ax.twinx()
-        self.infos = [self.image_info, *self.line_infos]
-
-    def setup(self):
-        self.setup_labels()
-        self.setup_data()
-        self.setup_title()  # after data to get line info and cbar
-        self.setup_scales()
-        self.setup_bounds()
-        return self.panel
-
-    def setup_title(self):
-        self.panel.wire_title(self.image_ax.title)
-
-    def setup_labels(self):
-        self.panel.wire_units(self.image_ax, "x", self.infos)
-        self.panel.wire_units(self.image_ax, "y", [self.image_info])
-        self.panel.wire_units(self.line_ax, "y", self.line_infos, require_display_match=False)
-
-    def setup_scales(self):
-        set_scales_xy(self.image_ax, "x", self.infos)
-        set_scales_xy(self.image_ax, "y", [self.image_info])
-        set_scales_xy(self.line_ax, "y", self.line_infos)
-
-    def setup_bounds(self):
-        self.panel.wire_bounds_setter_xy(self.image_ax, "x", self.infos)
-        self.panel.wire_bounds_setter_xy(self.image_ax, "y", [self.image_info])
-        self.panel.wire_bounds_setter_xy(self.line_ax, "y", self.line_infos)
-
-    def setup_data(self):
-        setup_image(self.panel, self.image_ax, self.image_info)
-        for info in self.line_infos:
-            setup_line(self.panel, self.line_ax, info)
-
-
 def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
     panel: Panel
     if len(infos) == 1:
@@ -211,7 +166,27 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
             panel.wire_bounds_setter_xy(ax, "x", infos)
             panel.wire_bounds_setter_xy(ax, "y", infos)
         elif len(image_infos) == 1:
-            panel = AxesManagerImageAndLines(ax, image_infos[0], line_infos).setup()
+            panel = Panel()
+
+            line_ax = ax.twinx()
+
+            panel.wire_units(ax, "x", infos)
+            panel.wire_units(ax, "y", image_infos)
+            panel.wire_units(line_ax, "y", line_infos, require_display_match=False)
+
+            setup_image(panel, ax, image_infos[0])
+            for info in line_infos:
+                setup_line(panel, line_ax, info)
+
+            panel.wire_title(ax.title)
+
+            set_scales_xy(ax, "x", infos)
+            set_scales_xy(ax, "y", image_infos)
+            set_scales_xy(line_ax, "y", line_infos)
+
+            panel.wire_bounds_setter_xy(ax, "x", infos)
+            panel.wire_bounds_setter_xy(ax, "y", image_infos)
+            panel.wire_bounds_setter_xy(line_ax, "y", line_infos)
         else:
             raise NotImplementedError("don't yet support multiple non-line plots per axes")
 
