@@ -136,6 +136,7 @@ def setup_bounds(ax: Axes, infos: list[PlotInfo]):
 def setup_line(panel: Panel, ax: Axes, info: LineInfo):
     setter = DataSetter.dispatch_init(ax, info)
     panel.wire_data_setter(setter)
+    panel.wire_legend_label(setter.artist, info)
     return setter
 
 
@@ -150,6 +151,7 @@ def setup_image(panel: Panel, ax: Axes, info: ImageInfo):
 def setup_scatter(panel: Panel, ax: Axes, info: ScatterInfo):
     setter = DataSetter.dispatch_init(ax, info)
     panel.wire_data_setter(setter)
+    panel.wire_legend_label(setter.artist, info)
     if info.color_dim:
         cbar = setup_colorbar(ax, setter.artist, info)
         panel.wire_cbar_label(cbar, info)
@@ -189,8 +191,6 @@ class AxesManagerImageAndLines(AxesManager):
         return self.panel
 
     def setup_title(self):
-        for info, line in zip(self.line_infos, self.lines):
-            self.panel.wire_legend_label(line, info)
         self.panel.wire_title(self.image_ax.title)
 
     def setup_labels(self):
@@ -231,7 +231,7 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
         info = infos[0]
         panel = Panel()
 
-        panel.wire_title(ax.title, info)
+        panel.wire_title(ax.title)
         setup_labels(ax, infos)
         setup_scales(ax, infos)
         setup_bounds(ax, infos)
@@ -256,8 +256,7 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
             setup_labels(ax, line_infos)
 
             for info in line_infos:
-                line = setup_line(panel, ax, info).artist
-                panel.wire_legend_label(line, info)
+                setup_line(panel, ax, info)
 
             panel.wire_title(ax.title)
 
