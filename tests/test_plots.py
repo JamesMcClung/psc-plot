@@ -15,8 +15,8 @@ def test_animated_1d():
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_static_1d():
-    """X-component of magnetic field at the last time step, implicitly averaged across z. Note video is disabled via `time=`."""
-    return make_plot("pfd hx_fc -i t=-1 -v y time=".split())
+    """X-component of magnetic field at the last time step, implicitly averaged across z."""
+    return make_plot("pfd hx_fc -i t=-1 -v y".split())
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
@@ -28,7 +28,7 @@ def test_animated_2d():
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_static_2d():
     """2D view of x-component of magnetic field at the last time step."""
-    return make_plot("pfd hx_fc -i t=-1 -v y z time=".split())
+    return make_plot("pfd hx_fc -i t=-1 -v y z".split())
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
@@ -70,7 +70,7 @@ def test_animated_1d_rolling():
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_static_2d_spectogram():
     """Spectrogram of wavenumber vs. time."""
-    return make_plot("pfd ey_ec -f y --mag --pow 2 --pos k_y=0: --nan0 --scale log -v t k_y time=".split())
+    return make_plot("pfd ey_ec -f y --mag --pow 2 --pos k_y=0: --nan0 --scale log -v t k_y".split())
 
 
 # --- Multiplots ---
