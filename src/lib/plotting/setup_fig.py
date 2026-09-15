@@ -10,6 +10,7 @@ from matplotlib.figure import Figure
 from matplotlib.projections import PolarAxes
 
 from lib.plotting import plt_util
+from lib.plotting.axis_id import AxisId
 from lib.plotting.data_setter import DataSetter
 from lib.plotting.grid import Grid
 from lib.plotting.panel import Panel
@@ -57,36 +58,26 @@ class AxesManager(ABC):
     def setup_data(self): ...
 
 
-def setup_scales_xy(ax: Axes, infos: list[PlotInfo2D]):
-    x_scales = [info.dim_scales[info.x_dim] for info in infos]
-    if (x_scale := _one_or_none(x_scales)) is not None:
-        ax.set_xscale(x_scale.to_axis_scale())
+def set_scales_xy(ax: Axes, axis_id: AxisId, infos: list[PlotInfo2D]):
+    match axis_id:
+        case "x":
+            scales = [info.dim_scales[info.x_dim] for info in infos]
+            set_scale = ax.set_xscale
+        case "y":
+            scales = [info.dim_scales[info.y_dim] for info in infos]
+            set_scale = ax.set_yscale
+    if (scale := _one_or_none(scales)) is not None:
+        set_scale(scale.to_axis_scale())
     else:
-        raise NotImplementedError(f"x scales must all be the same, but found {x_scales}")
-
-    y_scales = [info.dim_scales[info.y_dim] for info in infos]
-    if (y_scale := _one_or_none(y_scales)) is not None:
-        ax.set_yscale(y_scale.to_axis_scale())
-    else:
-        raise NotImplementedError(f"y scales must all be the same, but found {y_scales}")
+        raise NotImplementedError(f"{axis_id} scales must all be the same, but found {scales}")
 
 
-def setup_scales_rtheta(ax: PolarAxes, infos: list[PolarMeshInfo]):
+def set_scales_rtheta(ax: PolarAxes, infos: list[PolarMeshInfo]):
     r_scales = [info.dim_scales[info.r_dim] for info in infos]
     if (r_scale := _one_or_none(r_scales)) is not None:
         ax.set_rscale(r_scale.to_axis_scale())
     else:
         raise NotImplementedError(f"r scales must all be the same, but found {r_scales}")
-
-
-def setup_scales(ax: Axes, infos: list[PlotInfo]):
-    if all(isinstance(info, PlotInfo2D) for info in infos):
-        return setup_scales_xy(ax, infos)
-    elif all(isinstance(info, PolarMeshInfo) for info in infos):
-        assert isinstance(ax, PolarAxes)
-        return setup_scales_rtheta(ax, infos)
-    else:
-        assert False
 
 
 def setup_line(panel: Panel, ax: Axes, info: LineInfo):
@@ -191,11 +182,13 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
             panel.wire_units(ax, "x", infos)
             panel.wire_units(ax, "y", infos)
 
-        setup_scales(ax, infos)
+            set_scales_xy(ax, "x", infos)
+            set_scales_xy(ax, "y", infos)
 
-        if isinstance(info, PlotInfo2D):
             panel.wire_bounds_setter_xy(ax, "x", infos)
             panel.wire_bounds_setter_xy(ax, "y", infos)
+        else:
+            set_scales_rtheta(ax, infos)
 
         if isinstance(info, LineInfo):
             setup_line(panel, ax, info)
@@ -222,7 +215,9 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
 
             panel.wire_title(ax.title)
 
-            setup_scales(ax, line_infos)
+            set_scales_xy(ax, "x", infos)
+            set_scales_xy(ax, "y", infos)
+
             panel.wire_bounds_setter_xy(ax, "x", infos)
             panel.wire_bounds_setter_xy(ax, "y", infos)
         elif len(image_infos) == 1:
