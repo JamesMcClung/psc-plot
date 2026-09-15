@@ -11,6 +11,8 @@ from lib.plotting.data_setter import DataSetter
 from lib.plotting.labeler import Labeler, SubjectAndUnitLabeler, SubjectLabeler, UnitLabeler
 from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor
 
+type AxesAndId = tuple[Axes, AxisId]
+
 
 @dataclass
 class Panel:
@@ -18,17 +20,16 @@ class Panel:
     legend_labelers_per_axes: dict[Axes, list[SubjectLabeler]] = field(init=False, default_factory=dict)
     cbar_labeler: Labeler | None = field(init=False, default=None)
     data_setters: list[DataSetter] = field(init=False, default_factory=list)
-    units_per_axis_per_axes: dict[Axes, dict[AxisId, UnitLabeler]] = field(init=False, default_factory=dict)
-    bounds_setters_per_axis_per_axes: dict[Axes, dict[AxisId, BoundsSetter]] = field(init=False, default_factory=dict)
+    units_per_axis: dict[AxesAndId, UnitLabeler] = field(init=False, default_factory=dict)
+    bounds_setters_per_axis: dict[AxesAndId, BoundsSetter] = field(init=False, default_factory=dict)
 
     def update_data(self):
         for data_setter in self.data_setters:
             data_setter.update()
 
     def update_bounds(self):
-        for bounds_setters_per_axis in self.bounds_setters_per_axis_per_axes.values():
-            for bounds_setter in bounds_setters_per_axis.values():
-                bounds_setter.update()
+        for bounds_setter in self.bounds_setters_per_axis.values():
+            bounds_setter.update()
 
     def update_labels(self):
         for labeler in self.get_labelers():
@@ -46,7 +47,7 @@ class Panel:
             self.title_labeler,
             self.cbar_labeler,
             *(legend_labeler for labelers in self.legend_labelers_per_axes.values() for legend_labeler in labelers),
-            *(unit_labeler for units_per_axis in self.units_per_axis_per_axes.values() for unit_labeler in units_per_axis.values()),
+            *(unit_labeler for unit_labeler in self.units_per_axis.values()),
         ]
         return [labeler for labeler in maybe_labelers if labeler]
 
@@ -94,18 +95,16 @@ class Panel:
         self.data_setters.append(data_setter)
 
     def wire_bounds_setter_xy(self, ax: Axes, axis_id: AxisId, infos: list[PlotInfo2D]):
-        bounds_setters_per_axis = self.bounds_setters_per_axis_per_axes.setdefault(ax, {})
-        if bounds_setter := bounds_setters_per_axis.get(axis_id):
+        if bounds_setter := self.bounds_setters_per_axis.get((ax, axis_id)):
             bounds_setter.infos.extend(infos)
         else:
             create_setter = {"x": BoundsSetter.create_x_bounds_setter, "y": BoundsSetter.create_y_bounds_setter}[axis_id]
-            bounds_setters_per_axis[axis_id] = create_setter(ax, infos)
+            self.bounds_setters_per_axis[(ax, axis_id)] = create_setter(ax, infos)
 
     def wire_units(self, ax: Axes, axis_id: AxisId, infos: list[PlotInfo2D], *, require_display_match: bool = True):
-        units_per_axis = self.units_per_axis_per_axes.setdefault(ax, {})
-        if labeler := units_per_axis.get(axis_id):
+        if labeler := self.units_per_axis.get((ax, axis_id)):
             labeler.sources.extend(infos)
             labeler.require_display_match = require_display_match
         else:
             set_label = {"x": ax.set_xlabel, "y": ax.set_ylabel}[axis_id]
-            units_per_axis[axis_id] = UnitLabeler(set_label, axis_id, infos, require_display_match=require_display_match)
+            self.units_per_axis[(ax, axis_id)] = UnitLabeler(set_label, axis_id, infos, require_display_match=require_display_match)
