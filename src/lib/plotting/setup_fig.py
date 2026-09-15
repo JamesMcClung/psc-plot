@@ -26,24 +26,6 @@ def _one_or_none[T](objs: Iterable[T]) -> T | None:
     return one
 
 
-def find_widest_bounds(boundss: Iterable[tuple[float | None, float | None]]) -> tuple[float | None, float | None]:
-    lowest_bound = None
-    highest_bound = None
-
-    for bounds in boundss:
-        if lowest_bound is None:
-            lowest_bound = bounds[0]
-        elif bounds[0] is not None and lowest_bound > bounds[0]:
-            lowest_bound = bounds[0]
-
-        if highest_bound is None:
-            highest_bound = bounds[1]
-        elif bounds[1] is not None and highest_bound < bounds[1]:
-            highest_bound = bounds[1]
-
-    return (lowest_bound, highest_bound)
-
-
 def setup_colorbar(ax: Axes, target: ScalarMappable, info: PlotInfoColor | PlotInfoMaybeColor) -> Colorbar:
     assert info.color_dim
     cbar = ax.figure.colorbar(target)
@@ -187,9 +169,9 @@ class AxesManagerImageAndLines(AxesManager):
             raise NotImplementedError(f"y scales must all be the same, but found {y_scales}")
 
     def setup_bounds(self):
-        self.image_ax.set_xlim(*find_widest_bounds(info.dim_bounds[info.x_dim] for info in self.infos))
-        self.image_ax.set_ylim(*self.image_info.dim_bounds[self.image_info.y_dim])
-        self.line_ax.set_ylim(*find_widest_bounds(info.dim_bounds[info.y_dim] for info in self.line_infos))
+        self.panel.wire_bounds_setter_xy(self.image_ax, "x", self.infos)
+        self.panel.wire_bounds_setter_xy(self.image_ax, "y", [self.image_info])
+        self.panel.wire_bounds_setter_xy(self.line_ax, "y", self.line_infos)
 
     def setup_data(self):
         setup_image(self.panel, self.image_ax, self.image_info)
