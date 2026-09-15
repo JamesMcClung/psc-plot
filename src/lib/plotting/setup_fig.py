@@ -7,13 +7,11 @@ from matplotlib.axes import Axes
 from matplotlib.cm import ScalarMappable
 from matplotlib.colorbar import Colorbar
 from matplotlib.figure import Figure
-from matplotlib.lines import Line2D
 from matplotlib.projections import PolarAxes
 
 from lib.plotting import plt_util
 from lib.plotting.data_setter import DataSetter
 from lib.plotting.grid import Grid
-from lib.plotting.labeler import UnitLabeler
 from lib.plotting.panel import Panel
 from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor, PolarMeshInfo, ScatterInfo
 
@@ -75,16 +73,6 @@ class AxesManager(ABC):
 
     @abstractmethod
     def setup_data(self): ...
-
-
-def setup_labels(ax: Axes, infos: list[PlotInfo]):
-    if all(isinstance(info, PlotInfo2D) for info in infos):
-        UnitLabeler(ax.set_xlabel, "x", infos).update()
-        UnitLabeler(ax.set_ylabel, "y", infos, require_display_match=False).update()
-    elif all(isinstance(info, PolarMeshInfo) for info in infos):
-        pass
-    else:
-        assert False
 
 
 def setup_scales_xy(ax: Axes, infos: list[PlotInfo2D]):
@@ -193,9 +181,9 @@ class AxesManagerImageAndLines(AxesManager):
         self.panel.wire_title(self.image_ax.title)
 
     def setup_labels(self):
-        UnitLabeler(self.image_ax.set_xlabel, "x", self.infos).update()
-        UnitLabeler(self.image_ax.set_ylabel, "y", [self.image_info]).update()
-        UnitLabeler(self.line_ax.set_ylabel, "y", self.line_infos, require_display_match=False).update()
+        self.panel.wire_units(self.image_ax, "x", self.infos)
+        self.panel.wire_units(self.image_ax, "y", [self.image_info])
+        self.panel.wire_units(self.line_ax, "y", self.line_infos, require_display_match=False)
 
     def setup_scales(self):
         x_scales = [info.dim_scales[info.x_dim] for info in self.infos]
@@ -230,7 +218,11 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
         panel = Panel()
 
         panel.wire_title(ax.title)
-        setup_labels(ax, infos)
+
+        if isinstance(info, PlotInfo2D):
+            panel.wire_units(ax, "x", infos)
+            panel.wire_units(ax, "y", infos)
+
         setup_scales(ax, infos)
         setup_bounds(ax, infos)
 
@@ -251,7 +243,8 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
         if not image_infos:
             panel = Panel()
 
-            setup_labels(ax, line_infos)
+            panel.wire_units(ax, "x", infos)
+            panel.wire_units(ax, "y", infos, require_display_match=False)
 
             for info in line_infos:
                 setup_line(panel, ax, info)
