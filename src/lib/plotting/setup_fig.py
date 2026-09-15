@@ -173,7 +173,6 @@ class AxesManagerImageAndLines(AxesManager):
     image_ax: Axes
     image_info: ImageInfo
     line_infos: list[LineInfo]
-    lines: list[Line2D] = field(init=False, default_factory=list)
 
     line_ax: Axes = field(init=False)
     infos: list[PlotInfo2D] = field(init=False)
@@ -220,9 +219,8 @@ class AxesManagerImageAndLines(AxesManager):
 
     def setup_data(self):
         setup_image(self.panel, self.image_ax, self.image_info)
-
         for info in self.line_infos:
-            self.lines.append(setup_line(self.panel, self.line_ax, info).artist)
+            setup_line(self.panel, self.line_ax, info)
 
 
 def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
