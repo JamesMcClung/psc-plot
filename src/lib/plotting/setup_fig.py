@@ -116,54 +116,41 @@ def setup_polar_mesh(panel: Panel, ax: PolarAxes, info: PolarMeshInfo):
 
 
 def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
+    image_infos = [info for info in infos if isinstance(info, ImageInfo)]
+    line_infos = [info for info in infos if isinstance(info, LineInfo)]
+    scatter_infos = [info for info in infos if isinstance(info, ScatterInfo)]
+
+    bottom_infos = image_infos
+    top_infos = line_infos + scatter_infos
+
+    bottom_ax = ax
+    top_ax = ax.twinx() if bottom_infos and top_infos else ax
+
     panel = Panel()
     panel.wire_title(ax.title)
 
-    if len(infos) == 1:
-        info = infos[0]
+    set_scales_xy(ax, "x", infos)
+    panel.wire_bounds_setter_xy(ax, "x", infos)
+    panel.wire_units(ax, "x", infos)
 
-        panel.wire_units(ax, "x", infos)
-        panel.wire_units(ax, "y", infos)
+    if top_infos:
+        set_scales_xy(top_ax, "y", top_infos)
+        panel.wire_bounds_setter_xy(top_ax, "y", top_infos)
+        panel.wire_units(top_ax, "y", top_infos, require_display_match=False)
 
-        set_scales_xy(ax, "x", infos)
-        set_scales_xy(ax, "y", infos)
+    if bottom_infos:
+        set_scales_xy(bottom_ax, "y", bottom_infos)
+        panel.wire_bounds_setter_xy(bottom_ax, "y", bottom_infos)
+        panel.wire_units(bottom_ax, "y", bottom_infos)
 
-        panel.wire_bounds_setter_xy(ax, "x", infos)
-        panel.wire_bounds_setter_xy(ax, "y", infos)
+    for info in line_infos:
+        setup_line(panel, top_ax, info)
 
-        if isinstance(info, LineInfo):
-            setup_line(panel, ax, info)
-        elif isinstance(info, ImageInfo):
-            setup_image(panel, ax, info)
-        elif isinstance(info, ScatterInfo):
-            setup_scatter(panel, ax, info)
-        else:
-            raise TypeError(f"unknown type: {infos.__class__!r}")
-    else:
-        image_infos = [info for info in infos if isinstance(info, ImageInfo)]
-        line_infos = [info for info in infos if isinstance(info, LineInfo)]
+    for info in scatter_infos:
+        setup_scatter(panel, top_ax, info)
 
-        line_ax = ax.twinx() if image_infos else ax
-
-        set_scales_xy(ax, "x", infos)
-        panel.wire_bounds_setter_xy(ax, "x", infos)
-        panel.wire_units(ax, "x", infos)
-
-        set_scales_xy(line_ax, "y", line_infos)
-        panel.wire_bounds_setter_xy(line_ax, "y", line_infos)
-        panel.wire_units(line_ax, "y", line_infos, require_display_match=False)
-
-        for info in line_infos:
-            setup_line(panel, line_ax, info)
-
-        if len(image_infos) == 1:
-            set_scales_xy(ax, "y", image_infos)
-            panel.wire_bounds_setter_xy(ax, "y", image_infos)
-            panel.wire_units(ax, "y", image_infos)
-
-            setup_image(panel, ax, image_infos[0])
-        elif image_infos:
-            raise NotImplementedError("don't yet support multiple non-line plots per axes")
+    for info in image_infos:
+        setup_image(panel, bottom_ax, info)
 
     return panel
 
