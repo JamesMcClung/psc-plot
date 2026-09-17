@@ -80,38 +80,16 @@ def set_scales_rtheta(ax: PolarAxes, infos: list[PolarMeshInfo]):
         raise NotImplementedError(f"r scales must all be the same, but found {r_scales}")
 
 
-def setup_line(panel: Panel, ax: Axes, info: LineInfo):
+def setup_data_setter(panel: Panel, ax: Axes, info: PlotInfo):
     setter = DataSetter.dispatch_init(ax, info)
     panel.wire_data_setter(setter)
-    panel.wire_legend_label(setter.artist, info)
-    return setter
-
-
-def setup_image(panel: Panel, ax: Axes, info: ImageInfo):
-    setter = DataSetter.dispatch_init(ax, info)
-    panel.wire_data_setter(setter)
-    cbar = setup_colorbar(ax, setter.artist, info)
-    panel.wire_cbar_label(cbar, info)
-    return setter
-
-
-def setup_scatter(panel: Panel, ax: Axes, info: ScatterInfo):
-    setter = DataSetter.dispatch_init(ax, info)
-    panel.wire_data_setter(setter)
-    panel.wire_legend_label(setter.artist, info)
-    if info.color_dim:
+    if info.has_legend():
+        panel.wire_legend_label(setter.artist, info)
+    if info.has_colorbar():
         cbar = setup_colorbar(ax, setter.artist, info)
         panel.wire_cbar_label(cbar, info)
-
-    ax.set_aspect(info.get_aspect())
-    return setter
-
-
-def setup_polar_mesh(panel: Panel, ax: PolarAxes, info: PolarMeshInfo):
-    setter = DataSetter.dispatch_init(ax, info)
-    panel.wire_data_setter(setter)
-    cbar = setup_colorbar(ax, setter.artist, info)
-    panel.wire_cbar_label(cbar, info)
+    if isinstance(info, PlotInfo2D):
+        ax.set_aspect(info.get_aspect())
     return setter
 
 
@@ -138,19 +116,16 @@ def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
         panel.wire_bounds_setter_xy(top_ax, "y", top_infos)
         panel.wire_units(top_ax, "y", top_infos, require_display_match=False)
 
+        for info in top_infos:
+            setup_data_setter(panel, top_ax, info)
+
     if bottom_infos:
         set_scales_xy(bottom_ax, "y", bottom_infos)
         panel.wire_bounds_setter_xy(bottom_ax, "y", bottom_infos)
         panel.wire_units(bottom_ax, "y", bottom_infos)
 
-    for info in line_infos:
-        setup_line(panel, top_ax, info)
-
-    for info in scatter_infos:
-        setup_scatter(panel, top_ax, info)
-
-    for info in image_infos:
-        setup_image(panel, bottom_ax, info)
+        for info in bottom_infos:
+            setup_data_setter(panel, bottom_ax, info)
 
     return panel
 
@@ -167,7 +142,7 @@ def setup_panel_polar(ax: Axes, infos: list[PolarMeshInfo]) -> Panel:
     [info] = polar_mesh_infos
 
     set_scales_rtheta(ax, infos)
-    setup_polar_mesh(panel, ax, info)
+    setup_data_setter(panel, ax, info)
 
     return panel
 
