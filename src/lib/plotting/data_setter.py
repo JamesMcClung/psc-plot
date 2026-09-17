@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import overload
 
 import numpy as np
 from matplotlib.artist import Artist
@@ -28,18 +27,6 @@ class DataSetter[A: Artist = Artist, I: PlotInfo = PlotInfo](Renderer2):
     @abstractmethod
     def setup_artist(axes: Axes, info: I) -> A: ...
 
-    @overload
-    @staticmethod
-    def dispatch_init(axes: Axes, info: LineInfo) -> LineSetter: ...
-    @overload
-    @staticmethod
-    def dispatch_init(axes: Axes, info: ImageInfo) -> ImageSetter: ...
-    @overload
-    @staticmethod
-    def dispatch_init(axes: Axes, info: ScatterInfo) -> ScatterSetter: ...
-    @overload
-    @staticmethod
-    def dispatch_init(axes: Axes, info: PolarMeshInfo) -> PolarMeshSetter: ...
     @staticmethod
     def dispatch_init(axes: Axes, info: PlotInfo) -> DataSetter:
         if isinstance(info, LineInfo):
