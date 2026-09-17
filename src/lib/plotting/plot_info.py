@@ -9,7 +9,6 @@ from lib.data.types import VarKey
 from lib.latex import Latex
 from lib.scale import Scale
 
-type AttrKey = str
 type Projection = Literal["rectilinear", "polar"]
 
 
