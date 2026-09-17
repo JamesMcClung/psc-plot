@@ -130,7 +130,7 @@ def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
     return panel
 
 
-def setup_panel_polar(ax: Axes, infos: list[PolarMeshInfo]) -> Panel:
+def setup_panel_polar(ax: PolarAxes, infos: list[PolarMeshInfo]) -> Panel:
     polar_mesh_infos = infos
 
     panel = Panel()
@@ -152,11 +152,12 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
     infos_polar = [info for info in infos if isinstance(info, PolarMeshInfo)]
 
     if infos_2d and infos_polar:
-        raise Exception("can't combine Cartesian and polar plots")
+        raise Exception("can't overplot Cartesian and polar data")
 
     if infos_2d:
         return setup_panel_xy(ax, infos)
     if infos_polar:
+        assert isinstance(ax, PolarAxes)
         return setup_panel_polar(ax, infos)
 
 
