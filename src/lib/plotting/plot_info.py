@@ -46,7 +46,10 @@ class PlotInfo(ABC):
         return dim_label
 
     @abstractmethod
-    def is_partially_transparent(self) -> bool: ...
+    def has_legend(self) -> bool: ...
+
+    @abstractmethod
+    def has_colorbar(self) -> bool: ...
 
 
 @dataclass
@@ -90,7 +93,10 @@ class LineInfo(PlotInfo2D):
     y_data: np.ndarray
     line_style: LineStyleType = "-"
 
-    def is_partially_transparent(self) -> bool:
+    def has_legend(self) -> bool:
+        return True
+
+    def has_colorbar(self) -> bool:
         return False
 
 
@@ -99,7 +105,10 @@ class ImageInfo(PlotInfo2D, PlotInfoColor):
     _: KW_ONLY
     data: np.ndarray
 
-    def is_partially_transparent(self) -> bool:
+    def has_legend(self) -> bool:
+        return False
+
+    def has_colorbar(self) -> bool:
         return True
 
 
@@ -108,8 +117,11 @@ class ScatterInfo(PlotInfo2D, PlotInfoMaybeColor):
     _: KW_ONLY
     xy_data: np.ndarray
 
-    def is_partially_transparent(self) -> bool:
-        return False
+    def has_legend(self) -> bool:
+        return True
+
+    def has_colorbar(self) -> bool:
+        return self.color_dim is not None
 
 
 @dataclass
@@ -122,5 +134,8 @@ class PolarMeshInfo(PlotInfoColor):
     theta_dim: VarKey
     projection: Projection = field(default="polar", init=False)
 
-    def is_partially_transparent(self) -> bool:
+    def has_legend(self) -> bool:
+        return True
+
+    def has_colorbar(self) -> bool:
         return True
