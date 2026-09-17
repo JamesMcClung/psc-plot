@@ -1,4 +1,5 @@
 import math
+from abc import ABC, abstractmethod
 from dataclasses import KW_ONLY, dataclass, field
 from typing import Literal
 
@@ -13,7 +14,7 @@ type Projection = Literal["rectilinear", "polar"]
 
 
 @dataclass
-class PlotInfo:
+class PlotInfo(ABC):
     _: KW_ONLY
     subject: str | None = None
     dim_scales: dict[VarKey, Scale] = field(default_factory=dict)
@@ -43,6 +44,9 @@ class PlotInfo:
             dim_label += f" [${unit}$]"
 
         return dim_label
+
+    @abstractmethod
+    def is_partially_transparent(self) -> bool: ...
 
 
 @dataclass
@@ -86,17 +90,26 @@ class LineInfo(PlotInfo2D):
     y_data: np.ndarray
     line_style: LineStyleType = "-"
 
+    def is_partially_transparent(self) -> bool:
+        return False
+
 
 @dataclass
 class ImageInfo(PlotInfo2D, PlotInfoColor):
     _: KW_ONLY
     data: np.ndarray
 
+    def is_partially_transparent(self) -> bool:
+        return True
+
 
 @dataclass
 class ScatterInfo(PlotInfo2D, PlotInfoMaybeColor):
     _: KW_ONLY
     xy_data: np.ndarray
+
+    def is_partially_transparent(self) -> bool:
+        return False
 
 
 @dataclass
@@ -108,3 +121,6 @@ class PolarMeshInfo(PlotInfoColor):
     r_dim: VarKey
     theta_dim: VarKey
     projection: Projection = field(default="polar", init=False)
+
+    def is_partially_transparent(self) -> bool:
+        return True
