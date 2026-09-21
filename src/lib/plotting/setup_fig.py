@@ -13,6 +13,7 @@ from lib.plotting import plt_util
 from lib.plotting.axis_id import AxisId
 from lib.plotting.data_setter import DataSetter
 from lib.plotting.grid import Grid
+from lib.plotting.labeler import UnitLabeler
 from lib.plotting.panel import Panel
 from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor, PolarMeshInfo, ScatterInfo
 
@@ -30,6 +31,7 @@ def _one_or_none[T](objs: Iterable[T]) -> T | None:
 def setup_colorbar(ax: Axes, target: ScalarMappable, info: PlotInfoColor | PlotInfoMaybeColor) -> Colorbar:
     assert info.color_dim
     cbar = ax.figure.colorbar(target)
+    # TODO work into everything
     data_lower, data_upper = info.dim_bounds[info.color_dim]
     plt_util.update_cbar(target, data_min_override=data_lower, data_max_override=data_upper)
     return cbar
@@ -94,38 +96,59 @@ def setup_data_setter(panel: Panel, ax: Axes, info: PlotInfo):
 
 
 def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
-    image_infos = [info for info in infos if isinstance(info, ImageInfo)]
-    line_infos = [info for info in infos if isinstance(info, LineInfo)]
-    scatter_infos = [info for info in infos if isinstance(info, ScatterInfo)]
-
-    bottom_infos = image_infos
-    top_infos = line_infos + scatter_infos
-
-    bottom_ax = ax
-    top_ax = ax.twinx() if bottom_infos and top_infos else ax
-
     panel = Panel()
     panel.wire_title(ax.title)
 
     set_scales_xy(ax, "x", infos)
     panel.wire_bounds_setter_xy(ax, "x", infos)
-    panel.wire_units(ax, "x", infos)
+    for info in infos:
+        if not panel.try_wire_unit_labeler_xy(ax, "x", info):
+            raise Exception(f"the x-axis of {info} is incompatible with at least one other plot")
 
-    if top_infos:
-        set_scales_xy(top_ax, "y", top_infos)
-        panel.wire_bounds_setter_xy(top_ax, "y", top_infos)
-        panel.wire_units(top_ax, "y", top_infos, require_display_match=False)
+    # Choose whether each info uses the left y-axis or the right y-axis, preferring left.
+    # Only legend-supporting data (e.g. lines, but not images) are allowed on the right.
+    left_infos: list[PlotInfo] = []
+    right_infos: list[PlotInfo] = []
 
-        for info in top_infos:
-            setup_data_setter(panel, top_ax, info)
+    left_ax = ax
+    right_ax: Axes | None = None
 
-    if bottom_infos:
-        set_scales_xy(bottom_ax, "y", bottom_infos)
-        panel.wire_bounds_setter_xy(bottom_ax, "y", bottom_infos)
-        panel.wire_units(bottom_ax, "y", bottom_infos)
+    left_y_axis_only_infos = [info for info in infos if not info.has_legend()]
+    for info in left_y_axis_only_infos:
+        if panel.try_wire_unit_labeler_xy(left_ax, "y", info):
+            left_infos.append(info)
+            continue
 
-        for info in bottom_infos:
-            setup_data_setter(panel, bottom_ax, info)
+        raise Exception(f"{info} must use the left y-axis, but is incompatible with at least one other left-y-axis-only plot")
+
+    either_y_axis_infos = [info for info in infos if info.has_legend()]
+    for info in either_y_axis_infos:
+        if panel.try_wire_unit_labeler_xy(left_ax, "y", info):
+            left_infos.append(info)
+            continue
+
+        if not right_ax:
+            right_ax = left_ax.twinx()
+
+        if panel.try_wire_unit_labeler_xy(right_ax, "y", info):
+            right_infos.append(info)
+            continue
+
+        raise Exception(f"the y-axis of {info} and least two other plots are mutually incompatible")
+
+    if right_infos:
+        set_scales_xy(right_ax, "y", right_infos)
+        panel.wire_bounds_setter_xy(right_ax, "y", right_infos)
+
+        for info in right_infos:
+            setup_data_setter(panel, right_ax, info)
+
+    if left_infos:
+        set_scales_xy(left_ax, "y", left_infos)
+        panel.wire_bounds_setter_xy(left_ax, "y", left_infos)
+
+        for info in left_infos:
+            setup_data_setter(panel, left_ax, info)
 
     return panel
 

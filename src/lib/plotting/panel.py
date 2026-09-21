@@ -20,7 +20,7 @@ class Panel:
     legend_labelers_per_axes: dict[Axes, list[SubjectLabeler]] = field(init=False, default_factory=dict)
     cbar_labeler: Labeler | None = field(init=False, default=None)
     data_setters: list[DataSetter] = field(init=False, default_factory=list)
-    units_per_axis: dict[AxesAndId, UnitLabeler] = field(init=False, default_factory=dict)
+    unit_labelers_per_axis: dict[AxesAndId, UnitLabeler] = field(init=False, default_factory=dict)
     bounds_setters_per_axis: dict[AxesAndId, BoundsSetter] = field(init=False, default_factory=dict)
 
     def update_data(self):
@@ -47,7 +47,7 @@ class Panel:
             self.title_labeler,
             self.cbar_labeler,
             *(legend_labeler for labelers in self.legend_labelers_per_axes.values() for legend_labeler in labelers),
-            *(unit_labeler for unit_labeler in self.units_per_axis.values()),
+            *(unit_labeler for unit_labeler in self.unit_labelers_per_axis.values()),
         ]
         return [labeler for labeler in maybe_labelers if labeler]
 
@@ -101,10 +101,10 @@ class Panel:
             create_setter = {"x": BoundsSetter.create_x_bounds_setter, "y": BoundsSetter.create_y_bounds_setter}[axis_id]
             self.bounds_setters_per_axis[(ax, axis_id)] = create_setter(ax, infos)
 
-    def wire_units(self, ax: Axes, axis_id: AxisId, infos: list[PlotInfo2D], *, require_display_match: bool = True):
-        if labeler := self.units_per_axis.get((ax, axis_id)):
-            labeler.sources.extend(infos)
-            labeler.require_display_match = require_display_match
+    def try_wire_unit_labeler_xy(self, ax: Axes, axis_id: AxisId, info: PlotInfo2D) -> bool:
+        if unit_labeler := self.unit_labelers_per_axis.get((ax, axis_id)):
+            return unit_labeler.try_wire(info)
         else:
             set_label = {"x": ax.set_xlabel, "y": ax.set_ylabel}[axis_id]
-            self.units_per_axis[(ax, axis_id)] = UnitLabeler(set_label, axis_id, infos, require_display_match=require_display_match)
+            self.unit_labelers_per_axis[(ax, axis_id)] = UnitLabeler(set_label, axis_id, [info], require_display_match=axis_id == "x")
+            return True
