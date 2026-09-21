@@ -145,3 +145,30 @@ class Panel:
 
         self.scales_per_axis[(ax, axis_id)] = new_scale
         set_scale(new_scale.to_axis_scale())
+
+    def try_share_axis(self, other: Panel, axis_id: AxIdXY) -> bool:
+        my_axs = [ax for (ax, id) in self.scales_per_axis if id == axis_id]
+        other_axs = [ax for (ax, id) in other.scales_per_axis if id == axis_id]
+
+        if len(my_axs) != 1 or len(other_axs) != 1:
+            return False
+
+        [my_ax] = my_axs
+        [other_ax] = other_axs
+
+        if other.scales_per_axis[(other_ax, axis_id)] != self.scales_per_axis[(my_ax, axis_id)]:
+            return False
+
+        my_labeler = self.unit_labelers_per_axis[(my_ax, axis_id)]
+        other_labeler = other.unit_labelers_per_axis[(other_ax, axis_id)]
+        if not other_labeler.are_compatible(my_labeler.sources):
+            return False
+
+        {"x": my_ax.sharex, "y": my_ax.sharey}[axis_id](other_ax)
+        my_ax.label_outer()
+        other_labeler.sources.extend(my_labeler.sources)
+
+        self.unit_labelers_per_axis.pop((my_ax, axis_id))
+        self.scales_per_axis.pop((my_ax, axis_id))
+
+        return True
