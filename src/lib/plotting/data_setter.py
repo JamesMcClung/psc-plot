@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 import numpy as np
@@ -14,7 +14,7 @@ from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PolarMeshInfo,
 
 
 @dataclass
-class DataSetter[A: Artist = Artist, I: PlotInfo = PlotInfo]:
+class DataSetter[A: Artist = Artist, I: PlotInfo = PlotInfo](ABC):
     artist: A
     info: I
 
@@ -37,6 +37,9 @@ class DataSetter[A: Artist = Artist, I: PlotInfo = PlotInfo]:
         if isinstance(info, PolarMeshInfo):
             return PolarMeshSetter(axes, info)
         assert False
+
+    @abstractmethod
+    def update(self): ...
 
 
 class LineSetter(DataSetter[Line2D, LineInfo]):
