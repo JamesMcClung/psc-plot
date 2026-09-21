@@ -1,5 +1,3 @@
-from typing import Iterable
-
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.cm import ScalarMappable
@@ -11,9 +9,8 @@ from lib.plotting import plt_util
 from lib.plotting.axis_id import AxIdXY
 from lib.plotting.data_setter import DataSetter
 from lib.plotting.grid import Grid
-from lib.plotting.labeler import UnitLabeler
 from lib.plotting.panel import Panel
-from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor, PolarMeshInfo, ScatterInfo
+from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor, PolarMeshInfo
 
 
 def setup_colorbar(ax: Axes, target: ScalarMappable, info: PlotInfoColor | PlotInfoMaybeColor) -> Colorbar:
