@@ -1,420 +1,124 @@
-import math
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import Iterable, Literal
-
-import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
+from matplotlib.cm import ScalarMappable
+from matplotlib.colorbar import Colorbar
 from matplotlib.figure import Figure
-from matplotlib.lines import Line2D
 from matplotlib.projections import PolarAxes
 
 from lib.plotting import plt_util
-from lib.plotting.data_setter import ImageSetter, LineSetter, PolarMeshSetter, ScatterSetter
-from lib.plotting.labeler import TreeLabeler
-from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PolarMeshInfo, ScatterInfo
-from lib.plotting.renderer2 import Renderer2
+from lib.plotting.axis_id import AxIdXY
+from lib.plotting.data_setter import DataSetter
+from lib.plotting.grid import Grid
+from lib.plotting.panel import Panel
+from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor, PolarMeshInfo
 
-type AxesIdx = tuple[int, int]
 
+def setup_colorbar(ax: Axes, target: ScalarMappable, info: PlotInfoColor | PlotInfoMaybeColor) -> Colorbar:
+    assert info.color_dim
+    cbar = ax.figure.colorbar(target)
+    # TODO work into everything
+    data_lower, data_upper = info.dim_bounds[info.color_dim]
+    plt_util.update_cbar(target, data_min_override=data_lower, data_max_override=data_upper)
+    return cbar
 
-def _flatten_idx(axes_idx: tuple[int, int], ncols: int) -> int:
-    return ncols * (axes_idx[1] - 1) + axes_idx[0]
 
+def setup_data_setter(panel: Panel, ax: Axes, info: PlotInfo):
+    setter = DataSetter.dispatch_init(ax, info)
+    panel.wire_data_setter(setter)
+    if info.has_legend():
+        panel.wire_legend_label(setter.artist, info)
+    if info.has_colorbar():
+        cbar = setup_colorbar(ax, setter.artist, info)
+        panel.wire_cbar_label(cbar, info)
+    if isinstance(info, PlotInfo2D):
+        ax.set_aspect(info.get_aspect())
+    return setter
 
-def _setup_axes(figure: Figure, plot_infos: list[PlotInfo]) -> dict[AxesIdx, tuple[Axes, list[PlotInfo]]]:
-    idx_to_infos: dict[AxesIdx, list[PlotInfo]] = {}
-    for info in plot_infos:
-        idx_to_infos.setdefault(info.axes_index, []).append(info)
 
-    ncols = max(idx[0] for idx in idx_to_infos)
-    nrows = max(idx[1] for idx in idx_to_infos)
+def wire_axis(panel: Panel, ax: Axes, id: AxIdXY, info: PlotInfo2D) -> bool:
+    if panel.can_wire_unit_labeler_xy(ax, id, info) and panel.can_wire_scale(ax, id, info):
+        panel.wire_unit_labeler_xy(ax, id, info)
+        panel.wire_scale(ax, id, info)
+        panel.wire_bounds_setter_xy(ax, id, info)
+        return True
+    return False
 
-    ret: dict[AxesIdx, tuple[Axes, list[PlotInfo]]] = {}
-    for idx, infos in idx_to_infos.items():
-        projection = infos[0].projection
-        for info in infos[1:]:
-            if info.projection != projection:
-                raise ValueError("incompatible plots (TODO: better error message)")
-        ax = figure.add_subplot(nrows, ncols, _flatten_idx(idx, ncols), projection=projection)
-        ret[idx] = (ax, infos)
 
-    return ret
+def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
+    panel = Panel()
+    panel.wire_title(ax.title)
 
+    infos_with_legends_last = sorted(infos, key=lambda info: info.has_legend())
 
-def _get_aspect(info: PlotInfo2D) -> Literal["auto", "equal"]:
-    if info.dim_units[info.x_dim] != info.dim_units[info.y_dim]:
-        return "auto"
+    # Choose whether each info uses the left y-axis or the right y-axis, preferring left.
+    # Only legend-supporting data (e.g. lines, but not images) are allowed on the right.
+    left_ax = ax
+    right_ax: Axes | None = None
 
-    x_lo, x_hi = info.dim_bounds[info.x_dim]
-    y_lo, y_hi = info.dim_bounds[info.y_dim]
-    if None in [x_lo, x_hi, y_lo, y_hi]:
-        return "auto"
+    for info in infos_with_legends_last:
+        if not wire_axis(panel, ax, "x", info):
+            raise Exception(f"the x-axis of {info} is incompatible with at least one other plot")
 
-    if math.isclose(x_hi - x_lo, y_hi - y_lo):
-        return "equal"
+        if wire_axis(panel, left_ax, "y", info):
+            setup_data_setter(panel, left_ax, info)
+            continue
 
-    return "auto"
+        if not info.has_legend():
+            raise Exception(f"{info} must use the left y-axis, but is incompatible with at least one other left-y-axis-only plot")
 
+        if not right_ax:
+            right_ax = left_ax.twinx()
 
-def _one_or_none[T](objs: Iterable[T]) -> T | None:
-    one = None
-    for obj in objs:
-        if one is None:
-            one = obj
-        elif obj != one:
-            return None
-    return one
+        if wire_axis(panel, right_ax, "y", info):
+            setup_data_setter(panel, right_ax, info)
+            continue
 
+        raise Exception(f"the y-axis of {info} and least two other plots are mutually incompatible")
 
-def find_widest_bounds(boundss: Iterable[tuple[float | None, float | None]]) -> tuple[float | None, float | None]:
-    lowest_bound = None
-    highest_bound = None
+    return panel
 
-    for bounds in boundss:
-        if lowest_bound is None:
-            lowest_bound = bounds[0]
-        elif bounds[0] is not None and lowest_bound > bounds[0]:
-            lowest_bound = bounds[0]
 
-        if highest_bound is None:
-            highest_bound = bounds[1]
-        elif bounds[1] is not None and highest_bound < bounds[1]:
-            highest_bound = bounds[1]
+def setup_panel_polar(ax: PolarAxes, infos: list[PolarMeshInfo]) -> Panel:
+    polar_mesh_infos = infos
 
-    return (lowest_bound, highest_bound)
+    panel = Panel()
+    panel.wire_title(ax.title)
 
+    if len(polar_mesh_infos) > 1:
+        raise NotImplementedError("don't yet support overplotting polar meshes")
 
-@dataclass
-class AxesManager(ABC):
-    renderers: list[Renderer2] = field(init=False, default_factory=list)
+    [info] = polar_mesh_infos
 
-    @abstractmethod
-    def setup(self): ...
+    panel.wire_scale(ax, "r", info)
+    setup_data_setter(panel, ax, info)
 
-    @abstractmethod
-    def setup_title(self): ...
+    return panel
 
-    @abstractmethod
-    def setup_labels(self): ...
 
-    @abstractmethod
-    def setup_scales(self): ...
+def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
+    infos_2d = [info for info in infos if isinstance(info, PlotInfo2D)]
+    infos_polar = [info for info in infos if isinstance(info, PolarMeshInfo)]
 
-    @abstractmethod
-    def setup_bounds(self): ...
+    if infos_2d and infos_polar:
+        raise Exception("can't overplot Cartesian and polar data")
 
-    @abstractmethod
-    def setup_data(self): ...
+    if infos_2d:
+        return setup_panel_xy(ax, infos)
+    if infos_polar:
+        assert isinstance(ax, PolarAxes)
+        return setup_panel_polar(ax, infos)
 
 
-@dataclass
-class AxesManagerSingle[A: Axes, PI: PlotInfo](AxesManager):
-    ax: A
-    info: PI
-
-    def setup_title(self):
-        labeler = TreeLabeler(self.ax.title.set_text, self.info)
-        labeler.update()
-        self.renderers.append(labeler)
-
-
-class AxesManagerSingle2D[PI2D: PlotInfo2D](AxesManagerSingle[Axes, PI2D]):
-    def setup(self):
-        self.setup_title()
-        self.setup_labels()
-        self.setup_data()
-        self.setup_scales()
-        self.setup_bounds()
-
-    def setup_labels(self):
-        self.ax.set_xlabel(self.info.get_dim_label(self.info.x_dim))
-        self.ax.set_ylabel(self.info.get_dim_label(self.info.y_dim))
-
-    def setup_scales(self):
-        self.ax.set_xscale(self.info.dim_scales[self.info.x_dim].to_axis_scale())
-        self.ax.set_yscale(self.info.dim_scales[self.info.y_dim].to_axis_scale())
-
-    def setup_bounds(self):
-        self.ax.set_xlim(*self.info.dim_bounds[self.info.x_dim])
-        self.ax.set_ylim(*self.info.dim_bounds[self.info.y_dim])
-
-
-class AxesManagerSingleLine(AxesManagerSingle2D[LineInfo]):
-    def setup_data(self):
-        [line] = self.ax.plot(self.info.x_data, self.info.y_data, linestyle=self.info.line_style, scalex=False, scaley=False)
-        self.renderers.append(LineSetter(line, self.info))
-
-
-class AxesManagerSingleImage(AxesManagerSingle2D[ImageInfo]):
-    def setup_data(self):
-        image = self.ax.imshow(
-            self.info.data,
-            origin="lower",
-            extent=(*self.info.dim_bounds[self.info.x_dim], *self.info.dim_bounds[self.info.y_dim]),
-            norm=self.info.dim_scales[self.info.color_dim].to_color_norm(),
-            interpolation="nearest",
-            aspect=_get_aspect(self.info),
-        )
-        self.renderers.append(ImageSetter(image, self.info))
-
-        self.ax.figure.colorbar(image)
-        data_lower, data_upper = self.info.dim_bounds[self.info.color_dim]
-        plt_util.update_cbar(image, data_min_override=data_lower, data_max_override=data_upper)
-
-
-class AxesManagerSingleScatter(AxesManagerSingle2D[ScatterInfo]):
-    def setup_data(self):
-        if self.info.color_dim:
-            scatter = self.ax.scatter(
-                self.info.xy_data[:, 0],
-                self.info.xy_data[:, 1],
-                c=self.info.color_data,
-                norm=self.info.dim_scales[self.info.color_dim].to_color_norm(),
-                s=1,
-            )
-
-            self.ax.figure.colorbar(scatter, label=self.info.get_dim_label(self.info.color_dim))
-            data_lower, data_upper = self.info.dim_bounds[self.info.color_dim]
-            plt_util.update_cbar(scatter, data_min_override=data_lower, data_max_override=data_upper)
-        else:
-            scatter = self.ax.scatter(
-                self.info.xy_data[:, 0],
-                self.info.xy_data[:, 1],
-                color=self.ax._get_lines.get_next_color(),
-                s=0.5,
-            )
-        self.ax.set_aspect(_get_aspect(self.info))
-
-        self.renderers.append(ScatterSetter(scatter, self.info))
-
-
-class AxesManagerSinglePolarMesh(AxesManagerSingle[PolarAxes, PolarMeshInfo]):
-    def setup(self):
-        self.setup_title()
-        self.setup_labels()
-        self.setup_scales()
-        self.setup_data()
-
-    def setup_labels(self):
-        # FIXME make the labels work
-        pass
-
-    def setup_bounds(self):
-        pass
-
-    def setup_scales(self):
-        self.ax.set_rscale(self.info.dim_scales[self.info.r_dim].to_axis_scale())
-
-    def setup_data(self):
-        mesh = self.ax.pcolormesh(
-            *np.meshgrid(self.info.theta_vertices, self.info.r_vertices),
-            self.info.data,
-            shading="flat",
-            norm=self.info.dim_scales[self.info.color_dim].to_color_norm(),
-        )
-        self.renderers.append(PolarMeshSetter(mesh, self.info))
-
-        self.ax.figure.colorbar(mesh)
-        data_lower, data_upper = self.info.dim_bounds[self.info.color_dim]
-        plt_util.update_cbar(mesh, data_min_override=data_lower, data_max_override=data_upper)
-
-
-@dataclass
-class AxesManagerMultiLine(AxesManager):
-    ax: Axes
-    infos: list[LineInfo]
-    lines: list[Line2D] = field(init=False, default_factory=list)
-
-    def setup(self):
-        self.setup_labels()
-        self.setup_data()
-        self.setup_title()  # after data, to make sure lines is populated
-        self.setup_scales()
-        self.setup_bounds()
-
-    def setup_title(self):
-        labeler = TreeLabeler(self.ax.title.set_text)
-        for info, line in zip(self.infos, self.lines):
-            line_labeler = TreeLabeler(line.set_label, info)
-            labeler.add_child(line_labeler)
-        labeler.update()
-        self.renderers.append(labeler)
-
-        self.ax.legend()
-
-    def setup_labels(self):
-        x_labels = [info.get_dim_label(info.x_dim) for info in self.infos]
-        if (x_label := _one_or_none(x_labels)) is not None:
-            self.ax.set_xlabel(x_label)
-        else:
-            raise NotImplementedError(f"x labels must all be the same, but found {x_labels}")
-
-        y_labels = [info.get_dim_label(info.y_dim) for info in self.infos]
-        y_units = [info.dim_units[info.y_dim] for info in self.infos]
-        if (y_label := _one_or_none(y_labels)) is not None:
-            self.ax.set_ylabel(y_label)
-        elif (y_unit := _one_or_none(y_units)) is not None:
-            self.ax.set_ylabel(y_unit.maybe_with_dollars())
-        else:
-            raise NotImplementedError(f"y labels must all be the same unit, but found {y_units}")
-
-    def setup_scales(self):
-        x_scales = [info.dim_scales[info.x_dim] for info in self.infos]
-        if (x_scale := _one_or_none(x_scales)) is not None:
-            self.ax.set_xscale(x_scale.to_axis_scale())
-        else:
-            raise NotImplementedError(f"x scales must all be the same, but found {x_scales}")
-
-        y_scales = [info.dim_scales[info.y_dim] for info in self.infos]
-        if (y_scale := _one_or_none(y_scales)) is not None:
-            self.ax.set_yscale(y_scale.to_axis_scale())
-        else:
-            raise NotImplementedError(f"y scales must all be the same, but found {y_scales}")
-
-    def setup_bounds(self):
-        self.ax.set_xbound(*find_widest_bounds(info.dim_bounds[info.x_dim] for info in self.infos))
-        self.ax.set_ybound(*find_widest_bounds(info.dim_bounds[info.y_dim] for info in self.infos))
-
-    def setup_data(self):
-        for info in self.infos:
-            [line] = self.ax.plot(info.x_data, info.y_data, linestyle=info.line_style, scalex=False, scaley=False)
-            self.renderers.append(LineSetter(line, info))
-            self.lines.append(line)
-
-
-@dataclass
-class AxesManagerImageAndLines(AxesManager):
-    image_ax: Axes
-    image_info: ImageInfo
-    line_infos: list[LineInfo]
-    lines: list[Line2D] = field(init=False, default_factory=list)
-
-    line_ax: Axes = field(init=False)
-    infos: list[PlotInfo2D] = field(init=False)
-
-    def __post_init__(self):
-        self.line_ax = self.image_ax.twinx()
-        self.infos = [self.image_info, *self.line_infos]
-
-    def setup(self):
-        self.setup_labels()
-        self.setup_data()
-        self.setup_title()  # after data to get line info and cbar
-        self.setup_scales()
-        self.setup_bounds()
-
-    def setup_title(self):
-        labeler = TreeLabeler(self.image_ax.title.set_text)
-
-        labeler.add_child(TreeLabeler(self.cbar.set_label, self.image_info))
-        for info, line in zip(self.line_infos, self.lines):
-            labeler.add_child(TreeLabeler(line.set_label, info))
-
-        labeler.update()
-        self.renderers.append(labeler)
-
-        self.line_ax.legend()
-
-    def setup_labels(self):
-        x_labels = [info.get_dim_label(info.x_dim) for info in self.infos]
-        if (x_label := _one_or_none(x_labels)) is not None:
-            self.image_ax.set_xlabel(x_label)
-        else:
-            raise NotImplementedError(f"x labels must all be the same, but found {x_labels}")
-
-        self.image_ax.set_ylabel(self.image_info.get_dim_label(self.image_info.y_dim))
-
-        y_labels = [info.get_dim_label(info.y_dim) for info in self.line_infos]
-        y_units = [info.dim_units[info.y_dim] for info in self.line_infos]
-        if (y_label := _one_or_none(y_labels)) is not None:
-            self.line_ax.set_ylabel(y_label)
-        elif (y_unit := _one_or_none(y_units)) is not None:
-            self.line_ax.set_ylabel(y_unit.maybe_with_dollars())
-        else:
-            raise NotImplementedError(f"line y labels must all be the same unit, but found {y_units}")
-
-    def setup_scales(self):
-        x_scales = [info.dim_scales[info.x_dim] for info in self.infos]
-        if (x_scale := _one_or_none(x_scales)) is not None:
-            self.image_ax.set_xscale(x_scale.to_axis_scale())
-        else:
-            raise NotImplementedError(f"x scales must all be the same, but found {x_scales}")
-
-        self.image_ax.set_yscale(self.image_info.dim_scales[self.image_info.y_dim].to_axis_scale())
-
-        y_scales = [info.dim_scales[info.y_dim] for info in self.line_infos]
-        if (y_scale := _one_or_none(y_scales)) is not None:
-            self.line_ax.set_yscale(y_scale.to_axis_scale())
-        else:
-            raise NotImplementedError(f"y scales must all be the same, but found {y_scales}")
-
-    def setup_bounds(self):
-        self.image_ax.set_xlim(*find_widest_bounds(info.dim_bounds[info.x_dim] for info in self.infos))
-        self.image_ax.set_ylim(*self.image_info.dim_bounds[self.image_info.y_dim])
-        self.line_ax.set_ylim(*find_widest_bounds(info.dim_bounds[info.y_dim] for info in self.line_infos))
-
-    def setup_data(self):
-        image = self.image_ax.imshow(
-            self.image_info.data,
-            origin="lower",
-            extent=(*self.image_info.dim_bounds[self.image_info.x_dim], *self.image_info.dim_bounds[self.image_info.y_dim]),
-            norm=self.image_info.dim_scales[self.image_info.color_dim].to_color_norm(),
-            interpolation="nearest",
-            aspect=_get_aspect(self.image_info),
-        )
-        self.renderers.append(ImageSetter(image, self.image_info))
-
-        self.cbar = self.image_ax.figure.colorbar(image)
-        data_lower, data_upper = self.image_info.dim_bounds[self.image_info.color_dim]
-        plt_util.update_cbar(image, data_min_override=data_lower, data_max_override=data_upper)
-
-        for info in self.line_infos:
-            [line] = self.line_ax.plot(info.x_data, info.y_data, linestyle=info.line_style, scalex=False, scaley=False)
-            self.renderers.append(LineSetter(line, info))
-            self.lines.append(line)
-
-
-def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, list[Renderer2]]:
+def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, Grid]:
     figure = plt.figure(layout="constrained")
-    renderers: list[Renderer2] = []
 
-    loc_to_ax = _setup_axes(figure, plot_infos)
-    for ax, infos in loc_to_ax.values():
-        manager: AxesManager
-        if len(infos) == 1:
-            info = infos[0]
-            if isinstance(info, LineInfo):
-                manager = AxesManagerSingleLine(ax, info)
-            elif isinstance(info, ImageInfo):
-                manager = AxesManagerSingleImage(ax, info)
-            elif isinstance(info, ScatterInfo):
-                manager = AxesManagerSingleScatter(ax, info)
-            elif isinstance(info, PolarMeshInfo):
-                manager = AxesManagerSinglePolarMesh(ax, info)
-            else:
-                raise TypeError(f"unknown type: {infos.__class__!r}")
-        else:
-            image_infos = [info for info in infos if isinstance(info, ImageInfo)]
-            line_infos = [info for info in infos if isinstance(info, LineInfo)]
-            if not image_infos:
-                manager = AxesManagerMultiLine(ax, line_infos)
-            elif len(image_infos) == 1:
-                manager = AxesManagerImageAndLines(ax, image_infos[0], line_infos)
-            else:
-                raise NotImplementedError("don't yet support multiple non-line plots per axes")
+    grid = Grid(figure, plot_infos)
+    for loc, infos in grid.infos.items():
+        ax = grid.setup_ax(loc)
+        panel = setup_panel(ax, infos)
+        grid.set_panel(loc, panel)
 
-        manager.setup()
-        renderers += manager.renderers
+    grid.update_labels()
+    grid.update_bounds()
 
-    # lift labels to title
-    if len(loc_to_ax) > 1:
-        suptitle_labeler = TreeLabeler(figure.suptitle("").set_text)
-        for renderer in renderers:
-            if isinstance(renderer, TreeLabeler):
-                suptitle_labeler.add_child(renderer)
-        renderers.append(suptitle_labeler)
-        suptitle_labeler.update()
-
-    return figure, renderers
+    return figure, grid

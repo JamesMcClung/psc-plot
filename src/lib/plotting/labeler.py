@@ -1,30 +1,34 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Callable
+from typing import Callable, Literal
 
-from lib.plotting.plot_info import PlotInfo
-from lib.plotting.renderer2 import Renderer2
+from lib.data.types import VarKey
+from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor
 
 
 @dataclass
-class TreeLabeler(Renderer2):
-    """Manages the labels associated with one or more datasets within a figure. A label comprises an optional subject
-    (variable name) and any number of sublabels (e.g. scalar coordinates). When multiple datasets are plotted within
-    the same figure, common label components can be "factored out" to a higher label location, e.g. from a legend to
-    an axis title. Label locations are well-described by a tree structure, where common label components propagate
-    from the leaves to the root."""
-
+class Labeler:
     set_text: Callable[[str], None]
+
+
+@dataclass
+class SubjectLabeler(Labeler):
+    """Manages the subject labels associated with one or more datasets within a figure. A subject label comprises an
+    optional subject (variable name) and any number of sublabels (e.g. scalar coordinates). When multiple datasets are
+    plotted within the same figure, common label components can be "factored out" to a higher label location, e.g.
+    from a legend to an axis title. Label locations are well-described by a tree structure, where common label
+    components propagate from the leaves to the root."""
+
     source: PlotInfo | None = None
 
-    children: list[TreeLabeler] = field(default_factory=list, init=False)
-    parent: TreeLabeler | None = field(default=None, init=False)
+    children: list[SubjectLabeler] = field(default_factory=list, init=False)
+    parent: SubjectLabeler | None = field(default=None, init=False)
 
     _subject: str | None = field(default=None, init=False)
     _sublabels: list[str] = field(default_factory=list, init=False)
 
-    def add_child(self, child: TreeLabeler):
+    def add_child(self, child: SubjectLabeler):
         assert child.parent is None
         child.parent = self
         self.children.append(child)
@@ -90,3 +94,91 @@ class TreeLabeler(Renderer2):
         for child in self.children:
             for sublabel in self._sublabels:
                 child._sublabels.remove(sublabel)
+
+
+@dataclass
+class UnitLabeler(Labeler):
+    axis_name: Literal["x", "y", "color"]
+    sources: list[PlotInfo] = field(default_factory=list)
+
+    include_display: bool = field(kw_only=True, default=True)
+    """Include the display in the label. If false, show unit only. Independent of `require_display_match`."""
+    require_display_match: bool = field(kw_only=True, default=True)
+    """If false, sources only have to agree on the unit. Otherwise, all sources must agree on display and unit."""
+
+    def update(self):
+        self.set_text(self._get_label())
+
+    def is_compatible(self, info: PlotInfo) -> bool:
+        self.sources.append(info)
+        try:
+            self._get_label()
+            return True
+        except:
+            return False
+        finally:
+            self.sources.pop()
+
+    def _get_key(self, info: PlotInfo) -> VarKey:
+        match self.axis_name:
+            case "x":
+                assert isinstance(info, PlotInfo2D)
+                return info.x_dim
+            case "y":
+                assert isinstance(info, PlotInfo2D)
+                return info.y_dim
+            case "color":
+                assert isinstance(info, (PlotInfoColor, PlotInfoMaybeColor)) and info.color_dim
+                return info.color_dim
+
+    def _get_label(self) -> str:
+        keys = [self._get_key(info) for info in self.sources]
+
+        displays = {info.dim_displays[key] for info, key in zip(self.sources, keys)}
+        if self.require_display_match and len(displays) > 1:
+            raise ValueError(f"{self.axis_name} displays must all be the same, but found {displays}")
+
+        units = {info.dim_units[key] for info, key in zip(self.sources, keys)}
+        if len(units) > 1:
+            raise ValueError(f"{self.axis_name} units must all be the same, but found {units}")
+
+        display = displays.pop().maybe_with_dollars() if self.include_display and len(displays) == 1 else ""
+        unit = units.pop().maybe_with_dollars() if len(units) == 1 else ""
+
+        if display and unit:
+            return f"{display} [{unit}]"
+        return display or unit and f"[{unit}]"
+
+
+@dataclass(init=False)
+class SubjectAndUnitLabeler(Labeler):
+    def __init__(self, set_text: Callable[[str], None], axis_name: Literal["x", "y", "color"], source: PlotInfo):
+        super().__init__(set_text)
+        self._subject = ""
+        self._unit = ""
+
+        self.subject_labeler = SubjectLabeler(self._set_subject, source)
+        self.unit_labeler = UnitLabeler(self._set_unit, axis_name, [source], include_display=False, require_display_match=False)
+
+    def update(self):
+        """Update sublabelers, which call `_set_subject` and/or `_set_unit` and thus `set_text` (twice, possibly)."""
+        if self.subject_labeler:
+            self.subject_labeler.update()
+
+        if self.unit_labeler:
+            self.unit_labeler.update()
+
+    def _get_label(self) -> str:
+        if self._subject and self._unit:
+            return self._subject + " " + self._unit
+        return self._subject or self._unit
+
+    def _set_subject(self, subject: str):
+        """Intended to be passed to a `SubjectLabeler`."""
+        self._subject = subject
+        self.set_text(self._get_label())
+
+    def _set_unit(self, unit: str):
+        """Intended to be passed to a `UnitLabeler`."""
+        self._unit = unit
+        self.set_text(self._get_label())

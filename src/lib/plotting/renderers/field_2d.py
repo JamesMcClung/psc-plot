@@ -41,7 +41,7 @@ class Field2dRenderer(Renderer[Field, SpatialDimsXY, ImageInfo]):
             dim_displays={
                 x_dim: frame_data.metadata.var_infos[x_dim].display,
                 y_dim: frame_data.metadata.var_infos[y_dim].display,
-                color_dim: None,
+                color_dim: frame_data.metadata.var_infos[color_dim].display,
             },
             dim_units={
                 x_dim: frame_data.metadata.var_infos[x_dim].unit,

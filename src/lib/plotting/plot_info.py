@@ -1,5 +1,7 @@
+import math
+from abc import ABC, abstractmethod
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Any, Callable, Literal
+from typing import Literal
 
 import numpy as np
 from matplotlib.typing import LineStyleType
@@ -8,12 +10,11 @@ from lib.data.types import VarKey
 from lib.latex import Latex
 from lib.scale import Scale
 
-type AttrKey = str
 type Projection = Literal["rectilinear", "polar"]
 
 
 @dataclass
-class PlotInfo:
+class PlotInfo(ABC):
     _: KW_ONLY
     subject: str | None = None
     dim_scales: dict[VarKey, Scale] = field(default_factory=dict)
@@ -34,15 +35,21 @@ class PlotInfo:
         return Latex(f"{display} = {coord_val:.3f}{maybe_space}{unit}")
 
     def get_sublabels(self) -> list[str]:
-        return [f"${self.get_coord_label(dim)}$" for dim in self.scalar_coord_values]
+        return [self.get_coord_label(dim).maybe_with_dollars() for dim in self.scalar_coord_values]
 
     def get_dim_label(self, dim: VarKey) -> str:
-        dim_label = f"${self.dim_displays.get(dim, f'\\text{{{dim}}}')}$"
+        dim_label = self.dim_displays.get(dim, Latex(f"\\text{{{dim}}}")).maybe_with_dollars()
 
         if unit := self.dim_units.get(dim):
             dim_label += f" [${unit}$]"
 
         return dim_label
+
+    @abstractmethod
+    def has_legend(self) -> bool: ...
+
+    @abstractmethod
+    def has_colorbar(self) -> bool: ...
 
 
 @dataclass
@@ -50,6 +57,33 @@ class PlotInfo2D(PlotInfo):
     _: KW_ONLY
     x_dim: VarKey
     y_dim: VarKey
+
+    def get_aspect(self) -> Literal["auto", "equal"]:
+        if self.dim_units[self.x_dim] != self.dim_units[self.y_dim]:
+            return "auto"
+
+        x_lo, x_hi = self.dim_bounds[self.x_dim]
+        y_lo, y_hi = self.dim_bounds[self.y_dim]
+        if None in [x_lo, x_hi, y_lo, y_hi]:
+            return "auto"
+
+        if math.isclose(x_hi - x_lo, y_hi - y_lo):
+            return "equal"
+
+        return "auto"
+
+
+@dataclass
+class PlotInfoColor(PlotInfo):
+    _: KW_ONLY
+    color_dim: VarKey
+
+
+@dataclass
+class PlotInfoMaybeColor(PlotInfo):
+    _: KW_ONLY
+    color_data: np.ndarray | None = None
+    color_dim: VarKey | None = None
 
 
 @dataclass
@@ -59,29 +93,49 @@ class LineInfo(PlotInfo2D):
     y_data: np.ndarray
     line_style: LineStyleType = "-"
 
+    def has_legend(self) -> bool:
+        return True
+
+    def has_colorbar(self) -> bool:
+        return False
+
 
 @dataclass
-class ImageInfo(PlotInfo2D):
+class ImageInfo(PlotInfo2D, PlotInfoColor):
     _: KW_ONLY
     data: np.ndarray
-    color_dim: VarKey
+
+    def has_legend(self) -> bool:
+        return False
+
+    def has_colorbar(self) -> bool:
+        return True
 
 
 @dataclass
-class ScatterInfo(PlotInfo2D):
+class ScatterInfo(PlotInfo2D, PlotInfoMaybeColor):
     _: KW_ONLY
     xy_data: np.ndarray
-    color_data: np.ndarray | None = None
-    color_dim: VarKey | None = None
+
+    def has_legend(self) -> bool:
+        return True
+
+    def has_colorbar(self) -> bool:
+        return self.color_dim is not None
 
 
 @dataclass
-class PolarMeshInfo(PlotInfo):
+class PolarMeshInfo(PlotInfoColor):
     _: KW_ONLY
     data: np.ndarray
     r_vertices: np.ndarray
     theta_vertices: np.ndarray
     r_dim: VarKey
     theta_dim: VarKey
-    color_dim: VarKey
     projection: Projection = field(default="polar", init=False)
+
+    def has_legend(self) -> bool:
+        return True
+
+    def has_colorbar(self) -> bool:
+        return True
