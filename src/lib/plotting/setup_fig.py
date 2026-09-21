@@ -1,5 +1,3 @@
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
 from typing import Iterable
 
 from matplotlib import pyplot as plt
@@ -35,29 +33,6 @@ def setup_colorbar(ax: Axes, target: ScalarMappable, info: PlotInfoColor | PlotI
     data_lower, data_upper = info.dim_bounds[info.color_dim]
     plt_util.update_cbar(target, data_min_override=data_lower, data_max_override=data_upper)
     return cbar
-
-
-@dataclass
-class AxesManager(ABC):
-    panel: Panel = field(init=False, default_factory=Panel)
-
-    @abstractmethod
-    def setup(self) -> Panel: ...
-
-    @abstractmethod
-    def setup_title(self): ...
-
-    @abstractmethod
-    def setup_labels(self): ...
-
-    @abstractmethod
-    def setup_scales(self): ...
-
-    @abstractmethod
-    def setup_bounds(self): ...
-
-    @abstractmethod
-    def setup_data(self): ...
 
 
 def set_scales_xy(ax: Axes, axis_id: AxisId, infos: list[PlotInfo2D]):
