@@ -109,16 +109,15 @@ class UnitLabeler(Labeler):
     def update(self):
         self.set_text(self._get_label())
 
-    def try_wire(self, info: PlotInfo) -> bool:
-        """Try to add the given `info` to this labeler's list of sources. Return whether or not the attempt succeeded, i.e., whether or not this labeler can construct a valid label from the resulting list of sources."""
-        # bit of a hack
+    def is_compatible(self, info: PlotInfo) -> bool:
         self.sources.append(info)
         try:
             self._get_label()
             return True
         except:
-            self.sources.pop()
             return False
+        finally:
+            self.sources.pop()
 
     def _get_key(self, info: PlotInfo) -> VarKey:
         match self.axis_name:

@@ -36,7 +36,9 @@ def setup_data_setter(panel: Panel, ax: Axes, info: PlotInfo):
 
 
 def wire_axis(panel: Panel, ax: Axes, id: AxIdXY, info: PlotInfo2D) -> bool:
-    if panel.try_wire_unit_labeler_xy(ax, id, info) and panel.try_wire_scale(ax, id, info):
+    if panel.can_wire_unit_labeler_xy(ax, id, info) and panel.can_wire_scale(ax, id, info):
+        panel.wire_unit_labeler_xy(ax, id, info)
+        panel.wire_scale(ax, id, info)
         panel.wire_bounds_setter_xy(ax, id, info)
         return True
     return False
