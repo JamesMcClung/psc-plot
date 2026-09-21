@@ -8,6 +8,7 @@ from matplotlib.figure import Figure
 from matplotlib.projections import PolarAxes
 
 from lib.plotting import plt_util
+from lib.plotting.axis_id import AxIdXY
 from lib.plotting.data_setter import DataSetter
 from lib.plotting.grid import Grid
 from lib.plotting.labeler import UnitLabeler
@@ -37,15 +38,20 @@ def setup_data_setter(panel: Panel, ax: Axes, info: PlotInfo):
     return setter
 
 
+def wire_axis(panel: Panel, ax: Axes, id: AxIdXY, info: PlotInfo2D) -> bool:
+    if panel.try_wire_unit_labeler_xy(ax, id, info) and panel.try_wire_scale(ax, id, info):
+        panel.wire_bounds_setter_xy(ax, id, info)
+        return True
+    return False
+
+
 def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
     panel = Panel()
     panel.wire_title(ax.title)
 
     for info in infos:
-        if not panel.try_wire_unit_labeler_xy(ax, "x", info):
+        if not wire_axis(panel, ax, "x", info):
             raise Exception(f"the x-axis of {info} is incompatible with at least one other plot")
-        panel.wire_bounds_setter_xy(ax, "x", info)
-        panel.wire_scale(ax, "x", info)
 
     # Choose whether each info uses the left y-axis or the right y-axis, preferring left.
     # Only legend-supporting data (e.g. lines, but not images) are allowed on the right.
@@ -54,9 +60,7 @@ def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
 
     left_y_axis_only_infos = [info for info in infos if not info.has_legend()]
     for info in left_y_axis_only_infos:
-        if panel.try_wire_unit_labeler_xy(left_ax, "y", info):
-            panel.wire_bounds_setter_xy(left_ax, "y", info)
-            panel.wire_scale(left_ax, "y", info)
+        if wire_axis(panel, left_ax, "y", info):
             setup_data_setter(panel, left_ax, info)
             continue
 
@@ -64,18 +68,14 @@ def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
 
     either_y_axis_infos = [info for info in infos if info.has_legend()]
     for info in either_y_axis_infos:
-        if panel.try_wire_unit_labeler_xy(left_ax, "y", info):
-            panel.wire_bounds_setter_xy(left_ax, "y", info)
-            panel.wire_scale(left_ax, "y", info)
+        if wire_axis(panel, left_ax, "y", info):
             setup_data_setter(panel, left_ax, info)
             continue
 
         if not right_ax:
             right_ax = left_ax.twinx()
 
-        if panel.try_wire_unit_labeler_xy(right_ax, "y", info):
-            panel.wire_bounds_setter_xy(right_ax, "y", info)
-            panel.wire_scale(right_ax, "y", info)
+        if wire_axis(panel, right_ax, "y", info):
             setup_data_setter(panel, right_ax, info)
             continue
 
