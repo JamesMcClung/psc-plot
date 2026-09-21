@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Callable, Literal
 
@@ -8,8 +9,11 @@ from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfo
 
 
 @dataclass
-class Labeler:
+class Labeler(ABC):
     set_text: Callable[[str], None]
+
+    @abstractmethod
+    def update(self): ...
 
 
 @dataclass
