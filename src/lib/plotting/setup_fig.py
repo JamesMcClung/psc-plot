@@ -118,6 +118,7 @@ def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, Grid]:
         panel = setup_panel(ax, infos)
         grid.set_panel(loc, panel)
 
+    grid.share_x_axes_vertically()
     grid.update_labels()
     grid.update_bounds()
 
