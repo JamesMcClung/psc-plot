@@ -3,15 +3,18 @@ from dataclasses import dataclass, field
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.colorbar import Colorbar
+from matplotlib.projections import PolarAxes
 from matplotlib.text import Text
 
-from lib.plotting.axis_id import AxisId
+from lib.plotting.axis_id import AxId, AxIdPolar, AxIdXY
 from lib.plotting.bounds_setter import BoundsSetter
 from lib.plotting.data_setter import DataSetter
 from lib.plotting.labeler import Labeler, SubjectAndUnitLabeler, SubjectLabeler, UnitLabeler
-from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor
+from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PolarMeshInfo
+from lib.scale import Scale
 
-type AxesAndId = tuple[Axes, AxisId]
+type AxAndIdXY = tuple[Axes, AxIdXY]
+type AxAndId = tuple[Axes, AxIdXY] | tuple[PolarAxes, AxIdPolar]
 
 
 @dataclass
@@ -20,8 +23,9 @@ class Panel:
     legend_labelers_per_axes: dict[Axes, list[SubjectLabeler]] = field(init=False, default_factory=dict)
     cbar_labeler: Labeler | None = field(init=False, default=None)
     data_setters: list[DataSetter] = field(init=False, default_factory=list)
-    unit_labelers_per_axis: dict[AxesAndId, UnitLabeler] = field(init=False, default_factory=dict)
-    bounds_setters_per_axis: dict[AxesAndId, BoundsSetter] = field(init=False, default_factory=dict)
+    unit_labelers_per_axis: dict[AxAndIdXY, UnitLabeler] = field(init=False, default_factory=dict)
+    bounds_setters_per_axis: dict[AxAndIdXY, BoundsSetter] = field(init=False, default_factory=dict)
+    scales_per_axis: dict[AxAndId, Scale] = field(init=False, default_factory=dict)
 
     def update_data(self):
         for data_setter in self.data_setters:
@@ -94,17 +98,40 @@ class Panel:
     def wire_data_setter(self, data_setter: DataSetter):
         self.data_setters.append(data_setter)
 
-    def wire_bounds_setter_xy(self, ax: Axes, axis_id: AxisId, infos: list[PlotInfo2D]):
+    def wire_bounds_setter_xy(self, ax: Axes, axis_id: AxIdXY, infos: list[PlotInfo2D]):
         if bounds_setter := self.bounds_setters_per_axis.get((ax, axis_id)):
             bounds_setter.infos.extend(infos)
         else:
             create_setter = {"x": BoundsSetter.create_x_bounds_setter, "y": BoundsSetter.create_y_bounds_setter}[axis_id]
             self.bounds_setters_per_axis[(ax, axis_id)] = create_setter(ax, infos)
 
-    def try_wire_unit_labeler_xy(self, ax: Axes, axis_id: AxisId, info: PlotInfo2D) -> bool:
+    def try_wire_unit_labeler_xy(self, ax: Axes, axis_id: AxIdXY, info: PlotInfo2D) -> bool:
         if unit_labeler := self.unit_labelers_per_axis.get((ax, axis_id)):
             return unit_labeler.try_wire(info)
         else:
             set_label = {"x": ax.set_xlabel, "y": ax.set_ylabel}[axis_id]
             self.unit_labelers_per_axis[(ax, axis_id)] = UnitLabeler(set_label, axis_id, [info], require_display_match=axis_id == "x")
             return True
+
+    def try_wire_scale(self, ax: Axes | PolarAxes, axis_id: AxId, info: PlotInfo2D | PolarMeshInfo) -> bool:
+        match axis_id:
+            case "x":
+                new_scale = info.dim_scales[info.x_dim]
+                set_scale = ax.set_xscale
+            case "y":
+                new_scale = info.dim_scales[info.y_dim]
+                set_scale = ax.set_yscale
+            case "r":
+                new_scale = info.dim_scales[info.r_dim]
+                set_scale = ax.set_rscale
+
+        if scale := self.scales_per_axis.get((ax, axis_id)):
+            return scale == new_scale
+        else:
+            self.scales_per_axis[(ax, axis_id)] = scale
+            set_scale(new_scale.to_axis_scale())
+            return True
+
+    def wire_scale(self, ax: Axes | PolarAxes, axis_id: AxId, info: PlotInfo2D | PolarMeshInfo):
+        if not self.try_wire_scale(ax, axis_id, info):
+            raise Exception(f"the {axis_id}-scale of {info} is incompatible with at least one other plot")

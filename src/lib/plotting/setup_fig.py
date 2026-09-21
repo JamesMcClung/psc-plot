@@ -8,22 +8,11 @@ from matplotlib.figure import Figure
 from matplotlib.projections import PolarAxes
 
 from lib.plotting import plt_util
-from lib.plotting.axis_id import AxisId
 from lib.plotting.data_setter import DataSetter
 from lib.plotting.grid import Grid
 from lib.plotting.labeler import UnitLabeler
 from lib.plotting.panel import Panel
 from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor, PolarMeshInfo, ScatterInfo
-
-
-def _one_or_none[T](objs: Iterable[T]) -> T | None:
-    one = None
-    for obj in objs:
-        if one is None:
-            one = obj
-        elif obj != one:
-            return None
-    return one
 
 
 def setup_colorbar(ax: Axes, target: ScalarMappable, info: PlotInfoColor | PlotInfoMaybeColor) -> Colorbar:
@@ -33,28 +22,6 @@ def setup_colorbar(ax: Axes, target: ScalarMappable, info: PlotInfoColor | PlotI
     data_lower, data_upper = info.dim_bounds[info.color_dim]
     plt_util.update_cbar(target, data_min_override=data_lower, data_max_override=data_upper)
     return cbar
-
-
-def set_scales_xy(ax: Axes, axis_id: AxisId, infos: list[PlotInfo2D]):
-    match axis_id:
-        case "x":
-            scales = [info.dim_scales[info.x_dim] for info in infos]
-            set_scale = ax.set_xscale
-        case "y":
-            scales = [info.dim_scales[info.y_dim] for info in infos]
-            set_scale = ax.set_yscale
-    if (scale := _one_or_none(scales)) is not None:
-        set_scale(scale.to_axis_scale())
-    else:
-        raise NotImplementedError(f"{axis_id} scales must all be the same, but found {scales}")
-
-
-def set_scales_rtheta(ax: PolarAxes, infos: list[PolarMeshInfo]):
-    r_scales = [info.dim_scales[info.r_dim] for info in infos]
-    if (r_scale := _one_or_none(r_scales)) is not None:
-        ax.set_rscale(r_scale.to_axis_scale())
-    else:
-        raise NotImplementedError(f"r scales must all be the same, but found {r_scales}")
 
 
 def setup_data_setter(panel: Panel, ax: Axes, info: PlotInfo):
@@ -74,11 +41,11 @@ def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
     panel = Panel()
     panel.wire_title(ax.title)
 
-    set_scales_xy(ax, "x", infos)
     panel.wire_bounds_setter_xy(ax, "x", infos)
     for info in infos:
         if not panel.try_wire_unit_labeler_xy(ax, "x", info):
             raise Exception(f"the x-axis of {info} is incompatible with at least one other plot")
+        panel.wire_scale(ax, "x", info)
 
     # Choose whether each info uses the left y-axis or the right y-axis, preferring left.
     # Only legend-supporting data (e.g. lines, but not images) are allowed on the right.
@@ -112,17 +79,17 @@ def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
         raise Exception(f"the y-axis of {info} and least two other plots are mutually incompatible")
 
     if right_infos:
-        set_scales_xy(right_ax, "y", right_infos)
         panel.wire_bounds_setter_xy(right_ax, "y", right_infos)
 
         for info in right_infos:
+            panel.wire_scale(right_ax, "y", info)
             setup_data_setter(panel, right_ax, info)
 
     if left_infos:
-        set_scales_xy(left_ax, "y", left_infos)
         panel.wire_bounds_setter_xy(left_ax, "y", left_infos)
 
         for info in left_infos:
+            panel.wire_scale(left_ax, "y", info)
             setup_data_setter(panel, left_ax, info)
 
     return panel
@@ -139,7 +106,7 @@ def setup_panel_polar(ax: PolarAxes, infos: list[PolarMeshInfo]) -> Panel:
 
     [info] = polar_mesh_infos
 
-    set_scales_rtheta(ax, infos)
+    panel.wire_scale(ax, "r", info)
     setup_data_setter(panel, ax, info)
 
     return panel
