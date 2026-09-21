@@ -5,11 +5,10 @@ from typing import Callable, Literal
 
 from lib.data.types import VarKey
 from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor
-from lib.plotting.renderer2 import Renderer2
 
 
 @dataclass
-class Labeler(Renderer2):
+class Labeler:
     set_text: Callable[[str], None]
 
 

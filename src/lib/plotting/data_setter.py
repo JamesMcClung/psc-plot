@@ -11,11 +11,10 @@ from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 
 from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PolarMeshInfo, ScatterInfo
-from lib.plotting.renderer2 import Renderer2
 
 
 @dataclass
-class DataSetter[A: Artist = Artist, I: PlotInfo = PlotInfo](Renderer2):
+class DataSetter[A: Artist = Artist, I: PlotInfo = PlotInfo]:
     artist: A
     info: I
 
