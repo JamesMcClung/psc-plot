@@ -114,14 +114,18 @@ class UnitLabeler(Labeler):
         self.set_text(self._get_label())
 
     def is_compatible(self, info: PlotInfo) -> bool:
-        self.sources.append(info)
+        return self.are_compatible([info])
+
+    def are_compatible(self, infos: list[PlotInfo]) -> bool:
+        orig = self.sources
+        self.sources = orig + infos
         try:
             self._get_label()
             return True
         except:
             return False
         finally:
-            self.sources.pop()
+            self.sources = orig
 
     def _get_key(self, info: PlotInfo) -> VarKey:
         match self.axis_name:
