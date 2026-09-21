@@ -43,6 +43,20 @@ class Grid:
 
         self.panels[loc] = panel
 
+    def contiguous_cols(self) -> list[list[Panel]]:
+        cols = []
+        for x in range(1, self.ncols + 1):
+            col = []
+            for y in range(1, self.nrows + 1):
+                if panel := self.panels.get((x, y)):
+                    col.append(panel)
+                elif col:
+                    cols.append(col)
+                    col = []
+            if col:
+                cols.append(col)
+        return cols
+
     def _wire_suptitle(self, panel: Panel):
         for subject_labeler in panel.get_subject_labelers(toplevel_only=True):
             self.suptitle_labeler.add_child(subject_labeler)
