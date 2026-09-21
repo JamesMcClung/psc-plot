@@ -49,28 +49,23 @@ def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
     panel = Panel()
     panel.wire_title(ax.title)
 
-    for info in infos:
-        if not wire_axis(panel, ax, "x", info):
-            raise Exception(f"the x-axis of {info} is incompatible with at least one other plot")
+    infos_with_legends_last = sorted(infos, key=lambda info: info.has_legend())
 
     # Choose whether each info uses the left y-axis or the right y-axis, preferring left.
     # Only legend-supporting data (e.g. lines, but not images) are allowed on the right.
     left_ax = ax
     right_ax: Axes | None = None
 
-    left_y_axis_only_infos = [info for info in infos if not info.has_legend()]
-    for info in left_y_axis_only_infos:
+    for info in infos_with_legends_last:
+        if not wire_axis(panel, ax, "x", info):
+            raise Exception(f"the x-axis of {info} is incompatible with at least one other plot")
+
         if wire_axis(panel, left_ax, "y", info):
             setup_data_setter(panel, left_ax, info)
             continue
 
-        raise Exception(f"{info} must use the left y-axis, but is incompatible with at least one other left-y-axis-only plot")
-
-    either_y_axis_infos = [info for info in infos if info.has_legend()]
-    for info in either_y_axis_infos:
-        if wire_axis(panel, left_ax, "y", info):
-            setup_data_setter(panel, left_ax, info)
-            continue
+        if not info.has_legend():
+            raise Exception(f"{info} must use the left y-axis, but is incompatible with at least one other left-y-axis-only plot")
 
         if not right_ax:
             right_ax = left_ax.twinx()
