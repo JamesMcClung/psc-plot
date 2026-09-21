@@ -43,6 +43,11 @@ class Grid:
 
         self.panels[loc] = panel
 
+    def share_x_axes_vertically(self):
+        for col in self.contiguous_cols():
+            for above, below in zip(col[:-1], col[1:]):
+                above.try_share_axis(below, "x")
+
     def contiguous_cols(self) -> list[list[Panel]]:
         cols = []
         for x in range(1, self.ncols + 1):
