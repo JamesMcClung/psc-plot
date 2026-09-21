@@ -98,12 +98,12 @@ class Panel:
     def wire_data_setter(self, data_setter: DataSetter):
         self.data_setters.append(data_setter)
 
-    def wire_bounds_setter_xy(self, ax: Axes, axis_id: AxIdXY, infos: list[PlotInfo2D]):
+    def wire_bounds_setter_xy(self, ax: Axes, axis_id: AxIdXY, info: PlotInfo2D):
         if bounds_setter := self.bounds_setters_per_axis.get((ax, axis_id)):
-            bounds_setter.infos.extend(infos)
+            bounds_setter.infos.append(info)
         else:
             create_setter = {"x": BoundsSetter.create_x_bounds_setter, "y": BoundsSetter.create_y_bounds_setter}[axis_id]
-            self.bounds_setters_per_axis[(ax, axis_id)] = create_setter(ax, infos)
+            self.bounds_setters_per_axis[(ax, axis_id)] = create_setter(ax, [info])
 
     def try_wire_unit_labeler_xy(self, ax: Axes, axis_id: AxIdXY, info: PlotInfo2D) -> bool:
         if unit_labeler := self.unit_labelers_per_axis.get((ax, axis_id)):

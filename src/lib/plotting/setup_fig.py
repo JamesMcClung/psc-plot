@@ -41,24 +41,23 @@ def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
     panel = Panel()
     panel.wire_title(ax.title)
 
-    panel.wire_bounds_setter_xy(ax, "x", infos)
     for info in infos:
         if not panel.try_wire_unit_labeler_xy(ax, "x", info):
             raise Exception(f"the x-axis of {info} is incompatible with at least one other plot")
+        panel.wire_bounds_setter_xy(ax, "x", info)
         panel.wire_scale(ax, "x", info)
 
     # Choose whether each info uses the left y-axis or the right y-axis, preferring left.
     # Only legend-supporting data (e.g. lines, but not images) are allowed on the right.
-    left_infos: list[PlotInfo] = []
-    right_infos: list[PlotInfo] = []
-
     left_ax = ax
     right_ax: Axes | None = None
 
     left_y_axis_only_infos = [info for info in infos if not info.has_legend()]
     for info in left_y_axis_only_infos:
         if panel.try_wire_unit_labeler_xy(left_ax, "y", info):
-            left_infos.append(info)
+            panel.wire_bounds_setter_xy(left_ax, "y", info)
+            panel.wire_scale(left_ax, "y", info)
+            setup_data_setter(panel, left_ax, info)
             continue
 
         raise Exception(f"{info} must use the left y-axis, but is incompatible with at least one other left-y-axis-only plot")
@@ -66,31 +65,21 @@ def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
     either_y_axis_infos = [info for info in infos if info.has_legend()]
     for info in either_y_axis_infos:
         if panel.try_wire_unit_labeler_xy(left_ax, "y", info):
-            left_infos.append(info)
+            panel.wire_bounds_setter_xy(left_ax, "y", info)
+            panel.wire_scale(left_ax, "y", info)
+            setup_data_setter(panel, left_ax, info)
             continue
 
         if not right_ax:
             right_ax = left_ax.twinx()
 
         if panel.try_wire_unit_labeler_xy(right_ax, "y", info):
-            right_infos.append(info)
+            panel.wire_bounds_setter_xy(right_ax, "y", info)
+            panel.wire_scale(right_ax, "y", info)
+            setup_data_setter(panel, right_ax, info)
             continue
 
         raise Exception(f"the y-axis of {info} and least two other plots are mutually incompatible")
-
-    if right_infos:
-        panel.wire_bounds_setter_xy(right_ax, "y", right_infos)
-
-        for info in right_infos:
-            panel.wire_scale(right_ax, "y", info)
-            setup_data_setter(panel, right_ax, info)
-
-    if left_infos:
-        panel.wire_bounds_setter_xy(left_ax, "y", left_infos)
-
-        for info in left_infos:
-            panel.wire_scale(left_ax, "y", info)
-            setup_data_setter(panel, left_ax, info)
 
     return panel
 
