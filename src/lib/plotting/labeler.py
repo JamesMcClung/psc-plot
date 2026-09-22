@@ -37,6 +37,15 @@ class SubjectLabeler(Labeler):
         child.parent = self
         self.children.append(child)
 
+    def remove_from_tree(self):
+        for child in self.children:
+            child.parent = self.parent
+        if self.parent is not None:
+            self.parent.children.remove(self)
+            self.parent.children.extend(self.children)
+        self.children.clear()
+        self.parent = None
+
     def update(self):
         """Propagate updates up to the root labeler, which makes sure that everyone rebuilds and then everyone updates text."""
         if self.parent:
