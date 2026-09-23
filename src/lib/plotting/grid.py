@@ -1,5 +1,6 @@
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from matplotlib.transforms import ScaledTranslation
 
 from lib.plotting.labeler import SubjectLabeler
 from lib.plotting.panel import Panel
@@ -13,7 +14,8 @@ class Grid:
         self.fig = fig
         self.infos: dict[AxesIdx, list[PlotInfo]] = {}
         self.panels: dict[AxesIdx, Panel] = {}
-        self.suptitle_labeler = SubjectLabeler(self.fig.suptitle("").set_text)
+        self.suptitle = self.fig.suptitle("")
+        self.suptitle_labeler = SubjectLabeler(self.suptitle.set_text)
 
         for info in infos:
             self.infos.setdefault(info.axes_index, []).append(info)
@@ -55,13 +57,32 @@ class Grid:
         # didn't end up sharing.
         layout_engine = self.fig.get_layout_engine()
         assert layout_engine is not None
+        h_pad = layout_engine.get()["h_pad"]
         layout_engine.set(h_pad=0.0, hspace=0.0)
+        self._restore_vertical_figure_padding(h_pad)
 
         # Nothing may stick out past the shared edges either, or the space comes right back.
         for col in self.contiguous_cols():
             for above, below in zip(col[:-1], col[1:]):
                 above.prune_y_ticks("lower")
                 below.prune_y_ticks("upper")
+
+    def _restore_vertical_figure_padding(self, h_pad: float):
+        """Put back the padding above and below the figure that zeroing `h_pad` took with it.
+
+        `h_pad` is the padding at the edges of the figure as well as the floor on the gaps between
+        axes, so the only way to keep one is to lay the whole figure out in a shorter rectangle.
+        """
+        pad = h_pad / self.fig.get_figheight()  # h_pad is in inches, the rectangle in figure fractions
+
+        layout_engine = self.fig.get_layout_engine()
+        assert layout_engine is not None
+        layout_engine.set(rect=(0.0, pad, 1.0, 1.0 - 2 * pad))
+
+        # The suptitle sits outside that rectangle: the engine puts it h_pad below the top of the
+        # figure itself, which is now flush against it. Carrying the offset on its transform keeps it
+        # clear of the edge, and leaves the engine still reserving exactly its height below it.
+        self.suptitle.set_transform(self.fig.transSubfigure + ScaledTranslation(0.0, -h_pad, self.fig.dpi_scale_trans))
 
     def tuck_y_tick_labels(self):
         """Pull y tick labels back inside their axes wherever they overhang an edge that has to sit flush.
