@@ -165,8 +165,17 @@ class Panel:
             return False
 
         {"x": my_ax.sharex, "y": my_ax.sharey}[axis_id](other_ax)
-        my_ax.label_outer()
+        my_ax.label_outer(remove_inner_ticks=True)
+        other_ax.label_outer(remove_inner_ticks=True)
         other_labeler.sources.extend(my_labeler.sources)
+
+        if axis_id == "x":
+            if self.title_labeler:
+                self.title_labeler.remove_from_tree()
+                self.title_labeler = None
+            if other.title_labeler:
+                other.title_labeler.remove_from_tree()
+                other.title_labeler = None
 
         self.unit_labelers_per_axis.pop((my_ax, axis_id))
         self.scales_per_axis.pop((my_ax, axis_id))
