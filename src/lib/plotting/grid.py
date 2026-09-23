@@ -47,12 +47,21 @@ class Grid:
                 shared_all &= above.try_share_axis(below, "x")
 
         if shared_all:
-            # Constrained layout floors the gap between axes at h_pad, so zeroing hspace alone
-            # isn't enough. Both are figure-wide, so this also closes gaps between any axes that
-            # didn't end up sharing.
-            layout_engine = self.fig.get_layout_engine()
-            assert layout_engine is not None
-            layout_engine.set(h_pad=0.0, hspace=0.0)
+            self._remove_vertical_space()
+
+    def _remove_vertical_space(self):
+        # Constrained layout floors the gap between axes at h_pad, so zeroing hspace alone
+        # isn't enough. Both are figure-wide, so this also closes gaps between any axes that
+        # didn't end up sharing.
+        layout_engine = self.fig.get_layout_engine()
+        assert layout_engine is not None
+        layout_engine.set(h_pad=0.0, hspace=0.0)
+
+        # Nothing may stick out past the shared edges either, or the space comes right back.
+        for col in self.contiguous_cols():
+            for above, below in zip(col[:-1], col[1:]):
+                above.prune_y_ticks("lower")
+                below.prune_y_ticks("upper")
 
     def contiguous_cols(self) -> list[list[Panel]]:
         cols = []
