@@ -32,7 +32,8 @@ class Panel:
     unit_labelers_per_axis: dict[AxAndIdXY, UnitLabeler] = field(init=False, default_factory=dict)
     bounds_setters_per_axis: dict[AxAndIdXY, BoundsSetter] = field(init=False, default_factory=dict)
     scales_per_axis: dict[AxAndId, Scale] = field(init=False, default_factory=dict)
-    pruned_y_ends: set[YEnd] = field(init=False, default_factory=set)
+    flush_y_ends: set[YEnd] = field(init=False, default_factory=set)
+    """Ends at which this panel touches its vertical neighbour, so nothing may stick out past them."""
 
     def update_data(self):
         for data_setter in self.data_setters:
@@ -166,8 +167,8 @@ class Panel:
         Constrained layout reserves room for that overhang, so it shows up as a gap between
         axes meant to touch. Locators that can't prune (log, say) are left alone.
         """
-        self.pruned_y_ends.add(end)
-        prune = "both" if len(self.pruned_y_ends) > 1 else end
+        self.flush_y_ends.add(end)
+        prune = "both" if len(self.flush_y_ends) > 1 else end
 
         for ax, axis_id in self.scales_per_axis:
             if axis_id != "y":
