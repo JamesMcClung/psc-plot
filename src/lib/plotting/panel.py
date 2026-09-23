@@ -8,12 +8,13 @@ from matplotlib.projections import PolarAxes
 from matplotlib.text import Text
 from matplotlib.ticker import MaxNLocator
 
+from lib.plotting import plt_util
 from lib.plotting.axis_id import AxId, AxIdPolar, AxIdXY
 from lib.plotting.bounds_setter import BoundsSetter
 from lib.plotting.data_setter import DataSetter
 from lib.plotting.labeler import Labeler, SubjectAndUnitLabeler, SubjectLabeler, UnitLabeler
 from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PolarMeshInfo
-from lib.scale import Scale
+from lib.scale import LinearScale, Scale
 
 type AxAndIdXY = tuple[Axes, AxIdXY]
 type AxAndId = tuple[Axes, AxIdXY] | tuple[PolarAxes, AxIdPolar]
@@ -25,6 +26,7 @@ class Panel:
     title_labeler: SubjectLabeler | None = field(init=False, default=None)
     legend_labelers_per_axes: dict[Axes, list[SubjectLabeler]] = field(init=False, default_factory=dict)
     cbar_labeler: Labeler | None = field(init=False, default=None)
+    colorbars: list[Colorbar] = field(init=False, default_factory=list)
     data_setters: list[DataSetter] = field(init=False, default_factory=list)
     unit_labelers_per_axis: dict[AxAndIdXY, UnitLabeler] = field(init=False, default_factory=dict)
     bounds_setters_per_axis: dict[AxAndIdXY, BoundsSetter] = field(init=False, default_factory=dict)
@@ -91,13 +93,20 @@ class Panel:
             self.title_labeler.add_child(legend_labeler)
 
     def wire_cbar_label(self, cbar: Colorbar, info: PlotInfoColor):
+        self.colorbars.append(cbar)
+
+        # A multiplier only makes sense where the ticks are evenly spaced; log and symlog scales label
+        # their ticks with the exponent anyway.
+        is_linear = isinstance(info.dim_scales[info.color_dim], LinearScale)
+        multiplier_exponent = plt_util.move_cbar_multiplier_to_label(cbar) if is_linear else 0
+
         is_subject = info.dim_displays[info.color_dim].maybe_with_dollars() == info.subject
         if is_subject:
-            self.cbar_labeler = SubjectAndUnitLabeler(cbar.set_label, "color", info)
+            self.cbar_labeler = SubjectAndUnitLabeler(cbar.set_label, "color", info, multiplier_exponent=multiplier_exponent)
             if self.title_labeler:
                 self.title_labeler.add_child(self.cbar_labeler.subject_labeler)
         else:
-            self.cbar_labeler = UnitLabeler(cbar.set_label, "color", [info])
+            self.cbar_labeler = UnitLabeler(cbar.set_label, "color", [info], multiplier_exponent=multiplier_exponent)
 
     def wire_data_setter(self, data_setter: DataSetter):
         self.data_setters.append(data_setter)
