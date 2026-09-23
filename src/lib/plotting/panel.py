@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Literal
 
+from matplotlib import pyplot as plt
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import RendererBase
@@ -177,23 +178,38 @@ class Panel:
             if isinstance(locator, MaxNLocator):
                 locator.set_params(prune=prune)
 
-    def tuck_cbar_tick_labels(self, end: YEnd, renderer: RendererBase):
-        """Anchor every colorbar tick label that overhangs the `end` edge of its bar to that edge.
+    def tuck_y_tick_labels(self, renderer: RendererBase):
+        """Anchor every y tick label that overhangs a flush end to that end, on both the axes and their
+        colorbars.
 
-        Same rule as `prune_y_ticks`: nothing may stick out past an edge that has to sit flush. Pruning
-        is no good here, though, because a bar spans its data exactly, so whichever tick survives is
-        still right at the edge. Measures the drawn labels, so the figure must already be laid out.
+        Same rule as `prune_y_ticks`: nothing may stick out past an edge that has to sit flush, or
+        constrained layout reserves room for it and the gap comes back. Pruning alone doesn't get there,
+        because the tick it leaves behind can still sit within half a label of the edge -- always, in the
+        case of a colorbar, whose bar spans its data exactly.
+
+        Measures the labels where they were last drawn, so the figure must already have been laid out.
+        Every label is put back to its default alignment first, both so that the measurement doesn't
+        depend on an earlier tuck and so that ticks that have since moved away from the edge are let go.
         """
-        for cbar in self.colorbars:
-            bar = cbar.ax.get_window_extent(renderer)
-            for label in cbar.ax.get_yticklabels():
+        if not self.flush_y_ends:
+            return
+
+        axs = [ax for ax, axis_id in self.scales_per_axis if axis_id == "y"]
+        axs += [cbar.ax for cbar in self.colorbars]
+        default_va = plt.rcParams["ytick.alignment"]  # what matplotlib itself aligns y tick labels by
+
+        for ax in axs:
+            box = ax.get_window_extent(renderer)
+            for label in ax.get_yticklabels():
                 if not label.get_visible():
                     continue
 
+                label.set_va(default_va)
                 bbox = label.get_window_extent(renderer)
-                if end == "upper" and bbox.y0 < bar.y1 < bbox.y1:
+
+                if "upper" in self.flush_y_ends and bbox.y0 < box.y1 < bbox.y1:
                     label.set_va("top")
-                elif end == "lower" and bbox.y0 < bar.y0 < bbox.y1:
+                elif "lower" in self.flush_y_ends and bbox.y0 < box.y0 < bbox.y1:
                     label.set_va("bottom")
 
     def try_share_axis(self, other: Panel, axis_id: AxIdXY) -> bool:

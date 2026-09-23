@@ -14,7 +14,6 @@ class Grid:
         self.infos: dict[AxesIdx, list[PlotInfo]] = {}
         self.panels: dict[AxesIdx, Panel] = {}
         self.suptitle_labeler = SubjectLabeler(self.fig.suptitle("").set_text)
-        self.flush_panel_pairs: list[tuple[Panel, Panel]] = []
 
         for info in infos:
             self.infos.setdefault(info.axes_index, []).append(info)
@@ -59,27 +58,21 @@ class Grid:
         layout_engine.set(h_pad=0.0, hspace=0.0)
 
         # Nothing may stick out past the shared edges either, or the space comes right back.
-        self.flush_panel_pairs = [pair for col in self.contiguous_cols() for pair in zip(col[:-1], col[1:])]
-        for above, below in self.flush_panel_pairs:
-            above.prune_y_ticks("lower")
-            below.prune_y_ticks("upper")
+        for col in self.contiguous_cols():
+            for above, below in zip(col[:-1], col[1:]):
+                above.prune_y_ticks("lower")
+                below.prune_y_ticks("upper")
 
-    def tuck_cbar_tick_labels(self):
-        """Pull colorbar tick labels back inside their bars wherever they overhang a shared edge.
+    def tuck_y_tick_labels(self):
+        """Pull y tick labels back inside their axes wherever they overhang an edge that has to sit flush.
 
-        Does nothing until the axes have actually been made flush, and has to run after everything else
-        that affects the layout, since it measures the labels where they were drawn. The colorbars keep
-        the ticks they are given -- their limits are fixed at setup -- so once is enough.
+        Has to run after everything else that affects the layout, since it measures the labels where they
+        were last drawn -- and again every frame, since the ticks move with the bounds.
         """
-        if not self.flush_panel_pairs:
-            return
-
-        self.fig.draw_without_rendering()
         renderer = self.fig.canvas.get_renderer()
 
-        for above, below in self.flush_panel_pairs:
-            above.tuck_cbar_tick_labels("lower", renderer)
-            below.tuck_cbar_tick_labels("upper", renderer)
+        for panel in self.panels.values():
+            panel.tuck_y_tick_labels(renderer)
 
     def contiguous_cols(self) -> list[list[Panel]]:
         cols = []
@@ -118,3 +111,4 @@ class Grid:
         self.update_data()
         self.update_bounds()
         self.update_labels()
+        self.tuck_y_tick_labels()
