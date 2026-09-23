@@ -1,10 +1,12 @@
 from dataclasses import dataclass, field
+from typing import Literal
 
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.colorbar import Colorbar
 from matplotlib.projections import PolarAxes
 from matplotlib.text import Text
+from matplotlib.ticker import MaxNLocator
 
 from lib.plotting.axis_id import AxId, AxIdPolar, AxIdXY
 from lib.plotting.bounds_setter import BoundsSetter
@@ -15,6 +17,7 @@ from lib.scale import Scale
 
 type AxAndIdXY = tuple[Axes, AxIdXY]
 type AxAndId = tuple[Axes, AxIdXY] | tuple[PolarAxes, AxIdPolar]
+type YEnd = Literal["lower", "upper"]
 
 
 @dataclass
@@ -26,6 +29,7 @@ class Panel:
     unit_labelers_per_axis: dict[AxAndIdXY, UnitLabeler] = field(init=False, default_factory=dict)
     bounds_setters_per_axis: dict[AxAndIdXY, BoundsSetter] = field(init=False, default_factory=dict)
     scales_per_axis: dict[AxAndId, Scale] = field(init=False, default_factory=dict)
+    pruned_y_ends: set[YEnd] = field(init=False, default_factory=set)
 
     def update_data(self):
         for data_setter in self.data_setters:
@@ -145,6 +149,22 @@ class Panel:
 
         self.scales_per_axis[(ax, axis_id)] = new_scale
         set_scale(new_scale.to_axis_scale())
+
+    def prune_y_ticks(self, end: YEnd):
+        """Drop the y tick label at `end`, which would otherwise overhang the axes box.
+
+        Constrained layout reserves room for that overhang, so it shows up as a gap between
+        axes meant to touch. Locators that can't prune (log, say) are left alone.
+        """
+        self.pruned_y_ends.add(end)
+        prune = "both" if len(self.pruned_y_ends) > 1 else end
+
+        for ax, axis_id in self.scales_per_axis:
+            if axis_id != "y":
+                continue
+            locator = ax.yaxis.get_major_locator()
+            if isinstance(locator, MaxNLocator):
+                locator.set_params(prune=prune)
 
     def try_share_axis(self, other: Panel, axis_id: AxIdXY) -> bool:
         my_axs = [ax for (ax, id) in self.scales_per_axis if id == axis_id]
