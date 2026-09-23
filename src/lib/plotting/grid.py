@@ -8,10 +8,6 @@ from lib.plotting.plot_info import PlotInfo
 type AxesIdx = tuple[int, int]
 
 
-def _flatten_idx(axes_idx: AxesIdx, ncols: int) -> int:
-    return ncols * (axes_idx[1] - 1) + axes_idx[0]
-
-
 class Grid:
     def __init__(self, fig: Figure, infos: list[PlotInfo]):
         self.fig = fig
@@ -24,6 +20,7 @@ class Grid:
 
         self.ncols = max(idx[0] for idx in self.infos)
         self.nrows = max(idx[1] for idx in self.infos)
+        self.gridspec = self.fig.add_gridspec(self.nrows, self.ncols)
 
     def setup_ax(self, loc: AxesIdx) -> Axes:
         infos = self.infos[loc]
@@ -31,7 +28,7 @@ class Grid:
         for info in infos[1:]:
             if info.projection != projection:
                 raise ValueError("incompatible plots (TODO: better error message)")
-        return self.fig.add_subplot(self.nrows, self.ncols, _flatten_idx(loc, self.ncols), projection=projection)
+        return self.fig.add_subplot(self.gridspec[loc[1] - 1, loc[0] - 1], projection=projection)
 
     def set_panel(self, loc: AxesIdx, panel: Panel):
         if len(self.panels) == 1:
