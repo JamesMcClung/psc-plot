@@ -3,6 +3,7 @@ from typing import Literal
 
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
+from matplotlib.backend_bases import RendererBase
 from matplotlib.colorbar import Colorbar
 from matplotlib.projections import PolarAxes
 from matplotlib.text import Text
@@ -174,6 +175,25 @@ class Panel:
             locator = ax.yaxis.get_major_locator()
             if isinstance(locator, MaxNLocator):
                 locator.set_params(prune=prune)
+
+    def tuck_cbar_tick_labels(self, end: YEnd, renderer: RendererBase):
+        """Anchor every colorbar tick label that overhangs the `end` edge of its bar to that edge.
+
+        Same rule as `prune_y_ticks`: nothing may stick out past an edge that has to sit flush. Pruning
+        is no good here, though, because a bar spans its data exactly, so whichever tick survives is
+        still right at the edge. Measures the drawn labels, so the figure must already be laid out.
+        """
+        for cbar in self.colorbars:
+            bar = cbar.ax.get_window_extent(renderer)
+            for label in cbar.ax.get_yticklabels():
+                if not label.get_visible():
+                    continue
+
+                bbox = label.get_window_extent(renderer)
+                if end == "upper" and bbox.y0 < bar.y1 < bbox.y1:
+                    label.set_va("top")
+                elif end == "lower" and bbox.y0 < bar.y0 < bbox.y1:
+                    label.set_va("bottom")
 
     def try_share_axis(self, other: Panel, axis_id: AxIdXY) -> bool:
         my_axs = [ax for (ax, id) in self.scales_per_axis if id == axis_id]
