@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from typing import Callable, Literal
 
 from lib.data.types import VarKey
+from lib.latex import Latex
 from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor
 
 
@@ -118,6 +119,8 @@ class UnitLabeler(Labeler):
     """Include the display in the label. If false, show unit only. Independent of `require_display_match`."""
     require_display_match: bool = field(kw_only=True, default=True)
     """If false, sources only have to agree on the unit. Otherwise, all sources must agree on display and unit."""
+    multiplier_exponent: int = field(kw_only=True, default=0)
+    """A power of ten factored out of the tick labels, named alongside the unit. 0 means there is none."""
 
     def update(self):
         self.set_text(self._get_label())
@@ -160,7 +163,13 @@ class UnitLabeler(Labeler):
             raise ValueError(f"{self.axis_name} units must all be the same, but found {units}")
 
         display = displays.pop().maybe_with_dollars() if self.include_display and len(displays) == 1 else ""
-        unit = units.pop().maybe_with_dollars() if len(units) == 1 else ""
+        unit_latex = units.pop() if len(units) == 1 else Latex("")
+
+        if self.multiplier_exponent:
+            multiplier = Latex(f"10^{{{self.multiplier_exponent}}}")
+            unit_latex = multiplier.append(f"\\,{unit_latex}") if unit_latex else multiplier
+
+        unit = unit_latex.maybe_with_dollars()
 
         if display and unit:
             return f"{display} [{unit}]"
@@ -169,13 +178,13 @@ class UnitLabeler(Labeler):
 
 @dataclass(init=False)
 class SubjectAndUnitLabeler(Labeler):
-    def __init__(self, set_text: Callable[[str], None], axis_name: Literal["x", "y", "color"], source: PlotInfo):
+    def __init__(self, set_text: Callable[[str], None], axis_name: Literal["x", "y", "color"], source: PlotInfo, *, multiplier_exponent: int = 0):
         super().__init__(set_text)
         self._subject = ""
         self._unit = ""
 
         self.subject_labeler = SubjectLabeler(self._set_subject, source)
-        self.unit_labeler = UnitLabeler(self._set_unit, axis_name, [source], include_display=False, require_display_match=False)
+        self.unit_labeler = UnitLabeler(self._set_unit, axis_name, [source], include_display=False, require_display_match=False, multiplier_exponent=multiplier_exponent)
 
     def update(self):
         """Update sublabelers, which call `_set_subject` and/or `_set_unit` and thus `set_text` (twice, possibly)."""
