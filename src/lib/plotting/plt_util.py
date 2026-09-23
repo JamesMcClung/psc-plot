@@ -1,6 +1,10 @@
+import math
+
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+from matplotlib.colorbar import Colorbar
 from matplotlib.colorizer import _ScalarMappable
+from matplotlib.ticker import ScalarFormatter
 
 from lib.data.data_with_attrs import ListMetadata, Metadata
 
@@ -31,6 +35,41 @@ def update_cbar(mappable: _ScalarMappable, *, data_min_override: float | None = 
 
     mappable.set_clim(cmin, cmax)
     mappable.set_cmap(plt.get_cmap(cmap))
+
+
+def get_multiplier_exponent(lower: float, upper: float) -> int:
+    """The power of ten that matplotlib would factor out of tick labels spanning `lower` to `upper`. 0 means none."""
+    largest = max(abs(lower), abs(upper))
+    if largest == 0:
+        return 0
+
+    exponent = math.floor(math.log10(largest))
+    smallest_plain_exponent, largest_plain_exponent = plt.rcParams["axes.formatter.limits"]
+
+    if exponent <= smallest_plain_exponent or exponent >= largest_plain_exponent:
+        return exponent
+    return 0
+
+
+def move_cbar_multiplier_to_label(cbar: Colorbar) -> int:
+    """Factor a fixed power of ten out of the colorbar's tick labels and return it, so the caller can name it
+    in the label instead. 0 means the labels were left alone. Only makes sense for a linear color scale.
+
+    Matplotlib would otherwise float the multiplier above the bar, where it sticks out past the top edge and
+    forces constrained layout to reserve room there -- fatal when the axes above is supposed to sit flush.
+    """
+    exponent = get_multiplier_exponent(*cbar.mappable.get_clim())
+    if exponent == 0:
+        return 0
+
+    # Equal power limits are matplotlib's way of pinning the exponent, rather than letting the formatter pick
+    # one from whatever ticks it is given.
+    formatter = ScalarFormatter(useOffset=False)
+    formatter.set_powerlimits((exponent, exponent))
+    cbar.formatter = formatter
+    cbar.ax.yaxis.get_offset_text().set_visible(False)
+
+    return exponent
 
 
 def update_title(ax: Axes, metadata: Metadata, cut_labels: list[str]):
