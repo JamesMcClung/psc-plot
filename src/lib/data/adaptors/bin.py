@@ -213,7 +213,7 @@ _BIN_FORMAT = "var_key[=nbins]"
     dest="adaptors",
     flags=["--bin", "-b"],
     metavar=_BIN_FORMAT,
-    help="Bin the data along each of the given variables, which become coordinates. If nbins is unspecified, it is guessed. Note that t is implicitly binned; disable by passing t= (with no nbins).",
+    help="Bin the data along each of the given variables, which become coordinates. If nbins is unspecified, it is guessed. Note that t is implicitly binned; disable by passing t= (with no nbins). The binned grid stays lazy, so an animation recomputes each frame; pass --compute after --bin to compute the whole grid once instead.",
     nargs="+",
 )
 def parse_bin(args: list[str]) -> Bin:
