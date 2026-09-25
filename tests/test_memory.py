@@ -116,8 +116,9 @@ def test_peak_memory_does_not_grow_with_timestep_count(many_step_data_dirs):
 
     When it did, peak memory grew by ~10 slices of the binned grid per timestep
     (measured: 336 MiB at 4 steps to 1433 MiB at 120, on 3 MB of data), which is
-    what made real runs die with numpy's _ArrayMemoryError. The floor is the
-    result itself, which grows by one slice per step.
+    what made real runs die with numpy's _ArrayMemoryError. The budget is stated
+    in slices of the binned grid because that is the unit the old growth came in;
+    the grid itself stays lazy here, so no whole-run result is resident.
     """
     argv = f"prt --species i --bin y={_N_Y_BINS} py={_N_PY_BINS} -v y py"
     few_peak = _measure(many_step_data_dirs[_FEW_STEPS], chunksize=1_000_000, argv=argv)
