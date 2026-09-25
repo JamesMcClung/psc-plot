@@ -120,22 +120,42 @@ def test_time_axis_is_not_part_of_the_per_partition_histogram(histogram_calls):
     assert not oversized, f"per-partition histograms must cover only the non-time bins (8, 16); got {sorted(oversized)}"
 
 
-def test_particle_files_are_histogrammed_once(histogram_calls):
-    """The binned grid is materialized at --bin, so neither the color bounds nor
-    the animation frames may re-run the histogram over the particle files."""
-    node = compile_plot_node(parse_args("prt.i --bin y=8 py=16 -v y py -q".split()), CONFIG_2D)
-    plot = node.pull()
+def test_drawing_a_frame_histograms_only_that_step(histogram_calls):
+    """Binning stays lazy, so each frame recomputes its slice of the grid. Each t
+    bin is its own slice of the stack, so dask must cull the frame's computation
+    down to that step's partitions — per-frame cost must not scale with the run."""
+    plot = compile_plot_node(parse_args("prt.i --bin y=8 py=16 -v y py -q".split()), CONFIG_2D).pull()
     plot._initialize()
     after_initialize = len(histogram_calls)
 
+    per_frame = []
+    for frame in range(plot.n_frames):
+        before = len(histogram_calls)
+        for renderer in plot.renderers:
+            renderer.update_plot_info(frame)
+            np.asarray(renderer.plot_info.data)
+        per_frame.append(len(histogram_calls) - before)
+
+    n_partitions = len(_pull_active("prt.i -v y py").metadata.partition_ranges)
+    assert after_initialize > 0, "expected the binning pipeline to run the histogram kernel"
+    oversized = [n for n in per_frame if n > 1]
+    assert not oversized, f"each frame must histogram only its own step's partition; got {per_frame} calls per frame ({n_partitions} partitions total)"
+
+
+def test_compute_after_bin_materializes_the_grid(histogram_calls):
+    """`--bin ... -c` is how a user buys the plot-sized grid once: the histogram
+    runs during .pull(), and no frame may re-run it over the particle files."""
+    plot = compile_plot_node(parse_args("prt.i --bin y=8 py=16 -c -v y py -q".split()), CONFIG_2D).pull()
+    after_pull = len(histogram_calls)
+    plot._initialize()
     for frame in range(plot.n_frames):
         for renderer in plot.renderers:
             renderer.update_plot_info(frame)
             np.asarray(renderer.plot_info.data)
 
     n_partitions = len(_pull_active("prt.i -v y py").metadata.partition_ranges)
-    assert after_initialize == n_partitions, f"expected one histogram call per partition ({n_partitions}), got {after_initialize}"
-    assert len(histogram_calls) == after_initialize, f"drawing {plot.n_frames} frames re-ran the histogram {len(histogram_calls) - after_initialize} times"
+    assert after_pull == n_partitions, f"expected one histogram call per partition ({n_partitions}) at --compute, got {after_pull}"
+    assert len(histogram_calls) == after_pull, f"bounds and {plot.n_frames} frames re-ran the histogram {len(histogram_calls) - after_pull} times"
 
 
 @pytest.mark.parametrize("n_t_bins", [3, 11, 25])
