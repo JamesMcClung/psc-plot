@@ -136,3 +136,28 @@ def test_particle_files_are_histogrammed_once(histogram_calls):
     n_partitions = len(_pull_active("prt.i -v y py").metadata.partition_ranges)
     assert after_initialize == n_partitions, f"expected one histogram call per partition ({n_partitions}), got {after_initialize}"
     assert len(histogram_calls) == after_initialize, f"drawing {plot.n_frames} frames re-ran the histogram {len(histogram_calls) - after_initialize} times"
+
+
+@pytest.mark.parametrize("n_t_bins", [3, 11, 25])
+def test_explicit_time_bins_match_numpy(n_t_bins):
+    """An explicit --bin t=<n> makes t bins that don't correspond 1:1 to steps:
+    coarser bins sum several steps together, finer ones leave bins empty."""
+    listdata = _pull_active("prt.i -v y py")
+    assert isinstance(listdata, List)
+    df = listdata.data.compute()
+
+    binned = _pull_active(f"prt.i --bin y=8 py=16 t={n_t_bins} -v y py").require_active_subdata()
+    assert binned.sizes["t"] == n_t_bins
+
+    edgess = []
+    for dim in ("y", "py", "t"):
+        left = np.asarray(binned.coords[dim])
+        edgess.append(np.append(left, 2 * left[-1] - left[-2]))
+
+    expected, _ = np.histogramdd(
+        [df["y"].to_numpy(), df["py"].to_numpy(), df["t"].to_numpy()],
+        edgess,
+        weights=df["w"].to_numpy(),
+    )
+
+    np.testing.assert_allclose(np.asarray(binned.transpose("y", "py", "t")), expected, rtol=1e-6)
