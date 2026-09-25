@@ -39,3 +39,27 @@ Type aliases live in `src/lib/data/types.py`: `DimKey` / `SubdataKey` / `VarKey`
 A dim whose coord has collapsed to a scalar (via `--idx t=<int>`) holds one value for every row, so it is dropped from the bin dims and carried through as a scalar coord of the result — which is also what the renderers key on to label it.
 
 `tests/test_bin.py` guards all of this structurally (per-partition bin shape, one histogram pass per partition); `tests/test_memory.py` guards the peak-RSS scaling end-to-end, using a negligible particle count over many steps, since that is what makes the cluster failure reproducible on a laptop.
+
+### Idea, not implemented: sparse binning via groupby
+
+An alternative to the dense-histogram-plus-stacking above, recorded because the trade-off is not obvious and the crossover has never been measured. Instead of each partition allocating the output grid, each row gets one flat bin index and the aggregation is sparse:
+
+```python
+idx = np.ravel_multi_index([np.searchsorted(edges, col) - 1 for col, edges in ...], nbins)
+counts = df.assign(_bin=idx).groupby("_bin")[weight_key].sum()  # dask, tree-reduced
+out = np.zeros(nbins).ravel()
+out[counts.index] = counts.values  # once, at the end
+```
+
+The two approaches have orthogonal per-partition costs: dense is `prod(nbins) × itemsize` regardless of row count, sparse is `min(rows, occupied bins) × ~12 bytes` regardless of bin count. At a 1M-row chunk, sparse costs ~12 MiB per partition, so it **loses** for `--bin y=512 uy=256` (0.5 MiB dense after the t stacking) and **wins** around and above ~3M bins — i.e. three or more large non-`t` bin dims, e.g. `--bin t= y=512 uy=256 uz=256` at 134 MiB dense. That is the remaining exposure to the failure mode the t stacking fixed.
+
+Pros beyond the memory number:
+- Peak memory becomes a function of `PSC_PLOT_DASK_CHUNK_SIZE`, a knob, instead of a function of the plot's resolution, which is not. Better cluster failure mode: turn the chunk size down rather than "this plot is impossible".
+- It subsumes the per-step stacking entirely — fold `t` into the flat index and `_histogram_per_step`, `partition_dim`, `partition_ranges`, `_step_bin_indices` and `Idx`'s rebasing of the ranges all become unnecessary. One code path instead of two plus a metadata contract.
+
+Cons:
+- A groupby is a shuffle; even tree-reduced with `split_out=1`, the combine steps concatenate several partitions' pairs before aggregating, and it is meaningfully slower than `np.histogramdd`'s C loop on small grids.
+- Non-uniform edges need a `searchsorted` per dim per partition, and out-of-range rows need dropping explicitly — both free in dense `histogramdd`.
+- Picking per call by `prod(nbins)` means keeping both paths plus a crossover rule, which forfeits the simplification above. Deleting the dense path instead buys the simplification at the cost of the slowdown everywhere.
+
+The open question that decides between one path and two: is the groupby within ~2x of `histogramdd` at ~131k bins? Unmeasured.
