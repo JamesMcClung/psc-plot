@@ -14,9 +14,10 @@ Two properties matter here beyond plain correctness:
 from __future__ import annotations
 
 import numpy as np
+import pytest
 from conftest import CONFIG_2D
 
-from lib.data.compile import compile_data_node
+from lib.data.compile import compile_data_node, compile_plot_node
 from lib.data.data_with_attrs import Field, List
 from lib.parsing.parse import parse_args
 
@@ -89,3 +90,49 @@ def test_binned_values_match_numpy():
 
     actual = np.asarray(binned.transpose("y", "py", "t"))
     np.testing.assert_allclose(actual, expected, rtol=1e-6)
+
+
+@pytest.fixture
+def histogram_calls(monkeypatch: pytest.MonkeyPatch):
+    """Records the per-partition bin shape of every histogram kernel call.
+
+    `dask.array.histogramdd` allocates one dense `prod(nbins)` array per
+    dataframe partition, so this is the allocation that used to blow up.
+    """
+    shapes: list[tuple[int, ...]] = []
+    original = np.histogramdd
+
+    def recording_histogramdd(sample, bins=None, **kwargs):
+        shapes.append(tuple(len(np.asarray(edges)) - 1 for edges in bins))
+        return original(sample, bins, **kwargs)
+
+    monkeypatch.setattr(np, "histogramdd", recording_histogramdd)
+    return shapes
+
+
+def test_time_axis_is_not_part_of_the_per_partition_histogram(histogram_calls):
+    """Each partition holds one timestep, so histogramming t per partition would
+    allocate the whole y-by-py-by-t grid to write one t slice of it."""
+    compile_plot_node(parse_args("prt.i --bin y=8 py=16 -v y py -q".split()), CONFIG_2D).pull()._initialize()
+
+    assert histogram_calls, "expected the binning pipeline to run the histogram kernel"
+    oversized = {shape for shape in histogram_calls if shape != (8, 16)}
+    assert not oversized, f"per-partition histograms must cover only the non-time bins (8, 16); got {sorted(oversized)}"
+
+
+def test_particle_files_are_histogrammed_once(histogram_calls):
+    """The binned grid is materialized at --bin, so neither the color bounds nor
+    the animation frames may re-run the histogram over the particle files."""
+    node = compile_plot_node(parse_args("prt.i --bin y=8 py=16 -v y py -q".split()), CONFIG_2D)
+    plot = node.pull()
+    plot._initialize()
+    after_initialize = len(histogram_calls)
+
+    for frame in range(plot.n_frames):
+        for renderer in plot.renderers:
+            renderer.update_plot_info(frame)
+            np.asarray(renderer.plot_info.data)
+
+    n_partitions = len(_pull_active("prt.i -v y py").metadata.partition_ranges)
+    assert after_initialize == n_partitions, f"expected one histogram call per partition ({n_partitions}), got {after_initialize}"
+    assert len(histogram_calls) == after_initialize, f"drawing {plot.n_frames} frames re-ran the histogram {len(histogram_calls) - after_initialize} times"
