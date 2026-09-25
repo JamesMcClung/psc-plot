@@ -133,10 +133,8 @@ def _histogram_per_step(data: LazyList, keys_to_nbins: dict[VarKey, int | None],
 
 
 class Bin(MetadataAdaptor):
-    def __init__(self, key_to_nbins: dict[VarKey, int | None], materialize: bool = True):
+    def __init__(self, key_to_nbins: dict[VarKey, int | None]):
         self.keys_to_nbins = key_to_nbins
-        self.materialize = materialize
-        """Whether to compute the binned grid eagerly. Cleared by `--dask-graph`, which needs the lazy graph."""
 
     def apply_field(self, data: Field) -> Field:
         dim_names_to_bin_size = {}
@@ -173,12 +171,6 @@ class Bin(MetadataAdaptor):
                     density=False,
                     weights=data[data.metadata.weight_key].to_dask_array() if data.metadata.weight_key else None,
                 )
-
-            if self.materialize:
-                # Binning reduces the data to the plot-sized grid, so computing it here
-                # reads the particle files once instead of once per animation frame plus
-                # once more for the color bounds.
-                binned_data = binned_data.compute()
         else:
             binned_data, _ = np.histogramdd(
                 [data[key] for key in keys_to_nbins],

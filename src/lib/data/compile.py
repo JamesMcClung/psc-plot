@@ -2,7 +2,6 @@ import sys
 
 from lib.config import PscPlotConfig
 from lib.data.adaptor import Adaptor
-from lib.data.adaptors.bin import Bin
 from lib.data.adaptors.versus import Versus
 from lib.data.node import AdaptorNode, DaskGraphNode, DataProcessingNode, PlotNode, RootNode, SavePlotNode, ShowPlotNode
 from lib.parsing.args import Args
@@ -36,12 +35,6 @@ def compile_plot_node(args: Args, config: PscPlotConfig) -> PlotNode:
 
 
 def compile_action_nodes(args: Args, config: PscPlotConfig) -> list[DataProcessingNode[None]]:
-    if args.dask_graph:
-        # Bin materializes its grid by default, which would leave no graph to render.
-        for adaptor in args.adaptors:
-            if isinstance(adaptor, Bin):
-                adaptor.materialize = False
-
     plot_node = compile_plot_node(args, config)
     action_nodes = []
 
