@@ -15,20 +15,36 @@ class Idx(MetadataAdaptor):
     def apply_list(self, data: List) -> List:
         coordss = data.coordss().copy()
         df = data.data
+        partition_dim = data.metadata.partition_dim
+        partition_ranges = data.metadata.partition_ranges
 
         for dim, isel in self.dim_names_to_isel.items():
             if dim not in coordss:
                 raise ValueError(f"Data has no coordinate information for dimension {dim}")
 
-            if dim == data.metadata.partition_dim and data.metadata.partition_ranges is not None:
+            if dim == partition_dim and partition_ranges is not None:
                 # Dask-native partition pruning along the partition dim.
-                all_steps = list(range(len(data.metadata.partition_ranges)))
+                all_steps = list(range(len(partition_ranges)))
                 selected_steps = all_steps[isel]
                 if isinstance(selected_steps, int):
                     selected_steps = [selected_steps]
-                partition_indices = [p for step in selected_steps for p in range(*data.metadata.partition_ranges[step])]
+                partition_indices = [p for step in selected_steps for p in range(*partition_ranges[step])]
                 df = df.partitions[partition_indices]
-                coordss[dim] = coordss[dim][isel] if isinstance(isel, slice) else coordss[dim][isel]
+                coordss[dim] = coordss[dim][isel]
+
+                if isinstance(isel, int):
+                    # The dim now holds a single value, so partitions are no longer laid out along it.
+                    partition_dim = None
+                    partition_ranges = None
+                else:
+                    # Rebase the surviving ranges onto the pruned frame's partition numbering.
+                    rebased = []
+                    offset = 0
+                    for step in selected_steps:
+                        start, end = partition_ranges[step]
+                        rebased.append((offset, offset + end - start))
+                        offset += end - start
+                    partition_ranges = rebased
                 continue
 
             if isinstance(isel, int):
@@ -51,7 +67,7 @@ class Idx(MetadataAdaptor):
 
                 coordss[dim] = coordss[dim][isel]
 
-        return data.assign(df, coordss=coordss)
+        return data.assign(df, coordss=coordss, partition_dim=partition_dim, partition_ranges=partition_ranges)
 
     def get_name_fragments(self) -> list[str]:
         subfrags = "_".join(f"{dim_name}={data_util.sel_to_frag(isel)}" for dim_name, isel in self.dim_names_to_isel.items())
