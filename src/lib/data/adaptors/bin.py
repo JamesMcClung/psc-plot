@@ -76,9 +76,62 @@ def _guess_bin_edgess(data: List, keys_to_nbins: dict[VarKey, int | None]) -> li
     return edgess
 
 
+def _step_bin_indices(step_coords: np.ndarray, step_edges: np.ndarray) -> np.ndarray:
+    """Map each step's coord value onto an output bin index, or -1 if it falls outside every bin."""
+    indices = np.searchsorted(step_edges, step_coords, side="right") - 1
+    indices[(step_coords < step_edges[0]) | (step_coords >= step_edges[-1])] = -1
+    return indices
+
+
+def _histogram_per_step(data: LazyList, keys_to_nbins: dict[VarKey, int | None], bin_edgess: list) -> dask.array.Array:
+    """Histogram a partition-aligned `LazyList` one step at a time.
+
+    `dask.array.histogramdd` materializes one dense `prod(nbins)` array per dataframe
+    partition and sums them. Partitions are laid out along `partition_dim` — each holds
+    exactly one of its values — so including that dim in the histogram makes every
+    partition allocate the whole array while only ever writing to one slice of it.
+    Binning each step over the remaining dims and stacking the results shrinks the
+    per-partition allocation by the length of `partition_dim`; on a long run that is the
+    difference between half a MiB and a hundred MiB per partition in flight.
+    """
+    partition_dim = data.metadata.partition_dim
+    partition_ranges = data.metadata.partition_ranges
+    assert partition_dim is not None and partition_ranges is not None
+
+    keys = list(keys_to_nbins)
+    step_axis = keys.index(partition_dim)
+    step_edges = bin_edgess[step_axis]
+    other_keys = [key for key in keys if key != partition_dim]
+    other_edgess = [edges for key, edges in zip(keys, bin_edgess) if key != partition_dim]
+
+    weight_key = data.metadata.weight_key
+    step_bins = _step_bin_indices(np.asarray(data.metadata.coordss[partition_dim]), step_edges)
+
+    hists_per_bin: list[list[dask.array.Array]] = [[] for _ in range(len(step_edges) - 1)]
+    for step, (start, end) in enumerate(partition_ranges):
+        bin_index = int(step_bins[step])
+        if bin_index < 0 or start == end:
+            continue
+        step_df = data.data.partitions[start:end]
+        hist, _ = dask.array.histogramdd(
+            [step_df[key].to_dask_array() for key in other_keys],
+            other_edgess,
+            density=False,
+            weights=step_df[weight_key].to_dask_array() if weight_key else None,
+        )
+        hists_per_bin[bin_index].append(hist)
+
+    other_shape = tuple(len(edges) - 1 for edges in other_edgess)
+    dtype = data.data[weight_key].dtype if weight_key else np.float64
+    slices = [sum(hists[1:], hists[0]) if hists else dask.array.zeros(other_shape, dtype=dtype) for hists in hists_per_bin]
+    return dask.array.stack(slices, axis=step_axis)
+
+
 class Bin(MetadataAdaptor):
-    def __init__(self, key_to_nbins: dict[VarKey, int | None]):
+    def __init__(self, key_to_nbins: dict[VarKey, int | None], materialize: bool = True):
         self.keys_to_nbins = key_to_nbins
+        self.materialize = materialize
+        """Whether to compute the binned grid eagerly. Cleared by `--dask-graph`, which needs the lazy graph."""
 
     def apply_field(self, data: Field) -> Field:
         dim_names_to_bin_size = {}
@@ -97,30 +150,45 @@ class Bin(MetadataAdaptor):
         return data.with_active(data=data.require_active_subdata().coarsen(dim_names_to_bin_size, boundary="pad").mean())
 
     def apply_list(self, data: List) -> Field:
-        bin_edgess = _guess_bin_edgess(data, self.keys_to_nbins)
+        # A dim whose coord has collapsed to a single value (e.g. by --idx t=<int>) holds
+        # that value for every row, so it is a scalar coord of the result, not a bin dim.
+        all_coordss = data.coordss()
+        scalar_coords = {key: all_coordss[key] for key in self.keys_to_nbins if key in all_coordss and np.ndim(all_coordss[key]) == 0}
+        keys_to_nbins = {key: nbins for key, nbins in self.keys_to_nbins.items() if key not in scalar_coords}
+
+        bin_edgess = _guess_bin_edgess(data, keys_to_nbins)
 
         if isinstance(data, LazyList):
-            binned_data, _ = dask.array.histogramdd(
-                [data[key].to_dask_array() for key in self.keys_to_nbins],
-                bin_edgess,
-                density=False,
-                weights=data[data.metadata.weight_key].to_dask_array() if data.metadata.weight_key else None,
-            )
+            if data.metadata.partition_dim in keys_to_nbins and data.metadata.partition_ranges is not None:
+                binned_data = _histogram_per_step(data, keys_to_nbins, bin_edgess)
+            else:
+                binned_data, _ = dask.array.histogramdd(
+                    [data[key].to_dask_array() for key in keys_to_nbins],
+                    bin_edgess,
+                    density=False,
+                    weights=data[data.metadata.weight_key].to_dask_array() if data.metadata.weight_key else None,
+                )
+
+            if self.materialize:
+                # Binning reduces the data to the plot-sized grid, so computing it here
+                # reads the particle files once instead of once per animation frame plus
+                # once more for the color bounds.
+                binned_data = binned_data.compute()
         else:
             binned_data, _ = np.histogramdd(
-                [data[key] for key in self.keys_to_nbins],
+                [data[key] for key in keys_to_nbins],
                 bin_edgess,
                 density=False,
                 weights=data[data.metadata.weight_key] if data.metadata.weight_key else None,
             )
 
         # note: the slice removes any infs
-        coords = dict(zip(self.keys_to_nbins.keys(), (edges[:-1] for edges in bin_edgess)))
+        coords = dict(zip(keys_to_nbins.keys(), (edges[:-1] for edges in bin_edgess))) | scalar_coords
 
         da = xr.DataArray(
             binned_data,
             coords,
-            dims=self.keys_to_nbins.keys(),
+            dims=keys_to_nbins.keys(),
         )
 
         f_info = var_info_registry.lookup("prt", "f")
