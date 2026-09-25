@@ -1,0 +1,29 @@
+# CLAUDE.md — `src/lib/data`
+
+Detail on the data layer: the values that flow through the node graph, and the adaptors that transform them. The pipeline overview, the auto-registration mechanism, `var_infos`, and the derived-variable registries live in the repo-root `CLAUDE.md`.
+
+## PlotTarget
+
+`src/lib/data/plot_target.py`: a `PlotTarget[D, SD]` names one thing to draw — the `data` itself (a snapshot of the `DataWithAttrs` at the moment `Versus` ran, **not** a lookup key into `DataWorld.datas`), a `spatial_dims` (`SpatialDimsXY(x_dim, y_dim)` or `SpatialDimsRTheta(r_dim, theta_dim)`, both with `ndims` and `unpack()`), an optional `color_dim` and `time_dim`, and an `axes_loc: (col, row)` (1-based) selecting which subplot it lands in. `Versus.apply_world` is what constructs and appends targets (`-v … loc=i,j` sets `axes_loc`); multiple targets sharing an `axes_loc` are overlaid on one axes. Because the target captures the data, later adaptors in the pipeline don't retroactively affect already-appended targets — that's what makes `--copy x -i y=1 -v t --copy x -i y=-1 -v t` produce two independent curves.
+
+## WorldAdaptor / Adaptor class hierarchy
+
+`src/lib/data/adaptor.py`:
+- `WorldAdaptor` (ABC) — single abstract `apply_world(world) -> DataWorld`. The shared node-graph interface for **both loaders and adaptors**. Adaptors that must touch the whole world (e.g. `Versus`, which reads `active_data` and appends a `PlotTarget`) override this directly.
+- `Adaptor(WorldAdaptor)` — default `apply_world` = `world.with_active(data=self.apply(world.active_data))`. Override `apply_field`/`apply_list`; the unused one raises a friendly "use `--bin`/`--scatter`" error.
+- `MetadataAdaptor(Adaptor)` — wraps `apply` to also modify the active variable's `VarInfo` in `var_infos` (used to derive axis labels/filenames). Override `get_modified_display_latex(metadata)` and/or `get_modified_unit_latex(metadata)`; both receive the current `metadata` so they can inspect e.g. `active_key` and `active_var_info`.
+- `BareAdaptor(MetadataAdaptor)` — operates on the raw active variable (a single `xr.DataArray` for fields, a single `pd.Series`/`dd.Series` for lists) and doesn't touch metadata; override `apply_field_bare`/`apply_list_bare`.
+
+## Data wrapper
+
+`src/lib/data/data_with_attrs.py` defines `DataWithAttrs[Data, Subdata, MD]` and concrete `Field` (whole = `dict[str, xr.DataArray]`, sub = `xr.DataArray`), `FullList` (pandas) and `LazyList` (dask) (whole = `DataFrame`, sub = `Series`). The **whole/sub distinction is what the three type params encode** — `data` is the container, `__getitem__(key)` yields one subdata, `dims` lists the keys.
+
+Frozen dataclasses; mutate via `assign(data=None, /, **metadata_vals)` (replaces data and/or metadata fields in one call), `with_info(key, info)`, or `with_active(*, data=, key=, info=)` — the latter is the workhorse: it writes the subdata into `data[key]`, updates `var_infos[key]`, and sets `active_key`, any subset of which may be omitted. Read the active variable via `active_key` / `active_subdata` / `active_info` (all `None`-tolerant) or `require_active_key()` / `require_active_subdata()` (raise a friendly error). Most code should use these rather than `data` directly; `BareAdaptor` handles it automatically via the shims in `adaptor.py`.
+
+Two more abstract accessors both subclasses implement: `coordss(key=None) -> dict[DimKey, Coords]` (for `Field`, read off the xarray coords; for `List`, the explicit `ListMetadata.coordss`) and `bounds(key=None) -> Bounds` (defaults to the active key; **coordinates win over data values**, and the upper bound is extended by one cell width so it works as an image extent — falls back to a dask-computed min/max otherwise). `dask_collections()` returns the underlying dask objects, used by `--dask-graph`.
+
+Type aliases live in `src/lib/data/types.py`: `DimKey` / `SubdataKey` / `VarKey` (all `str`, but they document intent), `SpeciesKey`, `Bounds`, `Coords`.
+
+`Metadata` carries `prepath` (e.g. `"run5/pfd_moments"`), `active_key` (`SubdataKey | None`), `var_infos` (`dict[VarKey, VarInfo]` — maps all known variable/dimension keys), and `species`. `active_key` defaults to `None` — particle data may have no active variable (e.g. pure scatter of positions); `active_var_info` raises if so. `var_infos` is populated at load time from `src/lib/var_info_registry.py` via `lookup(prefix, key)` for every coordinate and the active variable. `FieldMetadata` adds nothing (it's a marker subclass). `ListMetadata` adds `coordss`, `weight_key`, and `subject: Latex | None` — what the list contains (e.g. "Particles", "Ions", "Electrons"); set by the particle loaders, refined by `SpeciesFilter`, used by `Bin` (distribution-function subscripts) and `ScatterRenderer` (titles). `ListMetadata` also carries optional `partition_dim: str | None` and `partition_ranges: list[tuple[int,int]] | None` — when set (currently by both particle loaders, with `partition_dim="t"`), they let `Idx.apply_list` prune by `df.partitions[...]` instead of a `df[df[dim] == pos]` predicate filter. **Loader invariant:** `partition_ranges` must describe the actual partition layout of the `dd.DataFrame` returned (one entry per value of `partition_dim`, each `(start, end)` matching the per-step `npartitions`). `LazyList.compute()` clears these fields because they describe the dask layout and become meaningless after materialization. The unusual `**` unpacking via `__getitem__` + `keys()` is what `Metadata.create_from` and `assign` use to round-trip values between subclasses (`FieldMetadata` vs `ListMetadata`).
+
+> **Note (split-vars):** the `spatial_dims` / `time_dim` / `color_dim` axis-selection fields and the `name_fragments` that `Metadata` used to carry have moved out — geometry/axis selection now lives on `PlotTarget` (inside `DataWorld`), and `name_fragments` are accumulated by the node graph (`DataProcessingNode.name_fragments` / `HasNameFragments`).
