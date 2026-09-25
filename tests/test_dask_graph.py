@@ -12,7 +12,7 @@ silently causing dead loads of every column in every file.
 from conftest import _DATA_DIR
 
 from lib.config import PscPlotConfig
-from lib.data.compile import compile_action_nodes
+from lib.data.compile import compile_data_node
 from lib.parsing.parse import parse_args
 
 
@@ -20,11 +20,7 @@ def _read_keys_for_columns(args_list: list[str], data_dir: str = "test-2d") -> l
     """Optimize each dask collection produced by `args_list` and return
     the set of per-column file-read task key strings in the optimized graph."""
     config = PscPlotConfig(data_root=_DATA_DIR / data_dir)
-    # --dask-graph is what keeps the pipeline lazy all the way to the plot node
-    # (Bin otherwise materializes its grid), so compile the way it does.
-    args = parse_args([*args_list, "--dask-graph"])
-    [dask_graph_node] = compile_action_nodes(args, config)
-    data = dask_graph_node.input_node.pull().active_data
+    data = compile_data_node(parse_args(args_list), config).pull().active_data
     collections = data.dask_collections()
     assert collections, "expected particle pipeline to be dask-backed"
     read_keys: list[str] = []
