@@ -22,7 +22,7 @@ psc-plot <prepath> [variable] [options]
 
 Or directly via `py src/main.py <prepath> [variable] [options]` (backward-compatible).
 
-Where `<prepath>` is a **path relative to `PSC_PLOT_DATA_DIR`, ending in the file prefix** — e.g. `pfd` (data root itself) or `run5/pfd` (subdirectory). The prefix part selects the data source: field prefixes (`pfd`, `pfd_moments`, `gauss`, `continuity`) or particle prefixes (`prt`). `Prepath` is just a `str` alias (`src/lib/file_util.py`); `split_prepath()` splits it into `(subdir, prefix)`. Examples live in `plots/check.sh` and `plots/check2.sh` and serve as the de-facto smoke tests / usage reference.
+Where `<prepath>` is a **path relative to `PSC_PLOT_DATA_DIR`, ending in the file prefix** — e.g. `pfd` (data root itself) or `run5/pfd` (subdirectory). The prefix part selects the data source: field prefixes (`pfd`, `pfd_moments`, `gauss`, `continuity`) or particle prefixes (`prt` for HDF5, `prt.<species>` for ADIOS2). `Prepath` is just a `str` alias (`src/lib/file_util.py`); `split_prepath()` splits it into `(subdir, prefix)`. Examples live in `plots/check.sh` and `plots/check2.sh` and serve as the de-facto smoke tests / usage reference.
 
 Common flags:
 - `-q` quiet (don't show interactively), `-s`/`--save` save output — each argument is either a path fragment `[dir/][stem][.ext]` or one of `dir=`/`name=`/`format=`; bare `-s` means cwd, a stem derived from `name_fragments`, and the default format. A directory fragment must end in `/` (or use `dir=`), otherwise it's taken as the filename stem. `--save-dpi` is deliberately separate, pending a `--dpi` that would apply to live figures too
