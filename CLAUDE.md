@@ -112,6 +112,13 @@ VS Code: install the official Ruff extension (`charliermarsh.ruff`) and add to y
 
 The code lives under `src/lib/` and is organized around **loaders** (sources), **adaptors** (transforms), and **plots** (renderers). A lazy **node graph** wraps a **`DataWorld`** value that flows through them; argument parsing wires it all together.
 
+Deeper detail lives next to the code it describes, and is loaded on demand when a session touches that subtree:
+
+- `src/lib/data/CLAUDE.md` — `PlotTarget`, the `WorldAdaptor`/`Adaptor` hierarchy, `DataWithAttrs`/`Metadata`
+- `src/lib/plotting/CLAUDE.md` — `PlotInfo`, `Renderer`, `setup_fig`/`Grid`/`Panel`, the artist setters, labelers, hooks
+
+What stays here is what spans packages: the pipeline overview below, auto-registration, `var_infos`, and the derived-variable registries. **Keep it that way** — a section whose subject lives in one subtree belongs in that subtree's file, so it gets updated by the sessions that change it.
+
 ### Data flow
 
 1. `cli.main()` (`src/lib/cli.py`) builds `PscPlotConfig.from_env()`, configures dask, calls `parse_args()` (`src/lib/parsing/parse.py`) — a flat argparse parser with positional `prepath` + optional `variable` plus all registered adaptor/hook flags, returning an `Args` namespace (`src/lib/parsing/args.py`). It then calls `compile_action_nodes(args, config)` (`src/lib/data/compile.py`) and `.pull()`s each returned action node. (The `prepath` positional is **not** choices-constrained; an unknown prefix fails later in `get_loader`.)
