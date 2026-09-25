@@ -107,17 +107,22 @@ def _histogram_per_step(data: LazyList, keys_to_nbins: dict[VarKey, int | None],
     weight_key = data.metadata.weight_key
     step_bins = _step_bin_indices(np.asarray(data.metadata.coordss[partition_dim]), step_edges)
 
+    # Convert each column to a dask array once, up front: every to_dask_array() call
+    # re-optimizes the whole dataframe expression, so calling it per step would cost
+    # O(n_steps^2). Selecting a step's partitions afterwards is a cheap `.blocks` slice,
+    # and needs no knowledge of per-partition row counts.
+    columns = {key: data.data[key].to_dask_array() for key in [*other_keys, *([weight_key] if weight_key else [])]}
+
     hists_per_bin: list[list[dask.array.Array]] = [[] for _ in range(len(step_edges) - 1)]
     for step, (start, end) in enumerate(partition_ranges):
         bin_index = int(step_bins[step])
         if bin_index < 0 or start == end:
             continue
-        step_df = data.data.partitions[start:end]
         hist, _ = dask.array.histogramdd(
-            [step_df[key].to_dask_array() for key in other_keys],
+            [columns[key].blocks[start:end] for key in other_keys],
             other_edgess,
             density=False,
-            weights=step_df[weight_key].to_dask_array() if weight_key else None,
+            weights=columns[weight_key].blocks[start:end] if weight_key else None,
         )
         hists_per_bin[bin_index].append(hist)
 
