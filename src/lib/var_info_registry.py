@@ -80,6 +80,9 @@ for species in ["e", "i"]:
     _register("pfd_moments", f"txy_{species}", rf"T_{{xy,\text{{{species}}}}}")
     _register("pfd_moments", f"tyz_{species}", rf"T_{{yz,\text{{{species}}}}}")
     _register("pfd_moments", f"tzx_{species}", rf"T_{{zx,\text{{{species}}}}}")
+    _register("pfd_moments", f"Txx_{species}", rf"T_{{xx,\text{{{species}}}}}")
+    _register("pfd_moments", f"Tyy_{species}", rf"T_{{yy,\text{{{species}}}}}")
+    _register("pfd_moments", f"Tzz_{species}", rf"T_{{zz,\text{{{species}}}}}")
 
 _register("pfd_moments", "rho", r"\rho")
 
