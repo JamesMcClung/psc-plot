@@ -80,6 +80,9 @@ for species in ["e", "i"]:
     _register("pfd_moments", f"txy_{species}", rf"T_{{xy,\text{{{species}}}}}")
     _register("pfd_moments", f"tyz_{species}", rf"T_{{yz,\text{{{species}}}}}")
     _register("pfd_moments", f"tzx_{species}", rf"T_{{zx,\text{{{species}}}}}")
+    _register("pfd_moments", f"Txx_{species}", rf"T_{{xx,\text{{{species}}}}}")
+    _register("pfd_moments", f"Tyy_{species}", rf"T_{{yy,\text{{{species}}}}}")
+    _register("pfd_moments", f"Tzz_{species}", rf"T_{{zz,\text{{{species}}}}}")
 
 _register("pfd_moments", "rho", r"\rho")
 
@@ -87,9 +90,12 @@ _register("pfd_moments", "rho", r"\rho")
 _register("prt", "x", "x", unit=ELECTRON_SKIN_DEPTH)
 _register("prt", "y", "y", unit=ELECTRON_SKIN_DEPTH)
 _register("prt", "z", "z", unit=ELECTRON_SKIN_DEPTH)
-_register("prt", "px", "u_x", unit=SPEED_OF_LIGHT)
-_register("prt", "py", "u_y", unit=SPEED_OF_LIGHT)
-_register("prt", "pz", "u_z", unit=SPEED_OF_LIGHT)
+_register("prt", "px", "u_x", unit=SPEED_OF_LIGHT)  # deprecated
+_register("prt", "py", "u_y", unit=SPEED_OF_LIGHT)  # deprecated
+_register("prt", "pz", "u_z", unit=SPEED_OF_LIGHT)  # deprecated
+_register("prt", "ux", "u_x", unit=SPEED_OF_LIGHT)
+_register("prt", "uy", "u_y", unit=SPEED_OF_LIGHT)
+_register("prt", "uz", "u_z", unit=SPEED_OF_LIGHT)
 _register("prt", "q", "q", unit=ELEMENTARY_CHARGE)
 _register("prt", "m", "m", unit=ELECTRON_MASS)
 _register("prt", "w", "w")
