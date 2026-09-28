@@ -16,6 +16,49 @@ def rho(rho_i: DataArray, rho_e: DataArray) -> DataArray:
     return rho_i + rho_e
 
 
+# PSC's `moment_all` deposits, per cell volume: rho = sum(w*q), p_a = sum(w*m*u_a),
+# j_a = sum(w*q*v_a) and t_aa = sum(w*m*u_a*v_a). Subtracting the bulk drift and
+# dividing by the number density n = rho/q leaves the temperature in the local frame:
+#     T_aa = (t_aa - p_a*j_a/rho) * q/rho
+# Beware that the charges are hardcoded, which is right for PSC's standard e/i kinds
+# but silently wrong for a run whose kinds carry different charges.
+_CHARGES = {"e": -1.0, "i": 1.0}
+
+
+def _temperature(t_aa: DataArray, p_a: DataArray, j_a: DataArray, rho: DataArray, q: float) -> DataArray:
+    return (t_aa - p_a * j_a / rho) * q / rho
+
+
+@derived_field_variable("pfd_moments")
+def Txx_e(txx_e: DataArray, px_e: DataArray, jx_e: DataArray, rho_e: DataArray) -> DataArray:
+    return _temperature(txx_e, px_e, jx_e, rho_e, _CHARGES["e"])
+
+
+@derived_field_variable("pfd_moments")
+def Tyy_e(tyy_e: DataArray, py_e: DataArray, jy_e: DataArray, rho_e: DataArray) -> DataArray:
+    return _temperature(tyy_e, py_e, jy_e, rho_e, _CHARGES["e"])
+
+
+@derived_field_variable("pfd_moments")
+def Tzz_e(tzz_e: DataArray, pz_e: DataArray, jz_e: DataArray, rho_e: DataArray) -> DataArray:
+    return _temperature(tzz_e, pz_e, jz_e, rho_e, _CHARGES["e"])
+
+
+@derived_field_variable("pfd_moments")
+def Txx_i(txx_i: DataArray, px_i: DataArray, jx_i: DataArray, rho_i: DataArray) -> DataArray:
+    return _temperature(txx_i, px_i, jx_i, rho_i, _CHARGES["i"])
+
+
+@derived_field_variable("pfd_moments")
+def Tyy_i(tyy_i: DataArray, py_i: DataArray, jy_i: DataArray, rho_i: DataArray) -> DataArray:
+    return _temperature(tyy_i, py_i, jy_i, rho_i, _CHARGES["i"])
+
+
+@derived_field_variable("pfd_moments")
+def Tzz_i(tzz_i: DataArray, pz_i: DataArray, jz_i: DataArray, rho_i: DataArray) -> DataArray:
+    return _temperature(tzz_i, pz_i, jz_i, rho_i, _CHARGES["i"])
+
+
 @derived_field_variable("gauss")
 def error(rho: DataArray, dive: DataArray) -> DataArray:
     return rho - dive
