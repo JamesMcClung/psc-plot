@@ -2,6 +2,7 @@ import pytest
 import xarray as xr
 from conftest import CONFIG_2D
 
+from lib.data.adaptors.deriv import parse_deriv
 from lib.data.adaptors.diff import Diff, _Diff1d, parse, parse_diffs_1d
 from lib.data.loader import load
 
@@ -25,9 +26,6 @@ def test_diff_values_unchanged():
     expected = (da.roll(y=-1, roll_coords=False) - da).isel(y=slice(0, -1))
     actual = Diff([_Diff1d("y", 1, "truncate")]).apply(data)["hy_fc"]
     xr.testing.assert_allclose(actual, expected)
-
-
-from lib.data.adaptors.deriv import parse_deriv
 
 
 def test_deriv_divides_by_spacing():
