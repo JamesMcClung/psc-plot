@@ -33,7 +33,7 @@ class RegistryEntry:
     pipeline: list[WorldAdaptor] | None = None
 
 
-def normalize_prefix(prefix: str | None) -> str | None:
+def _normalize_prefix(prefix: str | None) -> str | None:
     # ADIOS2 particle files are prefixed per species (prt.e, prt.i) but share one registry file
     if prefix is not None and prefix.startswith("prt."):
         return "prt"
@@ -135,7 +135,7 @@ class Registry:
         return cls(entries)
 
     def entry(self, prefix: str | None, key: str) -> RegistryEntry | None:
-        return self._entries.get((normalize_prefix(prefix), key))
+        return self._entries.get((_normalize_prefix(prefix), key))
 
     def lookup(self, prefix: str | None, key: str) -> VarInfo:
         """Look up display/unit info for a key: the prefix's entry, then the shared entry, then a bare fallback."""
@@ -150,5 +150,5 @@ class Registry:
         return entry.pipeline if entry else None
 
     def derivable_keys(self, prefix: str) -> list[str]:
-        prefix = normalize_prefix(prefix)
+        prefix = _normalize_prefix(prefix)
         return [key for (entry_prefix, key), entry in self._entries.items() if entry_prefix == prefix and entry.pipeline is not None]
