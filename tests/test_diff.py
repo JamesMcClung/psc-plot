@@ -17,67 +17,41 @@ def test_parse_diffs_1d_boundary_markers_apply_to_later_specs():
     assert diffs == [_Diff1d("y", 1, "truncate"), _Diff1d("z", -1, "pad"), _Diff1d("x", -1, "pad")]
 
 
-def test_diff_name_fragment_unchanged():
-    assert parse(["y=+", "pad", "z=-"]).get_name_fragments() == ["diff_truncate_y=+1_pad_z=-1"]
-
-
-def test_diff_values_unchanged():
+def test_diff_values():
     data = _pfd_hy()
     da = data["hy_fc"]
     expected = (da.roll(y=-1, roll_coords=False) - da).isel(y=slice(0, -1))
-    actual = Diff([_Diff1d("y", 1, "truncate")]).apply(data)["hy_fc"]
-    xr.testing.assert_allclose(actual, expected)
+    xr.testing.assert_allclose(parse(["y=+"]).apply(data)["hy_fc"], expected)
 
 
-def test_partial_divides_by_spacing():
+@pytest.mark.parametrize("dims", [["y"], ["y", "z"]])
+def test_partial_divides_by_each_dims_spacing(dims):
     data = _pfd_hy()
-    da = data["hy_fc"]
-    spacing = float(da.coords["y"][1] - da.coords["y"][0])
-    expected = Diff([_Diff1d("y", 1, "truncate")]).apply(data)["hy_fc"] / spacing
-    actual = parse_partial(["truncate", "y=+"]).apply(data)["hy_fc"]
-    xr.testing.assert_allclose(actual, expected)
+    coords = data["hy_fc"].coords
+    spacing = np.prod([float(coords[dim][1] - coords[dim][0]) for dim in dims])
+    expected = Diff([_Diff1d(dim, 1, "truncate") for dim in dims]).apply(data)["hy_fc"] / spacing
+    xr.testing.assert_allclose(parse_partial([f"{','.join(dims)}=+"]).apply(data)["hy_fc"], expected)
 
 
-def test_partial_uses_each_dims_own_spacing():
-    data = _pfd_hy()
-    da = data["hy_fc"]
-    dy = float(da.coords["y"][1] - da.coords["y"][0])
-    dz = float(da.coords["z"][1] - da.coords["z"][0])
-    expected = Diff([_Diff1d("y", 1, "truncate"), _Diff1d("z", 1, "truncate")]).apply(data)["hy_fc"] / (dy * dz)
-    actual = parse_partial(["y,z=+"]).apply(data)["hy_fc"]
-    xr.testing.assert_allclose(actual, expected)
-
-
-def test_partial_nonuniform_spacing():
-    x = np.array([0.0, 1.0, 3.0, 6.0])
-    da = xr.DataArray(x**2, coords={"x": x}, dims="x")
-    # forward difference quotient of x^2 is x_i + x_{i+1}
-    expected = xr.DataArray([1.0, 4.0, 9.0], coords={"x": x[:-1]}, dims="x")
-    xr.testing.assert_allclose(parse_partial(["x=+"]).apply_field_bare(da), expected)
-    expected = xr.DataArray([1.0, 4.0, 9.0], coords={"x": x[1:]}, dims="x")
-    xr.testing.assert_allclose(parse_partial(["x=-"]).apply_field_bare(da), expected)
-
-
-def test_partial_periodic_wrap_interpolates_spacing():
-    x = np.array([0.0, 0.5, 1.0, 1.5])
-    da = xr.DataArray([1.0, 2.0, 4.0, 8.0], coords={"x": x}, dims="x")
-    expected = xr.DataArray([2.0, 4.0, 8.0, -14.0], coords={"x": x}, dims="x")
-    xr.testing.assert_allclose(parse_partial(["periodic", "x=+"]).apply_field_bare(da), expected)
-
-    # nonuniform: the wrap spacing is the average of the first and last spacings (1), not the mean spacing (4/3)
-    x = np.array([0.0, 1.0, 3.0, 4.0])
-    da = xr.DataArray([1.0, 2.0, 4.0, 8.0], coords={"x": x}, dims="x")
-    expected = xr.DataArray([1.0, 1.0, 4.0, -7.0], coords={"x": x}, dims="x")
-    xr.testing.assert_allclose(parse_partial(["periodic", "x=+"]).apply_field_bare(da), expected)
-    expected = xr.DataArray([-7.0, 1.0, 1.0, 4.0], coords={"x": x}, dims="x")
-    xr.testing.assert_allclose(parse_partial(["periodic", "x=-"]).apply_field_bare(da), expected)
-
-
-def test_partial_pad_boundary_is_zero():
-    x = np.array([0.0, 1.0, 3.0])
-    da = xr.DataArray([1.0, 2.0, 4.0], coords={"x": x}, dims="x")
-    expected = xr.DataArray([1.0, 1.0, 0.0], coords={"x": x}, dims="x")
-    xr.testing.assert_allclose(parse_partial(["pad", "x=+"]).apply_field_bare(da), expected)
+@pytest.mark.parametrize(
+    "x, values, args, expected, expected_x",
+    [
+        # forward/backward difference quotients of x^2 are x_i + x_{i+1}
+        ([0, 1, 3, 6], [0, 1, 9, 36], ["x=+"], [1, 4, 9], slice(0, -1)),
+        ([0, 1, 3, 6], [0, 1, 9, 36], ["x=-"], [1, 4, 9], slice(1, None)),
+        ([0, 0.5, 1, 1.5], [1, 2, 4, 8], ["periodic", "x=+"], [2, 4, 8, -14], slice(None)),
+        # nonuniform: the wrap spacing is the average of the first and last spacings (1), not the mean spacing (4/3)
+        ([0, 1, 3, 4], [1, 2, 4, 8], ["periodic", "x=+"], [1, 1, 4, -7], slice(None)),
+        ([0, 1, 3, 4], [1, 2, 4, 8], ["periodic", "x=-"], [-7, 1, 1, 4], slice(None)),
+        ([0, 1, 3], [1, 2, 4], ["pad", "x=+"], [1, 1, 0], slice(None)),
+    ],
+    ids=["nonuniform+", "nonuniform-", "periodic", "periodic_nonuniform+", "periodic_nonuniform-", "pad"],
+)
+def test_partial_1d(x, values, args, expected, expected_x):
+    x = np.array(x, dtype=float)
+    da = xr.DataArray(np.array(values, dtype=float), coords={"x": x}, dims="x")
+    expected = xr.DataArray(np.array(expected, dtype=float), coords={"x": x[expected_x]}, dims="x")
+    xr.testing.assert_allclose(parse_partial(args).apply_field_bare(da), expected)
 
 
 def test_partial_rejects_dim_with_one_point():
@@ -86,8 +60,8 @@ def test_partial_rejects_dim_with_one_point():
         parse_partial(["x=+"]).apply(_pfd_hy())["hy_fc"].compute()
 
 
-def test_partial_display_and_name_fragment():
+def test_display_and_name_fragments():
+    assert parse(["y=+", "pad", "z=-"]).get_name_fragments() == ["diff_truncate_y=+1_pad_z=-1"]
     partial = parse_partial(["y=+"])
-    result = partial.apply(_pfd_hy())
-    assert result.metadata.var_infos["hy_fc"].display.latex == r"\partial_{y}B_y"
+    assert partial.apply(_pfd_hy()).metadata.var_infos["hy_fc"].display.latex == r"\partial_{y}B_y"
     assert partial.get_name_fragments() == ["partial_truncate_y=+1"]
