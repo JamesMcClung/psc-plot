@@ -2,6 +2,7 @@ import math
 
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+from matplotlib.backend_bases import RendererBase
 from matplotlib.colorbar import Colorbar
 from matplotlib.colorizer import _ScalarMappable
 from matplotlib.ticker import ScalarFormatter
@@ -70,6 +71,18 @@ def move_cbar_multiplier_to_label(cbar: Colorbar) -> int:
     cbar.ax.yaxis.get_offset_text().set_visible(False)
 
     return exponent
+
+
+def get_default_cbar_label_left(cbar: Colorbar, renderer: RendererBase) -> float:
+    """Where matplotlib puts the left edge of a vertical colorbar's label, in display coordinates: a label pad
+    past its tick labels, or past the bar itself if they don't reach any further.
+
+    Measures the tick labels where they were last drawn, so the figure must already have been laid out.
+    """
+    ax = cbar.ax
+    rights = [ax.get_window_extent(renderer).x1]
+    rights += [label.get_window_extent(renderer).x1 for label in ax.get_yticklabels() if label.get_visible()]
+    return max(rights) + ax.yaxis.labelpad * ax.get_figure(root=True).dpi / 72
 
 
 def update_title(ax: Axes, metadata: Metadata, cut_labels: list[str]):
