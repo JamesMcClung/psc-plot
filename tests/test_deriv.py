@@ -58,11 +58,19 @@ def test_partial_nonuniform_spacing():
     xr.testing.assert_allclose(parse_partial(["x=-"]).apply_field_bare(da), expected)
 
 
-def test_partial_periodic_wraps_with_mean_spacing():
+def test_partial_periodic_wrap_interpolates_spacing():
     x = np.array([0.0, 0.5, 1.0, 1.5])
     da = xr.DataArray([1.0, 2.0, 4.0, 8.0], coords={"x": x}, dims="x")
     expected = xr.DataArray([2.0, 4.0, 8.0, -14.0], coords={"x": x}, dims="x")
     xr.testing.assert_allclose(parse_partial(["periodic", "x=+"]).apply_field_bare(da), expected)
+
+    # nonuniform: the wrap spacing is the average of the first and last spacings (1), not the mean spacing (4/3)
+    x = np.array([0.0, 1.0, 3.0, 4.0])
+    da = xr.DataArray([1.0, 2.0, 4.0, 8.0], coords={"x": x}, dims="x")
+    expected = xr.DataArray([1.0, 1.0, 4.0, -7.0], coords={"x": x}, dims="x")
+    xr.testing.assert_allclose(parse_partial(["periodic", "x=+"]).apply_field_bare(da), expected)
+    expected = xr.DataArray([-7.0, 1.0, 1.0, 4.0], coords={"x": x}, dims="x")
+    xr.testing.assert_allclose(parse_partial(["periodic", "x=-"]).apply_field_bare(da), expected)
 
 
 def test_partial_pad_boundary_is_zero():
