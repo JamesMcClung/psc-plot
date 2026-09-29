@@ -5,12 +5,14 @@ import dask.dataframe as dd
 import numpy as np
 import xarray as xr
 
-from lib import var_info_registry
 from lib.data.adaptor import MetadataAdaptor
 from lib.data.data_with_attrs import Field, FieldMetadata, LazyList, List
+from lib.data.data_world import DataWorld
 from lib.data.types import VarKey
+from lib.file_util import split_prepath
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
+from lib.var_info import VarInfo
 
 
 def _guess_bin_edgess(data: List, keys_to_nbins: dict[VarKey, int | None]) -> list:
@@ -152,7 +154,14 @@ class Bin(MetadataAdaptor):
 
         return data.with_active(data=data.require_active_subdata().coarsen(dim_names_to_bin_size, boundary="pad").mean())
 
-    def apply_list(self, data: List) -> Field:
+    def apply_world(self, world: DataWorld) -> DataWorld:
+        data = world.require_active_data()
+        if not isinstance(data, List):
+            return super().apply_world(world)
+        _, prefix = split_prepath(data.metadata.prepath)
+        return world.with_active(data=self._bin_list(data, world.config.registry.lookup(prefix, "f")))
+
+    def _bin_list(self, data: List, f_info: VarInfo) -> Field:
         # A dim whose coord has collapsed to a single value (e.g. by --idx t=<int>) holds
         # that value for every row, so it is a scalar coord of the result, not a bin dim.
         all_coordss = data.coordss()
@@ -187,8 +196,6 @@ class Bin(MetadataAdaptor):
             coords,
             dims=keys_to_nbins.keys(),
         )
-
-        f_info = var_info_registry.lookup("prt", "f")
 
         subject = data.metadata.subject
         if subject is not None and subject.latex == r"\text{Ions}":
