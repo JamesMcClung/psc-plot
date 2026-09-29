@@ -1,6 +1,7 @@
 import math
 
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import RendererBase
 from matplotlib.colorbar import Colorbar
@@ -71,6 +72,20 @@ def move_cbar_multiplier_to_label(cbar: Colorbar) -> int:
     cbar.ax.yaxis.get_offset_text().set_visible(False)
 
     return exponent
+
+
+def get_relative_luminance(rgba: np.ndarray) -> np.ndarray:
+    """The WCAG relative luminance of each color in an array of shape `(..., 4)` (or `(..., 3)`) of sRGB floats."""
+    rgb = rgba[..., :3]
+    linear = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
+    return linear @ np.array([0.2126, 0.7152, 0.0722])
+
+
+def get_contrasting_text_color(rgba: np.ndarray) -> str:
+    """Black or white, whichever contrasts more with the average of the given colors (of shape `(..., 4)`)."""
+    luminance = get_relative_luminance(rgba).mean()
+    # Where black and white contrast equally, per the WCAG contrast ratio: (L + 0.05) / 0.05 == 1.05 / (L + 0.05)
+    return "black" if luminance > 0.179 else "white"
 
 
 def get_default_cbar_label_left(cbar: Colorbar, renderer: RendererBase) -> float:
