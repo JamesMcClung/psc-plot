@@ -11,7 +11,6 @@ from lib.config import PscPlotConfig
 from lib.data.data_with_attrs import LazyList, ListMetadata
 from lib.data.loader import Loader, loader
 from lib.species import SpeciesInfo, build_species_display
-from lib.var_info_registry import lookup
 
 _DISCOVER_PARTICLE_BP_PREFIX_RE = re.compile(r"^prt\.([^.]+)\.\d+\.bp$")
 
@@ -154,6 +153,6 @@ class ParticleLoaderBp(Loader):
             subject=info.display,
             partition_dim="t",
             partition_ranges=partition_ranges,
-            var_infos={key: lookup("prt", key) for key in df.columns},
+            var_infos={key: config.registry.lookup(self.prefix, key) for key in df.columns},
         )
         return LazyList(df, metadata)
