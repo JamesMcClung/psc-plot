@@ -62,11 +62,12 @@ class Grid:
         layout_engine.set(h_pad=0.0, hspace=0.0)
         self._restore_vertical_figure_padding(h_pad)
 
-        # Nothing may stick out past the shared edges either, or the space comes right back.
+        # Nothing may stick out past the shared edges either, or the space comes right back. The axes above
+        # keep their bottom tick, its label tucked up out of the way; the axes below drop their top one, whose
+        # label would otherwise crowd it.
         for col in self.contiguous_cols():
             for above, below in zip(col[:-1], col[1:]):
                 above.mark_y_end_flush("lower")
-                above.prune_y_ticks("lower")
                 below.mark_y_end_flush("upper")
                 below.prune_y_ticks("upper")
 
