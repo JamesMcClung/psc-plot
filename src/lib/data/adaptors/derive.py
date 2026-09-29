@@ -42,7 +42,7 @@ class AssignNewVariable(Transformer):
     def variable(self, toks: list):
         key = str(toks[0])
         data = self.world.require_active_data()
-        data = ensure_derived(data, key)
+        data = ensure_derived(data, key, self.world.config)
         return data[key]
 
     def prepath(self, toks: list):
@@ -55,7 +55,7 @@ class AssignNewVariable(Transformer):
         else:
             data = self.world.datas[prepath]
 
-        data = ensure_derived(data, key)
+        data = ensure_derived(data, key, self.world.config)
         self.world = self.world.with_data(prepath, data)
 
         return data[key]

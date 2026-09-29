@@ -135,8 +135,8 @@ def test_spectrum_1d():
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_spectrum_3d():
-    """Total power spectrum of the magnetic field. The builtin `hhat2` is the sum of the squares of the Fourier-transformed copmonents of the magnetic field. The combination of `--scatter` and `--transform-spherical` avoids interpolating onto a grid when doing the coordinate transformation. Note `--pos` removes the 0-mode. This is the current intended use case for `--fit`, which fits a power law index, but also necessitates `--compute` (the `-c` in `-cv`) due to a bug."""
-    return make_plot("pfd hhat2 --scatter --transform-spherical k_y k_z k_x --pos k_s=1e-8: --scale hhat2=log -cv k_s hhat2 --fit 25:45".split(), data_dir="test-3d")
+    """Total power spectrum of the magnetic field. The builtin `hhat2_xyz` is the sum of the squares of the Fourier-transformed copmonents of the magnetic field. The combination of `--scatter` and `--transform-spherical` avoids interpolating onto a grid when doing the coordinate transformation. Note `--pos` removes the 0-mode. This is the current intended use case for `--fit`, which fits a power law index, but also necessitates `--compute` (the `-c` in `-cv`) due to a bug."""
+    return make_plot("pfd hhat2_xyz --scatter --transform-spherical k_y k_z k_x --pos k_s=1e-8: --scale hhat2_xyz=log -cv k_s hhat2_xyz --fit 25:45".split(), data_dir="test-3d")
 
 
 # --- Particles ---
