@@ -107,13 +107,21 @@ class Panel:
         is_linear = isinstance(info.dim_scales[info.color_dim], LinearScale)
         multiplier_exponent = plt_util.move_cbar_multiplier_to_label(cbar) if is_linear else 0
 
+        # The multiplier gets a line of its own, the first -- which, the label reading bottom to top, is the
+        # one nearest the tick labels it modifies. That also leaves room beside it for an additive offset,
+        # should one ever be factored out too.
+        multiplier = plt_util.format_multiplier(multiplier_exponent) if multiplier_exponent else ""
+
+        def set_label(text: str):
+            cbar.set_label("\n".join(line for line in [multiplier, text] if line))
+
         is_subject = info.dim_displays[info.color_dim].maybe_with_dollars() == info.subject
         if is_subject:
-            self.cbar_labeler = SubjectAndUnitLabeler(cbar.set_label, "color", info, multiplier_exponent=multiplier_exponent)
+            self.cbar_labeler = SubjectAndUnitLabeler(set_label, "color", info)
             if self.title_labeler:
                 self.title_labeler.add_child(self.cbar_labeler.subject_labeler)
         else:
-            self.cbar_labeler = UnitLabeler(cbar.set_label, "color", [info], multiplier_exponent=multiplier_exponent)
+            self.cbar_labeler = UnitLabeler(set_label, "color", [info])
 
     def wire_data_setter(self, data_setter: DataSetter):
         self.data_setters.append(data_setter)
