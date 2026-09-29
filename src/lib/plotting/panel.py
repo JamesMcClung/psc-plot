@@ -241,7 +241,6 @@ class Panel:
         constrained layout reserves room for it and the gap comes back. Pruning alone doesn't get there,
         because the tick it leaves behind can still sit within half a label of the edge.
 
-        Measures the labels where they were last drawn, so the figure must already have been laid out.
         Every label is put back to its default alignment first, both so that the measurement doesn't
         depend on an earlier tuck and so that ticks that have since moved away from the edge are let go.
         """
