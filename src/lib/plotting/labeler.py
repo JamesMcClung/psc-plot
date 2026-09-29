@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from typing import Callable, Literal
 
 from lib.data.types import VarKey
-from lib.latex import Latex
 from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor
 
 
@@ -161,7 +160,7 @@ class UnitLabeler(Labeler):
             raise ValueError(f"{self.axis_name} units must all be the same, but found {units}")
 
         display = displays.pop().maybe_with_dollars() if self.include_display and len(displays) == 1 else ""
-        unit = (units.pop() if len(units) == 1 else Latex("")).maybe_with_dollars()
+        unit = units.pop().maybe_with_dollars() if len(units) == 1 else ""
 
         if display and unit:
             return f"{display} [{unit}]"
