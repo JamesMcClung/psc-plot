@@ -174,11 +174,6 @@ class Panel:
         self.scales_per_axis[(ax, axis_id)] = new_scale
         set_scale(new_scale.to_axis_scale())
 
-    def mark_y_end_flush(self, end: YEnd):
-        """Record that this panel touches its vertical neighbour at `end`, so that `tuck_y_tick_labels` keeps
-        the labels there from sticking out past it."""
-        self.flush_y_ends.add(end)
-
     def prune_y_ticks(self, end: YEnd):
         """Drop the y tick (and its label) at `end`, e.g. so it doesn't crowd the neighbouring axes' own tick
         label there. Locators that can't prune (log, say) are left alone.

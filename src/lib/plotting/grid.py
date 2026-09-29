@@ -67,15 +67,15 @@ class Grid:
         # label would otherwise crowd it.
         for col in self.contiguous_cols():
             for above, below in zip(col[:-1], col[1:]):
-                above.mark_y_end_flush("lower")
-                below.mark_y_end_flush("upper")
+                above.flush_y_ends.add("lower")
+                below.flush_y_ends.add("upper")
                 below.prune_y_ticks("upper")
 
         # The bottom of each column follows the same rule as the edges within it, so that every axes in the
         # column reads the same way.
         for col in self.contiguous_cols():
             if len(col) > 1:
-                col[-1].mark_y_end_flush("lower")
+                col[-1].flush_y_ends.add("lower")
 
         # Sharing took the ticks off every edge but the bottom of each column, which leaves the axes above
         # it with nothing to read positions off. That bottom edge keeps its outward ticks too, beside its labels.
