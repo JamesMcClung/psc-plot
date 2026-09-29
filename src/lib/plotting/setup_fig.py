@@ -122,10 +122,10 @@ def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, Grid]:
     grid.share_x_axes_vertically()
     grid.update_labels()
     grid.update_bounds()
+    grid.update_interior_x_ticks()
 
     figure.draw_without_rendering()  # gives the first tuck something to measure
     grid.tuck_y_tick_labels()
-    grid.style_interior_x_ticks()
     grid.right_align_cbar_labels()
 
     return figure, grid

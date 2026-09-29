@@ -6,12 +6,14 @@ from matplotlib import pyplot as plt
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import RendererBase
+from matplotlib.collections import PathCollection
 from matplotlib.colorbar import Colorbar
 from matplotlib.colors import to_rgba
 from matplotlib.markers import TICKDOWN, TICKUP
 from matplotlib.projections import PolarAxes
 from matplotlib.text import Text
 from matplotlib.ticker import MaxNLocator
+from matplotlib.transforms import Bbox
 
 from lib.plotting import plt_util
 from lib.plotting.axis_id import AxId, AxIdPolar, AxIdXY
@@ -40,8 +42,8 @@ class Panel:
     """Ends at which this panel touches its vertical neighbour, so nothing may stick out past them."""
     pruned_y_ends: set[YEnd] = field(init=False, default_factory=set)
     """Ends at which the y tick (and its label) is dropped."""
-    interior_x_tick_ends: set[YEnd] = field(init=False, default_factory=set)
-    """Ends at which the x ticks point into the axes, over the data, rather than out of them."""
+    interior_x_ticks: dict[tuple[Axes, YEnd], PathCollection] = field(init=False, default_factory=dict)
+    """Ticks drawn just inside the axes at an end, over the data, in addition to any axis ticks there."""
 
     def update_data(self):
         for data_setter in self.data_setters:
@@ -196,59 +198,55 @@ class Panel:
             if isinstance(locator, MaxNLocator):
                 locator.set_params(prune=prune)
 
-    def move_x_ticks_inside(self, ends: set[YEnd]):
+    def add_interior_x_ticks(self, ends: set[YEnd]):
         """Draw x ticks just inside the axes at `ends`, over the data, so that every panel in a stack gets its
-        own without any of them taking up room between the axes. The tick labels stay where they are.
+        own without any of them taking up room between the axes.
 
-        Only lays the groundwork; `style_interior_x_ticks` points the ticks inward and picks their colors,
-        every frame. Ticks at other ends keep pointing outward, which is what their labels are spaced for.
+        These are artists of their own rather than the axis' ticks, which at any one end all point the same
+        way (so can't add to ticks already pointing out) and all share one color. `update_interior_x_ticks`
+        places and colors them, every frame.
         """
-        self.interior_x_tick_ends |= ends
+        size = plt.rcParams["xtick.major.size"]
+        width = plt.rcParams["xtick.major.width"]
 
         # Sharing an axis takes it out of `scales_per_axis`, but not out of `bounds_setters_per_axis`.
         for ax, axis_id in self.bounds_setters_per_axis:
             if axis_id != "x":
                 continue
 
-            sides = [{"lower": "bottom", "upper": "top"}[end] for end in ends]
-            ax.tick_params(axis="x", which="both", **{side: True for side in sides})
+            for end in ends:
+                marker = {"lower": TICKUP, "upper": TICKDOWN}[end]
+                ticks = ax.scatter([], [], s=size**2, marker=marker, linewidths=width, transform=ax.get_xaxis_transform(), clip_on=False, zorder=2.5)
+                ticks.set_in_layout(False)
+                self.interior_x_ticks[(ax, end)] = ticks
 
-            # A spine's extent takes in whatever ticks stick out past it, which is how the axis says which
-            # way they point -- and since the ticks here are only turned inward after layout, that would
-            # leave room for them outside.
-            for side in sides:
-                ax.spines[side].set_in_layout(False)
+    def update_interior_x_ticks(self):
+        """Put an interior tick at each of the axis' major tick locations, colored to stand out against whatever
+        is drawn beneath it."""
+        for (ax, end), ticks in self.interior_x_ticks.items():
+            lower, upper = sorted(ax.get_xlim())
+            xs = [x for x in ax.xaxis.get_majorticklocs() if lower <= x <= upper]
+            y = {"lower": 0.0, "upper": 1.0}[end]
+            ticks.set_offsets(np.array([(x, y) for x in xs]).reshape(-1, 2))
 
-    def style_interior_x_ticks(self, renderer: RendererBase):
-        """Point each interior x tick inward, and color it to stand out against whatever is drawn beneath it.
+            # What's beneath a tick is the strip of display it covers, running inward from the edge.
+            length = float(np.sqrt(ticks.get_sizes()[0])) * ax.get_figure(root=True).dpi / 72
+            inward = {"lower": length, "upper": -length}[end]
+            colors = []
+            for x in xs:
+                tick_x, edge_y = ax.get_xaxis_transform().transform((x, y))
+                bbox = Bbox.from_extents(tick_x - 0.5, min(edge_y, edge_y + inward), tick_x + 0.5, max(edge_y, edge_y + inward))
+                colors.append(plt_util.get_opposite_color(self._get_colors_beneath(ax, bbox)))
 
-        `tick_params` can only point the ticks at both ends one way, so each interior tick's marker is set
-        by hand -- every frame, to catch ticks created since.
+            ticks.set_facecolor("none")
+            ticks.set_edgecolor(colors)
 
-        Measures the ticks where they were last drawn, so the figure must already have been laid out.
-        """
-        if not self.interior_x_tick_ends:
-            return
-
-        for ax, axis_id in self.bounds_setters_per_axis:
-            if axis_id != "x":
-                continue
-
-            data_setters = [data_setter for data_setter in self.data_setters if data_setter.artist.axes is ax]
-            background = np.array(to_rgba(ax.get_facecolor()))
-
-            for tick in ax.xaxis.get_major_ticks() + ax.xaxis.get_minor_ticks():
-                # tick1line is the bottom tick and tick2line the top one. Each is a single marker, so its
-                # extent is the square that marker fills -- half of it inside the axes, over the data.
-                for end, line, inward in [("lower", tick.tick1line, TICKUP), ("upper", tick.tick2line, TICKDOWN)]:
-                    if end not in self.interior_x_tick_ends or not line.get_visible():
-                        continue
-
-                    line.set_marker(inward)
-                    bbox = line.get_window_extent(renderer)
-                    colors = [colors for data_setter in data_setters if (colors := data_setter.get_colors_within(bbox)) is not None]
-                    beneath = np.concatenate([colors.reshape(-1, 4) for colors in colors]) if colors else background
-                    line.set_markeredgecolor(plt_util.get_opposite_color(beneath))
+    def _get_colors_beneath(self, ax: Axes, bbox: Bbox) -> np.ndarray:
+        """The colors drawn within `bbox` (in display coordinates) on `ax`, as an array of shape `(n, 4)`: those
+        of the data where it's known, or else the axes' own background."""
+        data_setters = [data_setter for data_setter in self.data_setters if data_setter.artist.axes is ax]
+        colors = [colors.reshape(-1, 4) for data_setter in data_setters if (colors := data_setter.get_colors_within(bbox)) is not None]
+        return np.concatenate(colors) if colors else np.array([to_rgba(ax.get_facecolor())])
 
     def tuck_y_tick_labels(self, renderer: RendererBase):
         """Anchor every y tick label that overhangs a flush end to that end.
