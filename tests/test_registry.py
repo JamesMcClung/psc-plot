@@ -18,6 +18,11 @@ def test_default_registry_derivable_keys():
     assert set(registry.derivable_keys("prt")) == {"pxy", "pyz", "pzx", "anisotropy_y_zx", "wx", "wy", "wz", "wxy", "wyz", "wzx", "wxyz"}
 
 
+@pytest.mark.parametrize("prefix", ["pfd", "pfd_moments", "gauss"])
+def test_default_registry_covers_test_data(prefix):
+    assert [key for key in load(CONFIG_2D, prefix).data if CONFIG_2D.registry.entry(prefix, key) is None] == []
+
+
 # --- lookup ---
 
 

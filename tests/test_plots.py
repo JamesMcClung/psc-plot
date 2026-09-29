@@ -296,22 +296,3 @@ def test_unit_override():
 def test_unit_override_dim():
     """`--unit DIM=VALUE` overrides the unit shown in a dimension's axis label."""
     return make_plot("pfd hx_fc --unit y=\\text{test} -v y".split())
-
-
-def test_field_units_lookup_covers_test_data():
-    """All raw vars present in the test-2d datasets resolve via the registry (no fallback)."""
-    from conftest import CONFIG_2D
-
-    registry = CONFIG_2D.registry
-    expected_pfd = {"hx_fc", "hy_fc", "hz_fc", "ex_ec", "ey_ec", "ez_ec", "jx_ec", "jy_ec", "jz_ec"}
-    expected_moments = {
-        *(f"{m}_{s}" for m in ("rho", "jx", "jy", "jz", "px", "py", "pz", "txx", "tyy", "tzz", "txy", "tyz", "tzx") for s in ("e", "i")),
-    }
-    expected_gauss = {"dive", "rho"}
-
-    for v in expected_pfd:
-        assert registry.entry("pfd", v) is not None, v
-    for v in expected_moments:
-        assert registry.entry("pfd_moments", v) is not None, v
-    for v in expected_gauss:
-        assert registry.entry("gauss", v) is not None, v
