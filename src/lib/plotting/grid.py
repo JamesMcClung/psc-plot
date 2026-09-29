@@ -62,27 +62,23 @@ class Grid:
         layout_engine.set(h_pad=0.0, hspace=0.0)
         self._restore_vertical_figure_padding(h_pad)
 
-        # Nothing may stick out past the shared edges either, or the space comes right back. The axes above
-        # keep their bottom tick, its label tucked up out of the way; the axes below drop their top one, whose
-        # label would otherwise crowd it.
         for col in self.contiguous_cols():
+            if len(col) == 1:
+                continue
+
+            # Nothing may stick out past the shared edges, or the space comes right back. The axes above keep
+            # their bottom tick, its label tucked up; the axes below drop their top one, which would crowd it.
             for above, below in zip(col[:-1], col[1:]):
                 above.flush_y_ends.add("lower")
                 below.flush_y_ends.add("upper")
                 below.prune_y_ticks("upper")
 
-        # The bottom of each column follows the same rule as the edges within it, so that every axes in the
-        # column reads the same way.
-        for col in self.contiguous_cols():
-            if len(col) > 1:
-                col[-1].flush_y_ends.add("lower")
+            # The column's bottom follows the same rule, so that every axes in it reads the same way.
+            col[-1].flush_y_ends.add("lower")
 
-        # Sharing took the ticks off every edge but the bottom of each column, which leaves the axes above
-        # it with nothing to read positions off. That bottom edge keeps its outward ticks too, beside its labels.
-        for col in self.contiguous_cols():
-            if len(col) > 1:
-                for panel in col:
-                    panel.add_interior_x_ticks()
+            # Sharing took the ticks off every edge but the column's bottom, so give each axes its own.
+            for panel in col:
+                panel.add_interior_x_ticks()
 
     def _restore_vertical_figure_padding(self, h_pad: float):
         """Put back the padding above and below the figure that zeroing `h_pad` took with it.
