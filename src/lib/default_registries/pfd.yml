@@ -104,13 +104,13 @@ div_h_cc_xyz:
   pipeline:
     - --copy dhx=hx_fc
     - --idx y=:-1 z=:-1
-    - --deriv truncate x=+
+    - --partial truncate x=+
     - --copy dhy=hy_fc
     - --idx x=:-1 z=:-1
-    - --deriv truncate y=+
+    - --partial truncate y=+
     - --copy dhz=hz_fc
     - --idx x=:-1 y=:-1
-    - --deriv truncate z=+
+    - --partial truncate z=+
     - --derive div_h_cc_xyz=dhx+dhy+dhz
 
 div_h_cc_yz:
@@ -118,10 +118,10 @@ div_h_cc_yz:
   pipeline:
     - --copy dhy=hy_fc
     - --idx z=:-1
-    - --deriv truncate y=+
+    - --partial truncate y=+
     - --copy dhz=hz_fc
     - --idx y=:-1
-    - --deriv truncate z=+
+    - --partial truncate z=+
     - --derive div_h_cc_yz=dhy+dhz
 
 sy_p:

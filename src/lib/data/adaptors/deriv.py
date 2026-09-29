@@ -12,7 +12,7 @@ def _spacing(diff_1d: _Diff1d, coord: xr.DataArray) -> xr.DataArray:
     """The coordinate difference matching `diff_1d`, per cell, so nonuniform grids work. Covers every cell; division aligns it to whichever cells the boundary kept."""
     c = coord.values
     if len(c) < 2:
-        raise ValueError(f"--deriv needs at least 2 points along '{diff_1d.dim_key}'; got {len(c)}")
+        raise ValueError(f"--partial needs at least 2 points along '{diff_1d.dim_key}'; got {len(c)}")
     spacing = diff_1d.dir * (np.roll(c, -diff_1d.dir) - c)
     # the wrap-around cell spans the domain boundary, where the true spacing is unknown; assume the mean (exact for uniform grids)
     boundary_idx = 0 if diff_1d.dir == -1 else -1
@@ -34,7 +34,7 @@ class Deriv(BareAdaptor):
         return da
 
     def get_name_fragments(self) -> list[str]:
-        return [f"deriv_{format_diffs_1d(self.diffs_1d)}"]
+        return [f"partial_{format_diffs_1d(self.diffs_1d)}"]
 
 
 DERIV_FORMAT = f"[{' | '.join(BOUNDARY_KEYS)}] dim_key[,dim_key...]={set(DIR_TO_SHIFT)} [...]"
@@ -42,7 +42,7 @@ DERIV_FORMAT = f"[{' | '.join(BOUNDARY_KEYS)}] dim_key[,dim_key...]={set(DIR_TO_
 
 @arg_parser(
     dest="adaptors",
-    flags="--deriv",
+    flags="--partial",
     metavar=DERIV_FORMAT,
     help=f"Like --diff, but divide each difference by the corresponding grid spacing along its dimension, approximating a derivative. {'/'.join(BOUNDARY_KEYS)} markers determine how to handle boundaries for subsequent specs (default: {BOUNDARY_KEYS[0]}).",
     nargs="+",
