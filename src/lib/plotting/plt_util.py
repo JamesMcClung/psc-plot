@@ -55,7 +55,7 @@ def get_multiplier_exponent(lower: float, upper: float) -> int:
 
 def move_cbar_multiplier_to_label(cbar: Colorbar) -> int:
     """Factor a fixed power of ten out of the colorbar's tick labels and return it, so the caller can name it
-    in the label instead. 0 means the labels were left alone. Only makes sense for a linear color scale.
+    in the label instead. 0 means the labels were left alone.
 
     Matplotlib would otherwise float the multiplier above the bar, where it sticks out past the top edge and
     forces constrained layout to reserve room there -- fatal when the axes above is supposed to sit flush.
