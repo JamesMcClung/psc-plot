@@ -82,7 +82,7 @@ class Grid:
         for col in self.contiguous_cols():
             if len(col) > 1:
                 for panel in col:
-                    panel.add_interior_x_ticks({"lower", "upper"})
+                    panel.add_interior_x_ticks()
 
     def _restore_vertical_figure_padding(self, h_pad: float):
         """Put back the padding above and below the figure that zeroing `h_pad` took with it.

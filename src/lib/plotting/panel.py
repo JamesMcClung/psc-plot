@@ -190,9 +190,9 @@ class Panel:
             if isinstance(locator, MaxNLocator):
                 locator.set_params(prune=end)
 
-    def add_interior_x_ticks(self, ends: set[YEnd]):
-        """Draw x ticks just inside the axes at `ends`, over the data, so that every panel in a stack gets its
-        own without any of them taking up room between the axes.
+    def add_interior_x_ticks(self):
+        """Draw x ticks just inside the top and bottom of the axes, over the data, so that every panel in a stack
+        gets its own without any of them taking up room between the axes.
 
         These are artists of their own rather than the axis' ticks, which at any one end all point the same
         way (so can't add to ticks already pointing out) and all share one color. `update_interior_x_ticks`
@@ -206,8 +206,7 @@ class Panel:
             if axis_id != "x":
                 continue
 
-            for end in ends:
-                marker = {"lower": TICKUP, "upper": TICKDOWN}[end]
+            for end, marker in [("lower", TICKUP), ("upper", TICKDOWN)]:
                 ticks = ax.scatter([], [], s=size**2, marker=marker, linewidths=width, transform=ax.get_xaxis_transform(), clip_on=False, zorder=2.5)
                 ticks.set_in_layout(False)
                 self.interior_x_ticks[(ax, end)] = ticks
