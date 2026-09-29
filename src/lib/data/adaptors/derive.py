@@ -1,5 +1,5 @@
 from lark import Lark
-from lark.visitors import Transformer_InPlace
+from lark.visitors import Transformer
 
 from lib.data.adaptor import WorldAdaptor
 from lib.data.data_world import DataWorld
@@ -21,7 +21,7 @@ class Derive(WorldAdaptor):
         return [f'derive_"{self.expression}"']
 
 
-class AssignNewVariable(Transformer_InPlace):
+class AssignNewVariable(Transformer):
     def __init__(self, world: DataWorld):
         self.world = world
         super().__init__(visit_tokens=True)
