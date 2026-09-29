@@ -82,4 +82,4 @@ def test_deriv_display_and_name_fragment():
     deriv = parse_deriv(["y=+"])
     result = deriv.apply(_pfd_hy())
     assert result.metadata.var_infos["hy_fc"].display.latex == r"\partial_{y}B_y"
-    assert deriv.get_name_fragments() == ["deriv_truncate_y=+1"]
+    assert deriv.get_name_fragments() == ["partial_truncate_y=+1"]
