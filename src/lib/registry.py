@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Callable
 import yaml
 
 from lib.latex import Latex
-from lib.var_info import FOURIER_KEY_PREFIX, Geometry, VarInfo
+from lib.var_info import Geometry, VarInfo
 
 if TYPE_CHECKING:
     from lib.data.adaptor import WorldAdaptor
@@ -138,17 +138,10 @@ class Registry:
         return self._entries.get((normalize_prefix(prefix), key))
 
     def lookup(self, prefix: str | None, key: str) -> VarInfo:
-        """Look up display/unit info for a key: the prefix's entry, then the shared entry, then (for `k_` keys) the Fourier toggle of either, then a bare fallback."""
+        """Look up display/unit info for a key: the prefix's entry, then the shared entry, then a bare fallback."""
         for candidate_prefix in (prefix, None):
             if entry := self.entry(candidate_prefix, key):
                 return entry.var_info
-
-        if key.startswith(FOURIER_KEY_PREFIX):
-            # TODO: remove this (can't until registered derived field vars can use Fourier adaptor again)
-            base_key = key[len(FOURIER_KEY_PREFIX) :]
-            for candidate_prefix in (prefix, None):
-                if entry := self.entry(candidate_prefix, base_key):
-                    return entry.var_info.toggle_fourier()
 
         return VarInfo(Latex(key), Latex(""), key=key)
 

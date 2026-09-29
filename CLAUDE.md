@@ -143,7 +143,7 @@ What stays here is what spans packages: the pipeline overview below, auto-regist
 ### Dimensions and var_infos
 
 `src/lib/var_info.py` defines `VarInfo` as a frozen value (`display: Latex`, `unit: Latex`, `geometry`, `key`). Var-infos and derived variables live in YAML (`src/lib/default_registries/`, or `PSC_PLOT_REGISTRIES`), loaded once per config into a `Registry` (`src/lib/registry.py`) reached via `config.registry` — there is no module-level registry. `shared.yml` holds prefix-`None` entries (x, y, z, t); each other `<prefix>.yml` holds that prefix's. An entry has `display` (required), `unit`, `geometry`, and optionally `pipeline`. Write LaTeX in **single quotes**: double-quoted YAML turns `\t` into a tab (the loader rejects control characters). `prt.<species>` prefixes are normalized to `prt` inside `Registry`, and only there.
-- `config.registry.lookup(prefix, key)` checks the prefix's entry, then the shared entry, then the Fourier toggle of the base key, and falls back to a plain `VarInfo(display=key)`. `entry(prefix, key)` is the exact, no-fallback accessor.
+- `config.registry.lookup(prefix, key)` checks the prefix's entry, then the shared entry, and falls back to a plain `VarInfo(display=key)`. `entry(prefix, key)` is the exact, no-fallback accessor.
 
 **Gotcha:** `lookup` keys on the bare **prefix**, never a `Prepath`. Passing a prepath is silent — it works at the data root (where prepath == prefix) and quietly falls through to the unprefixed/default `VarInfo` for a subdirectory prepath like `run5/pfd`. Call sites holding a prepath must pass `split_prepath(prepath)[1]`.
 

@@ -50,13 +50,6 @@ def test_prefix_entry_wins_over_shared(tmp_path):
     assert registry.lookup("pfd", "x").unit.latex == "d"
 
 
-def test_lookup_fourier_toggle_fallback(tmp_path):
-    _write(tmp_path, "shared.yml", "x: {display: 'x', unit: 'd'}\n")
-    info = Registry.load(tmp_path).lookup("pfd", "k_x")
-    assert info.display.latex == "k_x"
-    assert info.unit.latex == "d^{-1}"
-
-
 def test_lookup_unknown_key_falls_back_to_key(tmp_path):
     info = Registry.load(tmp_path).lookup("pfd", "mystery")
     assert (info.display.latex, info.unit.latex, info.key) == ("mystery", "", "mystery")
