@@ -242,13 +242,12 @@ class Panel:
                 label.set_color(plt_util.get_contrasting_text_color(beneath))
 
     def tuck_y_tick_labels(self, renderer: RendererBase):
-        """Anchor every y tick label that overhangs a flush end to that end, on both the axes and their
-        colorbars.
+        """Anchor every y tick label that overhangs a flush end to that end.
 
         Same rule as `prune_y_ticks`: nothing may stick out past an edge that has to sit flush, or
         constrained layout reserves room for it and the gap comes back. Pruning alone doesn't get there,
-        because the tick it leaves behind can still sit within half a label of the edge -- always, in the
-        case of a colorbar, whose bar spans its data exactly.
+        because the tick it leaves behind can still sit within half a label of the edge. (Colorbars are
+        shrunk well clear of the edges, so their tick labels never get that close.)
 
         Measures the labels where they were last drawn, so the figure must already have been laid out.
         Every label is put back to its default alignment first, both so that the measurement doesn't
@@ -258,7 +257,6 @@ class Panel:
             return
 
         axs = [ax for ax, axis_id in self.scales_per_axis if axis_id == "y"]
-        axs += [cbar.ax for cbar in self.colorbars]
         default_va = plt.rcParams["ytick.alignment"]  # what matplotlib itself aligns y tick labels by
 
         for ax in axs:
