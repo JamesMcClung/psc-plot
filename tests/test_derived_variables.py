@@ -224,3 +224,13 @@ def test_pipeline_error_names_the_variable(tmp_path):
     config = _write_registry(tmp_path, "a:\n  display: 'a'\n  pipeline: ['--derive a=missing_key+1']\n")
     with pytest.raises(ValueError, match="No variable named 'missing_key'"):
         ensure_derived(load(config, "pfd"), "a", config)
+
+
+def test_reused_pipeline_sees_new_data(tmp_path):
+    # the registry parses each pipeline once, so its steps must not cache results between applications
+    config = _write_registry(tmp_path, "a:\n  display: 'a'\n  pipeline: ['--derive a=hx_fc+1']\n")
+    data = load(config, "pfd")
+    ensure_derived(data, "a", config)
+    zeroed = data.with_active(data=data["hx_fc"] * 0, key="hx_fc")
+    second = ensure_derived(zeroed, "a", config)["a"]
+    xr.testing.assert_allclose(second, xr.ones_like(second))
