@@ -25,3 +25,38 @@ def test_diff_values_unchanged():
     expected = (da.roll(y=-1, roll_coords=False) - da).isel(y=slice(0, -1))
     actual = Diff([_Diff1d("y", 1, "truncate")]).apply(data)["hy_fc"]
     xr.testing.assert_allclose(actual, expected)
+
+
+from lib.data.adaptors.deriv import parse_deriv
+
+
+def test_deriv_divides_by_spacing():
+    data = _pfd_hy()
+    da = data["hy_fc"]
+    spacing = float(da.coords["y"][1] - da.coords["y"][0])
+    expected = Diff([_Diff1d("y", 1, "truncate")]).apply(data)["hy_fc"] / spacing
+    actual = parse_deriv(["truncate", "y=+"]).apply(data)["hy_fc"]
+    xr.testing.assert_allclose(actual, expected)
+
+
+def test_deriv_uses_each_dims_own_spacing():
+    data = _pfd_hy()
+    da = data["hy_fc"]
+    dy = float(da.coords["y"][1] - da.coords["y"][0])
+    dz = float(da.coords["z"][1] - da.coords["z"][0])
+    expected = Diff([_Diff1d("y", 1, "truncate"), _Diff1d("z", 1, "truncate")]).apply(data)["hy_fc"] / (dy * dz)
+    actual = parse_deriv(["y,z=+"]).apply(data)["hy_fc"]
+    xr.testing.assert_allclose(actual, expected)
+
+
+def test_deriv_rejects_dim_with_one_point():
+    # test-2d is invariant in x (length 1)
+    with pytest.raises(ValueError, match="'x'"):
+        parse_deriv(["x=+"]).apply(_pfd_hy())["hy_fc"].compute()
+
+
+def test_deriv_display_and_name_fragment():
+    deriv = parse_deriv(["y=+"])
+    result = deriv.apply(_pfd_hy())
+    assert result.metadata.var_infos["hy_fc"].display.latex == r"\partial_{y}B_y"
+    assert deriv.get_name_fragments() == ["deriv_truncate_y=+1"]
