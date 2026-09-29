@@ -72,11 +72,12 @@ class Grid:
                 below.prune_y_ticks("upper")
 
         # Sharing took the ticks off every edge but the bottom of each column, which leaves the axes above
-        # it with nothing to read positions off.
+        # it with nothing to read positions off. That bottom edge keeps its outward ticks, beside its labels.
         for col in self.contiguous_cols():
             if len(col) > 1:
-                for panel in col:
-                    panel.move_x_ticks_inside()
+                for panel in col[:-1]:
+                    panel.move_x_ticks_inside({"lower", "upper"})
+                col[-1].move_x_ticks_inside({"upper"})
 
     def _restore_vertical_figure_padding(self, h_pad: float):
         """Put back the padding above and below the figure that zeroing `h_pad` took with it.
@@ -106,13 +107,13 @@ class Grid:
         for panel in self.panels.values():
             panel.tuck_y_tick_labels(renderer)
 
-    def color_interior_x_ticks(self):
+    def style_interior_x_ticks(self):
         """Has to run after everything else that affects the layout, and again every frame, for the same reasons
         as `tuck_y_tick_labels` -- and because the data beneath the ticks changes too."""
         renderer = self.fig.canvas.get_renderer()
 
         for panel in self.panels.values():
-            panel.color_interior_x_ticks(renderer)
+            panel.style_interior_x_ticks(renderer)
 
     def right_align_cbar_labels(self):
         """Line up the right edges of the colorbar labels down each column, where matplotlib would line up
@@ -175,5 +176,5 @@ class Grid:
         self.update_bounds()
         self.update_labels()
         self.tuck_y_tick_labels()
-        self.color_interior_x_ticks()
+        self.style_interior_x_ticks()
         self.right_align_cbar_labels()
