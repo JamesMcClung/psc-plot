@@ -133,10 +133,13 @@ class Grid:
             right = max(plt_util.get_default_cbar_label_left(cbar, renderer) + cbar.ax.yaxis.label.get_window_extent(renderer).width for cbar in cbars)
 
             for cbar in cbars:
-                # A vertical colorbar's label reads bottom to top, so its bottom is its right edge.
-                box = cbar.ax.get_window_extent(renderer)
+                # A vertical colorbar's label reads bottom to top, so its bottom is its right edge. The label is
+                # pinned at a fixed distance from the bar, rather than at a fraction of the bar's width: the bar
+                # can still change size when the figure is next laid out (its width follows its height), but
+                # the tick labels that distance was measured from won't.
+                offset = (right - cbar.ax.get_window_extent(renderer).x1) / self.fig.dpi
                 cbar.ax.yaxis.label.set_va("bottom")
-                cbar.ax.yaxis.set_label_coords((right - box.x0) / box.width, 0.5)
+                cbar.ax.yaxis.set_label_coords(1.0, 0.5, transform=cbar.ax.transAxes + ScaledTranslation(offset, 0.0, self.fig.dpi_scale_trans))
 
     def contiguous_cols(self) -> list[list[Panel]]:
         cols = []
