@@ -65,7 +65,9 @@ class Grid:
         # Nothing may stick out past the shared edges either, or the space comes right back.
         for col in self.contiguous_cols():
             for above, below in zip(col[:-1], col[1:]):
+                above.mark_y_end_flush("lower")
                 above.prune_y_ticks("lower")
+                below.mark_y_end_flush("upper")
                 below.prune_y_ticks("upper")
 
         # Sharing took the ticks off every edge but the bottom of each column, which leaves the axes above

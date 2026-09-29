@@ -37,6 +37,8 @@ class Panel:
     scales_per_axis: dict[AxAndId, Scale] = field(init=False, default_factory=dict)
     flush_y_ends: set[YEnd] = field(init=False, default_factory=set)
     """Ends at which this panel touches its vertical neighbour, so nothing may stick out past them."""
+    pruned_y_ends: set[YEnd] = field(init=False, default_factory=set)
+    """Ends at which the y tick (and its label) is dropped."""
     has_interior_x_ticks: bool = field(init=False, default=False)
     """Whether the x ticks are drawn inside the axes, over the data, at both top and bottom."""
 
@@ -174,14 +176,17 @@ class Panel:
         self.scales_per_axis[(ax, axis_id)] = new_scale
         set_scale(new_scale.to_axis_scale())
 
-    def prune_y_ticks(self, end: YEnd):
-        """Drop the y tick label at `end`, which would otherwise overhang the axes box.
-
-        Constrained layout reserves room for that overhang, so it shows up as a gap between
-        axes meant to touch. Locators that can't prune (log, say) are left alone.
-        """
+    def mark_y_end_flush(self, end: YEnd):
+        """Record that this panel touches its vertical neighbour at `end`, so that `tuck_y_tick_labels` keeps
+        the labels there from sticking out past it."""
         self.flush_y_ends.add(end)
-        prune = "both" if len(self.flush_y_ends) > 1 else end
+
+    def prune_y_ticks(self, end: YEnd):
+        """Drop the y tick (and its label) at `end`, e.g. so it doesn't crowd the neighbouring axes' own tick
+        label there. Locators that can't prune (log, say) are left alone.
+        """
+        self.pruned_y_ends.add(end)
+        prune = "both" if len(self.pruned_y_ends) > 1 else end
 
         for ax, axis_id in self.scales_per_axis:
             if axis_id != "y":
