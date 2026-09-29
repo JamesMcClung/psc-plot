@@ -3,8 +3,8 @@ import pytest
 import xarray as xr
 from conftest import CONFIG_2D
 
-from lib.data.adaptors.deriv import parse_partial
 from lib.data.adaptors.diff import Diff, _Diff1d, parse, parse_diffs_1d
+from lib.data.adaptors.partial import parse_partial
 from lib.data.loader import load
 
 
