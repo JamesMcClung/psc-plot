@@ -14,6 +14,8 @@ Detail on the data layer: the values that flow through the node graph, and the a
 - `MetadataAdaptor(Adaptor)` — wraps `apply` to also modify the active variable's `VarInfo` in `var_infos` (used to derive axis labels/filenames). Override `get_modified_display_latex(metadata)` and/or `get_modified_unit_latex(metadata)`; both receive the current `metadata` so they can inspect e.g. `active_key` and `active_var_info`.
 - `BareAdaptor(MetadataAdaptor)` — operates on the raw active variable (a single `xr.DataArray` for fields, a single `pd.Series`/`dd.Series` for lists) and doesn't touch metadata; override `apply_field_bare`/`apply_list_bare`.
 
+**Concrete adaptors don't subclass each other.** `isinstance` is the go-to way to identify an adaptor's behavior (e.g. `_with_versus` checking for a `Versus`, `parse_steps` rejecting one), and making one concrete adaptor a subclass of another would make the parent's check match both. Share code through a common base class or standalone helpers instead, e.g. `Diff` and `Partial` are siblings under `DiffBase` (`adaptors/diff.py`).
+
 ## Data wrapper
 
 `src/lib/data/data_with_attrs.py` defines `DataWithAttrs[Data, Subdata, MD]` and concrete `Field` (whole = `dict[str, xr.DataArray]`, sub = `xr.DataArray`), `FullList` (pandas) and `LazyList` (dask) (whole = `DataFrame`, sub = `Series`). The **whole/sub distinction is what the three type params encode** — `data` is the container, `__getitem__(key)` yields one subdata, `dims` lists the keys.
