@@ -20,7 +20,7 @@ def _spacing(diff_1d: _Diff1d, coord: xr.DataArray) -> xr.DataArray:
     return xr.DataArray(spacing, coords={diff_1d.dim_key: c}, dims=diff_1d.dim_key)
 
 
-class Deriv(BareAdaptor):
+class Partial(BareAdaptor):
     def __init__(self, diffs_1d: list[_Diff1d]):
         self.diffs_1d = diffs_1d
 
@@ -37,15 +37,15 @@ class Deriv(BareAdaptor):
         return [f"partial_{format_diffs_1d(self.diffs_1d)}"]
 
 
-DERIV_FORMAT = f"[{' | '.join(BOUNDARY_KEYS)}] dim_key[,dim_key...]={set(DIR_TO_SHIFT)} [...]"
+PARTIAL_FORMAT = f"[{' | '.join(BOUNDARY_KEYS)}] dim_key[,dim_key...]={set(DIR_TO_SHIFT)} [...]"
 
 
 @arg_parser(
     dest="adaptors",
     flags="--partial",
-    metavar=DERIV_FORMAT,
+    metavar=PARTIAL_FORMAT,
     help=f"Like --diff, but divide each difference by the corresponding grid spacing along its dimension, approximating a derivative. {'/'.join(BOUNDARY_KEYS)} markers determine how to handle boundaries for subsequent specs (default: {BOUNDARY_KEYS[0]}).",
     nargs="+",
 )
-def parse_deriv(args: list[str]) -> Deriv:
-    return Deriv(parse_diffs_1d(args, DERIV_FORMAT))
+def parse_partial(args: list[str]) -> Partial:
+    return Partial(parse_diffs_1d(args, PARTIAL_FORMAT))
