@@ -37,8 +37,8 @@ class Panel:
     scales_per_axis: dict[AxAndId, Scale] = field(init=False, default_factory=dict)
     flush_y_ends: set[YEnd] = field(init=False, default_factory=set)
     """Ends at which this panel touches its vertical neighbour, so nothing may stick out past them."""
-    has_interior_x_tick_labels: bool = field(init=False, default=False)
-    """Whether the x tick labels are drawn inside the axes, over the data, rather than below them."""
+    has_interior_x_ticks: bool = field(init=False, default=False)
+    """Whether the x ticks are drawn inside the axes, over the data, at both top and bottom."""
 
     def update_data(self):
         for data_setter in self.data_setters:
@@ -190,56 +190,47 @@ class Panel:
             if isinstance(locator, MaxNLocator):
                 locator.set_params(prune=prune)
 
-    def move_x_tick_labels_inside(self):
-        """Draw the x tick labels just inside the bottom of the axes, over the data, so that every panel in a
-        stack gets its own without any of them taking up room between the axes.
+    def move_x_ticks_inside(self):
+        """Draw x ticks just inside both the top and bottom of the axes, over the data, so that every panel
+        in a stack gets its own without any of them taking up room between the axes. The tick labels stay
+        where they are.
 
-        Only lays the groundwork; `style_interior_x_tick_labels` does the rest, since which way each label
-        must be aligned and what color it must be depend on where it ends up.
+        Only lays the groundwork; `color_interior_x_ticks` picks each tick's color, which depends on what
+        ends up beneath it.
         """
-        self.has_interior_x_tick_labels = True
-        pad = plt.rcParams["xtick.major.pad"]
+        self.has_interior_x_ticks = True
 
         # Sharing an axis takes it out of `scales_per_axis`, but not out of `bounds_setters_per_axis`.
         for ax, axis_id in self.bounds_setters_per_axis:
             if axis_id == "x":
-                # A negative pad puts the labels above the bottom spine rather than below it.
-                ax.tick_params(axis="x", which="both", direction="in", bottom=True, labelbottom=True, pad=-pad)
+                ax.tick_params(axis="x", which="both", direction="in", bottom=True, top=True)
 
-    def style_interior_x_tick_labels(self, renderer: RendererBase):
-        """Align each interior x tick label to sit wholly inside the axes, and color it to stand out against
-        whatever is drawn beneath it.
+    def color_interior_x_ticks(self, renderer: RendererBase):
+        """Color each interior x tick to stand out against whatever is drawn beneath it.
 
-        Measures the labels where they were last drawn, so the figure must already have been laid out. Like
-        `tuck_y_tick_labels`, puts every label back to its default alignment before measuring it.
+        Measures the ticks where they were last drawn, so the figure must already have been laid out.
         """
-        if not self.has_interior_x_tick_labels:
+        if not self.has_interior_x_ticks:
             return
 
         for ax, axis_id in self.bounds_setters_per_axis:
             if axis_id != "x":
                 continue
 
-            box = ax.get_window_extent(renderer)
             data_setters = [data_setter for data_setter in self.data_setters if data_setter.artist.axes is ax]
             background = np.array(to_rgba(ax.get_facecolor()))
 
-            for label in ax.get_xticklabels():
-                if not label.get_visible():
-                    continue
+            for tick in ax.xaxis.get_major_ticks() + ax.xaxis.get_minor_ticks():
+                # tick1line is the bottom tick and tick2line the top one. Each is a single marker, so its
+                # extent is the square that marker fills -- half of it inside the axes, over the data.
+                for line in [tick.tick1line, tick.tick2line]:
+                    if not line.get_visible():
+                        continue
 
-                label.set_va("bottom")
-                label.set_ha("center")
-                bbox = label.get_window_extent(renderer)
-                if bbox.x0 < box.x0:
-                    label.set_ha("left")
-                elif bbox.x1 > box.x1:
-                    label.set_ha("right")
-                bbox = label.get_window_extent(renderer)
-
-                colors = [colors for data_setter in data_setters if (colors := data_setter.get_colors_within(bbox)) is not None]
-                beneath = np.concatenate([colors.reshape(-1, 4) for colors in colors]) if colors else background
-                label.set_color(plt_util.get_contrasting_color(beneath))
+                    bbox = line.get_window_extent(renderer)
+                    colors = [colors for data_setter in data_setters if (colors := data_setter.get_colors_within(bbox)) is not None]
+                    beneath = np.concatenate([colors.reshape(-1, 4) for colors in colors]) if colors else background
+                    line.set_markeredgecolor(plt_util.get_contrasting_color(beneath))
 
     def tuck_y_tick_labels(self, renderer: RendererBase):
         """Anchor every y tick label that overhangs a flush end to that end.
