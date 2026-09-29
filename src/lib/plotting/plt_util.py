@@ -74,6 +74,11 @@ def move_cbar_multiplier_to_label(cbar: Colorbar) -> int:
     return exponent
 
 
+def format_multiplier(exponent: int) -> str:
+    """The text naming a power of ten factored out of some tick labels, e.g. `×10⁻⁶`, set in math mode."""
+    return f"$\\times 10^{{{exponent}}}$"
+
+
 def get_relative_luminance(rgba: np.ndarray) -> np.ndarray:
     """The WCAG relative luminance of each color in an array of shape `(..., 4)` (or `(..., 3)`) of sRGB floats."""
     rgb = rgba[..., :3]
