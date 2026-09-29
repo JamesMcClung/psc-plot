@@ -124,5 +124,6 @@ def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, Grid]:
 
     figure.draw_without_rendering()  # gives the first tuck something to measure
     grid.tuck_y_tick_labels()
+    grid.right_align_cbar_labels()
 
     return figure, grid

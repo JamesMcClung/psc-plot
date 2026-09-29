@@ -2,6 +2,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.transforms import ScaledTranslation
 
+from lib.plotting import plt_util
 from lib.plotting.labeler import SubjectLabeler
 from lib.plotting.panel import Panel
 from lib.plotting.plot_info import PlotInfo
@@ -99,6 +100,29 @@ class Grid:
         for panel in self.panels.values():
             panel.tuck_y_tick_labels(renderer)
 
+    def right_align_cbar_labels(self):
+        """Line up the right edges of the colorbar labels down each column, where matplotlib would line up
+        none of their edges: it starts each label just past its own bar's tick labels, however wide those are.
+
+        Only moves labels rightward, up to the right edge of the one that already reached furthest, so it
+        doesn't change how much room constrained layout reserves for them. Has to run after everything else
+        that affects the layout, and again every frame, for the same reasons as `tuck_y_tick_labels`.
+        """
+        renderer = self.fig.canvas.get_renderer()
+
+        for col in self.contiguous_cols():
+            cbars = [cbar for panel in col for cbar in panel.colorbars]
+            if len(cbars) < 2:
+                continue
+
+            right = max(plt_util.get_default_cbar_label_left(cbar, renderer) + cbar.ax.yaxis.label.get_window_extent(renderer).width for cbar in cbars)
+
+            for cbar in cbars:
+                # A vertical colorbar's label reads bottom to top, so its bottom is its right edge.
+                box = cbar.ax.get_window_extent(renderer)
+                cbar.ax.yaxis.label.set_va("bottom")
+                cbar.ax.yaxis.set_label_coords((right - box.x0) / box.width, 0.5)
+
     def contiguous_cols(self) -> list[list[Panel]]:
         cols = []
         for x in range(1, self.ncols + 1):
@@ -137,3 +161,4 @@ class Grid:
         self.update_bounds()
         self.update_labels()
         self.tuck_y_tick_labels()
+        self.right_align_cbar_labels()
