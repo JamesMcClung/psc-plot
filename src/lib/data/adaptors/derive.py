@@ -1,7 +1,6 @@
 from lark import Lark
 from lark.visitors import Transformer_InPlace
 
-from lib import var_info_registry
 from lib.data.adaptor import WorldAdaptor
 from lib.data.data_world import DataWorld
 from lib.data.ensure_derived import ensure_derived
@@ -80,7 +79,7 @@ class AssignNewVariable(Transformer_InPlace):
         [key, subdata] = toks
         data = self.world.require_active_data()
         _, prefix = split_prepath(data.metadata.prepath)
-        info = var_info_registry.lookup(prefix, key)
+        info = self.world.config.registry.lookup(prefix, key)
         data = data.with_active(data=subdata, key=key, info=info)
         return self.world.with_active(data=data)
 
