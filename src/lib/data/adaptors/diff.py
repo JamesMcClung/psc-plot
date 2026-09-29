@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Literal
 
@@ -46,21 +47,37 @@ def format_diffs_1d(diffs_1d: list[_Diff1d]) -> str:
     return "_".join(parts)
 
 
-class Diff(BareAdaptor):
+class DiffBase(BareAdaptor):
+    """Shared by `Diff` and `Partial`, which are siblings rather than parent and child so `isinstance` tells them apart."""
+
+    symbol: str
+    fragment_prefix: str
+
     def __init__(self, diffs_1d: list[_Diff1d]):
         self.diffs_1d = diffs_1d
 
+    @abstractmethod
+    def apply_1d(self, diff_1d: _Diff1d, da: xr.DataArray) -> xr.DataArray: ...
+
     def get_modified_display_latex(self, metadata: Metadata) -> Latex:
         dims = ",".join(diff_1d.dim_key for diff_1d in self.diffs_1d)
-        return Latex(f"\\Delta_{{{dims}}}{metadata.active_var_info.display}")
+        return Latex(f"{self.symbol}_{{{dims}}}{metadata.active_var_info.display}")
 
     def apply_field_bare(self, da: xr.DataArray) -> xr.DataArray:
         for diff_1d in self.diffs_1d:
-            da = diff_1d.apply_field_bare(da)
+            da = self.apply_1d(diff_1d, da)
         return da
 
     def get_name_fragments(self) -> list[str]:
-        return [f"diff_{format_diffs_1d(self.diffs_1d)}"]
+        return [f"{self.fragment_prefix}_{format_diffs_1d(self.diffs_1d)}"]
+
+
+class Diff(DiffBase):
+    symbol = "\\Delta"
+    fragment_prefix = "diff"
+
+    def apply_1d(self, diff_1d: _Diff1d, da: xr.DataArray) -> xr.DataArray:
+        return diff_1d.apply_field_bare(da)
 
 
 DIR_TO_SHIFT = {"+": 1, "-": -1}
