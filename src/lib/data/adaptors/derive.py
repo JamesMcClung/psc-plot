@@ -1,4 +1,5 @@
 from lark import Lark
+from lark.exceptions import VisitError
 from lark.visitors import Transformer
 
 from lib.data.adaptor import WorldAdaptor
@@ -15,7 +16,11 @@ class Derive(WorldAdaptor):
         self.ast = _DERIVE_PARSER.parse(expression)
 
     def apply_world(self, world):
-        return AssignNewVariable(world).transform(self.ast)
+        try:
+            return AssignNewVariable(world).transform(self.ast)
+        except VisitError as e:
+            # lark wraps errors raised in the callbacks (e.g. an unknown variable); surface the original
+            raise e.orig_exc from e
 
     def get_name_fragments(self):
         return [f'derive_"{self.expression}"']
