@@ -172,3 +172,17 @@ def test_config_custom_registries_dir_replaces_defaults(tmp_path):
     registry = PscPlotConfig(registries_dir=tmp_path).registry
     assert registry.lookup("pfd", "x").display.latex == "X"
     assert registry.entry("pfd", "hx_fc") is None
+
+
+from conftest import CONFIG_2D
+
+from lib.data.loader import load
+
+
+def test_prt_species_var_infos(tmp_path):
+    # A custom registry proves the loader reads config.registry rather than the old module
+    # (test-2d's prt.e files carry px/py/pz, not ux/uy/uz)
+    _write(tmp_path, "prt.yml", "py: {display: 'U_Y', unit: 'c'}\n")
+    config = PscPlotConfig(data_root=CONFIG_2D.data_root, registries_dir=tmp_path)
+    assert load(config, "prt.e").metadata.var_infos["py"].display.latex == "U_Y"
+    assert load(CONFIG_2D, "prt.e").metadata.var_infos["py"].display.latex == "u_y"
