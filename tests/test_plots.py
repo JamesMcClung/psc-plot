@@ -106,6 +106,12 @@ def test_suptitle():
     return make_plot("prt.i -i t=1: --bin y z -v y z --with prt.e -i t=1: --bin y z -v y z loc=1,2".split())
 
 
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_stacked_images_with_scaled_cbar():
+    """Vertically stacking (and sharing x-axes) components of magnetic field. The --mul on By is to force a multiplicative factor, which is common in practice but not represented in the test data."""
+    return make_plot("-w pfd::hx_fc -i t=3 -cv y z loc=1,1 -w pfd::hy_fc -i t=3 --mul 1e-5 -cv y z loc=1,2 -w pfd::hz_fc -i t=3 -cv y z loc=1,3".split())
+
+
 # --- Cross-dataset plots ---
 
 
