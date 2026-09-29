@@ -1,10 +1,7 @@
 import numpy as np
 import xarray as xr
 
-from lib.data.adaptor import BareAdaptor
-from lib.data.adaptors.diff import BOUNDARY_KEYS, DIR_TO_SHIFT, _Diff1d, format_diffs_1d, parse_diffs_1d
-from lib.data.data_with_attrs import Metadata
-from lib.latex import Latex
+from lib.data.adaptors.diff import BOUNDARY_KEYS, DIFF_FORMAT, DiffBase, _Diff1d, parse_diffs_1d
 from lib.parsing.args_registry import arg_parser
 
 
@@ -20,32 +17,20 @@ def _spacing(diff_1d: _Diff1d, coord: xr.DataArray) -> xr.DataArray:
     return xr.DataArray(spacing, coords={diff_1d.dim_key: c}, dims=diff_1d.dim_key)
 
 
-class Partial(BareAdaptor):
-    def __init__(self, diffs_1d: list[_Diff1d]):
-        self.diffs_1d = diffs_1d
+class Partial(DiffBase):
+    symbol = "\\partial"
+    fragment_prefix = "partial"
 
-    def get_modified_display_latex(self, metadata: Metadata) -> Latex:
-        dims = ",".join(diff_1d.dim_key for diff_1d in self.diffs_1d)
-        return Latex(f"\\partial_{{{dims}}}{metadata.active_var_info.display}")
-
-    def apply_field_bare(self, da: xr.DataArray) -> xr.DataArray:
-        for diff_1d in self.diffs_1d:
-            da = diff_1d.apply_field_bare(da) / _spacing(diff_1d, da.coords[diff_1d.dim_key])
-        return da
-
-    def get_name_fragments(self) -> list[str]:
-        return [f"partial_{format_diffs_1d(self.diffs_1d)}"]
-
-
-PARTIAL_FORMAT = f"[{' | '.join(BOUNDARY_KEYS)}] dim_key[,dim_key...]={set(DIR_TO_SHIFT)} [...]"
+    def apply_1d(self, diff_1d: _Diff1d, da: xr.DataArray) -> xr.DataArray:
+        return diff_1d.apply_field_bare(da) / _spacing(diff_1d, da.coords[diff_1d.dim_key])
 
 
 @arg_parser(
     dest="adaptors",
     flags="--partial",
-    metavar=PARTIAL_FORMAT,
+    metavar=DIFF_FORMAT,
     help=f"Like --diff, but divide each difference by the corresponding grid spacing along its dimension, approximating a derivative. {'/'.join(BOUNDARY_KEYS)} markers determine how to handle boundaries for subsequent specs (default: {BOUNDARY_KEYS[0]}).",
     nargs="+",
 )
 def parse_partial(args: list[str]) -> Partial:
-    return Partial(parse_diffs_1d(args, PARTIAL_FORMAT))
+    return Partial(parse_diffs_1d(args, DIFF_FORMAT))
