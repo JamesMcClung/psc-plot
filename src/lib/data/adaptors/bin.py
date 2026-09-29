@@ -5,7 +5,7 @@ import dask.dataframe as dd
 import numpy as np
 import xarray as xr
 
-from lib.data.adaptor import MetadataAdaptor
+from lib.data.adaptor import Adaptor
 from lib.data.data_with_attrs import Field, FieldMetadata, LazyList, List
 from lib.data.data_world import DataWorld
 from lib.data.types import VarKey
@@ -134,7 +134,7 @@ def _histogram_per_step(data: LazyList, keys_to_nbins: dict[VarKey, int | None],
     return dask.array.stack(slices, axis=step_axis)
 
 
-class Bin(MetadataAdaptor):
+class Bin(Adaptor):
     def __init__(self, key_to_nbins: dict[VarKey, int | None]):
         self.keys_to_nbins = key_to_nbins
 
