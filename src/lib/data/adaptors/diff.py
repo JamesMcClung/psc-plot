@@ -34,6 +34,18 @@ class _Diff1d:
         return diff
 
 
+def format_diffs_1d(diffs_1d: list[_Diff1d]) -> str:
+    parts = []
+    prev_boundary: Boundary | None = None
+    for diff_1d in diffs_1d:
+        if diff_1d.boundary != prev_boundary:
+            parts.append(diff_1d.boundary)
+            prev_boundary = diff_1d.boundary
+        sign = "+" if diff_1d.dir > 0 else "-"
+        parts.append(f"{diff_1d.dim_key}={sign}{abs(diff_1d.dir)}")
+    return "_".join(parts)
+
+
 class Diff(BareAdaptor):
     def __init__(self, diffs_1d: list[_Diff1d]):
         self.diffs_1d = diffs_1d
@@ -48,19 +60,32 @@ class Diff(BareAdaptor):
         return da
 
     def get_name_fragments(self) -> list[str]:
-        parts = []
-        prev_boundary: Boundary | None = None
-        for diff_1d in self.diffs_1d:
-            if diff_1d.boundary != prev_boundary:
-                parts.append(diff_1d.boundary)
-                prev_boundary = diff_1d.boundary
-            sign = "+" if diff_1d.dir > 0 else "-"
-            parts.append(f"{diff_1d.dim_key}={sign}{abs(diff_1d.dir)}")
-        return [f"diff_{'_'.join(parts)}"]
+        return [f"diff_{format_diffs_1d(self.diffs_1d)}"]
 
 
 DIR_TO_SHIFT = {"+": 1, "-": -1}
 DIFF_FORMAT = f"[{' | '.join(BOUNDARY_KEYS)}] dim_key[,dim_key...]={set(DIR_TO_SHIFT)} [...]"
+
+
+def parse_diffs_1d(args: list[str], format: str) -> list[_Diff1d]:
+    diffs_1d: list[_Diff1d] = []
+    boundary = BOUNDARY_KEYS[0]
+
+    for arg in args:
+        if arg in BOUNDARY_KEYS:
+            boundary = arg
+            continue
+
+        dims_arg, dir_arg = parse_util.parse_assignment(arg, format)
+
+        parse_util.parse_value(dir_arg, "dir", DIR_TO_SHIFT.keys())
+        dir = DIR_TO_SHIFT[dir_arg]
+
+        for dim in parse_util.parse_comma_separated_list(dims_arg):
+            parse_util.parse_identifier(dim, "dim_key")
+            diffs_1d.append(_Diff1d(dim, dir, boundary))
+
+    return diffs_1d
 
 
 @arg_parser(
@@ -71,21 +96,4 @@ DIFF_FORMAT = f"[{' | '.join(BOUNDARY_KEYS)}] dim_key[,dim_key...]={set(DIR_TO_S
     nargs="+",
 )
 def parse(args: list[str]) -> Diff:
-    diffs_1d: list[_Diff1d] = []
-    boundary = BOUNDARY_KEYS[0]
-
-    for arg in args:
-        if arg in BOUNDARY_KEYS:
-            boundary = arg
-            continue
-
-        dims_arg, dir_arg = parse_util.parse_assignment(arg, DIFF_FORMAT)
-
-        parse_util.parse_value(dir_arg, "dir", DIR_TO_SHIFT.keys())
-        dir = DIR_TO_SHIFT[dir_arg]
-
-        for dim in parse_util.parse_comma_separated_list(dims_arg):
-            parse_util.parse_identifier(dim, "dim_key")
-            diffs_1d.append(_Diff1d(dim, dir, boundary))
-
-    return Diff(diffs_1d)
+    return Diff(parse_diffs_1d(args, DIFF_FORMAT))
