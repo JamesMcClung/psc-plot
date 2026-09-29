@@ -1,0 +1,67 @@
+rho:
+  display: '\rho'
+  pipeline:
+    - --derive rho=rho_i+rho_e
+
+# electrons
+rho_e: {display: '\rho_\text{e}'}
+jx_e: {display: 'j_{x,\text{e}}'}
+jy_e: {display: 'j_{y,\text{e}}'}
+jz_e: {display: 'j_{z,\text{e}}'}
+px_e: {display: 'u_{x,\text{e}}', unit: 'c'}
+py_e: {display: 'u_{y,\text{e}}', unit: 'c'}
+pz_e: {display: 'u_{z,\text{e}}', unit: 'c'}
+txx_e: {display: 'T_{xx,\text{e}}'}
+tyy_e: {display: 'T_{yy,\text{e}}'}
+tzz_e: {display: 'T_{zz,\text{e}}'}
+txy_e: {display: 'T_{xy,\text{e}}'}
+tyz_e: {display: 'T_{yz,\text{e}}'}
+tzx_e: {display: 'T_{zx,\text{e}}'}
+
+# PSC's `moment_all` deposits, per cell volume: rho = sum(w*q), p_a = sum(w*m*u_a),
+# j_a = sum(w*q*v_a) and t_aa = sum(w*m*u_a*v_a). Subtracting the bulk drift and
+# dividing by the number density n = rho/q leaves the temperature in the local frame:
+#     T_aa = (t_aa - p_a*j_a/rho) * q/rho
+# The charge is baked into each expression (q = -1 here, so the subtraction is reversed),
+# which is right for PSC's standard e/i kinds but silently wrong for other charges.
+Txx_e:
+  display: 'T_{xx,\text{e}}'
+  pipeline:
+    - --derive Txx_e=(px_e*jx_e/rho_e-txx_e)/rho_e
+Tyy_e:
+  display: 'T_{yy,\text{e}}'
+  pipeline:
+    - --derive Tyy_e=(py_e*jy_e/rho_e-tyy_e)/rho_e
+Tzz_e:
+  display: 'T_{zz,\text{e}}'
+  pipeline:
+    - --derive Tzz_e=(pz_e*jz_e/rho_e-tzz_e)/rho_e
+
+# ions
+rho_i: {display: '\rho_\text{i}'}
+jx_i: {display: 'j_{x,\text{i}}'}
+jy_i: {display: 'j_{y,\text{i}}'}
+jz_i: {display: 'j_{z,\text{i}}'}
+px_i: {display: 'u_{x,\text{i}}', unit: 'c'}
+py_i: {display: 'u_{y,\text{i}}', unit: 'c'}
+pz_i: {display: 'u_{z,\text{i}}', unit: 'c'}
+txx_i: {display: 'T_{xx,\text{i}}'}
+tyy_i: {display: 'T_{yy,\text{i}}'}
+tzz_i: {display: 'T_{zz,\text{i}}'}
+txy_i: {display: 'T_{xy,\text{i}}'}
+tyz_i: {display: 'T_{yz,\text{i}}'}
+tzx_i: {display: 'T_{zx,\text{i}}'}
+
+# q = +1
+Txx_i:
+  display: 'T_{xx,\text{i}}'
+  pipeline:
+    - --derive Txx_i=(txx_i-px_i*jx_i/rho_i)/rho_i
+Tyy_i:
+  display: 'T_{yy,\text{i}}'
+  pipeline:
+    - --derive Tyy_i=(tyy_i-py_i*jy_i/rho_i)/rho_i
+Tzz_i:
+  display: 'T_{zz,\text{i}}'
+  pipeline:
+    - --derive Tzz_i=(tzz_i-pz_i*jz_i/rho_i)/rho_i

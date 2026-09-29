@@ -29,7 +29,7 @@ class With(WorldAdaptor):
             data = load(world.config, prepath)
 
         if key:
-            data = ensure_derived(data, key)
+            data = ensure_derived(data, key, world.config)
         data = data.with_active(key=key)
 
         return world.with_active(prepath=prepath, data=data)
@@ -61,7 +61,7 @@ class With1(With):
     prepath_or_key: Prepath | SubdataKey
 
     def get_prepath_and_key(self, world):
-        if (data := world.active_data) is not None and (self.prepath_or_key in data or self.prepath_or_key in get_derivable_keys(data)):
+        if (data := world.active_data) is not None and (self.prepath_or_key in data or self.prepath_or_key in get_derivable_keys(data, world.config)):
             return None, self.prepath_or_key
         return self.prepath_or_key, None
 

@@ -12,8 +12,16 @@ from lib.plotting.plot import SaveFormat
 _TESTS_DIR = Path(__file__).parent
 _DATA_DIR = _TESTS_DIR / "data"
 CONFIG_2D = PscPlotConfig(data_root=_DATA_DIR / "test-2d")
+CONFIG_3D = PscPlotConfig(data_root=_DATA_DIR / "test-3d")
 
 matplotlib.use("Agg")
+
+
+def write_registry(registries_dir: Path, files: dict[str, str]) -> PscPlotConfig:
+    """Write `{stem: yaml_text}` registry files and return a test-2d config that uses only them."""
+    for stem, text in files.items():
+        (registries_dir / f"{stem}.yml").write_text(text)
+    return PscPlotConfig(data_root=CONFIG_2D.data_root, registries_dir=registries_dir)
 
 
 def make_plot(args_list: list[str], data_dir: str = "test-2d"):

@@ -1,0 +1,135 @@
+ex_ec: {display: 'E_x'}
+ey_ec: {display: 'E_y'}
+ez_ec: {display: 'E_z'}
+hx_fc: {display: 'B_x'}
+hy_fc: {display: 'B_y'}
+hz_fc: {display: 'B_z'}
+jx_ec: {display: 'j_x'}
+jy_ec: {display: 'j_y'}
+jz_ec: {display: 'j_z'}
+
+hxz2_cc:
+  display: 'B_x^2 + B_z^2'
+  pipeline:
+    - --copy h2x=hx_fc
+    - --pow 2
+    - --recenter x=+
+    - --copy h2z=hz_fc
+    - --pow 2
+    - --recenter z=+
+    - --derive hxz2_cc=h2x+h2z
+
+h2_cc:
+  display: 'B^2'
+  pipeline:
+    - --copy h2y=hy_fc
+    - --pow 2
+    - --recenter y=+
+    - --derive h2_cc=hxz2_cc+h2y
+
+h_cc:
+  display: 'B'
+  pipeline:
+    - --with h2_cc
+    - --pow 0.5
+
+hxzhat2_xyz:
+  display: '|\hat{B}_x|^2 + |\hat{B}_z|^2'
+  pipeline:
+    - --copy bx=hx_fc
+    - --fourier x y z
+    - '--idx k_x=1: k_y=1: k_z=1:'
+    - --mag
+    - --copy bz=hz_fc
+    - --fourier x y z
+    - '--idx k_x=1: k_y=1: k_z=1:'
+    - --mag
+    - --derive hxzhat2_xyz=bx^2+bz^2
+
+hxzhat2_yz:
+  display: '|\hat{B}_x|^2 + |\hat{B}_z|^2'
+  pipeline:
+    - --copy bx=hx_fc
+    - --fourier y z
+    - '--idx k_y=1: k_z=1:'
+    - --mag
+    - --copy bz=hz_fc
+    - --fourier y z
+    - '--idx k_y=1: k_z=1:'
+    - --mag
+    - --derive hxzhat2_yz=bx^2+bz^2
+
+hhat2_xyz:
+  display: '|\hat{B}|^2'
+  pipeline:
+    - --copy by=hy_fc
+    - --fourier x y z
+    - '--idx k_x=1: k_y=1: k_z=1:'
+    - --mag
+    - --derive hhat2_xyz=hxzhat2_xyz+by^2
+
+hhat2_yz:
+  display: '|\hat{B}|^2'
+  pipeline:
+    - --copy by=hy_fc
+    - --fourier y z
+    - '--idx k_y=1: k_z=1:'
+    - --mag
+    - --derive hhat2_yz=hxzhat2_yz+by^2
+
+div_h_cc_xyz:
+  display: '\nabla\cdot \vec B'
+  pipeline:
+    - --copy dhx=hx_fc
+    - --idx y=:-1 z=:-1
+    - --partial truncate x=+
+    - --copy dhy=hy_fc
+    - --idx x=:-1 z=:-1
+    - --partial truncate y=+
+    - --copy dhz=hz_fc
+    - --idx x=:-1 y=:-1
+    - --partial truncate z=+
+    - --derive div_h_cc_xyz=dhx+dhy+dhz
+
+div_h_cc_yz:
+  display: '\nabla\cdot \vec B'
+  pipeline:
+    - --copy dhy=hy_fc
+    - --idx z=:-1
+    - --partial truncate y=+
+    - --copy dhz=hz_fc
+    - --idx y=:-1
+    - --partial truncate z=+
+    - --derive div_h_cc_yz=dhy+dhz
+
+sy_p:
+  display: 'S_y^+'
+  pipeline:
+    - --copy hx_rc=hx_fc
+    - --recenter y=-
+    - --derive sy_p=(ez_ec+hx_rc)/2
+    - '--idx y=1:'
+
+sy_m:
+  display: 'S_y^-'
+  pipeline:
+    - --copy hx_rc=hx_fc
+    - --recenter y=-
+    - --derive sy_m=(ez_ec-hx_rc)/2
+    - '--idx y=1:'
+
+py_p:
+  display: 'P_y^+'
+  pipeline:
+    - --copy hz_rc=hz_fc
+    - --recenter y=-
+    - --derive py_p=(ex_ec-hz_rc)/2
+    - '--idx y=1:'
+
+py_m:
+  display: 'P_y^-'
+  pipeline:
+    - --copy hz_rc=hz_fc
+    - --recenter y=-
+    - --derive py_m=(ex_ec+hz_rc)/2
+    - '--idx y=1:'

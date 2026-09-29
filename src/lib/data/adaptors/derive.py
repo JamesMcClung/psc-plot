@@ -1,7 +1,7 @@
 from lark import Lark
-from lark.visitors import Transformer_InPlace
+from lark.exceptions import VisitError
+from lark.visitors import Transformer
 
-from lib import var_info_registry
 from lib.data.adaptor import WorldAdaptor
 from lib.data.data_world import DataWorld
 from lib.data.ensure_derived import ensure_derived
@@ -16,13 +16,17 @@ class Derive(WorldAdaptor):
         self.ast = _DERIVE_PARSER.parse(expression)
 
     def apply_world(self, world):
-        return AssignNewVariable(world).transform(self.ast)
+        try:
+            return AssignNewVariable(world).transform(self.ast)
+        except VisitError as e:
+            # lark wraps errors raised in the callbacks (e.g. an unknown variable); surface the original
+            raise e.orig_exc from e
 
     def get_name_fragments(self):
         return [f'derive_"{self.expression}"']
 
 
-class AssignNewVariable(Transformer_InPlace):
+class AssignNewVariable(Transformer):
     def __init__(self, world: DataWorld):
         self.world = world
         super().__init__(visit_tokens=True)
@@ -38,7 +42,7 @@ class AssignNewVariable(Transformer_InPlace):
     def variable(self, toks: list):
         key = str(toks[0])
         data = self.world.require_active_data()
-        data = ensure_derived(data, key)
+        data = ensure_derived(data, key, self.world.config)
         return data[key]
 
     def prepath(self, toks: list):
@@ -51,7 +55,7 @@ class AssignNewVariable(Transformer_InPlace):
         else:
             data = self.world.datas[prepath]
 
-        data = ensure_derived(data, key)
+        data = ensure_derived(data, key, self.world.config)
         self.world = self.world.with_data(prepath, data)
 
         return data[key]
@@ -80,7 +84,7 @@ class AssignNewVariable(Transformer_InPlace):
         [key, subdata] = toks
         data = self.world.require_active_data()
         _, prefix = split_prepath(data.metadata.prepath)
-        info = var_info_registry.lookup(prefix, key)
+        info = self.world.config.registry.lookup(prefix, key)
         data = data.with_active(data=subdata, key=key, info=info)
         return self.world.with_active(data=data)
 

@@ -135,8 +135,8 @@ def test_spectrum_1d():
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_spectrum_3d():
-    """Total power spectrum of the magnetic field. The builtin `hhat2` is the sum of the squares of the Fourier-transformed copmonents of the magnetic field. The combination of `--scatter` and `--transform-spherical` avoids interpolating onto a grid when doing the coordinate transformation. Note `--pos` removes the 0-mode. This is the current intended use case for `--fit`, which fits a power law index, but also necessitates `--compute` (the `-c` in `-cv`) due to a bug."""
-    return make_plot("pfd hhat2 --scatter --transform-spherical k_y k_z k_x --pos k_s=1e-8: --scale hhat2=log -cv k_s hhat2 --fit 25:45".split(), data_dir="test-3d")
+    """Total power spectrum of the magnetic field. The builtin `hhat2_xyz` is the sum of the squares of the Fourier-transformed copmonents of the magnetic field. The combination of `--scatter` and `--transform-spherical` avoids interpolating onto a grid when doing the coordinate transformation. Note `--pos` removes the 0-mode. This is the current intended use case for `--fit`, which fits a power law index, but also necessitates `--compute` (the `-c` in `-cv`) due to a bug."""
+    return make_plot("pfd hhat2_xyz --scatter --transform-spherical k_y k_z k_x --pos k_s=1e-8: --scale hhat2_xyz=log -cv k_s hhat2_xyz --fit 25:45".split(), data_dir="test-3d")
 
 
 # --- Particles ---
@@ -296,21 +296,3 @@ def test_unit_override():
 def test_unit_override_dim():
     """`--unit DIM=VALUE` overrides the unit shown in a dimension's axis label."""
     return make_plot("pfd hx_fc --unit y=\\text{test} -v y".split())
-
-
-def test_field_units_lookup_covers_test_data():
-    """All raw vars present in the test-2d datasets resolve via the registry (no fallback)."""
-    from lib.var_info_registry import _REGISTRY
-
-    expected_pfd = {"hx_fc", "hy_fc", "hz_fc", "ex_ec", "ey_ec", "ez_ec", "jx_ec", "jy_ec", "jz_ec"}
-    expected_moments = {
-        *(f"{m}_{s}" for m in ("rho", "jx", "jy", "jz", "px", "py", "pz", "txx", "tyy", "tzz", "txy", "tyz", "tzx") for s in ("e", "i")),
-    }
-    expected_gauss = {"dive", "rho"}
-
-    for v in expected_pfd:
-        assert ("pfd", v) in _REGISTRY, v
-    for v in expected_moments:
-        assert ("pfd_moments", v) in _REGISTRY, v
-    for v in expected_gauss:
-        assert ("gauss", v) in _REGISTRY, v

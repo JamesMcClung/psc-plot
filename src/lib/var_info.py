@@ -8,12 +8,7 @@ from lib.scale import LinearScale, Scale
 
 from .latex import Latex
 
-INVERSE_ELECTRON_PLASMA_FREQUENCY = Latex("\\omega_\\text{pe}^{-1}")
-ELECTRON_SKIN_DEPTH = Latex("d_\\text{e}")
 RADIAN = Latex("\\text{rad}")
-SPEED_OF_LIGHT = Latex("c")
-ELEMENTARY_CHARGE = Latex("e")
-ELECTRON_MASS = Latex("m_\\text{e}")
 
 FOURIER_KEY_PREFIX = "k_"
 

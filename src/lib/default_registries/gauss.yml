@@ -1,0 +1,6 @@
+dive: {display: '\nabla\cdot\vec E'}
+rho: {display: '\rho'}
+error:
+  display: '\rho - \nabla\cdot\vec E'
+  pipeline:
+    - --derive error=rho-dive

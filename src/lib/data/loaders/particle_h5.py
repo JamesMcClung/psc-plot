@@ -14,7 +14,6 @@ from lib.data.data_with_attrs import LazyList, ListMetadata
 from lib.data.loader import Loader, loader
 from lib.latex import Latex
 from lib.species import SpeciesInfo, build_species_display
-from lib.var_info_registry import lookup
 
 PRT_PARTICLES_KEY = "particles/p0/1d"
 _PRT_H5_RE = re.compile(r"^prt\.\d+\.h5$")
@@ -212,7 +211,7 @@ class ParticleLoaderH5(Loader):
             species=species_dict,
             partition_dim="t",
             partition_ranges=partition_ranges,
-            var_infos={key: lookup(self.prefix, key) for key in df.columns},
+            var_infos={key: config.registry.lookup(self.prefix, key) for key in df.columns},
             subject=Latex(r"\text{Particles}"),
         )
 
