@@ -24,7 +24,7 @@ def ensure_derived[D: DataWithAttrs](data: D, key: SubdataKey, config: PscPlotCo
     if pipeline is None:
         message = f"""No variable named '{key}'.
 The following variables are defined:    {list(data.data)}.
-The following variables can be derived: {config.registry.derivable_keys(prefix)}."""
+The following variables can be derived: {get_derivable_keys(data, config)}."""
         raise ValueError(message)
 
     chain = _DERIVING.get()
