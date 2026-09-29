@@ -107,14 +107,11 @@ class Panel:
     def wire_cbar_label(self, cbar: Colorbar, info: PlotInfoColor):
         self.colorbars.append(cbar)
 
-        # A multiplier only makes sense where the ticks are evenly spaced; log and symlog scales label
-        # their ticks with the exponent anyway.
+        # Log and symlog scales label their ticks with the exponent already.
         is_linear = isinstance(info.dim_scales[info.color_dim], LinearScale)
         multiplier_exponent = plt_util.move_cbar_multiplier_to_label(cbar) if is_linear else 0
 
-        # The multiplier gets a line of its own, the first -- which, the label reading bottom to top, is the
-        # one nearest the tick labels it modifies. That also leaves room beside it for an additive offset,
-        # should one ever be factored out too.
+        # The multiplier gets the first line, which (the label reading bottom to top) is nearest the tick labels.
         multiplier = f"$\\times 10^{{{multiplier_exponent}}}$" if multiplier_exponent else ""
 
         def set_label(text: str):
@@ -253,8 +250,7 @@ class Panel:
 
         Same rule as `prune_y_ticks`: nothing may stick out past an edge that has to sit flush, or
         constrained layout reserves room for it and the gap comes back. Pruning alone doesn't get there,
-        because the tick it leaves behind can still sit within half a label of the edge. (Colorbars are
-        shrunk well clear of the edges, so their tick labels never get that close.)
+        because the tick it leaves behind can still sit within half a label of the edge.
 
         Measures the labels where they were last drawn, so the figure must already have been laid out.
         Every label is put back to its default alignment first, both so that the measurement doesn't
