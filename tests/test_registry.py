@@ -142,3 +142,33 @@ def test_registries_dir_that_is_a_file(tmp_path):
     path.write_text("")
     with pytest.raises(RegistryError, match="not a directory"):
         Registry.load(path)
+
+
+from lib.config import PscPlotConfig
+
+
+def test_config_default_registries_dir_is_the_shipped_one():
+    assert (PscPlotConfig().registries_dir / "pfd.yml").is_file()
+    assert PscPlotConfig().registries_dir.resolve() == DEFAULT_REGISTRIES_DIR.resolve()
+
+
+def test_config_registries_dir_from_env(monkeypatch, tmp_path):
+    monkeypatch.setenv("PSC_PLOT_REGISTRIES", str(tmp_path))
+    assert PscPlotConfig.from_env().registries_dir == tmp_path
+
+
+def test_config_registries_dir_env_unset_uses_default(monkeypatch):
+    monkeypatch.delenv("PSC_PLOT_REGISTRIES", raising=False)
+    assert PscPlotConfig.from_env().registries_dir == PscPlotConfig().registries_dir
+
+
+def test_config_registry_is_loaded_once():
+    config = PscPlotConfig()
+    assert config.registry is config.registry
+
+
+def test_config_custom_registries_dir_replaces_defaults(tmp_path):
+    _write(tmp_path, "shared.yml", "x: {display: 'X'}\n")
+    registry = PscPlotConfig(registries_dir=tmp_path).registry
+    assert registry.lookup("pfd", "x").display.latex == "X"
+    assert registry.entry("pfd", "hx_fc") is None
