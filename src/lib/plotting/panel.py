@@ -202,7 +202,7 @@ class Panel:
                 continue
 
             for end, marker in [("lower", TICKUP), ("upper", TICKDOWN)]:
-                ticks = ax.scatter([], [], s=size**2, marker=marker, linewidths=width, transform=ax.get_xaxis_transform(), clip_on=False, zorder=2.5)
+                ticks = ax.scatter([], [], s=size**2, marker=marker, facecolors="none", linewidths=width, transform=ax.get_xaxis_transform(), clip_on=False, zorder=2.5)
                 ticks.set_in_layout(False)
                 self.interior_x_ticks[(ax, end)] = ticks
 
@@ -212,19 +212,18 @@ class Panel:
         for (ax, end), ticks in self.interior_x_ticks.items():
             lower, upper = sorted(ax.get_xlim())
             xs = [x for x in ax.xaxis.get_majorticklocs() if lower <= x <= upper]
-            y = {"lower": 0.0, "upper": 1.0}[end]
+            y, inward = {"lower": (0.0, 1.0), "upper": (1.0, -1.0)}[end]
             ticks.set_offsets(np.array([(x, y) for x in xs]).reshape(-1, 2))
 
             # What's beneath a tick is the strip of display it covers, running inward from the edge.
-            length = float(np.sqrt(ticks.get_sizes()[0])) * ax.get_figure(root=True).dpi / 72
-            inward = {"lower": length, "upper": -length}[end]
+            length = plt.rcParams["xtick.major.size"] * ax.get_figure(root=True).dpi / 72
             colors = []
             for x in xs:
                 tick_x, edge_y = ax.get_xaxis_transform().transform((x, y))
-                bbox = Bbox.from_extents(tick_x - 0.5, min(edge_y, edge_y + inward), tick_x + 0.5, max(edge_y, edge_y + inward))
+                y0, y1 = sorted([edge_y, edge_y + inward * length])
+                bbox = Bbox.from_extents(tick_x - 0.5, y0, tick_x + 0.5, y1)
                 colors.append(plt_util.get_opposite_color(self._get_colors_beneath(ax, bbox)))
 
-            ticks.set_facecolor("none")
             ticks.set_edgecolor(colors)
 
     def _get_colors_beneath(self, ax: Axes, bbox: Bbox) -> np.ndarray:
