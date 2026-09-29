@@ -115,7 +115,7 @@ class Panel:
         # The multiplier gets a line of its own, the first -- which, the label reading bottom to top, is the
         # one nearest the tick labels it modifies. That also leaves room beside it for an additive offset,
         # should one ever be factored out too.
-        multiplier = plt_util.format_multiplier(multiplier_exponent) if multiplier_exponent else ""
+        multiplier = f"$\\times 10^{{{multiplier_exponent}}}$" if multiplier_exponent else ""
 
         def set_label(text: str):
             cbar.set_label("\n".join(line for line in [multiplier, text] if line))

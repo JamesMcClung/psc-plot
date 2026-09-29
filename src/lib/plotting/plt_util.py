@@ -74,11 +74,6 @@ def move_cbar_multiplier_to_label(cbar: Colorbar) -> int:
     return exponent
 
 
-def format_multiplier(exponent: int) -> str:
-    """The text naming a power of ten factored out of some tick labels, e.g. `×10⁻⁶`, set in math mode."""
-    return f"$\\times 10^{{{exponent}}}$"
-
-
 # From linear sRGB to the cone responses OKLab is built on, and from their cube roots to OKLab itself.
 # See https://bottosson.github.io/posts/oklab/.
 _LINEAR_SRGB_TO_LMS = np.array(
