@@ -1,0 +1,6 @@
+d_rho: {display: '\partial_t \rho'}
+dt_divj: {display: '\partial_t \nabla\cdot\vec j'}
+error:
+  display: '\partial_t \rho + \partial_t \nabla\cdot\vec j'
+  pipeline:
+    - --derive error=d_rho+dt_divj

@@ -1,0 +1,5 @@
+# Dimensions shared by every prefix (prefix None). A prefix's own file may override any of these.
+x: {display: 'x', unit: 'd_\text{e}', geometry: linear}
+y: {display: 'y', unit: 'd_\text{e}', geometry: linear}
+z: {display: 'z', unit: 'd_\text{e}', geometry: linear}
+t: {display: 't', unit: '\omega_\text{pe}^{-1}', geometry: linear}

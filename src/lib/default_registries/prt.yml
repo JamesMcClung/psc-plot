@@ -1,0 +1,64 @@
+# Also used for prt.<species> (ADIOS2 particle files); see Registry's prefix normalization.
+x: {display: 'x', unit: 'd_\text{e}'}
+y: {display: 'y', unit: 'd_\text{e}'}
+z: {display: 'z', unit: 'd_\text{e}'}
+px: {display: 'u_x', unit: 'c'}  # deprecated
+py: {display: 'u_y', unit: 'c'}  # deprecated
+pz: {display: 'u_z', unit: 'c'}  # deprecated
+ux: {display: 'u_x', unit: 'c'}
+uy: {display: 'u_y', unit: 'c'}
+uz: {display: 'u_z', unit: 'c'}
+q: {display: 'q', unit: 'e'}
+m: {display: 'm', unit: 'm_\text{e}'}
+w: {display: 'w'}
+id: {display: '\text{id}'}
+tag: {display: '\text{tag}'}
+f: {display: 'f'}
+
+pxy:
+  display: '\sqrt{u_x^2 + u_y^2}'
+  unit: 'c'
+  pipeline:
+    - --derive pxy=(px^2+py^2)^0.5
+pyz:
+  display: '\sqrt{u_y^2 + u_z^2}'
+  unit: 'c'
+  pipeline:
+    - --derive pyz=(py^2+pz^2)^0.5
+pzx:
+  display: '\sqrt{u_z^2 + u_x^2}'
+  unit: 'c'
+  pipeline:
+    - --derive pzx=(pz^2+px^2)^0.5
+anisotropy_y_zx:
+  display: 'u_y^2 / (u_z^2 + u_x^2)'
+  pipeline:
+    - --derive anisotropy_y_zx=py^2/(pz^2+px^2)
+wx:
+  display: 'W_x'
+  pipeline:
+    - --derive wx=0.5*m*px^2
+wy:
+  display: 'W_y'
+  pipeline:
+    - --derive wy=0.5*m*py^2
+wz:
+  display: 'W_z'
+  pipeline:
+    - --derive wz=0.5*m*pz^2
+wxy:
+  display: 'W_{xy}'
+  pipeline:
+    - --derive wxy=0.5*m*(px^2+py^2)
+wyz:
+  display: 'W_{yz}'
+  pipeline:
+    - --derive wyz=0.5*m*(py^2+pz^2)
+wzx:
+  display: 'W_{zx}'
+  pipeline:
+    - --derive wzx=0.5*m*(pz^2+px^2)
+wxyz:
+  display: 'W'
+  pipeline:
+    - --derive wxyz=0.5*m*(px^2+py^2+pz^2)
