@@ -40,8 +40,6 @@ class Panel:
     scales_per_axis: dict[AxAndId, Scale] = field(init=False, default_factory=dict)
     flush_y_ends: set[YEnd] = field(init=False, default_factory=set)
     """Ends at which this panel touches its vertical neighbour, so nothing may stick out past them."""
-    pruned_y_ends: set[YEnd] = field(init=False, default_factory=set)
-    """Ends at which the y tick (and its label) is dropped."""
     interior_x_ticks: dict[tuple[Axes, YEnd], PathCollection] = field(init=False, default_factory=dict)
     """Ticks drawn just inside the axes at an end, over the data, in addition to any axis ticks there."""
 
@@ -185,15 +183,12 @@ class Panel:
         """Drop the y tick (and its label) at `end`, e.g. so it doesn't crowd the neighbouring axes' own tick
         label there. Locators that can't prune (log, say) are left alone.
         """
-        self.pruned_y_ends.add(end)
-        prune = "both" if len(self.pruned_y_ends) > 1 else end
-
         for ax, axis_id in self.scales_per_axis:
             if axis_id != "y":
                 continue
             locator = ax.yaxis.get_major_locator()
             if isinstance(locator, MaxNLocator):
-                locator.set_params(prune=prune)
+                locator.set_params(prune=end)
 
     def add_interior_x_ticks(self, ends: set[YEnd]):
         """Draw x ticks just inside the axes at `ends`, over the data, so that every panel in a stack gets its
