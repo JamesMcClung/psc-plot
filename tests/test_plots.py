@@ -112,6 +112,12 @@ def test_stacked_images_with_scaled_cbar():
     return make_plot("-w pfd::hx_fc -i t=3 -cv y z loc=1,1 -w pfd::hy_fc -i t=3 --mul 1e-5 -cv y z loc=1,2 -w pfd::hz_fc -i t=3 -cv y z loc=1,3".split())
 
 
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_stacked_images_with_log_scale():
+    """Vertically stacking ion and electron phase density plots. The --mul is to make sure no multiplicative factor is pulled out into the label, which would be silly for a log scale."""
+    return make_plot("prt.i -b y py --mul 1e5 --scale log --nan0 -v y py -w prt.e -b y py --scale log --nan0 -v y py loc=1,2".split())
+
+
 # --- Cross-dataset plots ---
 
 
