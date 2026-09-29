@@ -14,9 +14,9 @@ def _spacing(diff_1d: _Diff1d, coord: xr.DataArray) -> xr.DataArray:
     if len(c) < 2:
         raise ValueError(f"--partial needs at least 2 points along '{diff_1d.dim_key}'; got {len(c)}")
     spacing = diff_1d.dir * (np.roll(c, -diff_1d.dir) - c)
-    # the wrap-around cell spans the domain boundary, where the true spacing is unknown; assume the mean (exact for uniform grids)
+    # the wrap-around cell spans the domain boundary, where the true spacing is unknown; interpolate from the cells on either side of it
     boundary_idx = 0 if diff_1d.dir == -1 else -1
-    spacing[boundary_idx] = (c[-1] - c[0]) / (len(c) - 1)
+    spacing[boundary_idx] = ((c[1] - c[0]) + (c[-1] - c[-2])) / 2
     return xr.DataArray(spacing, coords={diff_1d.dim_key: c}, dims=diff_1d.dim_key)
 
 
