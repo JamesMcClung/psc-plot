@@ -81,35 +81,25 @@ class Grid:
                 panel.add_interior_x_ticks()
 
     def _restore_vertical_figure_padding(self, h_pad: float):
-        """Put back the padding above and below the figure that zeroing `h_pad` took with it.
-
-        `h_pad` is the padding at the edges of the figure as well as the floor on the gaps between
-        axes, so the only way to keep one is to lay the whole figure out in a shorter rectangle.
-        """
+        """Put back the padding above and below the figure that zeroing `h_pad` took with it, by laying the
+        figure out in a shorter rectangle (`h_pad` is both that padding and the floor on gaps between axes)."""
         pad = h_pad / self.fig.get_figheight()  # h_pad is in inches, the rectangle in figure fractions
 
         layout_engine = self.fig.get_layout_engine()
         assert layout_engine is not None
         layout_engine.set(rect=(0.0, pad, 1.0, 1.0 - 2 * pad))
 
-        # The suptitle sits outside that rectangle: the engine puts it h_pad below the top of the
-        # figure itself, which is now flush against it. Carrying the offset on its transform keeps it
-        # clear of the edge, and leaves the engine still reserving exactly its height below it.
+        # The engine puts the suptitle h_pad below the figure's top, now zero; offset it back down.
         self.suptitle.set_transform(self.fig.transSubfigure + ScaledTranslation(0.0, -h_pad, self.fig.dpi_scale_trans))
 
     def tuck_y_tick_labels(self):
-        """Pull y tick labels back inside their axes wherever they overhang an edge that has to sit flush.
-
-        Has to run after everything else that affects the layout, since it measures the labels where they
-        were last drawn -- and again every frame, since the ticks move with the bounds.
-        """
+        """Pull y tick labels back inside their axes wherever they overhang an edge that has to sit flush."""
         renderer = self.fig.canvas.get_renderer()
 
         for panel in self.panels.values():
             panel.tuck_y_tick_labels(renderer)
 
     def update_interior_x_ticks(self):
-        """Has to run every frame, since the tick locations follow the bounds and the colors the data."""
         for panel in self.panels.values():
             panel.update_interior_x_ticks()
 
@@ -118,8 +108,7 @@ class Grid:
         none of their edges: it starts each label just past its own bar's tick labels, however wide those are.
 
         Only moves labels rightward, up to the right edge of the one that already reached furthest, so it
-        doesn't change how much room constrained layout reserves for them. Has to run after everything else
-        that affects the layout, and again every frame, for the same reasons as `tuck_y_tick_labels`.
+        doesn't change how much room constrained layout reserves for them.
         """
         renderer = self.fig.canvas.get_renderer()
 
@@ -131,10 +120,8 @@ class Grid:
             right = max(plt_util.get_default_cbar_label_left(cbar, renderer) + cbar.ax.yaxis.label.get_window_extent(renderer).width for cbar in cbars)
 
             for cbar in cbars:
-                # A vertical colorbar's label reads bottom to top, so its bottom is its right edge. The label is
-                # pinned at a fixed distance from the bar, rather than at a fraction of the bar's width: the bar
-                # can still change size when the figure is next laid out (its width follows its height), but
-                # the tick labels that distance was measured from won't.
+                # The label reads bottom to top, so its bottom is its right edge. Pinned in fixed units, not
+                # axes fractions, since the bar can still resize at the next layout.
                 offset = (right - cbar.ax.get_window_extent(renderer).x1) / self.fig.dpi
                 cbar.ax.yaxis.label.set_va("bottom")
                 cbar.ax.yaxis.set_label_coords(1.0, 0.5, transform=cbar.ax.transAxes + ScaledTranslation(offset, 0.0, self.fig.dpi_scale_trans))
