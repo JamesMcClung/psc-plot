@@ -8,7 +8,6 @@ from lib import file_util
 from lib.config import PscPlotConfig
 from lib.data.data_with_attrs import Field, FieldMetadata
 from lib.data.loader import Loader, loader
-from lib.var_info_registry import lookup
 
 _KNOWN_PREFIXES = ("pfd", "pfd_moments", "gauss", "continuity")
 _STEP_BP_RE = re.compile(r"^(.+?)\.\d+\.bp$")
@@ -43,7 +42,7 @@ class FieldLoaderBp(Loader):
         )
 
         data = {key: ds[key] for key in ds.data_vars}
-        var_infos = {key: lookup(self.prefix, key) for key in ds.variables}
+        var_infos = {key: config.registry.lookup(self.prefix, key) for key in ds.variables}
 
         return Field(
             data,
