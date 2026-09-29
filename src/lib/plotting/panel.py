@@ -178,6 +178,16 @@ class Panel:
             if isinstance(locator, MaxNLocator):
                 locator.set_params(prune=prune)
 
+    def shrink_colorbars(self, shrink: float):
+        """Shorten each colorbar to `shrink` of its axes' height, centered on it, so that colorbars of axes
+        sitting flush against each other stay visibly apart.
+
+        Constrained layout reads a colorbar's placement parameters afresh on every draw, and they live nowhere
+        public, so this reaches into the same private dict `Figure.colorbar` fills in.
+        """
+        for cbar in self.colorbars:
+            cbar.ax._colorbar_info["shrink"] = shrink  # type: ignore[attr-defined]
+
     def tuck_y_tick_labels(self, renderer: RendererBase):
         """Anchor every y tick label that overhangs a flush end to that end, on both the axes and their
         colorbars.
