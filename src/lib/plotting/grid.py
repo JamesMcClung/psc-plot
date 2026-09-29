@@ -68,10 +68,6 @@ class Grid:
                 above.prune_y_ticks("lower")
                 below.prune_y_ticks("upper")
 
-        # With the axes flush, so are their colorbars, which then read as one bar.
-        for panel in self.panels.values():
-            panel.shrink_colorbars(0.8)
-
         # Only the bottom axes of each column keep their x tick labels, which leaves the others unreadable.
         for col in self.contiguous_cols():
             if len(col) > 1:

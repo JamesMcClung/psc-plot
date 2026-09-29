@@ -15,7 +15,8 @@ from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfo
 
 def setup_colorbar(ax: Axes, target: ScalarMappable, info: PlotInfoColor | PlotInfoMaybeColor) -> Colorbar:
     assert info.color_dim
-    cbar = ax.figure.colorbar(target)
+    # Shrunk so that the colorbars of axes sitting flush against each other stay visibly apart.
+    cbar = ax.figure.colorbar(target, shrink=0.8)
     # TODO work into everything
     data_lower, data_upper = info.dim_bounds[info.color_dim]
     plt_util.update_cbar(target, data_min_override=data_lower, data_max_override=data_upper)
