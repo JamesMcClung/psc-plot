@@ -27,7 +27,7 @@ Where `<prepath>` is a **path relative to `PSC_PLOT_DATA_DIR`, ending in the fil
 Common flags:
 - `-q` quiet (don't show interactively), `-s`/`--save` save output — each argument is either a path fragment `[dir/][stem][.ext]` or one of `dir=`/`name=`/`format=`; bare `-s` means cwd, a stem derived from `name_fragments`, and the default format. A directory fragment must end in `/` (or use `dir=`), otherwise it's taken as the filename stem. `--save-dpi` is deliberately separate, pending a `--dpi` that would apply to live figures too
 - `-w`/`--with [prepath::][var_key]` switch the active dataset and/or variable mid-pipeline (loads the prepath if not already in the world); `--copy [new=old|old]` duplicate a variable + its metadata; `-c`/`--compute` force full computation
-- Adaptor flags such as `--roll`, `--reduce`, `--bin`, `--scatter [name]`, `--mag`, `--nan0`, `--scale`, `--fourier`/`-f`, `--pos`, `--species`, `--transform-spherical`, `--diff`/`--deriv` (difference; `--deriv` also divides by the grid spacing), `-v` (versus, sets axes), `-b` (bin)
+- Adaptor flags such as `--roll`, `--reduce`, `--bin`, `--scatter [name]`, `--mag`, `--nan0`, `--scale`, `--fourier`/`-f`, `--pos`, `--species`, `--transform-spherical`, `--diff`/`--partial` (difference; `--partial` also divides by the per-cell grid spacing), `-v` (versus, sets axes), `-b` (bin)
 
 Required environment (see `src/lib/config.py`):
 - `PSC_PLOT_DATA_DIR` — the data **root** directory (`config.data_root`; prepaths resolve against it). Defaults to the cwd if unset; `set_data_dir.sh <dir>` is a convenience script that exports it
