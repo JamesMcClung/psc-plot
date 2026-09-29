@@ -145,10 +145,10 @@ class Registry:
 
         return VarInfo(Latex(key), Latex(""), key=key)
 
-    def pipeline(self, prefix: str, key: str) -> list[WorldAdaptor] | None:
+    def pipeline(self, prefix: str | None, key: str) -> list[WorldAdaptor] | None:
         entry = self.entry(prefix, key)
         return entry.pipeline if entry else None
 
-    def derivable_keys(self, prefix: str) -> list[str]:
+    def derivable_keys(self, prefix: str | None) -> list[str]:
         prefix = _normalize_prefix(prefix)
         return [key for (entry_prefix, key), entry in self._entries.items() if entry_prefix == prefix and entry.pipeline is not None]
