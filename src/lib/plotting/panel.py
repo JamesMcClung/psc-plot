@@ -1,11 +1,13 @@
 from dataclasses import dataclass, field
 from typing import Literal
 
+import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import RendererBase
 from matplotlib.colorbar import Colorbar
+from matplotlib.colors import to_rgba
 from matplotlib.projections import PolarAxes
 from matplotlib.text import Text
 from matplotlib.ticker import MaxNLocator
@@ -35,6 +37,8 @@ class Panel:
     scales_per_axis: dict[AxAndId, Scale] = field(init=False, default_factory=dict)
     flush_y_ends: set[YEnd] = field(init=False, default_factory=set)
     """Ends at which this panel touches its vertical neighbour, so nothing may stick out past them."""
+    has_interior_x_tick_labels: bool = field(init=False, default=False)
+    """Whether the x tick labels are drawn inside the axes, over the data, rather than below them."""
 
     def update_data(self):
         for data_setter in self.data_setters:
@@ -177,6 +181,57 @@ class Panel:
             locator = ax.yaxis.get_major_locator()
             if isinstance(locator, MaxNLocator):
                 locator.set_params(prune=prune)
+
+    def move_x_tick_labels_inside(self):
+        """Draw the x tick labels just inside the bottom of the axes, over the data, so that every panel in a
+        stack gets its own without any of them taking up room between the axes.
+
+        Only lays the groundwork; `style_interior_x_tick_labels` does the rest, since which way each label
+        must be aligned and what color it must be depend on where it ends up.
+        """
+        self.has_interior_x_tick_labels = True
+        pad = plt.rcParams["xtick.major.pad"]
+
+        # Sharing an axis takes it out of `scales_per_axis`, but not out of `bounds_setters_per_axis`.
+        for ax, axis_id in self.bounds_setters_per_axis:
+            if axis_id == "x":
+                # A negative pad puts the labels above the bottom spine rather than below it.
+                ax.tick_params(axis="x", which="both", direction="in", bottom=True, labelbottom=True, pad=-pad)
+
+    def style_interior_x_tick_labels(self, renderer: RendererBase):
+        """Align each interior x tick label to sit wholly inside the axes, and color it to stand out against
+        whatever is drawn beneath it.
+
+        Measures the labels where they were last drawn, so the figure must already have been laid out. Like
+        `tuck_y_tick_labels`, puts every label back to its default alignment before measuring it.
+        """
+        if not self.has_interior_x_tick_labels:
+            return
+
+        for ax, axis_id in self.bounds_setters_per_axis:
+            if axis_id != "x":
+                continue
+
+            box = ax.get_window_extent(renderer)
+            data_setters = [data_setter for data_setter in self.data_setters if data_setter.artist.axes is ax]
+            background = np.array(to_rgba(ax.get_facecolor()))
+
+            for label in ax.get_xticklabels():
+                if not label.get_visible():
+                    continue
+
+                label.set_va("bottom")
+                label.set_ha("center")
+                bbox = label.get_window_extent(renderer)
+                if bbox.x0 < box.x0:
+                    label.set_ha("left")
+                elif bbox.x1 > box.x1:
+                    label.set_ha("right")
+                bbox = label.get_window_extent(renderer)
+
+                colors = [colors for data_setter in data_setters if (colors := data_setter.get_colors_within(bbox)) is not None]
+                beneath = np.concatenate([colors.reshape(-1, 4) for colors in colors]) if colors else background
+                label.set_color(plt_util.get_contrasting_text_color(beneath))
 
     def shrink_colorbars(self, shrink: float):
         """Shorten each colorbar to `shrink` of its axes' height, centered on it, so that colorbars of axes
