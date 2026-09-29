@@ -67,6 +67,10 @@ class Grid:
                 above.prune_y_ticks("lower")
                 below.prune_y_ticks("upper")
 
+        # With the axes flush, so are their colorbars, which then read as one bar.
+        for panel in self.panels.values():
+            panel.shrink_colorbars(0.8)
+
     def _restore_vertical_figure_padding(self, h_pad: float):
         """Put back the padding above and below the figure that zeroing `h_pad` took with it.
 
