@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 import xarray as xr
 from conftest import CONFIG_2D
@@ -45,6 +46,30 @@ def test_deriv_uses_each_dims_own_spacing():
     expected = Diff([_Diff1d("y", 1, "truncate"), _Diff1d("z", 1, "truncate")]).apply(data)["hy_fc"] / (dy * dz)
     actual = parse_deriv(["y,z=+"]).apply(data)["hy_fc"]
     xr.testing.assert_allclose(actual, expected)
+
+
+def test_deriv_nonuniform_spacing():
+    x = np.array([0.0, 1.0, 3.0, 6.0])
+    da = xr.DataArray(x**2, coords={"x": x}, dims="x")
+    # forward difference quotient of x^2 is x_i + x_{i+1}
+    expected = xr.DataArray([1.0, 4.0, 9.0], coords={"x": x[:-1]}, dims="x")
+    xr.testing.assert_allclose(parse_deriv(["x=+"]).apply_field_bare(da), expected)
+    expected = xr.DataArray([1.0, 4.0, 9.0], coords={"x": x[1:]}, dims="x")
+    xr.testing.assert_allclose(parse_deriv(["x=-"]).apply_field_bare(da), expected)
+
+
+def test_deriv_periodic_wraps_with_mean_spacing():
+    x = np.array([0.0, 0.5, 1.0, 1.5])
+    da = xr.DataArray([1.0, 2.0, 4.0, 8.0], coords={"x": x}, dims="x")
+    expected = xr.DataArray([2.0, 4.0, 8.0, -14.0], coords={"x": x}, dims="x")
+    xr.testing.assert_allclose(parse_deriv(["periodic", "x=+"]).apply_field_bare(da), expected)
+
+
+def test_deriv_pad_boundary_is_zero():
+    x = np.array([0.0, 1.0, 3.0])
+    da = xr.DataArray([1.0, 2.0, 4.0], coords={"x": x}, dims="x")
+    expected = xr.DataArray([1.0, 1.0, 0.0], coords={"x": x}, dims="x")
+    xr.testing.assert_allclose(parse_deriv(["pad", "x=+"]).apply_field_bare(da), expected)
 
 
 def test_deriv_rejects_dim_with_one_point():
