@@ -124,8 +124,7 @@ def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, Grid]:
     grid.update_bounds()
     grid.update_interior_x_ticks()
 
-    figure.draw_without_rendering()  # gives the first tuck something to measure
-    grid.tuck_y_tick_labels()
-    grid.right_align_cbar_labels()
+    figure.draw_without_rendering()  # gives the first adjustment something to measure
+    grid.adjust_to_last_draw()
 
     return figure, grid

@@ -139,6 +139,12 @@ class Grid:
                 cbar.ax.yaxis.label.set_va("bottom")
                 cbar.ax.yaxis.set_label_coords(1.0, 0.5, transform=cbar.ax.transAxes + ScaledTranslation(offset, 0.0, self.fig.dpi_scale_trans))
 
+    def adjust_to_last_draw(self):
+        """Steps that measure where things were last drawn, so they must run after a layout, after everything
+        else that affects it -- and again every frame, since what they measure moves with the bounds."""
+        self.tuck_y_tick_labels()
+        self.right_align_cbar_labels()
+
     def contiguous_cols(self) -> list[list[Panel]]:
         cols = []
         for x in range(1, self.ncols + 1):
@@ -177,5 +183,4 @@ class Grid:
         self.update_bounds()
         self.update_interior_x_ticks()
         self.update_labels()
-        self.tuck_y_tick_labels()
-        self.right_align_cbar_labels()
+        self.adjust_to_last_draw()
