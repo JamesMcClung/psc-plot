@@ -86,7 +86,7 @@ def get_relative_luminance(rgba: np.ndarray) -> np.ndarray:
     return linear @ np.array([0.2126, 0.7152, 0.0722])
 
 
-def get_contrasting_text_color(rgba: np.ndarray) -> str:
+def get_contrasting_color(rgba: np.ndarray) -> str:
     """Black or white, whichever contrasts more with the average of the given colors (of shape `(..., 4)`)."""
     luminance = get_relative_luminance(rgba).mean()
     # Where black and white contrast equally, per the WCAG contrast ratio: (L + 0.05) / 0.05 == 1.05 / (L + 0.05)

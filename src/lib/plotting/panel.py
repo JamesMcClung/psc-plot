@@ -239,7 +239,7 @@ class Panel:
 
                 colors = [colors for data_setter in data_setters if (colors := data_setter.get_colors_within(bbox)) is not None]
                 beneath = np.concatenate([colors.reshape(-1, 4) for colors in colors]) if colors else background
-                label.set_color(plt_util.get_contrasting_text_color(beneath))
+                label.set_color(plt_util.get_contrasting_color(beneath))
 
     def tuck_y_tick_labels(self, renderer: RendererBase):
         """Anchor every y tick label that overhangs a flush end to that end.
