@@ -71,6 +71,12 @@ class Grid:
                 below.mark_y_end_flush("upper")
                 below.prune_y_ticks("upper")
 
+        # The bottom of each column follows the same rule as the edges within it, so that every axes in the
+        # column reads the same way.
+        for col in self.contiguous_cols():
+            if len(col) > 1:
+                col[-1].mark_y_end_flush("lower")
+
         # Sharing took the ticks off every edge but the bottom of each column, which leaves the axes above
         # it with nothing to read positions off. That bottom edge keeps its outward ticks, beside its labels.
         for col in self.contiguous_cols():
