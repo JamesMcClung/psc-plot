@@ -228,10 +228,17 @@ class Panel:
 
     def _get_colors_beneath(self, ax: Axes, bbox: Bbox) -> np.ndarray:
         """The colors drawn within `bbox` (in display coordinates) on `ax`, as an array of shape `(n, 4)`: those
-        of the data where it's known, or else the axes' own background."""
+        of the data where it's known, composited over the axes' own background, or else just the background."""
+        background = np.array(to_rgba(ax.get_facecolor()))
         data_setters = [data_setter for data_setter in self.data_setters if data_setter.artist.axes is ax]
         colors = [colors.reshape(-1, 4) for data_setter in data_setters if (colors := data_setter.get_colors_within(bbox)) is not None]
-        return np.concatenate(colors) if colors else np.array([to_rgba(ax.get_facecolor())])
+        if not colors:
+            return background[None, :]
+
+        # Translucent data (e.g. NaNs, which colormaps paint fully transparent) lets the background show through.
+        colors = np.concatenate(colors)
+        alpha = colors[:, 3:]
+        return np.concatenate([alpha * colors[:, :3] + (1 - alpha) * background[:3], np.ones_like(alpha)], axis=1)
 
     def tuck_y_tick_labels(self, renderer: RendererBase):
         """Anchor every y tick label that overhangs a flush end to that end.
