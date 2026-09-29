@@ -125,6 +125,12 @@ class UnitLabeler(Labeler):
     def update(self):
         self.set_text(self._get_label())
 
+    @property
+    def separator(self) -> str:
+        """What goes between the display and the bracketed unit. A multiplier gets a line of its own, which leaves
+        room beside it for an additive offset, should one ever be factored out too."""
+        return "\n" if self.multiplier_exponent else " "
+
     def is_compatible(self, info: PlotInfo) -> bool:
         return self.are_compatible([info])
 
@@ -172,7 +178,7 @@ class UnitLabeler(Labeler):
         unit = unit_latex.maybe_with_dollars()
 
         if display and unit:
-            return f"{display} [{unit}]"
+            return f"{display}{self.separator}[{unit}]"
         return display or unit and f"[{unit}]"
 
 
@@ -196,7 +202,7 @@ class SubjectAndUnitLabeler(Labeler):
 
     def _get_label(self) -> str:
         if self._subject and self._unit:
-            return self._subject + " " + self._unit
+            return self._subject + self.unit_labeler.separator + self._unit
         return self._subject or self._unit
 
     def _set_subject(self, subject: str):
