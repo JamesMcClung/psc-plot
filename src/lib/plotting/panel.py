@@ -175,6 +175,10 @@ class Panel:
         self.scales_per_axis[(ax, axis_id)] = new_scale
         set_scale(new_scale.to_axis_scale())
 
+    def _get_x_axs(self) -> list[Axes]:
+        # Sharing an axis takes it out of `scales_per_axis`, but not out of `bounds_setters_per_axis`.
+        return [ax for ax, axis_id in self.bounds_setters_per_axis if axis_id == "x"]
+
     def prune_y_ticks(self, end: YEnd):
         """Drop the y tick (and its label) at `end`, e.g. so it doesn't crowd the neighbouring axes' own tick
         label there. Locators that can't prune (log, say) are left alone.
@@ -193,10 +197,7 @@ class Panel:
         The room is an invisible spacer anchored to that text, since padding the text itself (`labelpad`, the
         title's `pad`) only moves it away from its own axes, not away from the neighbour's.
         """
-        # Sharing an axis takes it out of `scales_per_axis`, but not out of `bounds_setters_per_axis`.
-        for ax, axis_id in self.bounds_setters_per_axis:
-            if axis_id != "x":
-                continue
+        for ax in self._get_x_axs():
             text, xy, box_alignment = {"lower": (ax.xaxis.label, (0.5, 0.0), (0.5, 1.0)), "upper": (ax.title, (0.5, 1.0), (0.5, 0.0))}[end]
             spacer = AnnotationBbox(DrawingArea(0.0, pad), xy, xycoords=text, box_alignment=box_alignment, frameon=False, pad=0.0, annotation_clip=False)
             ax.add_artist(spacer)
@@ -212,11 +213,7 @@ class Panel:
         size = plt.rcParams["xtick.major.size"]
         width = plt.rcParams["xtick.major.width"]
 
-        # Sharing an axis takes it out of `scales_per_axis`, but not out of `bounds_setters_per_axis`.
-        for ax, axis_id in self.bounds_setters_per_axis:
-            if axis_id != "x":
-                continue
-
+        for ax in self._get_x_axs():
             for end, marker in [("lower", TICKUP), ("upper", TICKDOWN)]:
                 ticks = ax.scatter([], [], s=size**2, marker=marker, facecolors="none", linewidths=width, transform=ax.get_xaxis_transform(), clip_on=False, zorder=2.5)
                 ticks.set_in_layout(False)
