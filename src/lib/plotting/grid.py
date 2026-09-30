@@ -60,50 +60,35 @@ class Grid:
 
     def _remove_vertical_space(self, stacks_per_col: list[list[list[Panel]]]):
         """Push the panels of each stack flush together, keeping the usual space between stacks."""
-        # Constrained layout floors the gap between axes at h_pad, so zeroing hspace alone
-        # isn't enough. Both are figure-wide, so the padding between stacks has to be put back.
+        # Constrained layout floors the gap between axes at h_pad, so zeroing hspace alone isn't enough. h_pad
+        # is also the figure's own top/bottom padding, and both are figure-wide, so put those paddings back.
         layout_engine = self.fig.get_layout_engine()
         assert layout_engine is not None
-        h_pad = layout_engine.get()["h_pad"]
-        layout_engine.set(h_pad=0.0, hspace=0.0)
-        self._restore_vertical_figure_padding(h_pad)
-
-        for stacks in stacks_per_col:
-            # h_pad is the padding around each axes, so each side of the gap gets it back.
-            for upper, lower in zip(stacks[:-1], stacks[1:]):
-                upper[-1].pad_y_end("lower", h_pad * 72)  # h_pad is in inches, the pad in points
-                lower[0].pad_y_end("upper", h_pad * 72)
-
-        stacks = [stack for stacks in stacks_per_col for stack in stacks if len(stack) > 1]
-        for stack in stacks:
-            # Nothing may stick out past the shared edges, or the space comes right back. The axes above keep
-            # their bottom tick, its label tucked up; the axes below drop their top one, which would crowd it.
-            for above, below in zip(stack[:-1], stack[1:]):
-                above.flush_y_ends.add("lower")
-                below.flush_y_ends.add("upper")
-                below.prune_y_ticks("upper")
-
-            # The stack's bottom follows the same rule, so that every axes in it reads the same way.
-            stack[-1].flush_y_ends.add("lower")
-
-            # Sharing took the ticks off every edge but the stack's bottom, so give each axes its own.
-            for panel in stack:
-                panel.add_interior_x_ticks()
-
-    def _restore_vertical_figure_padding(self, h_pad: float):
-        """Put back the padding above and below the figure that zeroing `h_pad` took with it, by laying the
-        figure out in a shorter rectangle (`h_pad` is both that padding and the floor on gaps between axes)."""
-        pad = h_pad / self.fig.get_figheight()  # h_pad is in inches, the rectangle in figure fractions
-
-        layout_engine = self.fig.get_layout_engine()
-        assert layout_engine is not None
-        layout_engine.set(rect=(0.0, pad, 1.0, 1.0 - 2 * pad))
-
-        # The engine puts the suptitle h_pad below the figure's top, now zero; offset it back down.
+        h_pad = layout_engine.get()["h_pad"]  # inches
+        pad = h_pad / self.fig.get_figheight()
+        layout_engine.set(h_pad=0.0, hspace=0.0, rect=(0.0, pad, 1.0, 1.0 - 2 * pad))
         self.suptitle.set_transform(self.fig.transSubfigure + ScaledTranslation(0.0, -h_pad, self.fig.dpi_scale_trans))
 
+        for stacks in stacks_per_col:
+            for upper, lower in zip(stacks[:-1], stacks[1:]):
+                upper[-1].pad_y_end("lower", h_pad * 72)
+                lower[0].pad_y_end("upper", h_pad * 72)
+
+            for stack in stacks:
+                if len(stack) == 1:
+                    continue
+
+                # The axes above keep their bottom tick, its label tucked up; the axes below drop their top one.
+                for above, below in zip(stack[:-1], stack[1:]):
+                    above.flush_y_ends.add("lower")
+                    below.flush_y_ends.add("upper")
+                    below.prune_y_ticks("upper")
+                stack[-1].flush_y_ends.add("lower")
+
+                for panel in stack:
+                    panel.add_interior_x_ticks()
+
     def tuck_y_tick_labels(self):
-        """Pull y tick labels back inside their axes wherever they overhang an edge that has to sit flush."""
         renderer = self.fig.canvas.get_renderer()
 
         for panel in self.panels.values():
@@ -114,12 +99,8 @@ class Grid:
             panel.update_interior_x_ticks()
 
     def right_align_cbar_labels(self):
-        """Line up the right edges of the colorbar labels down each column, where matplotlib would line up
-        none of their edges: it starts each label just past its own bar's tick labels, however wide those are.
-
-        Only moves labels rightward, up to the right edge of the one that already reached furthest, so it
-        doesn't change how much room constrained layout reserves for them.
-        """
+        """Line up the right edges of the colorbar labels down each column. Only moves labels rightward, up to the
+        furthest one, so constrained layout doesn't reserve any more room for them."""
         renderer = self.fig.canvas.get_renderer()
 
         for col in self.contiguous_cols():
