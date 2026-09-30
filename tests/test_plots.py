@@ -118,6 +118,12 @@ def test_stacked_images_with_log_scale():
     return make_plot("prt.i -b y py --mul 1e5 --scale log --nan0 -v y py -w prt.e -b y py --scale log --nan0 -v y py loc=1,2".split())
 
 
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_stacked_images_with_overplotted_scatter():
+    """Contrived example of scatter on top of a stacked image."""
+    return make_plot("pfd ey_ec -i t=-1 -v y z -w ez_ec -i t=-1 -v y z loc=1,2 -w prt.i -i t=-1 -cv y z loc=1,1".split())
+
+
 # --- Cross-dataset plots ---
 
 
