@@ -44,40 +44,45 @@ class Grid:
         self.panels[loc] = panel
 
     def share_x_axes_vertically(self):
-        shared_all = True
+        stacks = []
         for col in self.contiguous_cols():
+            stack = [col[0]]
             for above, below in zip(col[:-1], col[1:]):
-                shared_all &= above.try_share_axis(below, "x")
+                if above.try_share_axis(below, "x"):
+                    stack.append(below)
+                else:
+                    stacks.append(stack)
+                    stack = [below]
+            stacks.append(stack)
 
-        if shared_all:
-            self._remove_vertical_space()
+        stacks = [stack for stack in stacks if len(stack) > 1]
+        if stacks:
+            self._remove_vertical_space(stacks)
 
-    def _remove_vertical_space(self):
+    def _remove_vertical_space(self, stacks: list[list[Panel]]):
+        """Push each stack of panels sharing an x axis flush together."""
         # Constrained layout floors the gap between axes at h_pad, so zeroing hspace alone
-        # isn't enough. Both are figure-wide, so this also closes gaps between any axes that
-        # didn't end up sharing.
+        # isn't enough. Both are figure-wide, so this also closes gaps between axes that didn't
+        # end up sharing, leaving only the room their labels and titles need.
         layout_engine = self.fig.get_layout_engine()
         assert layout_engine is not None
         h_pad = layout_engine.get()["h_pad"]
         layout_engine.set(h_pad=0.0, hspace=0.0)
         self._restore_vertical_figure_padding(h_pad)
 
-        for col in self.contiguous_cols():
-            if len(col) == 1:
-                continue
-
+        for stack in stacks:
             # Nothing may stick out past the shared edges, or the space comes right back. The axes above keep
             # their bottom tick, its label tucked up; the axes below drop their top one, which would crowd it.
-            for above, below in zip(col[:-1], col[1:]):
+            for above, below in zip(stack[:-1], stack[1:]):
                 above.flush_y_ends.add("lower")
                 below.flush_y_ends.add("upper")
                 below.prune_y_ticks("upper")
 
-            # The column's bottom follows the same rule, so that every axes in it reads the same way.
-            col[-1].flush_y_ends.add("lower")
+            # The stack's bottom follows the same rule, so that every axes in it reads the same way.
+            stack[-1].flush_y_ends.add("lower")
 
-            # Sharing took the ticks off every edge but the column's bottom, so give each axes its own.
-            for panel in col:
+            # Sharing took the ticks off every edge but the stack's bottom, so give each axes its own.
+            for panel in stack:
                 panel.add_interior_x_ticks()
 
     def _restore_vertical_figure_padding(self, h_pad: float):
