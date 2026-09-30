@@ -22,7 +22,7 @@ from lib.plotting import plt_util
 from lib.plotting.axis_id import AxId, AxIdPolar, AxIdXY
 from lib.plotting.bounds_setter import BoundsSetter
 from lib.plotting.data_setter import DataSetter
-from lib.plotting.labeler import ColorbarLabeler, Labeler, SubjectLabeler, UnitLabeler
+from lib.plotting.labeler import ColorbarLabeler, Labeler, SubjectLabeler, UnitLabeler, YAxisLabeler
 from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PolarMeshInfo
 from lib.scale import LinearScale, Scale
 
@@ -38,7 +38,8 @@ class Panel:
     cbar_labeler: Labeler | None = field(init=False, default=None)
     colorbars: list[Colorbar] = field(init=False, default_factory=list)
     data_setters: list[DataSetter] = field(init=False, default_factory=list)
-    unit_labelers_per_axis: dict[AxAndIdXY, UnitLabeler] = field(init=False, default_factory=dict)
+    x_labelers_per_axes: dict[Axes, UnitLabeler] = field(init=False, default_factory=dict)
+    y_labelers_per_axes: dict[Axes, YAxisLabeler] = field(init=False, default_factory=dict)
     bounds_setters_per_axis: dict[AxAndIdXY, BoundsSetter] = field(init=False, default_factory=dict)
     scales_per_axis: dict[AxAndId, Scale] = field(init=False, default_factory=dict)
     flush_y_ends: set[YEnd] = field(init=False, default_factory=set)
@@ -70,7 +71,8 @@ class Panel:
             self.title_labeler,
             self.cbar_labeler,
             *(legend_labeler for labelers in self.legend_labelers_per_axes.values() for legend_labeler in labelers),
-            *(unit_labeler for unit_labeler in self.unit_labelers_per_axis.values()),
+            *self.x_labelers_per_axes.values(),
+            *self.y_labelers_per_axes.values(),
         ]
         return [labeler for labeler in maybe_labelers if labeler]
 
@@ -83,9 +85,12 @@ class Panel:
 
     def wire_title(self, title: Text, info: PlotInfo | None = None):
         self.title_labeler = SubjectLabeler(title.set_text, info)
+        for y_labeler in self.y_labelers_per_axes.values():
+            self.title_labeler.add_child(y_labeler)
         for legend_labelers in self.legend_labelers_per_axes.values():
             for legend_labeler in legend_labelers:
-                self.title_labeler.add_child(legend_labeler)
+                if legend_labeler.parent is None:
+                    self.title_labeler.add_child(legend_labeler)
         if isinstance(self.cbar_labeler, ColorbarLabeler):
             self.title_labeler.add_child(self.cbar_labeler)
 
@@ -96,7 +101,10 @@ class Panel:
         assert axes is not None
         self.legend_labelers_per_axes.setdefault(axes, []).append(legend_labeler)
 
-        if self.title_labeler:
+        # A line whose subject is its y dim is labeled by its y axis first. Anything else goes straight to the title.
+        if isinstance(info, PlotInfo2D) and info.subject_dim == info.y_dim:
+            self.y_labelers_per_axes[axes].add_child(legend_labeler)
+        elif self.title_labeler:
             self.title_labeler.add_child(legend_labeler)
 
     def wire_cbar_label(self, cbar: Colorbar, info: PlotInfoColor):
@@ -130,15 +138,22 @@ class Panel:
             self.bounds_setters_per_axis[(ax, axis_id)] = create_setter(ax, [info])
 
     def can_wire_unit_labeler_xy(self, ax: Axes, axis_id: AxIdXY, info: PlotInfo2D) -> bool:
-        unit_labeler = self.unit_labelers_per_axis.get((ax, axis_id))
-        return unit_labeler is None or unit_labeler.is_compatible(info)
+        labeler = {"x": self.x_labelers_per_axes, "y": self.y_labelers_per_axes}[axis_id].get(ax)
+        return labeler is None or labeler.is_compatible(info)
 
     def wire_unit_labeler_xy(self, ax: Axes, axis_id: AxIdXY, info: PlotInfo2D):
-        if unit_labeler := self.unit_labelers_per_axis.get((ax, axis_id)):
-            unit_labeler.sources.append(info)
-        else:
-            set_label = {"x": ax.set_xlabel, "y": ax.set_ylabel}[axis_id]
-            self.unit_labelers_per_axis[(ax, axis_id)] = UnitLabeler(set_label, axis_id, [info], require_display_match=axis_id == "x")
+        match axis_id:
+            case "x":
+                if x_labeler := self.x_labelers_per_axes.get(ax):
+                    x_labeler.sources.append(info)
+                else:
+                    self.x_labelers_per_axes[ax] = UnitLabeler(ax.set_xlabel, "x", [info])
+            case "y":
+                if not (y_labeler := self.y_labelers_per_axes.get(ax)):
+                    y_labeler = self.y_labelers_per_axes[ax] = YAxisLabeler(ax.set_ylabel)
+                    if self.title_labeler:
+                        self.title_labeler.add_child(y_labeler)
+                y_labeler.add_source(info)
 
     def can_wire_scale(self, ax: Axes | PolarAxes, axis_id: AxId, info: PlotInfo2D | PolarMeshInfo) -> bool:
         match axis_id:
@@ -272,8 +287,8 @@ class Panel:
         if below.scales_per_axis[(below_ax, "x")] != self.scales_per_axis[(my_ax, "x")]:
             return False
 
-        my_labeler = self.unit_labelers_per_axis[(my_ax, "x")]
-        below_labeler = below.unit_labelers_per_axis[(below_ax, "x")]
+        my_labeler = self.x_labelers_per_axes[my_ax]
+        below_labeler = below.x_labelers_per_axes[below_ax]
         if not below_labeler.are_compatible(my_labeler.sources):
             return False
 
@@ -289,7 +304,7 @@ class Panel:
                 panel.title_labeler.remove_from_tree()
                 panel.title_labeler = None
 
-        self.unit_labelers_per_axis.pop((my_ax, "x"))
+        self.x_labelers_per_axes.pop(my_ax)
         self.scales_per_axis.pop((my_ax, "x"))
 
         return True
