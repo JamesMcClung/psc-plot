@@ -66,17 +66,27 @@ class SubjectLabeler(Labeler):
             self._sublabels = self.source.get_sublabels()
             return
 
-        self._subject = _get_common_subject(self.children)
+        children = self._get_children_labeling_data()
+
+        self._subject = _get_common_subject(children)
         if self._subject is not None:
-            for child in self.children:
+            for child in children:
                 child._lift_subject()
 
-        self._sublabels = _get_common_sublabels(self.children)
-        for child in self.children:
+        self._sublabels = _get_common_sublabels(children)
+        for child in children:
             child._lift_sublabels(self._sublabels)
+
+    def _get_children_labeling_data(self) -> list[SubjectLabeler]:
+        return [child for child in self.children if child._labels_any_data()]
 
     # What a parent sees of this node, and what happens when the parent factors it out. Subclasses override these
     # to control how they take part in factoring.
+
+    def _labels_any_data(self) -> bool:
+        """Whether this node labels any data at all. A parent ignores one that doesn't, rather than taking it to
+        offer no subject and no sublabels, which would stop anything being lifted from its siblings."""
+        return self.source is not None or bool(self._get_children_labeling_data())
 
     def _get_liftable_subject(self) -> str | None:
         return self._subject
@@ -144,6 +154,10 @@ class UnitLabeler(Labeler):
         finally:
             self.sources = orig
 
+    def has_common_display(self) -> bool:
+        """Whether the sources all agree on display, so that the label shows it."""
+        return len({info.dim_displays[self._get_key(info)] for info in self.sources}) == 1
+
     def _get_key(self, info: PlotInfo) -> VarKey:
         match self.axis_name:
             case "x":
@@ -207,3 +221,67 @@ class SubjectAndUnitLabeler(Labeler):
         """Intended to be passed to a `UnitLabeler`."""
         self._unit = unit
         self.set_text(self._get_label())
+
+
+@dataclass(init=False)
+class YAxisLabeler(SubjectLabeler):
+    """Labels a y axis, `display [unit]`, as a `UnitLabeler` would. It also takes part in the subject tree: its
+    children are the legend entries of the lines whose subject is their y dim. When the axis shows that display, it
+    absorbs their subject, which then appears nowhere else. Sublabels just pass through it, since it can't show them."""
+
+    def __init__(self, set_text: Callable[[str], None]):
+        super().__init__(set_text)
+        self.unit_labeler = UnitLabeler(set_text, "y", require_display_match=False)
+        self._absorbs_subject = False
+
+    def is_compatible(self, info: PlotInfo2D) -> bool:
+        return self.unit_labeler.is_compatible(info)
+
+    def add_source(self, info: PlotInfo2D):
+        self.unit_labeler.sources.append(info)
+
+    def _rebuild(self):
+        for child in self.children:
+            child._rebuild()
+
+        children = self._get_children_labeling_data()
+        # Every child's subject is the display of its y dim, so if the axis shows a display, it's theirs.
+        self._absorbs_subject = bool(children) and self.unit_labeler.has_common_display()
+        if self._absorbs_subject:
+            for child in children:
+                child._lift_subject()
+
+    def _get_label(self) -> str:
+        return self.unit_labeler._get_label()
+
+    def _get_liftable_subject(self) -> str | None:
+        if self._absorbs_subject:
+            return None
+        return _get_common_subject(self._get_children_labeling_data())
+
+    def _lift_subject(self):
+        for child in self._get_children_labeling_data():
+            child._lift_subject()
+
+    def _get_liftable_sublabels(self) -> list[str]:
+        return _get_common_sublabels(self._get_children_labeling_data())
+
+    def _lift_sublabels(self, sublabels: list[str]):
+        for child in self._get_children_labeling_data():
+            child._lift_sublabels(sublabels)
+
+
+@dataclass(init=False)
+class ColorbarLabeler(SubjectLabeler):
+    """Labels a colorbar whose color dim is its source's subject, `subject (sublabels) [unit]`. It keeps the subject
+    rather than offering it up, since the colorbar is where the subject belongs."""
+
+    def __init__(self, set_text: Callable[[str], None], source: PlotInfoColor):
+        super().__init__(set_text, source)
+        self.unit_labeler = UnitLabeler(set_text, "color", [source], include_display=False)
+
+    def _get_label(self) -> str:
+        return " ".join(label for label in [super()._get_label(), self.unit_labeler._get_label()] if label)
+
+    def _get_liftable_subject(self) -> str | None:
+        return None
