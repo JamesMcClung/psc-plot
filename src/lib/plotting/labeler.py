@@ -66,17 +66,12 @@ class SubjectLabeler(Labeler):
             self._sublabels = self.source.get_sublabels()
             return
 
-        child_subjects = {child._get_liftable_subject() for child in self.children}
-        if len(child_subjects) == 1:
-            self._subject = child_subjects.pop()
+        self._subject = _get_common_subject(self.children)
+        if self._subject is not None:
             for child in self.children:
                 child._lift_subject()
-        else:
-            self._subject = None
 
-        child_sublabelss = [child._get_liftable_sublabels() for child in self.children]
-        all_child_sublabels = {sublabel: None for sublabels in child_sublabelss for sublabel in sublabels}  # use dict to preserve insertion order
-        self._sublabels = [sublabel for sublabel in all_child_sublabels if all(sublabel in sublabels for sublabels in child_sublabelss)]
+        self._sublabels = _get_common_sublabels(self.children)
         for child in self.children:
             child._lift_sublabels(self._sublabels)
 
@@ -107,6 +102,19 @@ class SubjectLabeler(Labeler):
         if self._subject and sublabels:
             return f"{self._subject} ({sublabels})"
         return self._subject or sublabels
+
+
+def _get_common_subject(labelers: list[SubjectLabeler]) -> str | None:
+    """The subject every labeler offers, if they agree on one."""
+    subjects = {labeler._get_liftable_subject() for labeler in labelers}
+    return subjects.pop() if len(subjects) == 1 else None
+
+
+def _get_common_sublabels(labelers: list[SubjectLabeler]) -> list[str]:
+    """The sublabels every labeler offers, in order of first appearance."""
+    sublabelss = [labeler._get_liftable_sublabels() for labeler in labelers]
+    all_sublabels = {sublabel: None for sublabels in sublabelss for sublabel in sublabels}  # use dict to preserve insertion order
+    return [sublabel for sublabel in all_sublabels if all(sublabel in sublabels for sublabels in sublabelss)]
 
 
 @dataclass
