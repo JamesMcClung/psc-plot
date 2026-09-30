@@ -286,44 +286,37 @@ class Panel:
                 elif "lower" in self.flush_y_ends and bbox.y0 < box.y0 < bbox.y1:
                     label.set_va("bottom")
 
-    def try_share_axis(self, other: Panel, axis_id: AxIdXY) -> bool:
-        my_axs = [ax for (ax, id) in self.scales_per_axis if id == axis_id]
-        other_axs = [ax for (ax, id) in other.scales_per_axis if id == axis_id]
+    def try_share_x_axis(self, below: Panel) -> bool:
+        my_axs = [ax for (ax, id) in self.scales_per_axis if id == "x"]
+        below_axs = [ax for (ax, id) in below.scales_per_axis if id == "x"]
 
-        if len(my_axs) != 1 or len(other_axs) != 1:
+        if len(my_axs) != 1 or len(below_axs) != 1:
             return False
 
         [my_ax] = my_axs
-        [other_ax] = other_axs
+        [below_ax] = below_axs
 
-        if other.scales_per_axis[(other_ax, axis_id)] != self.scales_per_axis[(my_ax, axis_id)]:
+        if below.scales_per_axis[(below_ax, "x")] != self.scales_per_axis[(my_ax, "x")]:
             return False
 
-        my_labeler = self.unit_labelers_per_axis[(my_ax, axis_id)]
-        other_labeler = other.unit_labelers_per_axis[(other_ax, axis_id)]
-        if not other_labeler.are_compatible(my_labeler.sources):
+        my_labeler = self.unit_labelers_per_axis[(my_ax, "x")]
+        below_labeler = below.unit_labelers_per_axis[(below_ax, "x")]
+        if not below_labeler.are_compatible(my_labeler.sources):
             return False
 
-        {"x": my_ax.sharex, "y": my_ax.sharey}[axis_id](other_ax)
-        if axis_id == "x":
-            # Only the edge facing `other` is inner. `label_outer` would go by the grid instead, and strip the
-            # bottom of every axes above the last row, even one whose neighbour below it didn't share.
-            my_ax.xaxis.set_tick_params(which="both", labelbottom=False, bottom=False)
-            my_ax.xaxis.offsetText.set_visible(False)
-        else:
-            my_ax.label_outer(remove_inner_ticks=True)
-            other_ax.label_outer(remove_inner_ticks=True)
-        other_labeler.sources.extend(my_labeler.sources)
+        my_ax.sharex(below_ax)
+        # Only strip the edge facing `below`. `label_outer` would go by the grid instead, and strip the bottom of
+        # every axes above the last row, even one whose neighbour below it didn't share.
+        my_ax.xaxis.set_tick_params(which="both", labelbottom=False, bottom=False)
+        my_ax.xaxis.offsetText.set_visible(False)
+        below_labeler.sources.extend(my_labeler.sources)
 
-        if axis_id == "x":
-            if self.title_labeler:
-                self.title_labeler.remove_from_tree()
-                self.title_labeler = None
-            if other.title_labeler:
-                other.title_labeler.remove_from_tree()
-                other.title_labeler = None
+        for panel in [self, below]:
+            if panel.title_labeler:
+                panel.title_labeler.remove_from_tree()
+                panel.title_labeler = None
 
-        self.unit_labelers_per_axis.pop((my_ax, axis_id))
-        self.scales_per_axis.pop((my_ax, axis_id))
+        self.unit_labelers_per_axis.pop((my_ax, "x"))
+        self.scales_per_axis.pop((my_ax, "x"))
 
         return True

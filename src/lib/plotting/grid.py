@@ -49,7 +49,7 @@ class Grid:
         for col in self.contiguous_cols():
             stacks = [[col[0]]]
             for above, below in zip(col[:-1], col[1:]):
-                if above.try_share_axis(below, "x"):
+                if above.try_share_x_axis(below):
                     stacks[-1].append(below)
                 else:
                     stacks.append([below])

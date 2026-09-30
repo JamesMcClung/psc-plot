@@ -21,7 +21,7 @@ Detail on the rendering layer: turning `PlotTarget`s into a matplotlib figure th
 
 ## Stacked panels (shared x axes)
 
-`Grid.share_x_axes_vertically()` makes each vertically adjacent pair of panels share its x axis where it can (`Panel.try_share_axis`, which also drops the upper panel's bottom x labels and ticks, and both titles), splitting each column into **stacks**. If any stack has more than one panel, `_remove_vertical_space()` pushes each stack's panels flush together:
+`Grid.share_x_axes_vertically()` makes each vertically adjacent pair of panels share its x axis where it can (`Panel.try_share_x_axis`, which also drops the upper panel's bottom x labels and ticks, and both titles), splitting each column into **stacks**. If any stack has more than one panel, `_remove_vertical_space()` pushes each stack's panels flush together:
 
 - **Zero `h_pad`/`hspace`**, then `_restore_vertical_figure_padding` puts the figure's own top/bottom padding back, via the layout `rect` and a suptitle transform offset, since `h_pad` controls both. Both are figure-wide, so between stacks `Panel.pad_y_end` puts `h_pad` back on each side: an invisible in-layout `AnnotationBbox` spacer anchored beyond the x label / title (padding the text itself would only move it away from its own axes).
 - **y tick labels**: every end a panel has in a stack goes into its `flush_y_ends` (including the stack's bottom, so all panels follow the same rules). `tuck_y_tick_labels` then anchors any label overhanging a flush end so it sits inside the axes (`va="bottom"` at the lower end, `"top"` at the upper). Panels below another also `prune_y_ticks("upper")`, so their top label doesn't crowd the bottom label of the panel above. Flush-marking and pruning are deliberately separate.
