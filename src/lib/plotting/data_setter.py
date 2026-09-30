@@ -43,9 +43,8 @@ class DataSetter[A: Artist = Artist, I: PlotInfo = PlotInfo](ABC):
     def update(self): ...
 
     def get_colors_within(self, bbox: Bbox) -> np.ndarray | None:
-        """The RGBA colors this setter's artist paints within `bbox` (in display coordinates), as an array of
-        shape `(..., 4)`, or `None` where that isn't known -- in which case what shows is presumably whatever
-        is behind the artist."""
+        """The RGBA colors, of shape `(..., 4)`, the artist paints within `bbox` (in display coordinates), or `None`
+        if unknown."""
         return None
 
 
