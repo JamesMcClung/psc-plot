@@ -190,40 +190,6 @@ class UnitLabeler(Labeler):
 
 
 @dataclass(init=False)
-class SubjectAndUnitLabeler(Labeler):
-    def __init__(self, set_text: Callable[[str], None], axis_name: Literal["x", "y", "color"], source: PlotInfo):
-        super().__init__(set_text)
-        self._subject = ""
-        self._unit = ""
-
-        self.subject_labeler = SubjectLabeler(self._set_subject, source)
-        self.unit_labeler = UnitLabeler(self._set_unit, axis_name, [source], include_display=False, require_display_match=False)
-
-    def update(self):
-        """Update sublabelers, which call `_set_subject` and/or `_set_unit` and thus `set_text` (twice, possibly)."""
-        if self.subject_labeler:
-            self.subject_labeler.update()
-
-        if self.unit_labeler:
-            self.unit_labeler.update()
-
-    def _get_label(self) -> str:
-        if self._subject and self._unit:
-            return self._subject + " " + self._unit
-        return self._subject or self._unit
-
-    def _set_subject(self, subject: str):
-        """Intended to be passed to a `SubjectLabeler`."""
-        self._subject = subject
-        self.set_text(self._get_label())
-
-    def _set_unit(self, unit: str):
-        """Intended to be passed to a `UnitLabeler`."""
-        self._unit = unit
-        self.set_text(self._get_label())
-
-
-@dataclass(init=False)
 class YAxisLabeler(SubjectLabeler):
     """Labels a y axis, `display [unit]`, as a `UnitLabeler` would. It also takes part in the subject tree: its
     children are the legend entries of the lines whose subject is their y dim. When the axis shows that display, it

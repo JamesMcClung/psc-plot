@@ -22,7 +22,7 @@ from lib.plotting import plt_util
 from lib.plotting.axis_id import AxId, AxIdPolar, AxIdXY
 from lib.plotting.bounds_setter import BoundsSetter
 from lib.plotting.data_setter import DataSetter
-from lib.plotting.labeler import Labeler, SubjectAndUnitLabeler, SubjectLabeler, UnitLabeler
+from lib.plotting.labeler import ColorbarLabeler, Labeler, SubjectLabeler, UnitLabeler
 from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PolarMeshInfo
 from lib.scale import LinearScale, Scale
 
@@ -75,13 +75,7 @@ class Panel:
         return [labeler for labeler in maybe_labelers if labeler]
 
     def get_subject_labelers(self, *, toplevel_only: bool = False) -> list[SubjectLabeler]:
-        subject_labelers: list[SubjectLabeler] = []
-
-        for labeler in self.get_labelers():
-            if isinstance(labeler, SubjectLabeler):
-                subject_labelers.append(labeler)
-            elif isinstance(labeler, SubjectAndUnitLabeler):
-                subject_labelers.append(labeler.subject_labeler)
+        subject_labelers = [labeler for labeler in self.get_labelers() if isinstance(labeler, SubjectLabeler)]
 
         if toplevel_only:
             return [labeler for labeler in subject_labelers if labeler.parent is None]
@@ -92,8 +86,8 @@ class Panel:
         for legend_labelers in self.legend_labelers_per_axes.values():
             for legend_labeler in legend_labelers:
                 self.title_labeler.add_child(legend_labeler)
-        if self.cbar_labeler and isinstance(self.cbar_labeler, SubjectAndUnitLabeler):
-            self.title_labeler.add_child(self.cbar_labeler.subject_labeler)
+        if isinstance(self.cbar_labeler, ColorbarLabeler):
+            self.title_labeler.add_child(self.cbar_labeler)
 
     def wire_legend_label(self, artist: Artist, info: PlotInfo):
         legend_labeler = SubjectLabeler(artist.set_label, info)
@@ -118,11 +112,10 @@ class Panel:
         def set_label(text: str):
             cbar.set_label("\n".join(line for line in [multiplier, text] if line))
 
-        is_subject = info.dim_displays[info.color_dim].maybe_with_dollars() == info.subject
-        if is_subject:
-            self.cbar_labeler = SubjectAndUnitLabeler(set_label, "color", info)
+        if info.subject_dim == info.color_dim:
+            self.cbar_labeler = ColorbarLabeler(set_label, info)
             if self.title_labeler:
-                self.title_labeler.add_child(self.cbar_labeler.subject_labeler)
+                self.title_labeler.add_child(self.cbar_labeler)
         else:
             self.cbar_labeler = UnitLabeler(set_label, "color", [info])
 
