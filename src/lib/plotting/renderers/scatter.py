@@ -17,7 +17,7 @@ class ScatterRenderer(Renderer[FullList, SpatialDimsXY, ScatterInfo]):
             x_dim=x_dim,
             y_dim=y_dim,
             time_dim=self.plot_target.time_dim,
-            subject=f"${frame_data.metadata.subject}$" if frame_data.metadata.subject else None,
+            list_subject=f"${frame_data.metadata.subject}$" if frame_data.metadata.subject else None,
             dim_scales={
                 x_dim: frame_data.metadata.var_infos[x_dim].scale,
                 y_dim: frame_data.metadata.var_infos[y_dim].scale,

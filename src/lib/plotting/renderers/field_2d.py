@@ -27,7 +27,7 @@ class Field2dRenderer(Renderer[Field, SpatialDimsXY, ImageInfo]):
             y_dim=y_dim,
             color_dim=color_dim,
             time_dim=self.plot_target.time_dim,
-            subject=frame_data.metadata.active_var_info.to_axis_label(),
+            subject_dim=color_dim,
             dim_scales={
                 x_dim: frame_data.metadata.var_infos[x_dim].scale,
                 y_dim: frame_data.metadata.var_infos[y_dim].scale,
