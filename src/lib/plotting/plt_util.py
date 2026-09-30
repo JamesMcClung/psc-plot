@@ -39,33 +39,25 @@ def update_cbar(mappable: _ScalarMappable, *, data_min_override: float | None = 
     mappable.set_cmap(plt.get_cmap(cmap))
 
 
-def get_multiplier_exponent(lower: float, upper: float) -> int:
+def _get_multiplier_exponent(lower: float, upper: float) -> int:
     """The power of ten that matplotlib would factor out of tick labels spanning `lower` to `upper`. 0 means none."""
     largest = max(abs(lower), abs(upper))
     if largest == 0:
         return 0
 
     exponent = math.floor(math.log10(largest))
-    smallest_plain_exponent, largest_plain_exponent = plt.rcParams["axes.formatter.limits"]
-
-    if exponent <= smallest_plain_exponent or exponent >= largest_plain_exponent:
-        return exponent
-    return 0
+    lower_limit, upper_limit = plt.rcParams["axes.formatter.limits"]
+    return 0 if lower_limit < exponent < upper_limit else exponent
 
 
 def move_cbar_multiplier_to_label(cbar: Colorbar) -> int:
-    """Factor a fixed power of ten out of the colorbar's tick labels and return it, so the caller can name it
-    in the label instead. 0 means the labels were left alone.
-
-    Matplotlib would otherwise float the multiplier above the bar, where it sticks out past the top edge and
-    forces constrained layout to reserve room there -- fatal when the axes above is supposed to sit flush.
-    """
-    exponent = get_multiplier_exponent(*cbar.mappable.get_clim())
+    """Factor a fixed power of ten out of the colorbar's tick labels and return it (0 if none), so the caller can
+    put it in the label instead of matplotlib floating it above the bar, past the axes' top edge."""
+    exponent = _get_multiplier_exponent(*cbar.mappable.get_clim())
     if exponent == 0:
         return 0
 
-    # Equal power limits are matplotlib's way of pinning the exponent, rather than letting the formatter pick
-    # one from whatever ticks it is given.
+    # Equal power limits pin the exponent.
     formatter = ScalarFormatter(useOffset=False)
     formatter.set_powerlimits((exponent, exponent))
     cbar.formatter = formatter
