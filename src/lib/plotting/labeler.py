@@ -55,36 +55,45 @@ class SubjectLabeler(Labeler):
             self._update_text()
 
     def _rebuild(self):
+        """Recompute this node's subject and sublabels. A leaf reads them from its source; any other node factors
+        out whatever its children have in common."""
         for child in self.children:
             child._rebuild()
 
-        child_subjects = {child._subject for child in self.children}
-        all_child_sublabels = {sublabel: None for child in self.children for sublabel in child._sublabels}  # use dict to preserve insertion order
-        common_child_sublabels = {sublabel: None for sublabel in all_child_sublabels if all(sublabel in child._sublabels for child in self.children)}  # use dict to preserve insertion order
-
         if self.source:
+            assert not self.children, "a labeler with a source is a leaf"
             self._subject = self.source.subject
             self._sublabels = self.source.get_sublabels()
+            return
 
-            # only eliminate child subjects + sublabels if every child shares the root subject and all its sublabels
-            has_common_subject = {self._subject} == child_subjects
-            has_common_sublabels = set(self._sublabels) <= set(common_child_sublabels.keys())
-
-            if has_common_subject and has_common_sublabels:
-                self._eliminate_subject()
-                self._eliminate_common_sublabels()
-
+        child_subjects = {child._get_liftable_subject() for child in self.children}
+        if len(child_subjects) == 1:
+            self._subject = child_subjects.pop()
+            for child in self.children:
+                child._lift_subject()
         else:
-            # no source -> lift all common subject and/or sublabels independently
+            self._subject = None
 
-            if len(child_subjects) == 1:
-                self._subject = child_subjects.pop()
-                self._eliminate_subject()
-            else:
-                self._subject = None
+        child_sublabelss = [child._get_liftable_sublabels() for child in self.children]
+        all_child_sublabels = {sublabel: None for sublabels in child_sublabelss for sublabel in sublabels}  # use dict to preserve insertion order
+        self._sublabels = [sublabel for sublabel in all_child_sublabels if all(sublabel in sublabels for sublabels in child_sublabelss)]
+        for child in self.children:
+            child._lift_sublabels(self._sublabels)
 
-            self._sublabels = list(common_child_sublabels.keys())
-            self._eliminate_common_sublabels()
+    # What a parent sees of this node, and what happens when the parent factors it out. Subclasses override these
+    # to control how they take part in factoring.
+
+    def _get_liftable_subject(self) -> str | None:
+        return self._subject
+
+    def _lift_subject(self):
+        self._subject = None
+
+    def _get_liftable_sublabels(self) -> list[str]:
+        return self._sublabels
+
+    def _lift_sublabels(self, sublabels: list[str]):
+        self._sublabels = [sublabel for sublabel in self._sublabels if sublabel not in sublabels]
 
     def _update_text(self):
         # set_text intelligently checks if the text actually changes or not
@@ -98,15 +107,6 @@ class SubjectLabeler(Labeler):
         if self._subject and sublabels:
             return f"{self._subject} ({sublabels})"
         return self._subject or sublabels
-
-    def _eliminate_subject(self):
-        for child in self.children:
-            child._subject = None
-
-    def _eliminate_common_sublabels(self):
-        for child in self.children:
-            for sublabel in self._sublabels:
-                child._sublabels.remove(sublabel)
 
 
 @dataclass
