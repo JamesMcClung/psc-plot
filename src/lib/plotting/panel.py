@@ -180,9 +180,7 @@ class Panel:
         return [ax for ax, axis_id in self.bounds_setters_per_axis if axis_id == "x"]
 
     def prune_y_ticks(self, end: YEnd):
-        """Drop the y tick (and its label) at `end`, e.g. so it doesn't crowd the neighbouring axes' own tick
-        label there. Locators that can't prune (log, say) are left alone.
-        """
+        """Drop the y tick (and its label) at `end`. Locators that can't prune (log, say) are left alone."""
         for ax, axis_id in self.scales_per_axis:
             if axis_id != "y":
                 continue
@@ -191,25 +189,16 @@ class Panel:
                 locator.set_params(prune=end)
 
     def pad_y_end(self, end: YEnd, pad: float):
-        """Have constrained layout leave `pad` points of room beyond whatever sits outermost at `end` -- the x
-        label at the lower end, the title at the upper -- e.g. to make up for padding it was told not to leave.
-
-        The room is an invisible spacer anchored to that text, since padding the text itself (`labelpad`, the
-        title's `pad`) only moves it away from its own axes, not away from the neighbour's.
-        """
+        """Have constrained layout leave `pad` points of room beyond the x label (lower end) or title (upper end).
+        It's an invisible spacer, since padding the text itself only moves it away from its own axes."""
         for ax in self._get_x_axs():
             text, xy, box_alignment = {"lower": (ax.xaxis.label, (0.5, 0.0), (0.5, 1.0)), "upper": (ax.title, (0.5, 1.0), (0.5, 0.0))}[end]
             spacer = AnnotationBbox(DrawingArea(0.0, pad), xy, xycoords=text, box_alignment=box_alignment, frameon=False, pad=0.0, annotation_clip=False)
             ax.add_artist(spacer)
 
     def add_interior_x_ticks(self):
-        """Draw x ticks just inside the top and bottom of the axes, over the data, so that every panel in a stack
-        gets its own without any of them taking up room between the axes.
-
-        These are artists of their own rather than the axis' ticks, which at any one end all point the same
-        way (so can't add to ticks already pointing out) and all share one color. `update_interior_x_ticks`
-        places and colors them, every frame.
-        """
+        """Draw x ticks just inside the top and bottom of the axes, over the data. They're artists of their own
+        because an axis' ticks at one end all point one way and share one color."""
         size = plt.rcParams["xtick.major.size"]
         width = plt.rcParams["xtick.major.width"]
 
@@ -220,8 +209,7 @@ class Panel:
                 self.interior_x_ticks[(ax, end)] = ticks
 
     def update_interior_x_ticks(self):
-        """Put an interior tick at each of the axis' major tick locations, colored to stand out against whatever
-        is drawn beneath it."""
+        """Put an interior tick at each major tick location, colored to stand out against what's beneath it."""
         for (ax, end), ticks in self.interior_x_ticks.items():
             lower, upper = sorted(ax.get_xlim())
             xs = [x for x in ax.xaxis.get_majorticklocs() if lower <= x <= upper]
@@ -254,15 +242,8 @@ class Panel:
         return np.concatenate([alpha * colors[:, :3] + (1 - alpha) * background[:3], np.ones_like(alpha)], axis=1)
 
     def tuck_y_tick_labels(self, renderer: RendererBase):
-        """Anchor every y tick label that overhangs a flush end to that end.
-
-        Same rule as `prune_y_ticks`: nothing may stick out past an edge that has to sit flush, or
-        constrained layout reserves room for it and the gap comes back. Pruning alone doesn't get there,
-        because the tick it leaves behind can still sit within half a label of the edge.
-
-        Every label is put back to its default alignment first, both so that the measurement doesn't
-        depend on an earlier tuck and so that ticks that have since moved away from the edge are let go.
-        """
+        """Anchor every y tick label that overhangs a flush end to that end, so constrained layout doesn't reserve
+        room past it. Labels are reset to the default alignment first, so ticks that moved away are let go."""
         if not self.flush_y_ends:
             return
 
