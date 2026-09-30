@@ -44,32 +44,37 @@ class Grid:
         self.panels[loc] = panel
 
     def share_x_axes_vertically(self):
-        stacks = []
+        # Each column splits into stacks: runs of panels that share an x axis all the way down.
+        stacks_per_col: list[list[list[Panel]]] = []
         for col in self.contiguous_cols():
-            stack = [col[0]]
+            stacks = [[col[0]]]
             for above, below in zip(col[:-1], col[1:]):
                 if above.try_share_axis(below, "x"):
-                    stack.append(below)
+                    stacks[-1].append(below)
                 else:
-                    stacks.append(stack)
-                    stack = [below]
-            stacks.append(stack)
+                    stacks.append([below])
+            stacks_per_col.append(stacks)
 
-        stacks = [stack for stack in stacks if len(stack) > 1]
-        if stacks:
-            self._remove_vertical_space(stacks)
+        if any(len(stack) > 1 for stacks in stacks_per_col for stack in stacks):
+            self._remove_vertical_space(stacks_per_col)
 
-    def _remove_vertical_space(self, stacks: list[list[Panel]]):
-        """Push each stack of panels sharing an x axis flush together."""
+    def _remove_vertical_space(self, stacks_per_col: list[list[list[Panel]]]):
+        """Push the panels of each stack flush together, keeping the usual space between stacks."""
         # Constrained layout floors the gap between axes at h_pad, so zeroing hspace alone
-        # isn't enough. Both are figure-wide, so this also closes gaps between axes that didn't
-        # end up sharing, leaving only the room their labels and titles need.
+        # isn't enough. Both are figure-wide, so the padding between stacks has to be put back.
         layout_engine = self.fig.get_layout_engine()
         assert layout_engine is not None
         h_pad = layout_engine.get()["h_pad"]
         layout_engine.set(h_pad=0.0, hspace=0.0)
         self._restore_vertical_figure_padding(h_pad)
 
+        for stacks in stacks_per_col:
+            # h_pad is the padding around each axes, so each side of the gap gets it back.
+            for upper, lower in zip(stacks[:-1], stacks[1:]):
+                upper[-1].pad_y_end("lower", h_pad * 72)  # h_pad is in inches, the pad in points
+                lower[0].pad_y_end("upper", h_pad * 72)
+
+        stacks = [stack for stacks in stacks_per_col for stack in stacks if len(stack) > 1]
         for stack in stacks:
             # Nothing may stick out past the shared edges, or the space comes right back. The axes above keep
             # their bottom tick, its label tucked up; the axes below drop their top one, which would crowd it.
