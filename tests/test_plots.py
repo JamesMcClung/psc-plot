@@ -106,6 +106,30 @@ def test_suptitle():
     return make_plot("prt.i -i t=1: --bin y z -v y z --with prt.e -i t=1: --bin y z -v y z loc=1,2".split())
 
 
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_stacked_images_with_scaled_cbar():
+    """Vertically stacking (and sharing x-axes) components of magnetic field. The --mul on By is to force a multiplicative factor, which is common in practice but not represented in the test data."""
+    return make_plot("-w pfd::hx_fc -i t=3 -cv y z loc=1,1 -w pfd::hy_fc -i t=3 --mul 1e-5 -cv y z loc=1,2 -w pfd::hz_fc -i t=3 -cv y z loc=1,3".split())
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_stacked_images_with_log_scale():
+    """Vertically stacking ion and electron phase density plots. The --mul is to make sure no multiplicative factor is pulled out into the label, which would be silly for a log scale."""
+    return make_plot("prt.i -b y py --mul 1e5 --scale log --nan0 -v y py -w prt.e -b y py --scale log --nan0 -v y py loc=1,2".split())
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_stacked_images_with_overplotted_scatter():
+    """Contrived example of scatter on top of a stacked image."""
+    return make_plot("pfd ey_ec -i t=-1 -v y z -w ez_ec -i t=-1 -v y z loc=1,2 -w prt.i -i t=-1 -cv y z loc=1,1".split())
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_stacked_plots_with_incompatible_x():
+    """Contrived example where two plots share an x-axis, but not a third below."""
+    return make_plot("pfd ex_ec --copy -i t=0 -v y --copy ex_ec -i t=-1 -v y loc=1,2 -w ex_ec -v t loc=1,3".split())
+
+
 # --- Cross-dataset plots ---
 
 

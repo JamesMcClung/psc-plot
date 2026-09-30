@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Callable, Literal
 
@@ -8,8 +9,11 @@ from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfo
 
 
 @dataclass
-class Labeler:
+class Labeler(ABC):
     set_text: Callable[[str], None]
+
+    @abstractmethod
+    def update(self): ...
 
 
 @dataclass
@@ -32,6 +36,15 @@ class SubjectLabeler(Labeler):
         assert child.parent is None
         child.parent = self
         self.children.append(child)
+
+    def remove_from_tree(self):
+        for child in self.children:
+            child.parent = self.parent
+        if self.parent is not None:
+            self.parent.children.remove(self)
+            self.parent.children.extend(self.children)
+        self.children.clear()
+        self.parent = None
 
     def update(self):
         """Propagate updates up to the root labeler, which makes sure that everyone rebuilds and then everyone updates text."""
@@ -110,14 +123,18 @@ class UnitLabeler(Labeler):
         self.set_text(self._get_label())
 
     def is_compatible(self, info: PlotInfo) -> bool:
-        self.sources.append(info)
+        return self.are_compatible([info])
+
+    def are_compatible(self, infos: list[PlotInfo]) -> bool:
+        orig = self.sources
+        self.sources = orig + infos
         try:
             self._get_label()
             return True
         except:
             return False
         finally:
-            self.sources.pop()
+            self.sources = orig
 
     def _get_key(self, info: PlotInfo) -> VarKey:
         match self.axis_name:

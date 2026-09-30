@@ -30,12 +30,12 @@ class Idx(MetadataAdaptor):
                     selected_steps = [selected_steps]
                 partition_indices = [p for step in selected_steps for p in range(*partition_ranges[step])]
                 df = df.partitions[partition_indices]
-                coordss[dim] = coordss[dim][isel]
 
                 if isinstance(isel, int):
                     # The dim now holds a single value, so partitions are no longer laid out along it.
                     partition_dim = None
                     partition_ranges = None
+                    df = df.drop(columns=dim)
                 else:
                     # Rebase the surviving ranges onto the pruned frame's partition numbering.
                     rebased = []
@@ -45,9 +45,8 @@ class Idx(MetadataAdaptor):
                         rebased.append((offset, offset + end - start))
                         offset += end - start
                     partition_ranges = rebased
-                continue
 
-            if isinstance(isel, int):
+            elif isinstance(isel, int):
                 pos = coordss[dim][isel]
                 df = df[df[dim] == pos]
                 if len(df) == 0:
@@ -55,7 +54,7 @@ class Idx(MetadataAdaptor):
 
                     message = f"--idx {dim}={isel} on list data requires exact coordinate match, and returned an empty list. Try --idx {dim}={isel}:{isel + 1} instead."
                     warnings.warn(message)
-                coordss[dim] = pos
+                df = df.drop(columns=dim)
             else:
                 if isel.start not in [None, 0]:
                     pos_lower = coordss[dim][isel.start]
@@ -65,7 +64,7 @@ class Idx(MetadataAdaptor):
                     pos_upper = coordss[dim][isel.stop]
                     df = df[df[dim] < pos_upper]
 
-                coordss[dim] = coordss[dim][isel]
+            coordss[dim] = coordss[dim][isel]
 
         return data.assign(df, coordss=coordss, partition_dim=partition_dim, partition_ranges=partition_ranges)
 

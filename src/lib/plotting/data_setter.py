@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 import numpy as np
@@ -9,12 +9,13 @@ from matplotlib.axes import Axes
 from matplotlib.collections import PathCollection, QuadMesh
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
+from matplotlib.transforms import Bbox
 
 from lib.plotting.plot_info import ImageInfo, LineInfo, PlotInfo, PolarMeshInfo, ScatterInfo
 
 
 @dataclass
-class DataSetter[A: Artist = Artist, I: PlotInfo = PlotInfo]:
+class DataSetter[A: Artist = Artist, I: PlotInfo = PlotInfo](ABC):
     artist: A
     info: I
 
@@ -37,6 +38,14 @@ class DataSetter[A: Artist = Artist, I: PlotInfo = PlotInfo]:
         if isinstance(info, PolarMeshInfo):
             return PolarMeshSetter(axes, info)
         assert False
+
+    @abstractmethod
+    def update(self): ...
+
+    def get_colors_within(self, bbox: Bbox) -> np.ndarray | None:
+        """The RGBA colors, of shape `(..., 4)`, the artist paints within `bbox` (in display coordinates), or `None`
+        if unknown."""
+        return None
 
 
 class LineSetter(DataSetter[Line2D, LineInfo]):
@@ -65,6 +74,22 @@ class ImageSetter(DataSetter[AxesImage, ImageInfo]):
             interpolation="nearest",
             aspect=info.get_aspect(),
         )
+
+    def get_colors_within(self, bbox: Bbox) -> np.ndarray | None:
+        data = self.artist.get_array()
+        if data is None:
+            return None
+
+        ny, nx = data.shape
+        x0, x1, y0, y1 = self.artist.get_extent()
+        (bx0, by0), (bx1, by1) = self.artist.axes.transData.inverted().transform(bbox.get_points())
+
+        # The pixels (of the data, not the screen) the bbox overlaps, clipped to the image. origin="lower", so
+        # rows count up from y0.
+        i0, i1 = sorted(np.clip(np.floor((np.array([bx0, bx1]) - x0) / (x1 - x0) * nx), 0, nx - 1).astype(int))
+        j0, j1 = sorted(np.clip(np.floor((np.array([by0, by1]) - y0) / (y1 - y0) * ny), 0, ny - 1).astype(int))
+
+        return self.artist.to_rgba(data[j0 : j1 + 1, i0 : i1 + 1])
 
 
 class ScatterSetter(DataSetter[PathCollection, ScatterInfo]):
