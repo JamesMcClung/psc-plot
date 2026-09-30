@@ -10,6 +10,7 @@ from matplotlib.collections import PathCollection
 from matplotlib.colorbar import Colorbar
 from matplotlib.colors import to_rgba
 from matplotlib.markers import TICKDOWN, TICKUP
+from matplotlib.offsetbox import AnnotationBbox, DrawingArea
 from matplotlib.projections import PolarAxes
 from matplotlib.text import Text
 from matplotlib.ticker import MaxNLocator
@@ -184,6 +185,21 @@ class Panel:
             locator = ax.yaxis.get_major_locator()
             if isinstance(locator, MaxNLocator):
                 locator.set_params(prune=end)
+
+    def pad_y_end(self, end: YEnd, pad: float):
+        """Have constrained layout leave `pad` points of room beyond whatever sits outermost at `end` -- the x
+        label at the lower end, the title at the upper -- e.g. to make up for padding it was told not to leave.
+
+        The room is an invisible spacer anchored to that text, since padding the text itself (`labelpad`, the
+        title's `pad`) only moves it away from its own axes, not away from the neighbour's.
+        """
+        # Sharing an axis takes it out of `scales_per_axis`, but not out of `bounds_setters_per_axis`.
+        for ax, axis_id in self.bounds_setters_per_axis:
+            if axis_id != "x":
+                continue
+            text, xy, box_alignment = {"lower": (ax.xaxis.label, (0.5, 0.0), (0.5, 1.0)), "upper": (ax.title, (0.5, 1.0), (0.5, 0.0))}[end]
+            spacer = AnnotationBbox(DrawingArea(0.0, pad), xy, xycoords=text, box_alignment=box_alignment, frameon=False, pad=0.0, annotation_clip=False)
+            ax.add_artist(spacer)
 
     def add_interior_x_ticks(self):
         """Draw x ticks just inside the top and bottom of the axes, over the data, so that every panel in a stack
