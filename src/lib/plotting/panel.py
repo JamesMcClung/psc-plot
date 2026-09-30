@@ -289,8 +289,14 @@ class Panel:
             return False
 
         {"x": my_ax.sharex, "y": my_ax.sharey}[axis_id](other_ax)
-        my_ax.label_outer(remove_inner_ticks=True)
-        other_ax.label_outer(remove_inner_ticks=True)
+        if axis_id == "x":
+            # Only the edge facing `other` is inner. `label_outer` would go by the grid instead, and strip the
+            # bottom of every axes above the last row, even one whose neighbour below it didn't share.
+            my_ax.xaxis.set_tick_params(which="both", labelbottom=False, bottom=False)
+            my_ax.xaxis.offsetText.set_visible(False)
+        else:
+            my_ax.label_outer(remove_inner_ticks=True)
+            other_ax.label_outer(remove_inner_ticks=True)
         other_labeler.sources.extend(my_labeler.sources)
 
         if axis_id == "x":
