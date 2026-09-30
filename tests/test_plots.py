@@ -124,6 +124,12 @@ def test_stacked_images_with_overplotted_scatter():
     return make_plot("pfd ey_ec -i t=-1 -v y z -w ez_ec -i t=-1 -v y z loc=1,2 -w prt.i -i t=-1 -cv y z loc=1,1".split())
 
 
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_stacked_plots_with_incompatible_x():
+    """Contrived example where two plots share an x-axis, but not a third below."""
+    return make_plot("pfd ex_ec --copy -i t=0 -v y --copy ex_ec -i t=-1 -v y loc=1,2 -w ex_ec -v t loc=1,3".split())
+
+
 # --- Cross-dataset plots ---
 
 
