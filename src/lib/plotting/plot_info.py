@@ -45,14 +45,6 @@ class PlotInfo(ABC):
     def get_sublabels(self) -> list[str]:
         return [self.get_coord_label(dim).maybe_with_dollars() for dim in self.scalar_coord_values]
 
-    def get_dim_label(self, dim: VarKey) -> str:
-        dim_label = self.dim_displays.get(dim, Latex(f"\\text{{{dim}}}")).maybe_with_dollars()
-
-        if unit := self.dim_units.get(dim):
-            dim_label += f" [${unit}$]"
-
-        return dim_label
-
     @abstractmethod
     def has_legend(self) -> bool: ...
 
