@@ -84,8 +84,7 @@ class SubjectLabeler(Labeler):
     # to control how they take part in factoring.
 
     def _labels_any_data(self) -> bool:
-        """Whether this node labels any data at all. A parent ignores one that doesn't, rather than taking it to
-        offer no subject and no sublabels, which would stop anything being lifted from its siblings."""
+        """A parent ignores children that don't, since their empty labels would block lifting from their siblings."""
         return self.source is not None or bool(self._get_children_labeling_data())
 
     def _get_liftable_subject(self) -> str | None:
@@ -191,14 +190,13 @@ class UnitLabeler(Labeler):
 
 @dataclass(init=False)
 class YAxisLabeler(SubjectLabeler):
-    """Labels a y axis, `display [unit]`, as a `UnitLabeler` would. It also takes part in the subject tree: its
-    children are the legend entries of the lines whose subject is their y dim. When the axis shows that display, it
-    absorbs their subject, which then appears nowhere else. Sublabels just pass through it, since it can't show them."""
+    """Labels a y axis, `display [unit]`. Its children are the legend entries of lines whose subject is their y dim;
+    when the axis shows a display, that is their subject, so it absorbs it. Sublabels pass through, since it can't
+    show them."""
 
     def __init__(self, set_text: Callable[[str], None]):
         super().__init__(set_text)
         self.unit_labeler = UnitLabeler(set_text, "y", require_display_match=False)
-        self._absorbs_subject = False
 
     def is_compatible(self, info: PlotInfo2D) -> bool:
         return self.unit_labeler.is_compatible(info)
@@ -210,19 +208,14 @@ class YAxisLabeler(SubjectLabeler):
         for child in self.children:
             child._rebuild()
 
-        children = self._get_children_labeling_data()
         # Every child's subject is the display of its y dim, so if the axis shows a display, it's theirs.
-        self._absorbs_subject = bool(children) and self.unit_labeler.has_common_display()
-        if self._absorbs_subject:
-            for child in children:
-                child._lift_subject()
+        if self.unit_labeler.has_common_display():
+            self._lift_subject()
 
     def _get_label(self) -> str:
         return self.unit_labeler._get_label()
 
     def _get_liftable_subject(self) -> str | None:
-        if self._absorbs_subject:
-            return None
         return _get_common_subject(self._get_children_labeling_data())
 
     def _lift_subject(self):
