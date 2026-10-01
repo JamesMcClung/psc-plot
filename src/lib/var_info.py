@@ -49,11 +49,6 @@ class VarInfo:
             unit = Latex(unit)
         return VarInfo(display or self.display, unit or self.unit, self.geometry, key=self.key, scale=self.scale)
 
-    def to_axis_label(self) -> str:
-        if self.unit:
-            return f"${self.display}$ [${self.unit}$]"
-        return f"${self.display}$"
-
     def get_coordinate_label(self, coord_val: float) -> str:
         return f"${self.display} = {coord_val:.3f}\\ {self.unit}$"
 
