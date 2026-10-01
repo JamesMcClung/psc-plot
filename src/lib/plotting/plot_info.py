@@ -16,7 +16,8 @@ type Projection = Literal["rectilinear", "polar"]
 @dataclass
 class PlotInfo(ABC):
     _: KW_ONLY
-    subject: str | None = None
+    subject_dim: VarKey | None = None
+    """The dim that is the plotted variable itself, if any. Its axis (or colorbar) is where the subject belongs."""
     dim_scales: dict[VarKey, Scale] = field(default_factory=dict)
     dim_bounds: dict[VarKey, tuple[float | None, float | None]] = field(default_factory=dict)
     dim_displays: dict[VarKey, Latex] = field(default_factory=dict)
@@ -27,6 +28,13 @@ class PlotInfo(ABC):
     axes_index: tuple[int, int] = (1, 1)
     projection: Projection = field(default="rectilinear", init=False)
 
+    @property
+    def subject(self) -> str | None:
+        """What is plotted: the display of the subject dim (without its unit, which belongs to the axis)."""
+        if self.subject_dim:
+            return self.dim_displays[self.subject_dim].maybe_with_dollars()
+        return None
+
     def get_coord_label(self, dim: VarKey) -> Latex:
         display = self.dim_displays.get(dim, f"\\text{{{dim}}}")
         coord_val = self.scalar_coord_values[dim]
@@ -36,14 +44,6 @@ class PlotInfo(ABC):
 
     def get_sublabels(self) -> list[str]:
         return [self.get_coord_label(dim).maybe_with_dollars() for dim in self.scalar_coord_values]
-
-    def get_dim_label(self, dim: VarKey) -> str:
-        dim_label = self.dim_displays.get(dim, Latex(f"\\text{{{dim}}}")).maybe_with_dollars()
-
-        if unit := self.dim_units.get(dim):
-            dim_label += f" [${unit}$]"
-
-        return dim_label
 
     @abstractmethod
     def has_legend(self) -> bool: ...
@@ -116,6 +116,12 @@ class ImageInfo(PlotInfo2D, PlotInfoColor):
 class ScatterInfo(PlotInfo2D, PlotInfoMaybeColor):
     _: KW_ONLY
     xy_data: np.ndarray
+    list_subject: str | None = None
+    """What the list contains (e.g. "Ions"). Not a dim, so it has no axis of its own."""
+
+    @property
+    def subject(self) -> str | None:
+        return self.list_subject
 
     def has_legend(self) -> bool:
         return True

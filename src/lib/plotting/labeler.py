@@ -55,36 +55,49 @@ class SubjectLabeler(Labeler):
             self._update_text()
 
     def _rebuild(self):
+        """Recompute this node's subject and sublabels. A leaf reads them from its source; any other node factors
+        out whatever its children have in common."""
         for child in self.children:
             child._rebuild()
 
-        child_subjects = {child._subject for child in self.children}
-        all_child_sublabels = {sublabel: None for child in self.children for sublabel in child._sublabels}  # use dict to preserve insertion order
-        common_child_sublabels = {sublabel: None for sublabel in all_child_sublabels if all(sublabel in child._sublabels for child in self.children)}  # use dict to preserve insertion order
-
         if self.source:
+            assert not self.children, "a labeler with a source is a leaf"
             self._subject = self.source.subject
             self._sublabels = self.source.get_sublabels()
+            return
 
-            # only eliminate child subjects + sublabels if every child shares the root subject and all its sublabels
-            has_common_subject = {self._subject} == child_subjects
-            has_common_sublabels = set(self._sublabels) <= set(common_child_sublabels.keys())
+        children = self._get_children_labeling_data()
 
-            if has_common_subject and has_common_sublabels:
-                self._eliminate_subject()
-                self._eliminate_common_sublabels()
+        self._subject = _get_common_subject(children)
+        if self._subject is not None:
+            for child in children:
+                child._lift_subject()
 
-        else:
-            # no source -> lift all common subject and/or sublabels independently
+        self._sublabels = _get_common_sublabels(children)
+        for child in children:
+            child._lift_sublabels(self._sublabels)
 
-            if len(child_subjects) == 1:
-                self._subject = child_subjects.pop()
-                self._eliminate_subject()
-            else:
-                self._subject = None
+    def _get_children_labeling_data(self) -> list[SubjectLabeler]:
+        return [child for child in self.children if child._labels_any_data()]
 
-            self._sublabels = list(common_child_sublabels.keys())
-            self._eliminate_common_sublabels()
+    # What a parent sees of this node, and what happens when the parent factors it out. Subclasses override these
+    # to control how they take part in factoring.
+
+    def _labels_any_data(self) -> bool:
+        """A parent ignores children that don't, since their empty labels would block lifting from their siblings."""
+        return self.source is not None or bool(self._get_children_labeling_data())
+
+    def _get_liftable_subject(self) -> str | None:
+        return self._subject
+
+    def _lift_subject(self):
+        self._subject = None
+
+    def _get_liftable_sublabels(self) -> list[str]:
+        return self._sublabels
+
+    def _lift_sublabels(self, sublabels: list[str]):
+        self._sublabels = [sublabel for sublabel in self._sublabels if sublabel not in sublabels]
 
     def _update_text(self):
         # set_text intelligently checks if the text actually changes or not
@@ -99,14 +112,18 @@ class SubjectLabeler(Labeler):
             return f"{self._subject} ({sublabels})"
         return self._subject or sublabels
 
-    def _eliminate_subject(self):
-        for child in self.children:
-            child._subject = None
 
-    def _eliminate_common_sublabels(self):
-        for child in self.children:
-            for sublabel in self._sublabels:
-                child._sublabels.remove(sublabel)
+def _get_common_subject(labelers: list[SubjectLabeler]) -> str | None:
+    """The subject every labeler offers, if they agree on one."""
+    subjects = {labeler._get_liftable_subject() for labeler in labelers}
+    return subjects.pop() if len(subjects) == 1 else None
+
+
+def _get_common_sublabels(labelers: list[SubjectLabeler]) -> list[str]:
+    """The sublabels every labeler offers, in order of first appearance."""
+    sublabelss = [labeler._get_liftable_sublabels() for labeler in labelers]
+    all_sublabels = {sublabel: None for sublabels in sublabelss for sublabel in sublabels}  # use dict to preserve insertion order
+    return [sublabel for sublabel in all_sublabels if all(sublabel in sublabels for sublabels in sublabelss)]
 
 
 @dataclass
@@ -135,6 +152,10 @@ class UnitLabeler(Labeler):
             return False
         finally:
             self.sources = orig
+
+    def has_common_display(self) -> bool:
+        """Whether the sources all agree on display, so that the label shows it."""
+        return len({info.dim_displays[self._get_key(info)] for info in self.sources}) == 1
 
     def _get_key(self, info: PlotInfo) -> VarKey:
         match self.axis_name:
@@ -168,34 +189,58 @@ class UnitLabeler(Labeler):
 
 
 @dataclass(init=False)
-class SubjectAndUnitLabeler(Labeler):
-    def __init__(self, set_text: Callable[[str], None], axis_name: Literal["x", "y", "color"], source: PlotInfo):
+class YAxisLabeler(SubjectLabeler):
+    """Labels a y axis, `display [unit]`. Its children are the legend entries of lines whose subject is their y dim;
+    when the axis shows a display, that is their subject, so it absorbs it. Sublabels pass through, since it can't
+    show them."""
+
+    def __init__(self, set_text: Callable[[str], None]):
         super().__init__(set_text)
-        self._subject = ""
-        self._unit = ""
+        self.unit_labeler = UnitLabeler(set_text, "y", require_display_match=False)
 
-        self.subject_labeler = SubjectLabeler(self._set_subject, source)
-        self.unit_labeler = UnitLabeler(self._set_unit, axis_name, [source], include_display=False, require_display_match=False)
+    def is_compatible(self, info: PlotInfo2D) -> bool:
+        return self.unit_labeler.is_compatible(info)
 
-    def update(self):
-        """Update sublabelers, which call `_set_subject` and/or `_set_unit` and thus `set_text` (twice, possibly)."""
-        if self.subject_labeler:
-            self.subject_labeler.update()
+    def add_source(self, info: PlotInfo2D):
+        self.unit_labeler.sources.append(info)
 
-        if self.unit_labeler:
-            self.unit_labeler.update()
+    def _rebuild(self):
+        for child in self.children:
+            child._rebuild()
+
+        # Every child's subject is the display of its y dim, so if the axis shows a display, it's theirs.
+        if self.unit_labeler.has_common_display():
+            self._lift_subject()
 
     def _get_label(self) -> str:
-        if self._subject and self._unit:
-            return self._subject + " " + self._unit
-        return self._subject or self._unit
+        return self.unit_labeler._get_label()
 
-    def _set_subject(self, subject: str):
-        """Intended to be passed to a `SubjectLabeler`."""
-        self._subject = subject
-        self.set_text(self._get_label())
+    def _get_liftable_subject(self) -> str | None:
+        return _get_common_subject(self._get_children_labeling_data())
 
-    def _set_unit(self, unit: str):
-        """Intended to be passed to a `UnitLabeler`."""
-        self._unit = unit
-        self.set_text(self._get_label())
+    def _lift_subject(self):
+        for child in self._get_children_labeling_data():
+            child._lift_subject()
+
+    def _get_liftable_sublabels(self) -> list[str]:
+        return _get_common_sublabels(self._get_children_labeling_data())
+
+    def _lift_sublabels(self, sublabels: list[str]):
+        for child in self._get_children_labeling_data():
+            child._lift_sublabels(sublabels)
+
+
+@dataclass(init=False)
+class ColorbarLabeler(SubjectLabeler):
+    """Labels a colorbar whose color dim is its source's subject, `subject (sublabels) [unit]`. It keeps the subject
+    rather than offering it up, since the colorbar is where the subject belongs."""
+
+    def __init__(self, set_text: Callable[[str], None], source: PlotInfoColor):
+        super().__init__(set_text, source)
+        self.unit_labeler = UnitLabeler(set_text, "color", [source], include_display=False)
+
+    def _get_label(self) -> str:
+        return " ".join(label for label in [super()._get_label(), self.unit_labeler._get_label()] if label)
+
+    def _get_liftable_subject(self) -> str | None:
+        return None

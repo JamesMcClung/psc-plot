@@ -33,7 +33,7 @@ class PolarFieldRenderer(Renderer[Field, SpatialDimsRTheta, PolarMeshInfo]):
             time_dim=self.plot_target.time_dim,
             r_vertices=r_vertices,
             theta_vertices=theta_vertices,
-            subject=frame_data.metadata.active_var_info.to_axis_label(),
+            subject_dim=color_dim,
             dim_scales={
                 r_dim: frame_data.metadata.var_infos[r_dim].scale,
                 color_dim: frame_data.metadata.var_infos[color_dim].scale,

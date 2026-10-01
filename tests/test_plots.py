@@ -130,6 +130,18 @@ def test_stacked_plots_with_incompatible_x():
     return make_plot("pfd ex_ec --copy -i t=0 -v y --copy ex_ec -i t=-1 -v y loc=1,2 -w ex_ec -v t loc=1,3".split())
 
 
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_stacked_lines_with_subjects_on_y_axes():
+    """Each panel overlays one variable at two slices: its y axis shows the subject, so the legend shows just the slices."""
+    return make_plot("pfd_moments Txx_i --copy -i y=0 -v t loc=1,1 -w Txx_i -i y=-1 -v t loc=1,1 -w Tyy_i --copy -i y=0 -v t loc=1,2 -w Tyy_i -i y=-1 -v t loc=1,2".split())
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_lines_of_different_subjects_on_one_y_axis():
+    """Two variables sharing a y axis: the axis shows just the unit, so the legend keeps the subjects."""
+    return make_plot("pfd_moments Txx_i -i y=0 -v t -w Tyy_i -i y=0 -v t".split())
+
+
 # --- Cross-dataset plots ---
 
 
