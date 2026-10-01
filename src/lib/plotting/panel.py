@@ -83,16 +83,10 @@ class Panel:
             return [labeler for labeler in subject_labelers if labeler.parent is None]
         return subject_labelers
 
-    def wire_title(self, title: Text, info: PlotInfo | None = None):
-        self.title_labeler = SubjectLabeler(title.set_text, info)
-        for y_labeler in self.y_labelers_per_axes.values():
-            self.title_labeler.add_child(y_labeler)
-        for legend_labelers in self.legend_labelers_per_axes.values():
-            for legend_labeler in legend_labelers:
-                if legend_labeler.parent is None:
-                    self.title_labeler.add_child(legend_labeler)
-        if isinstance(self.cbar_labeler, ColorbarLabeler):
-            self.title_labeler.add_child(self.cbar_labeler)
+    def wire_title(self, title: Text):
+        """Must come first, so the labelers wired after it can join the title's tree."""
+        assert not self.get_labelers()
+        self.title_labeler = SubjectLabeler(title.set_text)
 
     def wire_legend_label(self, artist: Artist, info: PlotInfo):
         legend_labeler = SubjectLabeler(artist.set_label, info)
