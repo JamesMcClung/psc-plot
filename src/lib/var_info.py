@@ -49,9 +49,6 @@ class VarInfo:
             unit = Latex(unit)
         return VarInfo(display or self.display, unit or self.unit, self.geometry, key=self.key, scale=self.scale)
 
-    def get_coordinate_label(self, coord_val: float) -> str:
-        return f"${self.display} = {coord_val:.3f}\\ {self.unit}$"
-
     def toggle_fourier(self) -> VarInfo:
         # TODO make t <-> omega
         toggled_unit = _toggle_unit_fourier(self.unit)
