@@ -2,13 +2,10 @@ import math
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.axes import Axes
 from matplotlib.backend_bases import RendererBase
 from matplotlib.colorbar import Colorbar
 from matplotlib.colorizer import _ScalarMappable
 from matplotlib.ticker import ScalarFormatter
-
-from lib.data.data_with_attrs import ListMetadata, Metadata
 
 
 def symmetrize_bounds(lower: float, upper: float) -> tuple[float, float]:
@@ -114,19 +111,3 @@ def get_default_cbar_label_left(cbar: Colorbar, renderer: RendererBase) -> float
     rights = [ax.get_window_extent(renderer).x1]
     rights += [label.get_window_extent(renderer).x1 for label in ax.get_yticklabels() if label.get_visible()]
     return max(rights) + ax.yaxis.labelpad * ax.get_figure(root=True).dpi / 72
-
-
-def update_title(ax: Axes, metadata: Metadata, cut_labels: list[str]):
-    title_base = ""
-    cut_labels_str = ", ".join(cut_labels)
-
-    if isinstance(metadata, ListMetadata):
-        if metadata.subject:
-            title_base = f"${metadata.subject}$"
-    elif metadata.active_key:
-        title_base = metadata.active_var_info.to_axis_label()
-
-    if title_base and cut_labels_str:
-        cut_labels_str = f" ({cut_labels_str})"
-
-    ax.set_title(title_base + cut_labels_str)
