@@ -9,6 +9,7 @@ from lib.profiling.sampler import ProcessTreeSampler
 PLOT_INIT = "plot init"
 FRAME_UPDATE = "frame.update"
 FRAME_RENDER = "frame.render"
+FRAME_REDRAW = "frame.redraw"
 FINISH = "finish"
 TOTAL = "total"
 
