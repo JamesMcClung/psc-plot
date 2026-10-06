@@ -15,7 +15,7 @@ class DataWorld:
     active_prepath: Prepath | None = None
     _: KW_ONLY
     plot_targets: list[PlotTarget] = field(default_factory=list)
-    config: PscPlotConfig = field(default_factory=PscPlotConfig.from_env)
+    config: PscPlotConfig
 
     def __post_init__(self):
         assert self.active_prepath is None or self.active_prepath in self.datas
