@@ -225,6 +225,18 @@ class PscPlotConfig:
             registry_patterns=patterns,
         )
 
+    def to_mapping(self) -> dict[str, ConfigValue]:
+        """The `PSC_PLOT_*` keys and values that `from_mapping` parses back into this config."""
+        return {
+            _DATA_DIR_KEY: str(self.data_root),
+            _FFMPEG_BIN_KEY: None if self.ffmpeg_bin is None else str(self.ffmpeg_bin),
+            _DASK_SCHEDULER_KEY: self.dask_scheduler,
+            _DASK_NUM_WORKERS_KEY: str(self.dask_num_workers),
+            _DASK_CHUNK_SIZE_KEY: str(self.dask_chunk_size),
+            _REGISTRIES_USE_DEFAULTS_KEY: "true" if self.registries_use_defaults else "false",
+            _REGISTRIES_KEY: list(self.registry_patterns),
+        }
+
     @property
     def registry_files(self) -> list[Path]:
         files = sorted(_default_registries_dir().glob("*.yml")) if self.registries_use_defaults else []
