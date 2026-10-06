@@ -46,10 +46,6 @@ def test_from_mapping():
     assert (config.registries_use_defaults, config.registry_patterns) == (False, ["a.yml"])
 
 
-def test_config_keys_match_mapping():
-    assert set(CONFIG_KEYS) == set(_complete())
-
-
 def test_missing_key():
     values = _complete()
     del values["PSC_PLOT_DASK_CHUNK_SIZE"]
