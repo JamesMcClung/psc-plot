@@ -134,10 +134,16 @@ def clean_env(monkeypatch):
     return monkeypatch
 
 
-def _use_config(monkeypatch, tmp_path, text: str, replace: dict[str, str] | None = None) -> Path:
-    for old, new in (replace or {}).items():
-        assert old in text
-        text = text.replace(old, new)
+def _full_with(*lines: str) -> str:
+    """`_FULL` with each of `lines` replacing the line for the same key."""
+    text = _FULL
+    for line in lines:
+        old_line = next(old for old in _FULL.splitlines() if old.startswith(line.split(":")[0] + ":"))
+        text = text.replace(old_line, line)
+    return text
+
+
+def _use_config(monkeypatch, tmp_path, text: str) -> Path:
     path = tmp_path / "config.yml"
     path.write_text(text)
     monkeypatch.setenv(CONFIG_PATH_KEY, str(path))
@@ -158,7 +164,7 @@ def test_user_config(clean_env, tmp_path):
 
 
 def test_user_config_replaces_shipped(clean_env, tmp_path):
-    _use_config(clean_env, tmp_path, _FULL, {"PSC_PLOT_DASK_CHUNK_SIZE: 500\n": ""})
+    _use_config(clean_env, tmp_path, _FULL.replace("PSC_PLOT_DASK_CHUNK_SIZE: 500\n", ""))
     with pytest.raises(ConfigError, match="missing.*PSC_PLOT_DASK_CHUNK_SIZE"):
         PscPlotConfig.from_env()
 
@@ -180,7 +186,7 @@ def test_env_overrides_file(clean_env, tmp_path):
 
 
 def test_env_completes_file(clean_env, tmp_path):
-    _use_config(clean_env, tmp_path, _FULL, {"PSC_PLOT_DASK_CHUNK_SIZE: 500\n": ""})
+    _use_config(clean_env, tmp_path, _FULL.replace("PSC_PLOT_DASK_CHUNK_SIZE: 500\n", ""))
     clean_env.setenv("PSC_PLOT_DASK_CHUNK_SIZE", "9")
     assert PscPlotConfig.from_env().dask_chunk_size == 9
 
@@ -198,9 +204,7 @@ def test_env_completes_file(clean_env, tmp_path):
     ],
 )
 def test_expansion(clean_env, tmp_path, line, env, field, expected):
-    key = line.split(":")[0]
-    old_line = next(old for old in _FULL.splitlines() if old.startswith(key + ":"))
-    _use_config(clean_env, tmp_path, _FULL, {old_line: line})
+    _use_config(clean_env, tmp_path, _full_with(line))
     for name, value in env.items():
         clean_env.setenv(name, value)
     assert getattr(PscPlotConfig.from_env(), field) == expected
@@ -208,14 +212,14 @@ def test_expansion(clean_env, tmp_path, line, env, field, expected):
 
 def test_unset_variable_errors(clean_env, tmp_path):
     clean_env.delenv("NSLOTS", raising=False)
-    _use_config(clean_env, tmp_path, _FULL, {"PSC_PLOT_DASK_NUM_WORKERS: 3": "PSC_PLOT_DASK_NUM_WORKERS: $NSLOTS"})
+    _use_config(clean_env, tmp_path, _full_with("PSC_PLOT_DASK_NUM_WORKERS: $NSLOTS"))
     with pytest.raises(ConfigError, match=r"PSC_PLOT_DASK_NUM_WORKERS: .*\$NSLOTS"):
         PscPlotConfig.from_env()
 
 
 def test_env_overridden_key_is_not_expanded(clean_env, tmp_path):
     clean_env.delenv("NSLOTS", raising=False)
-    _use_config(clean_env, tmp_path, _FULL, {"PSC_PLOT_DASK_NUM_WORKERS: 3": "PSC_PLOT_DASK_NUM_WORKERS: $NSLOTS"})
+    _use_config(clean_env, tmp_path, _full_with("PSC_PLOT_DASK_NUM_WORKERS: $NSLOTS"))
     clean_env.setenv("PSC_PLOT_DASK_NUM_WORKERS", "2")
     assert PscPlotConfig.from_env().dask_num_workers == 2
 
@@ -227,7 +231,7 @@ def test_env_values_are_not_expanded(clean_env, tmp_path):
 
 
 def test_yaml_native_scalars(clean_env, tmp_path):
-    _use_config(clean_env, tmp_path, _FULL, {"PSC_PLOT_DASK_CHUNK_SIZE: 500": "PSC_PLOT_DASK_CHUNK_SIZE: 1_000_000", "PSC_PLOT_REGISTRIES_USE_DEFAULTS: false": "PSC_PLOT_REGISTRIES_USE_DEFAULTS: True", "PSC_PLOT_FFMPEG_BIN: null": "PSC_PLOT_FFMPEG_BIN: ~"})
+    _use_config(clean_env, tmp_path, _full_with("PSC_PLOT_DASK_CHUNK_SIZE: 1_000_000", "PSC_PLOT_REGISTRIES_USE_DEFAULTS: True", "PSC_PLOT_FFMPEG_BIN: ~"))
     config = PscPlotConfig.from_env()
     assert (config.dask_chunk_size, config.registries_use_defaults, config.ffmpeg_bin) == (1_000_000, True, None)
 
@@ -243,9 +247,7 @@ def test_yaml_native_scalars(clean_env, tmp_path):
     ],
 )
 def test_file_values_are_literal_text(clean_env, tmp_path, line, field, expected):
-    key = line.split(":")[0]
-    old_line = next(old for old in _FULL.splitlines() if old.startswith(key + ":"))
-    _use_config(clean_env, tmp_path, _FULL, {old_line: line})
+    _use_config(clean_env, tmp_path, _full_with(line))
     assert getattr(PscPlotConfig.from_env(), field) == expected
 
 
