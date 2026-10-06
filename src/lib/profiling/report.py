@@ -1,12 +1,12 @@
 from dataclasses import dataclass, field
 
 from lib.profiling.environment import EnvironmentReport
-from lib.profiling.profiler import FRAME_RENDER, FRAME_UPDATE, PLOT_INIT, StageRecord
+from lib.profiling.profiler import FRAME_REDRAW, FRAME_RENDER, FRAME_UPDATE, PLOT_INIT, StageRecord
 from lib.profiling.units import format_bytes
 
 # Stages recorded more than once per run, merged into one row each. Adaptor stages are never merged: two `--mag`s are two rows.
-_MERGED = (PLOT_INIT, FRAME_UPDATE, FRAME_RENDER)
-_FRAME_LABELS = {FRAME_UPDATE: "frame update", FRAME_RENDER: "frame render"}
+_MERGED = (PLOT_INIT, FRAME_UPDATE, FRAME_REDRAW, FRAME_RENDER)
+_FRAME_LABELS = {FRAME_UPDATE: "frame update", FRAME_REDRAW: "frame redraw", FRAME_RENDER: "frame render"}
 _LABEL_WIDTH = 28
 _MIN_WALL_FOR_CORES = 0.05
 
