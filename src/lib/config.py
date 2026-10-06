@@ -106,7 +106,7 @@ def _expand_vars(value: str, environ: Mapping[str, str]) -> str:
     return _VAR_PATTERN.sub(substitute, value)
 
 
-def _scalar_to_str(raw: object) -> str:
+def _require_scalar(raw: object) -> str:
     if not isinstance(raw, str):
         raise ConfigError(f"expected a scalar, got {raw!r}")
     return raw
@@ -116,8 +116,8 @@ def _to_config_value(raw: object, environ: Mapping[str, str]) -> ConfigValue:
     if raw is None:
         return None
     if isinstance(raw, list):
-        return [_expand_vars(_scalar_to_str(item), environ) for item in raw]
-    return _expand_vars(_scalar_to_str(raw), environ)
+        return [_expand_vars(_require_scalar(item), environ) for item in raw]
+    return _expand_vars(_require_scalar(raw), environ)
 
 
 def _read_config_file(path: Path, environ: Mapping[str, str], overridden_keys: Collection[str]) -> dict[str, ConfigValue]:
