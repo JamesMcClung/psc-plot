@@ -40,12 +40,10 @@ class Pipeline:
                 world = adaptor.apply_world(world)
         return world
 
-    def build_plot(self, world: DataWorld) -> Plot:
+    def run_plot(self) -> Plot:
+        world = self.run_world()
         with profile_stage(PLOT_INIT):
             plot = get_plot(world)
             for hook in self.hooks:
                 plot.add_hook(hook)
         return plot
-
-    def run_plot(self) -> Plot:
-        return self.build_plot(self.run_world())
