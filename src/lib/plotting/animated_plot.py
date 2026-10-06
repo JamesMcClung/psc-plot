@@ -11,7 +11,7 @@ from lib.data.data_with_attrs import DataWithAttrs
 from lib.plotting.hook import DrawMessage
 from lib.plotting.plot import Plot, SaveFormat
 from lib.plotting.renderer import Renderer
-from lib.profiling.profiler import FRAME_RENDER, FRAME_UPDATE, profile_stage
+from lib.profiling.profiler import FRAME_REDRAW, FRAME_RENDER, FRAME_UPDATE, profile_stage
 
 
 def print_progress(current_frame: int, n_frames: int):
@@ -83,4 +83,13 @@ class AnimatedPlot(Plot):
                 grab_frame(**savefig_kwargs)
 
         writer.grab_frame = profiled_grab_frame
+
+        # After each frame, matplotlib calls _post_draw -> draw_idle, which on Agg is a full synchronous draw on top of grab_frame's.
+        post_draw = self.anim._post_draw
+
+        def profiled_post_draw(*args, **kwargs):
+            with profile_stage(FRAME_REDRAW):
+                post_draw(*args, **kwargs)
+
+        self.anim._post_draw = profiled_post_draw
         self.anim.save(path, writer=writer, dpi=dpi)
