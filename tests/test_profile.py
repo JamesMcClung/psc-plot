@@ -5,8 +5,8 @@ from conftest import _DATA_DIR, CONFIG_2D
 
 from lib import cli
 from lib.config import CONFIG_KEYS, CONFIG_PATH_KEY
-from lib.data.compile import compile_action_nodes
-from lib.data.node import RenderPlotNode, SavePlotNode, ShowPlotNode
+from lib.data.actions import RenderPlot, SavePlot, ShowPlot
+from lib.data.compile import compile_run
 from lib.parsing.parse import parse_args
 from lib.profiling.profiler import FINISH, FRAME_RENDER, FRAME_UPDATE, PLOT_INIT, Profiler
 from lib.profiling.sampler import ProcessTreeSampler
@@ -16,33 +16,32 @@ _STATIC = ["pfd", "hx_fc", "-i", "t=-1", "-v", "y", "time="]
 
 
 def test_profile_renders_offscreen_instead_of_showing():
-    [node] = compile_action_nodes(parse_args([*_ANIMATED, "--profile"]), CONFIG_2D)
-    assert isinstance(node, RenderPlotNode)
+    [action] = compile_run(parse_args([*_ANIMATED, "--profile"]), CONFIG_2D).plot_actions
+    assert isinstance(action, RenderPlot)
 
 
 def test_profile_with_save_only_saves(tmp_path):
-    [node] = compile_action_nodes(parse_args([*_ANIMATED, "--profile", "-s", f"{tmp_path}/"]), CONFIG_2D)
-    assert isinstance(node, SavePlotNode)
+    [action] = compile_run(parse_args([*_ANIMATED, "--profile", "-s", f"{tmp_path}/"]), CONFIG_2D).plot_actions
+    assert isinstance(action, SavePlot)
 
 
 def test_without_profile_still_shows():
-    assert any(isinstance(node, ShowPlotNode) for node in compile_action_nodes(parse_args(_ANIMATED), CONFIG_2D))
+    assert any(isinstance(action, ShowPlot) for action in compile_run(parse_args(_ANIMATED), CONFIG_2D).plot_actions)
 
 
 def test_profile_and_dask_graph_conflict(capsys):
     with pytest.raises(SystemExit) as exit_info:
-        compile_action_nodes(parse_args([*_ANIMATED, "--profile", "--dask-graph"]), CONFIG_2D)
+        compile_run(parse_args([*_ANIMATED, "--profile", "--dask-graph"]), CONFIG_2D)
     assert exit_info.value.code == 1
     assert "error: --profile and --dask-graph are mutually exclusive" in capsys.readouterr().err
 
 
 def _profile(args_list: list[str]) -> Profiler:
-    actions = compile_action_nodes(parse_args([*args_list, "--profile"]), CONFIG_2D)
+    run = compile_run(parse_args([*args_list, "--profile"]), CONFIG_2D)
     with ProcessTreeSampler() as sampler:
         profiler = Profiler(sampler)
         with profiler.run():
-            for action in actions:
-                action.pull()
+            run.execute()
     return profiler
 
 

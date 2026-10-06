@@ -1,8 +1,8 @@
 """Everything about saving a figure, from the innermost layer outward:
 
 1. `parse_save` — the pure `--save` argument grammar, no data and no pipeline.
-2. `get_save_file_stem` — the filename derived from the node graph's `name_fragments`.
-3. The whole pipeline — `compile_action_nodes` through to a file on disk.
+2. `get_save_file_stem` — the filename derived from the pipeline's `name_fragments`.
+3. The whole pipeline — `compile_run` through to a file on disk.
 """
 
 import argparse
@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 from conftest import CONFIG_2D, make_save
 
-from lib.data.compile import compile_action_nodes, compile_plot_node
+from lib.data.compile import compile_pipeline, compile_run
 from lib.parsing.parse import parse_args
 from lib.parsing.parse_save import SaveSpec, parse_save
 
@@ -100,7 +100,7 @@ def test_parse_save_errors(args, message_fragment):
     ],
 )
 def test_save_file_stem(args_list, expected_stem):
-    actual_stem = compile_plot_node(parse_args(args_list), CONFIG_2D).get_save_file_stem()
+    actual_stem = compile_pipeline(parse_args(args_list), CONFIG_2D).get_save_file_stem()
     assert actual_stem == expected_stem
 
 
@@ -128,32 +128,32 @@ def test_save_animated_gif(tmp_path):
         assert img.n_frames == 11
 
 
-def test_no_save_flag_produces_no_action_nodes():
-    assert compile_action_nodes(parse_args(_BASE), CONFIG_2D) == []
+def test_no_save_flag_produces_no_plot_actions():
+    assert compile_run(parse_args(_BASE), CONFIG_2D).plot_actions == []
 
 
 def test_save_uses_derived_stem_by_default(tmp_path):
-    [node] = compile_action_nodes(parse_args([*_BASE, "-s", f"{tmp_path}/"]), CONFIG_2D)
-    node.pull()
-    assert (tmp_path / f"{node.get_save_file_stem()}.png").exists()
+    run = compile_run(parse_args([*_BASE, "-s", f"{tmp_path}/"]), CONFIG_2D)
+    run.execute()
+    assert (tmp_path / f"{run.pipeline.get_save_file_stem()}.png").exists()
 
 
 def test_save_name_and_format_override_the_output_path(tmp_path):
-    [node] = compile_action_nodes(parse_args([*_BASE, "-s", f"{tmp_path}/", "name=myfig", "format=png"]), CONFIG_2D)
-    node.pull()
+    run = compile_run(parse_args([*_BASE, "-s", f"{tmp_path}/", "name=myfig", "format=png"]), CONFIG_2D)
+    run.execute()
     assert (tmp_path / "myfig.png").exists()
 
 
 def test_save_fragment_sets_dir_name_and_ext(tmp_path):
-    [node] = compile_action_nodes(parse_args([*_BASE, "-s", f"{tmp_path}/myfig.png"]), CONFIG_2D)
-    node.pull()
+    run = compile_run(parse_args([*_BASE, "-s", f"{tmp_path}/myfig.png"]), CONFIG_2D)
+    run.execute()
     assert (tmp_path / "myfig.png").exists()
 
 
 def test_save_name_is_not_sanitized(tmp_path):
     """A ':' in a derived stem is rewritten by sanitize_stem; an explicit name is not."""
-    [node] = compile_action_nodes(parse_args([*_BASE, "-s", f"{tmp_path}/", "name=a:b"]), CONFIG_2D)
-    node.pull()
+    run = compile_run(parse_args([*_BASE, "-s", f"{tmp_path}/", "name=a:b"]), CONFIG_2D)
+    run.execute()
     assert (tmp_path / "a:b.png").exists()
 
 
@@ -164,7 +164,7 @@ def test_save_format_flag_is_gone():
 
 def test_save_incompatible_format_falls_back_to_default(tmp_path):
     """A static plot only allows 'png'; requesting 'jpg' should warn and fall back."""
-    [node] = compile_action_nodes(parse_args([*_BASE, "-s", f"{tmp_path}/", "name=myfig", "format=jpg"]), CONFIG_2D)
+    run = compile_run(parse_args([*_BASE, "-s", f"{tmp_path}/", "name=myfig", "format=jpg"]), CONFIG_2D)
     with pytest.warns(UserWarning, match="jpg is incompatible with the data; reverting to default"):
-        node.pull()
+        run.execute()
     assert (tmp_path / "myfig.png").exists()

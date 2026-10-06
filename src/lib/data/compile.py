@@ -1,10 +1,13 @@
 import sys
+from dataclasses import dataclass
 
 from lib.config import PscPlotConfig
+from lib.data.actions import DaskGraph, PlotAction, RenderPlot, SavePlot, ShowPlot
 from lib.data.adaptor import Adaptor
 from lib.data.adaptors.versus import Versus
-from lib.data.node import AdaptorNode, DaskGraphNode, DataProcessingNode, PlotNode, RenderPlotNode, RootNode, SavePlotNode, ShowPlotNode
+from lib.data.pipeline import Pipeline
 from lib.parsing.args import Args
+from lib.parsing.parse_save import SaveSpec
 
 
 def _with_versus(adaptors: list[Adaptor]) -> list[Adaptor]:
@@ -17,46 +20,51 @@ def _with_versus(adaptors: list[Adaptor]) -> list[Adaptor]:
     return adaptors
 
 
-def compile_data_node(args: Args, config: PscPlotConfig):
-    node = RootNode(config)
-
-    for adaptor in _with_versus(args.adaptors):
-        node = AdaptorNode(node, adaptor)
-
-    return node
+def compile_pipeline(args: Args, config: PscPlotConfig) -> Pipeline:
+    return Pipeline(config, _with_versus(args.adaptors), args.hooks)
 
 
-def compile_plot_node(args: Args, config: PscPlotConfig) -> PlotNode:
-    node = compile_data_node(args, config)
+@dataclass(frozen=True)
+class CompiledRun:
+    pipeline: Pipeline
+    plot_actions: list[PlotAction]
+    dask_graph: DaskGraph | None
+    """When set, `plot_actions` is empty."""
 
-    node = PlotNode(node, args.hooks)
+    def execute(self) -> None:
+        if self.dask_graph is not None:
+            self.dask_graph.run(self.pipeline.run_world(), self.pipeline)
+            return
+        if not self.plot_actions:
+            return  # e.g. -q without -s; don't load anything
+        plot = self.pipeline.run_plot()
+        for action in self.plot_actions:
+            action.run(plot, self.pipeline)
 
-    return node
 
-
-def compile_action_nodes(args: Args, config: PscPlotConfig) -> list[DataProcessingNode[None]]:
-    plot_node = compile_plot_node(args, config)
-    action_nodes = []
+def compile_run(args: Args, config: PscPlotConfig) -> CompiledRun:
+    pipeline = compile_pipeline(args, config)
 
     if args.profile and args.dask_graph:
         print("error: --profile and --dask-graph are mutually exclusive", file=sys.stderr)
         sys.exit(1)
 
     if args.dask_graph:
-        action_nodes.append(DaskGraphNode(plot_node.input_node, save=args.save, show=args.show))
-        return action_nodes
+        return CompiledRun(pipeline, [], DaskGraph(save=args.save or SaveSpec(), show=args.show))
+
+    plot_actions = []
 
     # a shown figure blocks on the user (and an animation loops forever), so --profile never shows
     if args.show and not args.profile:
-        action_nodes.append(ShowPlotNode(plot_node))
+        plot_actions.append(ShowPlot())
 
     if args.save is not None:
         if args.save.format == "mp4" and not config.ffmpeg_bin:
             print("error: format=mp4 requires ffmpeg", file=sys.stderr)
             sys.exit(1)
 
-        action_nodes.append(SavePlotNode(plot_node, save=args.save, save_dpi=args.save_dpi))
+        plot_actions.append(SavePlot(save=args.save, save_dpi=args.save_dpi))
     elif args.profile:
-        action_nodes.append(RenderPlotNode(plot_node))
+        plot_actions.append(RenderPlot())
 
-    return action_nodes
+    return CompiledRun(pipeline, plot_actions, None)
