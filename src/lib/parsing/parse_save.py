@@ -8,7 +8,7 @@ from lib.parsing import parse_util
 @dataclass(frozen=True)
 class SaveSpec:
     """The components of a save path, each None when the user did not specify it.
-    Resolution of the defaults happens in SavePlotNode, which needs the Plot to
+    Resolution of the defaults happens in SavePlot, which needs the Plot to
     decide a default format."""
 
     dir: Path | None = None
