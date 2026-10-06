@@ -118,3 +118,23 @@ def test_cli_profile_with_pipeline(monkeypatch, capsys):
     assert "frame render ×11" in out
     assert "frame update ×12" in out
     assert out.rstrip().splitlines()[-1].startswith("total")
+
+
+@pytest.mark.parametrize("save", [False, True])
+def test_every_canvas_draw_is_in_a_stage(monkeypatch, tmp_path, save):
+    """matplotlib redraws after each frame (_post_draw -> draw_idle, synchronous on Agg); that draw must land in a stage, not between stages or in finish."""
+    from matplotlib.backends.backend_agg import FigureCanvasAgg
+
+    from lib.profiling.profiler import _ACTIVE
+
+    draw = FigureCanvasAgg.draw
+    unattributed = []
+
+    def recording_draw(self, *args, **kwargs):
+        if _ACTIVE.get()._depth == 0:
+            unattributed.append(self)
+        return draw(self, *args, **kwargs)
+
+    monkeypatch.setattr(FigureCanvasAgg, "draw", recording_draw)
+    _profile([*_ANIMATED, *(["-s", f"{tmp_path}/out.gif"] if save else [])])
+    assert unattributed == []
