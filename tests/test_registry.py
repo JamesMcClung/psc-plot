@@ -1,4 +1,3 @@
-import os
 import re
 from pathlib import Path
 
@@ -156,22 +155,6 @@ def test_redefining_default_entry_errors(tmp_path):
     (tmp_path / "pfd.yml").write_text("hx_fc: {display: 'H'}\n")
     with pytest.raises(RegistryError, match=r"pfd\.yml: hx_fc already defined in .*default_registries/pfd\.yml"):
         _files_config(str(tmp_path / "pfd.yml"), use_defaults=True).registry
-
-
-def test_registry_settings_from_env(monkeypatch):
-    for value, expected in [("FALSE", False), ("false", False), ("0", False), ("True", True), ("1", True)]:
-        monkeypatch.setenv("PSC_PLOT_REGISTRIES_USE_DEFAULTS", value)
-        assert PscPlotConfig.from_env().registries_use_defaults is expected
-
-    monkeypatch.setenv("PSC_PLOT_REGISTRIES_USE_DEFAULTS", "maybe")
-    with pytest.raises(ValueError, match="maybe"):
-        PscPlotConfig.from_env()
-    monkeypatch.delenv("PSC_PLOT_REGISTRIES_USE_DEFAULTS")
-
-    monkeypatch.setenv("PSC_PLOT_REGISTRIES", f"a.yml{os.pathsep}b/*.yml")
-    assert PscPlotConfig.from_env().registry_patterns == ["a.yml", "b/*.yml"]
-    monkeypatch.setenv("PSC_PLOT_REGISTRIES", "")
-    assert PscPlotConfig.from_env().registry_patterns == []
 
 
 def test_config_custom_registry_replaces_defaults(tmp_path):

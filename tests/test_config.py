@@ -89,6 +89,11 @@ def test_registries_null_means_none():
     assert PscPlotConfig.from_mapping(_complete(REGISTRIES=None)).registry_patterns == []
 
 
+@pytest.mark.parametrize("value, expected", [("FALSE", False), ("0", False), ("True", True), ("1", True)])
+def test_bool_spellings(value, expected):
+    assert PscPlotConfig.from_mapping(_complete(REGISTRIES_USE_DEFAULTS=value)).registries_use_defaults is expected
+
+
 @pytest.mark.parametrize("scheduler", ["threads", "processes", "synchronous", "distributed"])
 def test_schedulers(scheduler):
     assert PscPlotConfig.from_mapping(_complete(DASK_SCHEDULER=scheduler)).dask_scheduler == scheduler
@@ -183,6 +188,12 @@ def test_env_overrides_file(clean_env, tmp_path):
     clean_env.setenv("PSC_PLOT_FFMPEG_BIN", "")
     config = PscPlotConfig.from_env()
     assert (config.dask_num_workers, config.registry_patterns, config.ffmpeg_bin) == (7, ["x.yml", "y/*.yml"], None)
+
+
+def test_empty_env_registries_means_none(clean_env, tmp_path):
+    _use_config(clean_env, tmp_path, _FULL)
+    clean_env.setenv("PSC_PLOT_REGISTRIES", "")
+    assert PscPlotConfig.from_env().registry_patterns == []
 
 
 def test_env_completes_file(clean_env, tmp_path):
