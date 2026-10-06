@@ -36,9 +36,8 @@ def test_field_idx_t(files_and_vars):
     args = parse_args("pfd ex_ec --idx t=-1 -v y z time= --compute".split())
     compile_plot_node(args, CONFIG_2D).pull()._initialize()
 
-    # 'jeh' is the raw adios2 variable that holds all pfd components.
-    files_read = {f for f, var in files_and_vars if var == "jeh"}
-    assert len(files_read) == 1, f"--idx t=-1 read 'jeh' from {len(files_read)} files; expected 1. files: {sorted(files_read)}"
+    files_read = {f for f, var in files_and_vars if var == "ex_ec"}
+    assert len(files_read) == 1, f"--idx t=-1 read 'ex_ec' from {len(files_read)} files; expected 1. files: {sorted(files_read)}"
 
 
 def test_particle_bp_idx_t(files_and_vars):
@@ -57,8 +56,8 @@ def test_field_pos_t(files_and_vars):
     args = parse_args("pfd ex_ec --pos t=999 -v y z time= --compute".split())
     compile_plot_node(args, CONFIG_2D).pull()._initialize()
 
-    files_read = {f for f, var in files_and_vars if var == "jeh"}
-    assert len(files_read) == 1, f"--pos t=999 read 'jeh' from {len(files_read)} files; expected 1. files: {sorted(files_read)}"
+    files_read = {f for f, var in files_and_vars if var == "ex_ec"}
+    assert len(files_read) == 1, f"--pos t=999 read 'ex_ec' from {len(files_read)} files; expected 1. files: {sorted(files_read)}"
 
 
 def test_particle_bp_pos_t(files_and_vars):
