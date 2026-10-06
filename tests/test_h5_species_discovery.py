@@ -13,7 +13,7 @@ from lib.data.loader import load
 
 def test_h5_species_discovery_standard(tmp_path: Path):
     write_step(tmp_path / "prt.000000000.h5", time=0.0, species=[(-1.0, 1.0, 10), (1.0, 100.0, 10)], seed=0)
-    data = load(PscPlotConfig(data_root=tmp_path), "prt")
+    data = load(PscPlotConfig.create_minimal(data_root=tmp_path), "prt")
     assert set(data.metadata.species.keys()) == {"e", "i"}
     e = data.metadata.species["e"]
     i = data.metadata.species["i"]
@@ -28,7 +28,7 @@ def test_h5_species_discovery_multiple_ion_masses(tmp_path: Path):
         species=[(-1.0, 1.0, 10), (1.0, 25.0, 10), (1.0, 100.0, 10)],
         seed=0,
     )
-    data = load(PscPlotConfig(data_root=tmp_path), "prt")
+    data = load(PscPlotConfig.create_minimal(data_root=tmp_path), "prt")
     assert set(data.metadata.species.keys()) == {"e", "i25", "i100"}
     assert data.metadata.species["i25"].m == 25.0
     assert data.metadata.species["i100"].m == 100.0
@@ -41,7 +41,7 @@ def test_h5_species_discovery_multiple_ion_charges(tmp_path: Path):
         species=[(-1.0, 1.0, 10), (1.0, 100.0, 10), (2.0, 100.0, 10)],
         seed=0,
     )
-    data = load(PscPlotConfig(data_root=tmp_path), "prt")
+    data = load(PscPlotConfig.create_minimal(data_root=tmp_path), "prt")
     assert set(data.metadata.species.keys()) == {"e", "i+", "i++"}
     assert data.metadata.species["i+"].q == 1.0
     assert data.metadata.species["i++"].q == 2.0
@@ -54,7 +54,7 @@ def test_h5_species_discovery_multiple_ion_everything(tmp_path: Path):
         species=[(-1.0, 1.0, 10), (1.0, 25.0, 10), (1.0, 100.0, 10), (2.0, 100.0, 10)],
         seed=0,
     )
-    data = load(PscPlotConfig(data_root=tmp_path), "prt")
+    data = load(PscPlotConfig.create_minimal(data_root=tmp_path), "prt")
     assert set(data.metadata.species.keys()) == {"e", "i+25", "i+100", "i++100"}
     assert data.metadata.species["i+25"].q == 1.0
     assert data.metadata.species["i+25"].m == 25.0
@@ -72,7 +72,7 @@ def test_h5_species_discovery_electron_merge_warns(tmp_path: Path):
         seed=0,
     )
     with pytest.warns(UserWarning, match="merging"):
-        data = load(PscPlotConfig(data_root=tmp_path), "prt")
+        data = load(PscPlotConfig.create_minimal(data_root=tmp_path), "prt")
     assert set(data.metadata.species.keys()) == {"e"}
 
 
@@ -80,5 +80,5 @@ def test_h5_species_discovery_species_at_different_times(tmp_path: Path):
     # step 0: only species 0 has particles; step 1: only species 1 has particles.
     write_step(tmp_path / "prt.000000000.h5", time=0.0, species=[(-1.0, 1.0, 10), (1.0, 1.0, 0)], seed=0)
     write_step(tmp_path / "prt.000000001.h5", time=1.0, species=[(-1.0, 1.0, 0), (1.0, 1.0, 10)], seed=1)
-    data = load(PscPlotConfig(data_root=tmp_path), "prt")
+    data = load(PscPlotConfig.create_minimal(data_root=tmp_path), "prt")
     assert set(data.metadata.species.keys()) == {"e", "i"}

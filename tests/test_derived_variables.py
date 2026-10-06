@@ -48,7 +48,7 @@ def test_get_derivable_keys():
 
 
 def test_derived_on_subdir_prepath():
-    config = PscPlotConfig(data_root=_DATA_DIR)
+    config = PscPlotConfig.create_minimal(data_root=_DATA_DIR)
     data = ensure_derived(load(config, "test-2d/pfd"), "h2_cc", config)
     assert data.metadata.var_infos["h2_cc"].display.latex == "B^2"
     xr.testing.assert_allclose(data["h2_cc"], ensure_derived(load(CONFIG_2D, "pfd"), "h2_cc", CONFIG_2D)["h2_cc"])

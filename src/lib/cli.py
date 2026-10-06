@@ -14,7 +14,7 @@ def main():
 
         cluster = LocalCluster(n_workers=config.dask_num_workers, threads_per_worker=1, processes=True)
         Client(cluster)
-    elif config.dask_scheduler:
+    else:
         dask.config.set(scheduler=config.dask_scheduler)
 
     args = parse_args()
