@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -17,6 +18,19 @@ def print_progress(current_frame: int, n_frames: int):
     current_frame_padded = str(current_frame + 1).rjust(len(str(n_frames)))
     end = "\r" if sys.stdout.isatty() else "\n"
     print(f"frame {current_frame_padded}/{n_frames}", end=end)
+
+
+class _DiscardingWriter(AbstractMovieWriter):
+    """Draws each frame and keeps nothing: renders an animation without encoding it."""
+
+    def setup(self, fig, outfile, dpi=None):
+        super().setup(fig, outfile, dpi)
+
+    def grab_frame(self, **savefig_kwargs):
+        self.fig.canvas.draw()
+
+    def finish(self):
+        pass
 
 
 class AnimatedPlot(Plot):
@@ -54,6 +68,10 @@ class AnimatedPlot(Plot):
             writer = PillowWriter()
 
         self._run_writer(path, writer, dpi)
+
+    def render_offscreen(self):
+        # the same anim.save path as a real save, so offscreen and saved profiles are comparable
+        self._run_writer(Path(os.devnull), _DiscardingWriter(), None)
 
     def _run_writer(self, path: Path, writer: AbstractMovieWriter, dpi: float | None):
         self._initialize()
