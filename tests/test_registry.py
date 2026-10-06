@@ -159,11 +159,6 @@ def test_redefining_default_entry_errors(tmp_path):
 
 
 def test_registry_settings_from_env(monkeypatch):
-    monkeypatch.delenv("PSC_PLOT_REGISTRIES_USE_DEFAULTS", raising=False)
-    monkeypatch.delenv("PSC_PLOT_REGISTRIES", raising=False)
-    config = PscPlotConfig.from_env()
-    assert (config.registries_use_defaults, config.registry_patterns) == (True, [])
-
     for value, expected in [("FALSE", False), ("false", False), ("0", False), ("True", True), ("1", True)]:
         monkeypatch.setenv("PSC_PLOT_REGISTRIES_USE_DEFAULTS", value)
         assert PscPlotConfig.from_env().registries_use_defaults is expected

@@ -41,7 +41,7 @@ filterwarnings = [
 where = ["src"]
 
 [tool.setuptools.package-data]
-lib = ["default_registries/*.yml"]
+lib = ["default_registries/*.yml", "default_config.yml"]
 
 [tool.ruff]
 line-length = 320

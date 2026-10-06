@@ -1,16 +1,20 @@
 import glob
 import importlib.resources
 import os
+import re
 import shutil
 import warnings
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from dataclasses import KW_ONLY, dataclass, replace
 from functools import cached_property
 from pathlib import Path
 from typing import Callable, Self
 
+import yaml
+
 from lib.registry import Registry, RegistryError
 
+CONFIG_PATH_KEY = "PSC_PLOT_CONFIG_PATH"
 _DATA_DIR_KEY = "PSC_PLOT_DATA_DIR"
 _FFMPEG_BIN_KEY = "PSC_PLOT_FFMPEG_BIN"
 _DASK_NUM_WORKERS_KEY = "PSC_PLOT_DASK_NUM_WORKERS"
@@ -26,12 +30,6 @@ class ConfigError(ValueError): ...
 
 
 type ConfigValue = str | list[str] | None
-
-
-def parse_optional[T](s: str | None, parser: Callable[[str], T]) -> T | None:
-    if s is None:
-        return None
-    return parser(s)
 
 
 def _default_registries_dir() -> Path:
@@ -79,6 +77,69 @@ _SCALAR_PARSERS: dict[str, Callable[[str], object]] = {
 }
 _NULLABLE_SCALAR_KEYS = {_FFMPEG_BIN_KEY}
 CONFIG_KEYS = (*_SCALAR_PARSERS, _REGISTRIES_KEY)
+
+
+def _default_config_path() -> Path:
+    return Path(str(importlib.resources.files("lib") / "default_config.yml"))
+
+
+# $$ (escape), ${NAME}, or $NAME; a $ followed by anything else is left alone
+_VAR_PATTERN = re.compile(r"\$(?:(\$)|\{(\w+)\}|(\w+))")
+
+
+def _expand_vars(value: str, environ: Mapping[str, str]) -> str:
+    def substitute(match: re.Match) -> str:
+        if match[1]:
+            return "$"
+        name = match[2] or match[3]
+        if name not in environ:
+            raise ConfigError(f"references unset variable ${name}")
+        return environ[name]
+
+    return _VAR_PATTERN.sub(substitute, value)
+
+
+def _scalar_to_str(raw: object) -> str:
+    if isinstance(raw, bool):
+        return "true" if raw else "false"
+    if isinstance(raw, (str, int, float)):
+        return str(raw)
+    raise ConfigError(f"expected a scalar, got {raw!r}")
+
+
+def _to_config_value(raw: object, environ: Mapping[str, str]) -> ConfigValue:
+    if raw is None:
+        return None
+    if isinstance(raw, list):
+        return [_expand_vars(_scalar_to_str(item), environ) for item in raw]
+    return _expand_vars(_scalar_to_str(raw), environ)
+
+
+def _read_config_file(path: Path, environ: Mapping[str, str], overridden_keys: Collection[str]) -> dict[str, ConfigValue]:
+    if not path.is_file():
+        raise ConfigError(f"config file {path} does not exist")
+    try:
+        with path.open() as f:
+            content = yaml.safe_load(f)
+    except yaml.YAMLError as e:
+        raise ConfigError(f"{path}: {e}") from e
+
+    if content is None:
+        content = {}
+    if not isinstance(content, dict):
+        raise ConfigError(f"{path}: expected a mapping of PSC_PLOT_* keys to values")
+    if unknown := sorted(str(key) for key in content if key not in CONFIG_KEYS):
+        raise ConfigError(f"{path}: unknown key(s) {unknown}; expected some of {list(CONFIG_KEYS)}")
+
+    values = {}
+    for key, raw in content.items():
+        if key in overridden_keys:
+            continue
+        try:
+            values[key] = _to_config_value(raw, environ)
+        except ConfigError as e:
+            raise ConfigError(f"{path}: {key}: {e}") from e
+    return values
 
 
 def _split_patterns(s: str) -> list[str]:
@@ -172,13 +233,13 @@ class PscPlotConfig:
 
     @classmethod
     def from_env(cls) -> Self:
+        """Read the config file ($PSC_PLOT_CONFIG_PATH, or the shipped default_config.yml) and overlay the env's PSC_PLOT_* vars."""
         environ = os.environ
-        return cls(
-            data_root=parse_optional(environ.get(_DATA_DIR_KEY), Path) or Path.cwd(),
-            ffmpeg_bin=parse_optional(environ.get(_FFMPEG_BIN_KEY, shutil.which("ffmpeg")), Path),
-            dask_num_workers=parse_optional(environ.get(_DASK_NUM_WORKERS_KEY), int) or os.cpu_count() or 1,
-            dask_chunk_size=parse_optional(environ.get(_DASK_CHUNK_SIZE_KEY), int) or 1_000_000,
-            dask_scheduler=environ.get(_DASK_SCHEDULER_KEY) or "threads",
-            registries_use_defaults=_parse_bool(environ.get(_REGISTRIES_USE_DEFAULTS_KEY, "true")),
-            registry_patterns=_split_patterns(environ.get(_REGISTRIES_KEY, "")),
-        )
+        config_path = Path(environ[CONFIG_PATH_KEY]) if CONFIG_PATH_KEY in environ else _default_config_path()
+
+        env_values: dict[str, ConfigValue] = {key: environ[key] for key in CONFIG_KEYS if key in environ}
+        if _REGISTRIES_KEY in env_values:
+            env_values[_REGISTRIES_KEY] = _split_patterns(env_values[_REGISTRIES_KEY])
+
+        file_values = _read_config_file(config_path, environ, overridden_keys=env_values.keys())
+        return cls.from_mapping(file_values | env_values)

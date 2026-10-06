@@ -1,0 +1,34 @@
+# psc-plot configuration.
+#
+# Keys are the env-var names, and a set env var overrides its key here.
+# A file named by PSC_PLOT_CONFIG_PATH replaces this one entirely (nothing is
+# merged), and every key below must be defined there or in the env, so start
+# from a copy of this file.
+#
+# String values may reference env vars as $VAR or ${VAR} ($$ is a literal $).
+# Referencing an unset var is an error. Relative paths resolve against the cwd.
+
+# Data root that prepaths resolve against.
+PSC_PLOT_DATA_DIR: .
+
+# ffmpeg executable, needed to save animations: a name looked up on PATH, a
+# path, or null for none.
+PSC_PLOT_FFMPEG_BIN: ffmpeg
+
+# Dask scheduler: threads, processes, synchronous, or distributed (a
+# dask.distributed LocalCluster with one single-threaded process per worker).
+PSC_PLOT_DASK_SCHEDULER: threads
+
+# Number of dask workers. On a cluster, set this to the job's slot count,
+# e.g. $NSLOTS (SGE), $NCPUS (PBS), or $SLURM_CPUS_PER_TASK (Slurm).
+PSC_PLOT_DASK_NUM_WORKERS: 1
+
+# Rows per dask partition for particle loads; lower it to bound peak memory.
+PSC_PLOT_DASK_CHUNK_SIZE: 1000000
+
+# Whether to load the shipped registries (src/lib/default_registries/*.yml).
+PSC_PLOT_REGISTRIES_USE_DEFAULTS: true
+
+# Extra registry files or globs, loaded after the shipped ones. A variable
+# defined in two files is an error. In the env, separate entries with ':'.
+PSC_PLOT_REGISTRIES: []
