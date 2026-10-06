@@ -42,6 +42,11 @@ def _get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="visualize the pipeline's dask graph as SVG instead of rendering a plot",
     )
+    parser.add_argument(
+        "--profile",
+        action="store_true",
+        help="report the environment, the resolved config, and the time and memory each pipeline stage takes. Never shows the figure: profiles --save if given, else renders every frame offscreen. With no pipeline, reports only the environment",
+    )
 
     for custom_arg in CUSTOM_ARGS:
         custom_arg.add_to(parser)

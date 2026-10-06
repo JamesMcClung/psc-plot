@@ -12,3 +12,4 @@ class Args(argparse.Namespace):
     save: SaveSpec | None
     save_dpi: float | None
     dask_graph: bool
+    profile: bool
