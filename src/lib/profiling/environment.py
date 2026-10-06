@@ -11,7 +11,7 @@ from pathlib import Path
 import psutil
 
 from lib.config import CONFIG_KEYS, ConfigValue, PscPlotConfig, config_file_path_from_env
-from lib.profiling.units import format_bytes, format_optional
+from lib.profiling.units import format_bytes
 
 _JOB_VARS = {
     "SGE": ("JOB_ID", "NSLOTS", "PE", "QUEUE"),
@@ -110,6 +110,10 @@ def _hosts(environ: Mapping[str, str]) -> list[str]:
     return hosts
 
 
+def _format_optional(value: object) -> str:
+    return "n/a" if value is None else str(value)
+
+
 def _version(distribution: str) -> str | None:
     try:
         return importlib.metadata.version(distribution)
@@ -193,7 +197,7 @@ class EnvironmentReport:
         lines = [
             "== environment ==",
             f"host     {self.host} · {self.platform} · python {self.python_version} ({gil})",
-            f"cpus     {format_optional(self.cpu_logical)} logical · {format_optional(self.cpu_physical)} physical · {format_optional(self.cpu_affinity)} in affinity mask · cgroup quota {quota}{cpuset}",
+            f"cpus     {_format_optional(self.cpu_logical)} logical · {_format_optional(self.cpu_physical)} physical · {_format_optional(self.cpu_affinity)} in affinity mask · cgroup quota {quota}{cpuset}",
             f"memory   {format_bytes(self.mem_total)} total · {format_bytes(self.mem_available)} available",
             f"job      {job}",
         ]
@@ -201,5 +205,5 @@ class EnvironmentReport:
             lines.append("threads  " + "  ".join(f"{var}={value}" for var, value in self.thread_vars.items()))
         lines.append(f"config   {self.config_path}   (env overrides: {overrides})")
         lines.extend(f"  {key}: {_format_config_value(value)}" for key, value in self.config_values.items())
-        lines.append("versions " + " · ".join(f"{name} {format_optional(version)}" for name, version in self.versions.items()))
+        lines.append("versions " + " · ".join(f"{name} {_format_optional(version)}" for name, version in self.versions.items()))
         return "\n".join(lines)
