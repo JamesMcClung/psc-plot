@@ -25,13 +25,9 @@ class Pipeline:
     """Starts with the implicit `With` of the positional args, and includes a `Versus`."""
     hooks: list[Hook]
 
-    def name_fragments(self) -> list[str]:
-        return [frag for adaptor in self.adaptors for frag in adaptor.get_name_fragments()] + [frag for hook in self.hooks for frag in hook.get_name_fragments()]
-
     def get_save_file_stem(self) -> str:
-        stem = "-".join(self.name_fragments())
-        stem = file_util.sanitize_stem(stem)
-        return stem
+        fragments = [frag for adaptor in self.adaptors for frag in adaptor.get_name_fragments()] + [frag for hook in self.hooks for frag in hook.get_name_fragments()]
+        return file_util.sanitize_stem("-".join(fragments))
 
     def run_world(self) -> DataWorld:
         world = DataWorld(config=self.config)
