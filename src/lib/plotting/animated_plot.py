@@ -3,13 +3,14 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from matplotlib.animation import FFMpegWriter, FuncAnimation, PillowWriter
+from matplotlib.animation import AbstractMovieWriter, FFMpegWriter, FuncAnimation, PillowWriter
 
 from lib.config import PscPlotConfig
 from lib.data.data_with_attrs import DataWithAttrs
 from lib.plotting.hook import DrawMessage
 from lib.plotting.plot import Plot, SaveFormat
 from lib.plotting.renderer import Renderer
+from lib.profiling.profiler import FRAME_RENDER, FRAME_UPDATE, profile_stage
 
 
 def print_progress(current_frame: int, n_frames: int):
@@ -30,10 +31,11 @@ class AnimatedPlot(Plot):
         self.anim = FuncAnimation(self.fig, self._next_frame, frames=self.n_frames, blit=False)
 
     def _next_frame(self, frame: int):
-        for renderer in self.renderers:
-            renderer.update_plot_info(frame)
-        self.grid.update()
-        self.post_update_fig(DrawMessage(plot_info=self.renderers[0].plot_info, axes=self.fig.axes[0], frame_data=self.renderers[0]._get_data_at_frame(frame)))
+        with profile_stage(FRAME_UPDATE):
+            for renderer in self.renderers:
+                renderer.update_plot_info(frame)
+            self.grid.update()
+            self.post_update_fig(DrawMessage(plot_info=self.renderers[0].plot_info, axes=self.fig.axes[0], frame_data=self.renderers[0]._get_data_at_frame(frame)))
         print_progress(frame, self.n_frames)
 
     def allowed_save_formats(self) -> list[SaveFormat]:
@@ -43,8 +45,6 @@ class AnimatedPlot(Plot):
             return ["gif"]
 
     def save_to_path(self, path: Path, *, dpi: float | None = None):
-        self._initialize()
-
         if path.suffix == ".mp4":
             from matplotlib import pyplot as plt
 
@@ -53,4 +53,16 @@ class AnimatedPlot(Plot):
         else:
             writer = PillowWriter()
 
+        self._run_writer(path, writer, dpi)
+
+    def _run_writer(self, path: Path, writer: AbstractMovieWriter, dpi: float | None):
+        self._initialize()
+
+        grab_frame = writer.grab_frame
+
+        def profiled_grab_frame(**savefig_kwargs):
+            with profile_stage(FRAME_RENDER):
+                grab_frame(**savefig_kwargs)
+
+        writer.grab_frame = profiled_grab_frame
         self.anim.save(path, writer=writer, dpi=dpi)
