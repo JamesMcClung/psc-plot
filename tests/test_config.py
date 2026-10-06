@@ -119,7 +119,7 @@ def test_ffmpeg_bin(tmp_path, monkeypatch):
     assert PscPlotConfig.from_mapping(_complete(FFMPEG_BIN="")).ffmpeg_bin is None
 
     for missing in ["no-such-ffmpeg", str(tmp_path / "nope" / "ffmpeg")]:
-        with pytest.warns(UserWarning, match="PSC_PLOT_FFMPEG_BIN"):
+        with pytest.warns(UserWarning, match="PSC_PLOT_FFMPEG_BIN.*set it to null"):
             assert PscPlotConfig.from_mapping(_complete(FFMPEG_BIN=missing)).ffmpeg_bin is None
 
 

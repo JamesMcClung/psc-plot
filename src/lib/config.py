@@ -62,7 +62,7 @@ def _parse_ffmpeg_bin(s: str) -> Path | None:
     if not s:
         return None
     if (found := shutil.which(s)) is None:
-        warnings.warn(f"{_FFMPEG_BIN_KEY}: {s!r} not found; saving animations is unavailable.")
+        warnings.warn(f"{_FFMPEG_BIN_KEY}: {s!r} not found; saving animations is unavailable. If that's intended, set it to null in the config file.")
         return None
     return Path(found)
 
