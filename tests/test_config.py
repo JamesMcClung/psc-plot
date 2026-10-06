@@ -242,6 +242,23 @@ def test_yaml_native_scalars(clean_env, tmp_path):
 
 
 @pytest.mark.parametrize(
+    "line, field, expected",
+    [
+        ("PSC_PLOT_DATA_DIR: 0755", "data_root", Path("0755")),
+        ("PSC_PLOT_DATA_DIR: 2026-10-06", "data_root", Path("2026-10-06")),
+        ("PSC_PLOT_DATA_DIR: no", "data_root", Path("no")),
+        ("PSC_PLOT_REGISTRIES: [1.10]", "registry_patterns", ["1.10"]),
+        ("PSC_PLOT_DASK_NUM_WORKERS: 010", "dask_num_workers", 10),
+    ],
+)
+def test_file_values_are_literal_text(clean_env, tmp_path, line, field, expected):
+    key = line.split(":")[0]
+    old_line = next(old for old in _FULL.splitlines() if old.startswith(key + ":"))
+    _use_config(clean_env, tmp_path, _FULL, {old_line: line})
+    assert getattr(PscPlotConfig.from_env(), field) == expected
+
+
+@pytest.mark.parametrize(
     "text, match",
     [
         ("- a\n- b\n", "expected a mapping"),

@@ -62,7 +62,7 @@ def _parse_ffmpeg_bin(s: str) -> Path | None:
     if not s:
         return None
     if (found := shutil.which(s)) is None:
-        warnings.warn(f"{_FFMPEG_BIN_KEY}: {s!r} not found; saving animations is unavailable")
+        warnings.warn(f"{_FFMPEG_BIN_KEY}: {s!r} not found; saving animations is unavailable.")
         return None
     return Path(found)
 
@@ -87,6 +87,13 @@ def _default_config_path() -> Path:
 _VAR_PATTERN = re.compile(r"\$(?:(\$)|\{(\w+)\}|(\w+))")
 
 
+class _LiteralLoader(yaml.SafeLoader):
+    """A SafeLoader that reads every scalar but null as its literal text, so `0755`, `2026-10-06`, and `no` stay strings and parse like env values."""
+
+
+_LiteralLoader.yaml_implicit_resolvers = {first: [(tag, regexp) for tag, regexp in resolvers if tag == "tag:yaml.org,2002:null"] for first, resolvers in yaml.SafeLoader.yaml_implicit_resolvers.items()}
+
+
 def _expand_vars(value: str, environ: Mapping[str, str]) -> str:
     def substitute(match: re.Match) -> str:
         if match[1]:
@@ -100,11 +107,9 @@ def _expand_vars(value: str, environ: Mapping[str, str]) -> str:
 
 
 def _scalar_to_str(raw: object) -> str:
-    if isinstance(raw, bool):
-        return "true" if raw else "false"
-    if isinstance(raw, (str, int, float)):
-        return str(raw)
-    raise ConfigError(f"expected a scalar, got {raw!r}")
+    if not isinstance(raw, str):
+        raise ConfigError(f"expected a scalar, got {raw!r}")
+    return raw
 
 
 def _to_config_value(raw: object, environ: Mapping[str, str]) -> ConfigValue:
@@ -120,7 +125,7 @@ def _read_config_file(path: Path, environ: Mapping[str, str], overridden_keys: C
         raise ConfigError(f"config file {path} does not exist")
     try:
         with path.open() as f:
-            content = yaml.safe_load(f)
+            content = yaml.load(f, Loader=_LiteralLoader)
     except yaml.YAMLError as e:
         raise ConfigError(f"{path}: {e}") from e
 
