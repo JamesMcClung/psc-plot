@@ -1,7 +1,6 @@
 import re
 from pathlib import Path
 
-import pscpy
 import xarray as xr
 
 from lib import file_util
@@ -17,8 +16,12 @@ def _get_path(data_dir: Path, prefix: str, step: int) -> Path:
     return data_dir / f"{prefix}.{step:09}.bp"
 
 
-def _decode_psc(ds):
-    return pscpy.decode_psc(ds, ["e", "i"])
+def _decode_psc(ds: xr.Dataset):
+    if "time" in ds.variables or "time" in ds.dims:
+        ds = ds.rename(time="t")
+    for key, corner in zip(["x", "y", "z"], ds.attrs["corner"]):
+        ds.coords[key] = ds.coords[key] - (ds.coords[key][0] - corner)
+    return ds
 
 
 @loader
@@ -35,8 +38,6 @@ class FieldLoaderBp(Loader):
     def get_data(self, config: PscPlotConfig) -> Field:
         ds = xr.open_mfdataset(
             paths=[_get_path(config.data_root / self.subdir, self.prefix, step) for step in file_util.get_available_steps(config.data_root / self.subdir, self.prefix + ".", ".bp")],
-            combine="nested",
-            concat_dim="t",
             preprocess=_decode_psc,
             parallel=True,
         )
