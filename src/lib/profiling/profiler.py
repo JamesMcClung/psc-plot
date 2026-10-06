@@ -35,13 +35,13 @@ class Profiler:
         self._depth = 0
 
     @contextmanager
-    def run(self) -> Iterator["Profiler"]:
+    def run(self) -> Iterator[None]:
         """Make this the active profiler, and record the whole run as `total`."""
         token = _ACTIVE.set(self)
         window = self.sampler.open_window()
         start = self.clock()
         try:
-            yield self
+            yield
         finally:
             wall = self.clock() - start
             cpu, peak_rss = self.sampler.close_window(window)
