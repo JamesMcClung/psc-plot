@@ -1,4 +1,4 @@
-"""Variable display info and derived-variable pipelines, loaded from a directory of YAML files.
+"""Variable display info and derived-variable pipelines, loaded from a list of YAML files.
 
 `shared.yml` holds entries shared by every prefix (prefix `None`, e.g. the x/y/z/t dims); every other `<prefix>.yml` holds that prefix's entries. See `src/lib/default_registries/`.
 """
@@ -118,20 +118,20 @@ class Registry:
         self._entries = entries
 
     @classmethod
-    def load(cls, registries_dir: Path) -> Registry:
-        if not registries_dir.exists():
-            raise RegistryError(f"registries directory {registries_dir} does not exist")
-        if not registries_dir.is_dir():
-            raise RegistryError(f"registries directory {registries_dir} is not a directory")
-
+    def load(cls, files: list[Path]) -> Registry:
         # Deferred: the parser imports every adaptor, and several adaptors reach the registry via config.
         from lib.parsing.parse import parse_steps
 
         entries: dict[tuple[str | None, str], RegistryEntry] = {}
-        for path in sorted(registries_dir.glob("*.yml")):
+        sources: dict[tuple[str | None, str], Path] = {}
+        for path in files:
             prefix = None if path.stem == SHARED_FILE_STEM else path.stem
             for key, raw in _read_yaml(path).items():
-                entries[(prefix, key)] = _parse_entry(path, prefix, key, raw, parse_steps)
+                entry = _parse_entry(path, prefix, key, raw, parse_steps)
+                if (prefix, key) in sources:
+                    raise RegistryError(f"{path}: {key} already defined in {sources[(prefix, key)]}")
+                entries[(prefix, key)] = entry
+                sources[(prefix, key)] = path
         return cls(entries)
 
     def entry(self, prefix: str | None, key: str) -> RegistryEntry | None:

@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from conftest import CONFIG_2D, write_registry
 
@@ -33,8 +35,8 @@ def test_prefix_entry_wins_over_shared(tmp_path):
     assert registry.lookup("pfd", "x").unit.latex == "d"
 
 
-def test_lookup_unknown_key_falls_back_to_key(tmp_path):
-    info = Registry.load(tmp_path).lookup("pfd", "mystery")
+def test_lookup_unknown_key_falls_back_to_key():
+    info = Registry.load([]).lookup("pfd", "mystery")
     assert (info.display.latex, info.unit.latex, info.key) == ("mystery", "", "mystery")
 
 
@@ -53,11 +55,31 @@ def test_pipeline_is_parsed(tmp_path):
     assert registry.derivable_keys("pfd") == ["a"]
 
 
+def test_same_stem_files_merge(tmp_path):
+    (tmp_path / "a").mkdir()
+    (tmp_path / "b").mkdir()
+    (tmp_path / "a" / "pfd.yml").write_text("one: {display: '1'}\n")
+    (tmp_path / "b" / "pfd.yml").write_text("two: {display: '2'}\n")
+    registry = Registry.load([tmp_path / "a" / "pfd.yml", tmp_path / "b" / "pfd.yml"])
+    assert registry.lookup("pfd", "one").display.latex == "1"
+    assert registry.lookup("pfd", "two").display.latex == "2"
+
+
 def test_empty_file_is_allowed(tmp_path):
     assert write_registry(tmp_path, {"pfd": "# nothing yet\n"}).registry.derivable_keys("pfd") == []
 
 
 # --- validation ---
+
+
+def test_duplicate_key_across_files_errors(tmp_path):
+    (tmp_path / "a").mkdir()
+    (tmp_path / "b").mkdir()
+    first, second = tmp_path / "a" / "pfd.yml", tmp_path / "b" / "pfd.yml"
+    first.write_text("x: {display: 'x'}\n")
+    second.write_text("x: {display: 'X'}\n")
+    with pytest.raises(RegistryError, match=re.escape(f"{second}: x already defined in {first}")):
+        Registry.load([first, second])
 
 
 @pytest.mark.parametrize(
@@ -88,7 +110,7 @@ def test_invalid_entries(tmp_path, stem, text, match):
 def test_bad_registries_dir(tmp_path, name, match):
     (tmp_path / "file.yml").write_text("")
     with pytest.raises(RegistryError, match=match):
-        Registry.load(tmp_path / name)
+        PscPlotConfig(registries_dir=tmp_path / name).registry
 
 
 # --- config ---

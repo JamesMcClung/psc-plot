@@ -6,7 +6,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Callable, Self
 
-from lib.registry import Registry
+from lib.registry import Registry, RegistryError
 
 _DATA_DIR_KEY = "PSC_PLOT_DATA_DIR"
 _FFMPEG_BIN_KEY = "PSC_PLOT_FFMPEG_BIN"
@@ -38,7 +38,11 @@ class PscPlotConfig:
 
     @cached_property
     def registry(self) -> Registry:
-        return Registry.load(self.registries_dir)
+        if not self.registries_dir.exists():
+            raise RegistryError(f"registries directory {self.registries_dir} does not exist")
+        if not self.registries_dir.is_dir():
+            raise RegistryError(f"registries directory {self.registries_dir} is not a directory")
+        return Registry.load(sorted(self.registries_dir.glob("*.yml")))
 
     @classmethod
     def from_env(cls) -> Self:
