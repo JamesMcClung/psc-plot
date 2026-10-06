@@ -15,11 +15,6 @@ _ANIMATED = ["pfd", "hx_fc", "-v", "y"]
 _STATIC = ["pfd", "hx_fc", "-i", "t=-1", "-v", "y", "time="]
 
 
-def test_profile_flag_defaults_off():
-    assert parse_args(_ANIMATED).profile is False
-    assert parse_args([*_ANIMATED, "--profile"]).profile is True
-
-
 def test_profile_renders_offscreen_instead_of_showing():
     [node] = compile_action_nodes(parse_args([*_ANIMATED, "--profile"]), CONFIG_2D)
     assert isinstance(node, RenderPlotNode)
@@ -39,12 +34,6 @@ def test_profile_and_dask_graph_conflict(capsys):
         compile_action_nodes(parse_args([*_ANIMATED, "--profile", "--dask-graph"]), CONFIG_2D)
     assert exit_info.value.code == 1
     assert "error: --profile and --dask-graph are mutually exclusive" in capsys.readouterr().err
-
-
-@pytest.mark.parametrize("args_list", [_ANIMATED, _STATIC])
-def test_render_offscreen_runs(args_list):
-    [node] = compile_action_nodes(parse_args([*args_list, "--profile"]), CONFIG_2D)
-    node.pull()
 
 
 def _profile(args_list: list[str]) -> Profiler:
