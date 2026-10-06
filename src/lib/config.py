@@ -83,6 +83,11 @@ def _default_config_path() -> Path:
     return Path(str(importlib.resources.files("lib") / "default_config.yml"))
 
 
+def config_file_path_from_env(environ: Mapping[str, str]) -> Path:
+    """The config file to read: $PSC_PLOT_CONFIG_PATH, or the shipped default_config.yml."""
+    return Path(environ[CONFIG_PATH_KEY]) if CONFIG_PATH_KEY in environ else _default_config_path()
+
+
 # $$ (escape), ${NAME}, or $NAME; a $ followed by anything else is left alone
 _VAR_PATTERN = re.compile(r"\$(?:(\$)|\{(\w+)\}|(\w+))")
 
@@ -252,7 +257,7 @@ class PscPlotConfig:
     def from_env(cls) -> Self:
         """Read the config file ($PSC_PLOT_CONFIG_PATH, or the shipped default_config.yml) and overlay the env's PSC_PLOT_* vars."""
         environ = os.environ
-        config_path = Path(environ[CONFIG_PATH_KEY]) if CONFIG_PATH_KEY in environ else _default_config_path()
+        config_path = config_file_path_from_env(environ)
 
         env_values: dict[str, ConfigValue] = {key: environ[key] for key in CONFIG_KEYS if key in environ}
         if _REGISTRIES_KEY in env_values:
