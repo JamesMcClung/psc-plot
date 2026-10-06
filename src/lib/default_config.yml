@@ -8,7 +8,7 @@
 # String values may reference env vars as $VAR or ${VAR} ($$ is a literal $).
 # Referencing an unset var is an error. Relative paths resolve against the cwd.
 
-# Data root that prepaths resolve against.
+# Directory in which psc-plot looks for data.
 PSC_PLOT_DATA_DIR: .
 
 # ffmpeg executable, needed to save animations: a name looked up on PATH, a
@@ -26,9 +26,10 @@ PSC_PLOT_DASK_NUM_WORKERS: 1
 # Rows per dask partition for particle loads; lower it to bound peak memory.
 PSC_PLOT_DASK_CHUNK_SIZE: 1000000
 
-# Whether to load the shipped registries (src/lib/default_registries/*.yml).
+# Whether to load the default registries included with psc-plot
+# (see src/lib/default_registries/*.yml).
 PSC_PLOT_REGISTRIES_USE_DEFAULTS: true
 
-# Extra registry files or globs, loaded after the shipped ones. A variable
-# defined in two files is an error. In the env, separate entries with ':'.
+# Extra registry files or globs, loaded after the default ones. A variable
+# defined in two files is an error. As an env variable, delimit entries with ':'.
 PSC_PLOT_REGISTRIES: []
