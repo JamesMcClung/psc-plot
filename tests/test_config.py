@@ -230,12 +230,6 @@ def test_env_values_are_not_expanded(clean_env, tmp_path):
     assert PscPlotConfig.from_env().data_root == Path("$NOT_EXPANDED")
 
 
-def test_yaml_native_scalars(clean_env, tmp_path):
-    _use_config(clean_env, tmp_path, _full_with("PSC_PLOT_DASK_CHUNK_SIZE: 1_000_000", "PSC_PLOT_REGISTRIES_USE_DEFAULTS: True", "PSC_PLOT_FFMPEG_BIN: ~"))
-    config = PscPlotConfig.from_env()
-    assert (config.dask_chunk_size, config.registries_use_defaults, config.ffmpeg_bin) == (1_000_000, True, None)
-
-
 @pytest.mark.parametrize(
     "line, field, expected",
     [
@@ -244,9 +238,12 @@ def test_yaml_native_scalars(clean_env, tmp_path):
         ("PSC_PLOT_DATA_DIR: no", "data_root", Path("no")),
         ("PSC_PLOT_REGISTRIES: [1.10]", "registry_patterns", ["1.10"]),
         ("PSC_PLOT_DASK_NUM_WORKERS: 010", "dask_num_workers", 10),
+        ("PSC_PLOT_DASK_CHUNK_SIZE: 1_000_000", "dask_chunk_size", 1_000_000),
+        ("PSC_PLOT_REGISTRIES_USE_DEFAULTS: True", "registries_use_defaults", True),
+        ("PSC_PLOT_FFMPEG_BIN: ~", "ffmpeg_bin", None),
     ],
 )
-def test_file_values_are_literal_text(clean_env, tmp_path, line, field, expected):
+def test_file_scalars(clean_env, tmp_path, line, field, expected):
     _use_config(clean_env, tmp_path, _full_with(line))
     assert getattr(PscPlotConfig.from_env(), field) == expected
 
