@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from lib.data.data_world import DataWorld
-from lib.data.pipeline import Pipeline
 from lib.parsing.parse_save import SaveSpec
 from lib.plotting.plot import Plot
 from lib.profiling.profiler import FINISH, profile_stage
@@ -13,18 +12,18 @@ from lib.profiling.profiler import FINISH, profile_stage
 
 class PlotAction(ABC):
     @abstractmethod
-    def run(self, plot: Plot, pipeline: Pipeline) -> None: ...
+    def run(self, plot: Plot) -> None: ...
 
 
 class ShowPlot(PlotAction):
-    def run(self, plot: Plot, pipeline: Pipeline) -> None:
+    def run(self, plot: Plot) -> None:
         plot.show()
 
 
 class RenderPlot(PlotAction):
     """Renders every frame offscreen and discards it, e.g. to profile a pipeline without showing or saving."""
 
-    def run(self, plot: Plot, pipeline: Pipeline) -> None:
+    def run(self, plot: Plot) -> None:
         plot.render_offscreen()
 
 
@@ -32,8 +31,9 @@ class RenderPlot(PlotAction):
 class SavePlot(PlotAction):
     save: SaveSpec
     save_dpi: float | None
+    default_stem: str
 
-    def run(self, plot: Plot, pipeline: Pipeline) -> None:
+    def run(self, plot: Plot) -> None:
         with profile_stage(FINISH, exclusive=True):
             save_format = self.save.format
             if save_format not in plot.allowed_save_formats():
@@ -45,7 +45,7 @@ class SavePlot(PlotAction):
 
             save_dir = self.save.dir or Path(".")
             save_dir.mkdir(exist_ok=True, parents=True)
-            path = save_dir / f"{self.save.name or pipeline.get_save_file_stem()}.{save_format}"
+            path = save_dir / f"{self.save.name or self.default_stem}.{save_format}"
             plot.save_to_path(path, dpi=self.save_dpi)
             print(f"wrote to {path}")
 
@@ -56,8 +56,9 @@ class DaskGraph:
 
     save: SaveSpec
     show: bool
+    default_stem: str
 
-    def run(self, world: DataWorld, pipeline: Pipeline) -> None:
+    def run(self, world: DataWorld) -> None:
         data = world.active_data
 
         collections = data.dask_collections()
@@ -82,7 +83,7 @@ class DaskGraph:
         # save.format is ignored: the extension here is always .daskgraph.svg
         save_dir = self.save.dir or Path.cwd()
         save_dir.mkdir(exist_ok=True, parents=True)
-        path = save_dir / f"{self.save.name or pipeline.get_save_file_stem()}.daskgraph.svg"
+        path = save_dir / f"{self.save.name or self.default_stem}.daskgraph.svg"
         # dask.visualize's optimize_graph flag only lowers legacy HLG collections
         # (e.g. dask Arrays), not new-style Expr ones (dask DataFrames) — without
         # pre-optimizing the latter, un-lowered nodes (e.g. Concat from dd.concat)

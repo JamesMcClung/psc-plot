@@ -33,13 +33,13 @@ class CompiledRun:
 
     def execute(self) -> None:
         if self.dask_graph is not None:
-            self.dask_graph.run(self.pipeline.run_world(), self.pipeline)
+            self.dask_graph.run(self.pipeline.run_world())
             return
         if not self.plot_actions:
             return  # e.g. -q without -s; don't load anything
         plot = self.pipeline.run_plot()
         for action in self.plot_actions:
-            action.run(plot, self.pipeline)
+            action.run(plot)
 
 
 def compile_run(args: Args, config: PscPlotConfig) -> CompiledRun:
@@ -50,7 +50,7 @@ def compile_run(args: Args, config: PscPlotConfig) -> CompiledRun:
         sys.exit(1)
 
     if args.dask_graph:
-        return CompiledRun(pipeline, [], DaskGraph(save=args.save or SaveSpec(), show=args.show))
+        return CompiledRun(pipeline, [], DaskGraph(save=args.save or SaveSpec(), show=args.show, default_stem=pipeline.get_save_file_stem()))
 
     plot_actions = []
 
@@ -63,7 +63,7 @@ def compile_run(args: Args, config: PscPlotConfig) -> CompiledRun:
             print("error: format=mp4 requires ffmpeg", file=sys.stderr)
             sys.exit(1)
 
-        plot_actions.append(SavePlot(save=args.save, save_dpi=args.save_dpi))
+        plot_actions.append(SavePlot(save=args.save, save_dpi=args.save_dpi, default_stem=pipeline.get_save_file_stem()))
     elif args.profile:
         plot_actions.append(RenderPlot())
 
