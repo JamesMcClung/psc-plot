@@ -1,4 +1,5 @@
 import importlib.metadata
+import math
 import os
 import platform
 import socket
@@ -29,20 +30,63 @@ def _read(path: Path) -> str | None:
         return None
 
 
-def cgroup_cpu_quota(cgroup_root: Path = Path("/sys/fs/cgroup")) -> float | None:
-    """The cgroup's CPU limit in cores (v2 `cpu.max`, then v1 CFS quota), or None when unlimited or unknown."""
-    if (cpu_max := _read(cgroup_root / "cpu.max")) is not None:
+_CGROUP_ROOT = Path("/sys/fs/cgroup")
+_PROC_CGROUP = Path("/proc/self/cgroup")
+
+
+def _own_cgroup_dirs(cgroup_root: Path, proc_cgroup: Path) -> dict[str, Path]:
+    """This process's cgroup directory per hierarchy, from /proc/self/cgroup: "unified" for v2, else a v1 controller name ("cpu", "cpuset")."""
+    dirs: dict[str, Path] = {}
+    for line in (_read(proc_cgroup) or "").splitlines():
+        _, controllers, path = line.split(":", 2)
+        relative = path.lstrip("/")
+        if controllers == "":
+            dirs["unified"] = cgroup_root / relative
+        for controller in controllers.split(","):
+            if controller in ("cpu", "cpuset"):
+                dirs[controller] = cgroup_root / controller / relative
+    return dirs
+
+
+def _self_and_ancestors(directory: Path, cgroup_root: Path) -> list[Path]:
+    dirs = [directory]
+    while directory != cgroup_root and directory.parent != directory:
+        directory = directory.parent
+        dirs.append(directory)
+    return dirs
+
+
+def _quota_in(directory: Path) -> float | None:
+    """The CPU limit set in one cgroup directory, in cores: math.inf if it says unlimited, None if it has no limit files."""
+    if (cpu_max := _read(directory / "cpu.max")) is not None:
         quota, _, period = cpu_max.partition(" ")
-        return None if quota == "max" else int(quota) / int(period)
-    quota = _read(cgroup_root / "cpu" / "cpu.cfs_quota_us")
-    period = _read(cgroup_root / "cpu" / "cpu.cfs_period_us")
-    if quota is None or period is None or int(quota) <= 0:
+        return math.inf if quota == "max" else int(quota) / int(period)
+    quota = _read(directory / "cpu.cfs_quota_us")
+    period = _read(directory / "cpu.cfs_period_us")
+    if quota is None or period is None:
         return None
-    return int(quota) / int(period)
+    return math.inf if int(quota) <= 0 else int(quota) / int(period)
 
 
-def _cgroup_cpuset(cgroup_root: Path = Path("/sys/fs/cgroup")) -> str | None:
-    return _read(cgroup_root / "cpuset.cpus.effective") or _read(cgroup_root / "cpuset" / "cpuset.cpus")
+def cgroup_cpu_quota(cgroup_root: Path = _CGROUP_ROOT, proc_cgroup: Path = _PROC_CGROUP) -> float | None:
+    """This process's cgroup CPU limit in cores: the tightest over its cgroup and their ancestors (v2 `cpu.max`, v1 CFS quota). math.inf when unlimited, None when unknown."""
+    own_dirs = _own_cgroup_dirs(cgroup_root, proc_cgroup)
+    # on a hybrid v1/v2 host the controllers live in v1, so prefer it
+    directory = own_dirs.get("cpu") or own_dirs.get("unified")
+    if directory is None:
+        return None
+    quotas = [quota for d in _self_and_ancestors(directory, cgroup_root) if (quota := _quota_in(d)) is not None]
+    return min(quotas) if quotas else None
+
+
+def cgroup_cpuset(cgroup_root: Path = _CGROUP_ROOT, proc_cgroup: Path = _PROC_CGROUP) -> str | None:
+    """The CPUs this process's cgroup allows (v2 `cpuset.cpus.effective`, v1 `cpuset.cpus`), or None when unknown."""
+    own_dirs = _own_cgroup_dirs(cgroup_root, proc_cgroup)
+    if "cpuset" in own_dirs:
+        return _read(own_dirs["cpuset"] / "cpuset.cpus")
+    if "unified" in own_dirs:
+        return _read(own_dirs["unified"] / "cpuset.cpus.effective")
+    return None
 
 
 def _detect_job_scheduler(environ: Mapping[str, str]) -> str | None:
@@ -90,7 +134,7 @@ class EnvironmentReport:
     cpu_logical: int | None
     cpu_physical: int | None
     cpu_affinity: int | None
-    cgroup_cpu_quota: float | None
+    cgroup_cpu_quota: float | None  # cores; math.inf when unlimited, None when unknown
     cgroup_cpuset: str | None
     mem_total: int
     mem_available: int
@@ -117,7 +161,7 @@ class EnvironmentReport:
             cpu_physical=psutil.cpu_count(logical=False),
             cpu_affinity=len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else None,
             cgroup_cpu_quota=cgroup_cpu_quota(),
-            cgroup_cpuset=_cgroup_cpuset(),
+            cgroup_cpuset=cgroup_cpuset(),
             mem_total=memory.total,
             mem_available=memory.available,
             job_scheduler=job_scheduler,
@@ -132,7 +176,12 @@ class EnvironmentReport:
 
     def format_text(self) -> str:
         gil = "GIL enabled" if self.gil_enabled else "GIL disabled"
-        quota = "none" if self.cgroup_cpu_quota is None else f"{self.cgroup_cpu_quota:g} cores"
+        if self.cgroup_cpu_quota is None:
+            quota = "n/a"
+        elif self.cgroup_cpu_quota == math.inf:
+            quota = "none"
+        else:
+            quota = f"{self.cgroup_cpu_quota:g} cores"
         cpuset = "" if self.cgroup_cpuset is None else f" · cpuset {self.cgroup_cpuset}"
         if self.job_scheduler is None:
             job = "none detected"
