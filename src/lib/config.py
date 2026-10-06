@@ -2,6 +2,8 @@ import glob
 import importlib.resources
 import os
 import shutil
+import warnings
+from collections.abc import Mapping
 from dataclasses import KW_ONLY, dataclass, replace
 from functools import cached_property
 from pathlib import Path
@@ -17,6 +19,13 @@ _DASK_SCHEDULER_KEY = "PSC_PLOT_DASK_SCHEDULER"
 _REGISTRIES_USE_DEFAULTS_KEY = "PSC_PLOT_REGISTRIES_USE_DEFAULTS"
 _REGISTRIES_KEY = "PSC_PLOT_REGISTRIES"
 _GLOB_CHARS = "*?["
+SCHEDULERS = ("threads", "processes", "synchronous", "distributed")
+
+
+class ConfigError(ValueError): ...
+
+
+type ConfigValue = str | list[str] | None
 
 
 def parse_optional[T](s: str | None, parser: Callable[[str], T]) -> T | None:
@@ -36,6 +45,40 @@ def _parse_bool(s: str) -> bool:
         case "false" | "0":
             return False
     raise ValueError(f"expected true/false/1/0, got {s!r}")
+
+
+def _parse_positive_int(s: str) -> int:
+    value = int(s)
+    if value < 1:
+        raise ValueError(f"must be positive, got {value}")
+    return value
+
+
+def _parse_scheduler(s: str) -> str:
+    if s not in SCHEDULERS:
+        raise ValueError(f"expected one of {list(SCHEDULERS)}, got {s!r}")
+    return s
+
+
+def _parse_ffmpeg_bin(s: str) -> Path | None:
+    if not s:
+        return None
+    if (found := shutil.which(s)) is None:
+        warnings.warn(f"{_FFMPEG_BIN_KEY}: {s!r} not found; saving animations is unavailable")
+        return None
+    return Path(found)
+
+
+_SCALAR_PARSERS: dict[str, Callable[[str], object]] = {
+    _DATA_DIR_KEY: Path,
+    _FFMPEG_BIN_KEY: _parse_ffmpeg_bin,
+    _DASK_SCHEDULER_KEY: _parse_scheduler,
+    _DASK_NUM_WORKERS_KEY: _parse_positive_int,
+    _DASK_CHUNK_SIZE_KEY: _parse_positive_int,
+    _REGISTRIES_USE_DEFAULTS_KEY: _parse_bool,
+}
+_NULLABLE_SCALAR_KEYS = {_FFMPEG_BIN_KEY}
+CONFIG_KEYS = (*_SCALAR_PARSERS, _REGISTRIES_KEY)
 
 
 def _split_patterns(s: str) -> list[str]:
@@ -82,6 +125,39 @@ class PscPlotConfig:
             registry_patterns=[],
         )
         return replace(minimal, **overrides)
+
+    @classmethod
+    def from_mapping(cls, values: Mapping[str, ConfigValue]) -> Self:
+        """Parse a complete config from `PSC_PLOT_*` keys. `PSC_PLOT_REGISTRIES` is a list (or None); every other key is a string."""
+        if missing := [key for key in CONFIG_KEYS if key not in values]:
+            raise ConfigError(f"missing config key(s) {missing}; set them in the config file or the env")
+
+        def scalar(key: str):
+            value = values[key]
+            if value is None and key in _NULLABLE_SCALAR_KEYS:
+                return None
+            if not isinstance(value, str):
+                raise ConfigError(f"{key}: expected a single value, got {value!r}")
+            try:
+                return _SCALAR_PARSERS[key](value)
+            except ValueError as e:
+                raise ConfigError(f"{key}: {e}") from e
+
+        patterns = values[_REGISTRIES_KEY]
+        if patterns is None:
+            patterns = []
+        if not isinstance(patterns, list) or not all(isinstance(pattern, str) for pattern in patterns):
+            raise ConfigError(f"{_REGISTRIES_KEY}: expected a list of paths, got {patterns!r}")
+
+        return cls(
+            data_root=scalar(_DATA_DIR_KEY),
+            ffmpeg_bin=scalar(_FFMPEG_BIN_KEY),
+            dask_scheduler=scalar(_DASK_SCHEDULER_KEY),
+            dask_num_workers=scalar(_DASK_NUM_WORKERS_KEY),
+            dask_chunk_size=scalar(_DASK_CHUNK_SIZE_KEY),
+            registries_use_defaults=scalar(_REGISTRIES_USE_DEFAULTS_KEY),
+            registry_patterns=patterns,
+        )
 
     @property
     def registry_files(self) -> list[Path]:
