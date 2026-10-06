@@ -82,6 +82,17 @@ class ShowPlotNode(DataProcessingNode[None]):
         self.input_node.pull().show()
 
 
+class RenderPlotNode(DataProcessingNode[None]):
+    """Renders every frame offscreen and discards it, e.g. to profile a pipeline without showing or saving."""
+
+    def __init__(self, input_node: DataProcessingNode[Plot]):
+        super().__init__(input_node.name_fragments)
+        self.input_node = input_node
+
+    def pull(self) -> None:
+        self.input_node.pull().render_offscreen()
+
+
 class SavePlotNode(DataProcessingNode[None]):
     def __init__(
         self,
