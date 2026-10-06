@@ -109,7 +109,7 @@ def test_invalid_entries(tmp_path, stem, text, match):
 
 
 def _files_config(*patterns: str, use_defaults: bool = False) -> PscPlotConfig:
-    return PscPlotConfig(data_root=CONFIG_2D.data_root, registries_use_defaults=use_defaults, registry_patterns=list(patterns))
+    return PscPlotConfig.create_minimal(data_root=CONFIG_2D.data_root, registries_use_defaults=use_defaults, registry_patterns=list(patterns))
 
 
 def test_registry_path_missing(tmp_path):

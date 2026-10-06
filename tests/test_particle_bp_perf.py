@@ -30,7 +30,7 @@ def _run_h5_pipeline(data_dir: pathlib.Path, result_queue: mp.Queue) -> None:
     # Time the whole pipeline: binning is lazy, so the histogram actually runs
     # during ._initialize() (the color bounds), not during .pull().
     t0 = time.perf_counter()
-    compile_plot_node(args, PscPlotConfig(data_root=data_dir)).pull()._initialize()
+    compile_plot_node(args, PscPlotConfig.create_minimal(data_root=data_dir)).pull()._initialize()
     elapsed = time.perf_counter() - t0
     result_queue.put(elapsed)
 
@@ -46,7 +46,7 @@ def _run_bp_pipeline(data_dir: pathlib.Path, result_queue: mp.Queue) -> None:
     # Time the whole pipeline: binning is lazy, so the histogram actually runs
     # during ._initialize() (the color bounds), not during .pull().
     t0 = time.perf_counter()
-    compile_plot_node(args, PscPlotConfig(data_root=data_dir)).pull()._initialize()
+    compile_plot_node(args, PscPlotConfig.create_minimal(data_root=data_dir)).pull()._initialize()
     elapsed = time.perf_counter() - t0
     result_queue.put(elapsed)
 

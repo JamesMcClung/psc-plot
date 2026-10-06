@@ -2,7 +2,7 @@ import glob
 import importlib.resources
 import os
 import shutil
-from dataclasses import KW_ONLY, dataclass, field
+from dataclasses import KW_ONLY, dataclass, replace
 from functools import cached_property
 from pathlib import Path
 from typing import Callable, Self
@@ -61,13 +61,27 @@ def _expand_registry_pattern(pattern: str) -> list[Path]:
 @dataclass
 class PscPlotConfig:
     _: KW_ONLY
-    data_root: Path = field(default_factory=Path.cwd)
-    ffmpeg_bin: Path | None = None
-    dask_num_workers: int = 1
-    dask_chunk_size: int = 1_000_000
-    dask_scheduler: str | None = None
-    registries_use_defaults: bool = True
-    registry_patterns: list[str] = field(default_factory=list)
+    data_root: Path
+    ffmpeg_bin: Path | None
+    dask_num_workers: int
+    dask_chunk_size: int
+    dask_scheduler: str
+    registries_use_defaults: bool
+    registry_patterns: list[str]
+
+    @classmethod
+    def create_minimal(cls, **overrides) -> Self:
+        """The minimal viable config: no parallelism and no ffmpeg. For tests and convenience; never used as a fallback."""
+        minimal = cls(
+            data_root=Path.cwd(),
+            ffmpeg_bin=None,
+            dask_num_workers=1,
+            dask_chunk_size=1_000_000,
+            dask_scheduler="synchronous",
+            registries_use_defaults=True,
+            registry_patterns=[],
+        )
+        return replace(minimal, **overrides)
 
     @property
     def registry_files(self) -> list[Path]:
@@ -82,15 +96,13 @@ class PscPlotConfig:
 
     @classmethod
     def from_env(cls) -> Self:
-        config = cls()
-
-        config.data_root = parse_optional(os.environ.get(_DATA_DIR_KEY), Path) or config.data_root
-        config.ffmpeg_bin = parse_optional(os.environ.get(_FFMPEG_BIN_KEY, shutil.which("ffmpeg")), Path) or config.ffmpeg_bin
-        config.dask_num_workers = parse_optional(os.environ.get(_DASK_NUM_WORKERS_KEY), int) or os.cpu_count() or config.dask_num_workers
-        config.dask_chunk_size = parse_optional(os.environ.get(_DASK_CHUNK_SIZE_KEY), int) or config.dask_chunk_size
-        config.dask_scheduler = os.environ.get(_DASK_SCHEDULER_KEY) or config.dask_scheduler
-        if (use_defaults := os.environ.get(_REGISTRIES_USE_DEFAULTS_KEY)) is not None:
-            config.registries_use_defaults = _parse_bool(use_defaults)
-        config.registry_patterns = parse_optional(os.environ.get(_REGISTRIES_KEY), _split_patterns) or config.registry_patterns
-
-        return config
+        environ = os.environ
+        return cls(
+            data_root=parse_optional(environ.get(_DATA_DIR_KEY), Path) or Path.cwd(),
+            ffmpeg_bin=parse_optional(environ.get(_FFMPEG_BIN_KEY, shutil.which("ffmpeg")), Path),
+            dask_num_workers=parse_optional(environ.get(_DASK_NUM_WORKERS_KEY), int) or os.cpu_count() or 1,
+            dask_chunk_size=parse_optional(environ.get(_DASK_CHUNK_SIZE_KEY), int) or 1_000_000,
+            dask_scheduler=environ.get(_DASK_SCHEDULER_KEY) or "threads",
+            registries_use_defaults=_parse_bool(environ.get(_REGISTRIES_USE_DEFAULTS_KEY, "true")),
+            registry_patterns=_split_patterns(environ.get(_REGISTRIES_KEY, "")),
+        )

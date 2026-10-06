@@ -19,7 +19,7 @@ from lib.parsing.parse import parse_args
 def _read_keys_for_columns(args_list: list[str], data_dir: str = "test-2d") -> list[str]:
     """Optimize each dask collection produced by `args_list` and return
     the set of per-column file-read task key strings in the optimized graph."""
-    config = PscPlotConfig(data_root=_DATA_DIR / data_dir)
+    config = PscPlotConfig.create_minimal(data_root=_DATA_DIR / data_dir)
     data = compile_data_node(parse_args(args_list), config).pull().active_data
     collections = data.dask_collections()
     assert collections, "expected particle pipeline to be dask-backed"
