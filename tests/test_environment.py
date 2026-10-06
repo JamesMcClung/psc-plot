@@ -1,9 +1,10 @@
+import math
 from dataclasses import replace
 
 from conftest import CONFIG_2D
 
 from lib.config import CONFIG_KEYS
-from lib.profiling.environment import EnvironmentReport, cgroup_cpu_quota
+from lib.profiling.environment import EnvironmentReport, cgroup_cpu_quota, cgroup_cpuset
 
 
 def test_detects_sge_job_and_hosts(tmp_path):
@@ -48,21 +49,49 @@ def test_format_text_with_missing_values():
     assert "job      none detected" in text
 
 
-def test_cgroup_v2_quota(tmp_path):
-    (tmp_path / "cpu.max").write_text("200000 100000\n")
-    assert cgroup_cpu_quota(tmp_path) == 2.0
-    (tmp_path / "cpu.max").write_text("max 100000\n")
-    assert cgroup_cpu_quota(tmp_path) is None
+def _cgroup_fs(tmp_path, proc_cgroup: str, files: dict[str, str]):
+    """A fake cgroup mount at tmp_path/cgroup and /proc/self/cgroup at tmp_path/proc_cgroup."""
+    root = tmp_path / "cgroup"
+    root.mkdir(parents=True)
+    for relative, text in files.items():
+        (root / relative).parent.mkdir(parents=True, exist_ok=True)
+        (root / relative).write_text(text)
+    (tmp_path / "proc_cgroup").write_text(proc_cgroup)
+    return root, tmp_path / "proc_cgroup"
+
+
+def test_cgroup_v2_quota_is_tightest_ancestor(tmp_path):
+    root, proc = _cgroup_fs(tmp_path, "0::/job/step\n", {"job/cpu.max": "200000 100000\n", "job/step/cpu.max": "max 100000\n"})
+    assert cgroup_cpu_quota(root, proc) == 2.0
+
+
+def test_cgroup_v2_unlimited(tmp_path):
+    root, proc = _cgroup_fs(tmp_path, "0::/job\n", {"job/cpu.max": "max 100000\n"})
+    assert cgroup_cpu_quota(root, proc) == math.inf
 
 
 def test_cgroup_v1_quota(tmp_path):
-    (tmp_path / "cpu").mkdir()
-    (tmp_path / "cpu" / "cpu.cfs_quota_us").write_text("400000\n")
-    (tmp_path / "cpu" / "cpu.cfs_period_us").write_text("100000\n")
-    assert cgroup_cpu_quota(tmp_path) == 4.0
-    (tmp_path / "cpu" / "cpu.cfs_quota_us").write_text("-1\n")
-    assert cgroup_cpu_quota(tmp_path) is None
+    root, proc = _cgroup_fs(tmp_path, "5:cpuset:/sge/1234\n4:cpu,cpuacct:/sge/1234\n", {"cpu/sge/1234/cpu.cfs_quota_us": "400000\n", "cpu/sge/1234/cpu.cfs_period_us": "100000\n"})
+    assert cgroup_cpu_quota(root, proc) == 4.0
+    (root / "cpu/sge/1234/cpu.cfs_quota_us").write_text("-1\n")
+    assert cgroup_cpu_quota(root, proc) == math.inf
 
 
-def test_no_cgroup(tmp_path):
-    assert cgroup_cpu_quota(tmp_path) is None
+def test_cgroup_unknown(tmp_path):
+    root, proc = _cgroup_fs(tmp_path, "0::/job\n", {})
+    assert cgroup_cpu_quota(root, proc) is None
+    assert cgroup_cpu_quota(root, tmp_path / "no_such_file") is None
+
+
+def test_cgroup_cpuset_reads_own_cgroup(tmp_path):
+    root, proc = _cgroup_fs(tmp_path, "0::/job\n", {"cpuset.cpus.effective": "0-63\n", "job/cpuset.cpus.effective": "0-31\n"})
+    assert cgroup_cpuset(root, proc) == "0-31"
+    root, proc = _cgroup_fs(tmp_path / "v1", "3:cpuset:/sge/1234\n", {"cpuset/sge/1234/cpuset.cpus": "8-15\n"})
+    assert cgroup_cpuset(root, proc) == "8-15"
+
+
+def test_format_text_quota():
+    report = EnvironmentReport.collect(CONFIG_2D, environ={})
+    assert "cgroup quota n/a" in replace(report, cgroup_cpu_quota=None).format_text()
+    assert "cgroup quota none" in replace(report, cgroup_cpu_quota=math.inf).format_text()
+    assert "cgroup quota 2 cores" in replace(report, cgroup_cpu_quota=2.0).format_text()
