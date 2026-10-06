@@ -11,6 +11,7 @@ from lib.data.data_with_attrs import DataWithAttrs
 from lib.plotting.hook import DrawMessage, Hook
 from lib.plotting.renderer import Renderer
 from lib.plotting.setup_fig import setup_fig
+from lib.profiling.profiler import PLOT_INIT, profile_stage
 
 type SaveFormat = Literal["mp4", "gif", "png"]
 
@@ -28,9 +29,10 @@ class Plot(ABC):
             return
         self._initialized = True
 
-        self.fig, self.grid = setup_fig([r.plot_info for r in self.renderers])
-        # TODO hooks should be per-renderer; for now, just apply them to the 1st one
-        self.post_init_fig(DrawMessage(plot_info=self.renderers[0].plot_info, axes=self.fig.axes[0], frame_data=self.renderers[0]._get_data_at_frame(0)))
+        with profile_stage(PLOT_INIT):
+            self.fig, self.grid = setup_fig([r.plot_info for r in self.renderers])
+            # TODO hooks should be per-renderer; for now, just apply them to the 1st one
+            self.post_init_fig(DrawMessage(plot_info=self.renderers[0].plot_info, axes=self.fig.axes[0], frame_data=self.renderers[0]._get_data_at_frame(0)))
 
     def add_hook(self, hook: Hook):
         self.hooks.append(hook)
@@ -41,6 +43,10 @@ class Plot(ABC):
 
     @abstractmethod
     def save_to_path(self, path: Path, *, dpi: float | None = None): ...
+
+    @abstractmethod
+    def render_offscreen(self):
+        """Render every frame to the canvas and discard it, without showing or saving."""
 
     @abstractmethod
     def allowed_save_formats(self) -> list[SaveFormat]: ...

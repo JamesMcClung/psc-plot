@@ -12,6 +12,7 @@ from lib.parsing.parse_save import SaveSpec
 from lib.plotting.get_plot import get_plot
 from lib.plotting.hook import Hook
 from lib.plotting.plot import Plot
+from lib.profiling.profiler import FINISH, PLOT_INIT, profile_stage
 
 
 class DataProcessingNode[D](ABC):
@@ -35,7 +36,16 @@ class AdaptorNode(DataProcessingNode[DataWorld]):
 
     @cache
     def pull(self) -> DataWorld:
-        return self.adaptor.apply_world(self.input_node.pull())
+        world = self.input_node.pull()
+        with profile_stage(self.stage_name()):
+            return self.adaptor.apply_world(world)
+
+    def stage_name(self) -> str:
+        """The adaptor's class name, plus its name fragments; the CLI text isn't kept after parsing."""
+        name = type(self.adaptor).__name__
+        if fragments := self.adaptor.get_name_fragments():
+            name += f" ({'-'.join(fragments)})"
+        return name
 
 
 class RootNode(DataProcessingNode[DataWorld]):
@@ -56,11 +66,10 @@ class PlotNode(DataProcessingNode[Plot]):
     @cache
     def pull(self) -> Plot:
         world = self.input_node.pull()
-        plot = get_plot(world)
-
-        for hook in self.hooks:
-            plot.add_hook(hook)
-
+        with profile_stage(PLOT_INIT):
+            plot = get_plot(world)
+            for hook in self.hooks:
+                plot.add_hook(hook)
         return plot
 
 
@@ -71,6 +80,17 @@ class ShowPlotNode(DataProcessingNode[None]):
 
     def pull(self) -> None:
         self.input_node.pull().show()
+
+
+class RenderPlotNode(DataProcessingNode[None]):
+    """Renders every frame offscreen and discards it, e.g. to profile a pipeline without showing or saving."""
+
+    def __init__(self, input_node: DataProcessingNode[Plot]):
+        super().__init__(input_node.name_fragments)
+        self.input_node = input_node
+
+    def pull(self) -> None:
+        self.input_node.pull().render_offscreen()
 
 
 class SavePlotNode(DataProcessingNode[None]):
@@ -89,19 +109,20 @@ class SavePlotNode(DataProcessingNode[None]):
     def pull(self) -> None:
         plot = self.input_node.pull()
 
-        save_format = self.save.format
-        if save_format not in plot.allowed_save_formats():
-            if save_format is not None:
-                message = f"{save_format} is incompatible with the data; reverting to default ({plot.default_save_format()})"
-                warnings.warn(message)
+        with profile_stage(FINISH, exclusive=True):
+            save_format = self.save.format
+            if save_format not in plot.allowed_save_formats():
+                if save_format is not None:
+                    message = f"{save_format} is incompatible with the data; reverting to default ({plot.default_save_format()})"
+                    warnings.warn(message)
 
-            save_format = plot.default_save_format()
+                save_format = plot.default_save_format()
 
-        save_dir = self.save.dir or Path(".")
-        save_dir.mkdir(exist_ok=True, parents=True)
-        path = save_dir / f"{self.save.name or self.get_save_file_stem()}.{save_format}"
-        plot.save_to_path(path, dpi=self.save_dpi)
-        print(f"wrote to {path}")
+            save_dir = self.save.dir or Path(".")
+            save_dir.mkdir(exist_ok=True, parents=True)
+            path = save_dir / f"{self.save.name or self.get_save_file_stem()}.{save_format}"
+            plot.save_to_path(path, dpi=self.save_dpi)
+            print(f"wrote to {path}")
 
 
 class DaskGraphNode(DataProcessingNode[None]):

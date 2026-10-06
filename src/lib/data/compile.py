@@ -3,7 +3,7 @@ import sys
 from lib.config import PscPlotConfig
 from lib.data.adaptor import Adaptor
 from lib.data.adaptors.versus import Versus
-from lib.data.node import AdaptorNode, DaskGraphNode, DataProcessingNode, PlotNode, RootNode, SavePlotNode, ShowPlotNode
+from lib.data.node import AdaptorNode, DaskGraphNode, DataProcessingNode, PlotNode, RenderPlotNode, RootNode, SavePlotNode, ShowPlotNode
 from lib.parsing.args import Args
 
 
@@ -38,11 +38,16 @@ def compile_action_nodes(args: Args, config: PscPlotConfig) -> list[DataProcessi
     plot_node = compile_plot_node(args, config)
     action_nodes = []
 
+    if args.profile and args.dask_graph:
+        print("error: --profile and --dask-graph are mutually exclusive", file=sys.stderr)
+        sys.exit(1)
+
     if args.dask_graph:
         action_nodes.append(DaskGraphNode(plot_node.input_node, save=args.save, show=args.show))
         return action_nodes
 
-    if args.show:
+    # a shown figure blocks on the user (and an animation loops forever), so --profile never shows
+    if args.show and not args.profile:
         action_nodes.append(ShowPlotNode(plot_node))
 
     if args.save is not None:
@@ -51,5 +56,7 @@ def compile_action_nodes(args: Args, config: PscPlotConfig) -> list[DataProcessi
             sys.exit(1)
 
         action_nodes.append(SavePlotNode(plot_node, save=args.save, save_dpi=args.save_dpi))
+    elif args.profile:
+        action_nodes.append(RenderPlotNode(plot_node))
 
     return action_nodes

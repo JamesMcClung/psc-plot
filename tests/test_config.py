@@ -119,6 +119,18 @@ def test_ffmpeg_bin(tmp_path, monkeypatch):
             assert PscPlotConfig.from_mapping(_complete(FFMPEG_BIN=missing)).ffmpeg_bin is None
 
 
+def test_to_mapping_round_trips(tmp_path):
+    ffmpeg = _fake_executable(tmp_path / "ffmpeg")
+    configs = [
+        PscPlotConfig.create_minimal(),
+        PscPlotConfig.create_minimal(data_root=tmp_path, ffmpeg_bin=ffmpeg, dask_scheduler="distributed", dask_num_workers=8, dask_chunk_size=500, registries_use_defaults=False, registry_patterns=["a.yml", "b/*.yml"]),
+    ]
+    for config in configs:
+        mapping = config.to_mapping()
+        assert set(mapping) == set(CONFIG_KEYS)
+        assert PscPlotConfig.from_mapping(mapping) == config
+
+
 # --- from_env ---
 
 _FULL = """\
