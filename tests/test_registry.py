@@ -1,4 +1,6 @@
+import os
 import re
+from pathlib import Path
 
 import pytest
 from conftest import CONFIG_2D, write_registry
@@ -106,21 +108,75 @@ def test_invalid_entries(tmp_path, stem, text, match):
         config.registry
 
 
-@pytest.mark.parametrize("name, match", [("nope", "does not exist"), ("file.yml", "not a directory")])
-def test_bad_registries_dir(tmp_path, name, match):
-    (tmp_path / "file.yml").write_text("")
-    with pytest.raises(RegistryError, match=match):
-        PscPlotConfig(registries_dir=tmp_path / name).registry
+def _files_config(*patterns: str, use_defaults: bool = False) -> PscPlotConfig:
+    return PscPlotConfig(data_root=CONFIG_2D.data_root, registries_use_defaults=use_defaults, registry_patterns=list(patterns))
+
+
+def test_registry_path_missing(tmp_path):
+    with pytest.raises(RegistryError, match="does not exist"):
+        _files_config(str(tmp_path / "nope.yml")).registry_files
+
+
+def test_registry_glob_matches_nothing(tmp_path):
+    with pytest.raises(RegistryError, match="matches no files"):
+        _files_config(str(tmp_path / "*.yml")).registry_files
+
+
+def test_registry_path_is_directory(tmp_path):
+    with pytest.raises(RegistryError, match=re.escape(f"{tmp_path} is a directory; list its files, e.g. {tmp_path}/*.yml")):
+        _files_config(str(tmp_path)).registry_files
+
+
+def test_glob_matching_directory_errors(tmp_path):
+    (tmp_path / "a.yml").write_text("")
+    (tmp_path / "sub").mkdir()
+    with pytest.raises(RegistryError, match="sub is a directory"):
+        _files_config(str(tmp_path / "*")).registry_files
+
+
+def test_registry_patterns_resolve_against_cwd_in_order(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "regs").mkdir()
+    for name in ["b.yml", "a.yml", "z.yml"]:
+        (tmp_path / "regs" / name).write_text("")
+    assert _files_config("regs/z.yml", "regs/[ab].yml").registry_files == [Path("regs/z.yml"), Path("regs/a.yml"), Path("regs/b.yml")]
 
 
 # --- config ---
 
 
-def test_config_registries_dir_from_env(monkeypatch, tmp_path):
+def test_use_defaults_adds_listed_files(tmp_path):
+    (tmp_path / "pfd.yml").write_text("my_var: {display: 'M'}\n")
+    registry = _files_config(str(tmp_path / "pfd.yml"), use_defaults=True).registry
+    assert registry.entry("pfd", "hx_fc") is not None
+    assert registry.entry("pfd", "my_var") is not None
+
+
+def test_redefining_default_entry_errors(tmp_path):
+    (tmp_path / "pfd.yml").write_text("hx_fc: {display: 'H'}\n")
+    with pytest.raises(RegistryError, match=r"pfd\.yml: hx_fc already defined in .*default_registries/pfd\.yml"):
+        _files_config(str(tmp_path / "pfd.yml"), use_defaults=True).registry
+
+
+def test_registry_settings_from_env(monkeypatch):
+    monkeypatch.delenv("PSC_PLOT_REGISTRIES_USE_DEFAULTS", raising=False)
     monkeypatch.delenv("PSC_PLOT_REGISTRIES", raising=False)
-    assert (PscPlotConfig.from_env().registries_dir / "pfd.yml").is_file()
-    monkeypatch.setenv("PSC_PLOT_REGISTRIES", str(tmp_path))
-    assert PscPlotConfig.from_env().registries_dir == tmp_path
+    config = PscPlotConfig.from_env()
+    assert (config.registries_use_defaults, config.registry_patterns) == (True, [])
+
+    for value, expected in [("FALSE", False), ("false", False), ("0", False), ("True", True), ("1", True)]:
+        monkeypatch.setenv("PSC_PLOT_REGISTRIES_USE_DEFAULTS", value)
+        assert PscPlotConfig.from_env().registries_use_defaults is expected
+
+    monkeypatch.setenv("PSC_PLOT_REGISTRIES_USE_DEFAULTS", "maybe")
+    with pytest.raises(ValueError, match="maybe"):
+        PscPlotConfig.from_env()
+    monkeypatch.delenv("PSC_PLOT_REGISTRIES_USE_DEFAULTS")
+
+    monkeypatch.setenv("PSC_PLOT_REGISTRIES", f"a.yml{os.pathsep}b/*.yml")
+    assert PscPlotConfig.from_env().registry_patterns == ["a.yml", "b/*.yml"]
+    monkeypatch.setenv("PSC_PLOT_REGISTRIES", "")
+    assert PscPlotConfig.from_env().registry_patterns == []
 
 
 def test_config_custom_registry_replaces_defaults(tmp_path):

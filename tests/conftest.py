@@ -19,9 +19,12 @@ matplotlib.use("Agg")
 
 def write_registry(registries_dir: Path, files: dict[str, str]) -> PscPlotConfig:
     """Write `{stem: yaml_text}` registry files and return a test-2d config that uses only them."""
+    paths = []
     for stem, text in files.items():
-        (registries_dir / f"{stem}.yml").write_text(text)
-    return PscPlotConfig(data_root=CONFIG_2D.data_root, registries_dir=registries_dir)
+        path = registries_dir / f"{stem}.yml"
+        path.write_text(text)
+        paths.append(str(path))
+    return PscPlotConfig(data_root=CONFIG_2D.data_root, registries_use_defaults=False, registry_patterns=paths)
 
 
 def make_plot(args_list: list[str], data_dir: str = "test-2d"):
