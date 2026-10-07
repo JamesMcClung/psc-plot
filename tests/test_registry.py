@@ -50,7 +50,7 @@ def test_prt_species_prefix_normalizes_to_prt(tmp_path):
 
 def test_pipeline_is_parsed(tmp_path):
     registry = write_registry(tmp_path, {"pfd": "a:\n  display: 'a'\n  pipeline: ['--copy a=hx_fc']\nhx_fc: {display: 'B_x'}\n"}).registry
-    [step] = registry.pipeline("pfd", "a")
+    [step] = registry.pipeline("pfd", "a").adaptors
     assert isinstance(step, Copy)
     assert registry.pipeline("pfd", "hx_fc") is None
     assert registry.derivable_keys("pfd") == ["a"]
