@@ -5,7 +5,7 @@ from lib.config import PscPlotConfig
 from lib.data.actions import DaskGraph, PlotAction, RenderPlot, SavePlot, ShowPlot
 from lib.data.adaptor import Adaptor
 from lib.data.adaptors.versus import Versus
-from lib.data.pipeline import Pipeline
+from lib.data.pipeline import PlotPipeline
 from lib.parsing.args import Args
 from lib.parsing.parse_save import SaveSpec
 
@@ -20,13 +20,13 @@ def _with_versus(adaptors: list[Adaptor]) -> list[Adaptor]:
     return adaptors
 
 
-def compile_pipeline(args: Args, config: PscPlotConfig) -> Pipeline:
-    return Pipeline(config, _with_versus(args.adaptors), args.hooks)
+def compile_pipeline(args: Args, config: PscPlotConfig) -> PlotPipeline:
+    return PlotPipeline(config, _with_versus(args.adaptors), args.hooks)
 
 
 @dataclass(frozen=True)
 class CompiledRun:
-    pipeline: Pipeline
+    pipeline: PlotPipeline
     plot_actions: list[PlotAction]
     dask_graph: DaskGraph | None
     """When set, `plot_actions` is empty."""

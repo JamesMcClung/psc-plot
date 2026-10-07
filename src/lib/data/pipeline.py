@@ -19,7 +19,7 @@ def _stage_name(adaptor: Adaptor) -> str:
 
 
 @dataclass(frozen=True)
-class Pipeline:
+class PlotPipeline:
     config: PscPlotConfig
     adaptors: list[Adaptor]
     """Starts with the implicit `With` of the positional args, and includes a `Versus`."""
