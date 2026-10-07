@@ -5,11 +5,11 @@ from conftest import _DATA_DIR, CONFIG_2D
 
 from lib import cli
 from lib.config import CONFIG_KEYS, CONFIG_PATH_KEY
-from lib.data.actions import RenderPlot, SavePlot, ShowPlot
 from lib.data.compile import compile_run
 from lib.parsing.parse import parse_args
 from lib.profiling.profiler import FINISH, FRAME_RENDER, FRAME_UPDATE, PLOT_INIT, Profiler
 from lib.profiling.sampler import ProcessTreeSampler
+from lib.run.actions import RenderPlot, SavePlot, ShowPlot
 
 _ANIMATED = ["pfd", "hx_fc", "-v", "y"]
 _STATIC = ["pfd", "hx_fc", "-i", "t=-1", "-v", "y", "time="]
