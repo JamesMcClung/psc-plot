@@ -52,4 +52,4 @@ Labelers are driven by `Grid.update_labels()` each animation frame. `Panel.updat
 
 ## Hooks
 
-Hooks (`src/lib/plotting/hooks/`) — currently `--grid`, `--vline`, `--fit`, `--show-com` — subclass `Hook` (`src/lib/plotting/hook.py`) and implement `post_init_fig(message)` / `post_update_fig(message)`, receiving a `DrawMessage(plot_info, axes, frame_data)`. `Pipeline.run_plot` attaches them and `Plot._initialize()` calls `post_init_fig` after building the figure. **Currently hooks are applied to the first renderer/axes only** — see the TODO in `plot.py`.
+Hooks (`src/lib/plotting/hooks/`) — currently `--grid`, `--vline`, `--fit`, `--show-com` — subclass `Hook` (`src/lib/plotting/hook.py`) and implement `post_init_fig(message)` / `post_update_fig(message)`, receiving a `DrawMessage(plot_info, axes, frame_data)`. `PlotPipeline.run_plot` (`src/lib/run/plot_pipeline.py`) attaches them and `Plot._initialize()` calls `post_init_fig` after building the figure. **Currently hooks are applied to the first renderer/axes only** — see the TODO in `plot.py`.
