@@ -12,18 +12,14 @@ from lib.run.plot_pipeline import PlotPipeline
 from lib.run.usage_error import UsageError
 
 
-def _with_versus(adaptors: list[Adaptor]) -> list[Adaptor]:
-    adaptors = adaptors.copy()
-    for adaptor in adaptors:
-        if isinstance(adaptor, Versus):
-            break
-    else:
-        adaptors.append(Versus(["y", "z"], time_dim_rule="guess", color_dim=None))
-    return adaptors
+def _with_versus(adaptors: list[Adaptor]) -> tuple[Adaptor, ...]:
+    if any(isinstance(adaptor, Versus) for adaptor in adaptors):
+        return tuple(adaptors)
+    return (*adaptors, Versus(["y", "z"], time_dim_rule="guess", color_dim=None))
 
 
 def compile_plot_pipeline(args: Args, config: PscPlotConfig) -> PlotPipeline:
-    return PlotPipeline(config, Pipeline(tuple(_with_versus(args.adaptors))), tuple(args.hooks))
+    return PlotPipeline(config, Pipeline(_with_versus(args.adaptors)), tuple(args.hooks))
 
 
 @dataclass(frozen=True)
