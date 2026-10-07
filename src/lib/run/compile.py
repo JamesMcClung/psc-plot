@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from lib import file_util
 from lib.config import PscPlotConfig
 from lib.data.adaptor import Adaptor
 from lib.data.adaptors.versus import Versus
@@ -54,7 +55,9 @@ def compile_run(args: Args, config: PscPlotConfig) -> CompiledRun:
     plot_pipeline = compile_plot_pipeline(args, config)
 
     if args.dask_graph:
-        return DaskGraphRun(plot_pipeline, DaskGraph(save=args.save or SaveSpec(), show=args.show, default_stem=plot_pipeline.get_save_file_stem()))
+        # hooks draw on the plot, which --dask-graph never builds, so they don't name the file
+        default_stem = file_util.stem_from_fragments(plot_pipeline.pipeline.get_name_fragments())
+        return DaskGraphRun(plot_pipeline, DaskGraph(save=args.save or SaveSpec(), show=args.show, default_stem=default_stem))
 
     plot_actions = []
 

@@ -118,6 +118,13 @@ def test_save_file_stem(args_list, expected_stem):
     assert actual_stem == expected_stem
 
 
+def test_dask_graph_stem_leaves_out_hooks():
+    """Hooks draw on the plot, which --dask-graph doesn't build."""
+    args_list = ["prt.i", "--show-com", "-q"]
+    assert compile_plot_pipeline(parse_args(args_list), CONFIG_2D).get_save_file_stem() == "prt.i-v_y,z-show_com"
+    assert compile_run(parse_args([*args_list, "--dask-graph"]), CONFIG_2D).dask_graph.default_stem == "prt.i-v_y,z"
+
+
 # --- 3. End to end, through the pipeline to a file ----------------------------------
 
 _BASE = ["pfd", "hx_fc", "-i", "t=-1", "-v", "y", "time=", "-q"]
