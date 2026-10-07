@@ -1,4 +1,3 @@
-import sys
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -8,6 +7,7 @@ from lib.data.data_world import DataWorld
 from lib.parsing.parse_save import SaveSpec
 from lib.plotting.plot import Plot
 from lib.profiling.profiler import FINISH, profile_stage
+from lib.run.usage_error import UsageError
 
 
 class PlotAction(ABC):
@@ -63,20 +63,12 @@ class DaskGraph:
 
         collections = data.dask_collections()
         if not collections:
-            print(
-                f"error: --dask-graph requires dask-backed data; pipeline produced eager {type(data).__name__}",
-                file=sys.stderr,
-            )
-            sys.exit(1)
+            raise UsageError(f"--dask-graph requires dask-backed data; pipeline produced eager {type(data).__name__}")
 
         try:
             import graphviz  # noqa: F401
         except ImportError:
-            print(
-                "error: --dask-graph requires the 'graphviz' package; install with `pip install -e \".[dask-graph]\"`",
-                file=sys.stderr,
-            )
-            sys.exit(1)
+            raise UsageError("--dask-graph requires the 'graphviz' package; install with `pip install -e \".[dask-graph]\"`") from None
 
         import dask
 
