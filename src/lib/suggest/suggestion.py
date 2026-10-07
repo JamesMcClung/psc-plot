@@ -41,7 +41,9 @@ class ConfigSuggestion:
         for scheduler, result in self.measurement.trials.items():
             mark = "*" if scheduler == self.scheduler else " "
             if isinstance(result, TrialFailure):
-                lines.append(f"{mark} {scheduler:<12}failed: {result.reason}")
+                # one line, since format_yaml comments out each table line and a stray line would become config
+                reason = " ".join(part.strip() for part in result.reason.splitlines())
+                lines.append(f"{mark} {scheduler:<12}failed: {reason}")
                 continue
             total = result.total
             cores = f"{total.cpu / total.wall:.1f}" if total.wall >= _MIN_WALL_FOR_CORES else "-"

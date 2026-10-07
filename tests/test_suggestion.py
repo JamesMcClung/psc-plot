@@ -1,6 +1,8 @@
 import datetime
 from pathlib import Path
 
+import yaml
+
 from lib.config import CONFIG_KEYS, CONFIG_PATH_KEY, PscPlotConfig
 from lib.profiling.profiler import StageRecord
 from lib.profiling.worker_count import WorkerCount
@@ -70,3 +72,10 @@ def test_format_yaml_loads_as_a_config_file(tmp_path, monkeypatch):
     assert loaded.dask_scheduler == "processes"
     assert loaded.dask_num_workers == 28
     assert loaded.dask_chunk_size == 500
+
+
+def test_multi_line_failure_reason_stays_in_the_comments():
+    trials = {"threads": TrialFailure("ValueError: bad\nkey: oops\n  more"), "processes": _TRIALS["distributed"]}
+    suggestion = ConfigSuggestion("node1", _DATE, _WORKERS, "processes", _CONFIG, Measurement("pfd hx_fc", 3, 11, trials))
+    assert "#   threads     failed: ValueError: bad key: oops more\n" in suggestion.format_yaml()
+    assert set(yaml.safe_load(suggestion.format_yaml())) == set(CONFIG_KEYS)
