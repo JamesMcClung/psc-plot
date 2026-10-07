@@ -34,7 +34,7 @@ Configuration (see `src/lib/config.py`) comes from a YAML **config file** whose 
 
 - `PSC_PLOT_DATA_DIR` — the data **root** directory (`config.data_root`; prepaths resolve against it). `set_data_dir.sh <dir>` is a convenience script that exports it
 - `PSC_PLOT_FFMPEG_BIN` — a name looked up on `PATH`, a path, or `null` (env: empty) for none; needed for saving animations. Not found → warning and none
-- `PSC_PLOT_DASK_SCHEDULER` — `threads`, `processes`, `synchronous`, or `distributed` (a `dask.distributed.LocalCluster` with `n_workers=dask_num_workers, threads_per_worker=1, processes=True`)
+- `PSC_PLOT_DASK_SCHEDULER` — `threads`, `processes`, `synchronous`, or `distributed` (a `dask.distributed.LocalCluster` with `n_workers=dask_num_workers, threads_per_worker=1, processes=True`; needs the `hpc` extra, `pip install -e ".[hpc]"`, else a `UsageError`)
 - `PSC_PLOT_DASK_NUM_WORKERS` — positive int
 - `PSC_PLOT_DASK_CHUNK_SIZE` — rows per dask partition for particle loads; reduce to bound peak memory on large files
 - `PSC_PLOT_REGISTRIES_USE_DEFAULTS` — `true`/`false` (or `1`/`0`): load the shipped `src/lib/default_registries/*.yml`

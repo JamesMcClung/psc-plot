@@ -16,7 +16,8 @@ PSC_PLOT_DATA_DIR: .
 PSC_PLOT_FFMPEG_BIN: ffmpeg
 
 # Dask scheduler: threads, processes, synchronous, or distributed (a
-# dask.distributed LocalCluster with one single-threaded process per worker).
+# dask.distributed LocalCluster with one single-threaded process per worker;
+# requires the hpc extra, `pip install -e ".[hpc]"`).
 PSC_PLOT_DASK_SCHEDULER: threads
 
 # Number of dask workers. On a cluster, set this to the job's slot count,
