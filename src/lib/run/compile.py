@@ -53,10 +53,6 @@ type CompiledRun = PlotRun | DaskGraphRun
 def compile_run(args: Args, config: PscPlotConfig) -> CompiledRun:
     plot_pipeline = compile_plot_pipeline(args, config)
 
-    if args.profile and args.dask_graph:
-        print("error: --profile and --dask-graph are mutually exclusive", file=sys.stderr)
-        sys.exit(1)
-
     if args.dask_graph:
         return DaskGraphRun(plot_pipeline, DaskGraph(save=args.save or SaveSpec(), show=args.show, default_stem=plot_pipeline.get_save_file_stem()))
 

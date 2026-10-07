@@ -31,9 +31,9 @@ def test_without_profile_still_shows():
 
 def test_profile_and_dask_graph_conflict(capsys):
     with pytest.raises(SystemExit) as exit_info:
-        compile_run(parse_args([*_ANIMATED, "--profile", "--dask-graph"]), CONFIG_2D)
-    assert exit_info.value.code == 1
-    assert "error: --profile and --dask-graph are mutually exclusive" in capsys.readouterr().err
+        parse_args([*_ANIMATED, "--profile", "--dask-graph"])
+    assert exit_info.value.code == 2
+    assert "error: argument --dask-graph: not allowed with argument --profile" in capsys.readouterr().err
 
 
 def _profile(args_list: list[str]) -> Profiler:
