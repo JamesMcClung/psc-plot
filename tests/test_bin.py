@@ -17,13 +17,13 @@ import numpy as np
 import pytest
 from conftest import CONFIG_2D
 
-from lib.data.compile import compile_pipeline
+from lib.data.compile import compile_plot_pipeline
 from lib.data.data_with_attrs import Field, List
 from lib.parsing.parse import parse_args
 
 
 def _pull_world(argv: str):
-    return compile_pipeline(parse_args(argv.split()), CONFIG_2D).run_world()
+    return compile_plot_pipeline(parse_args(argv.split()), CONFIG_2D).run_world()
 
 
 def _pull_active(argv: str):
@@ -113,7 +113,7 @@ def histogram_calls(monkeypatch: pytest.MonkeyPatch):
 def test_time_axis_is_not_part_of_the_per_partition_histogram(histogram_calls):
     """Each partition holds one timestep, so histogramming t per partition would
     allocate the whole y-by-py-by-t grid to write one t slice of it."""
-    compile_pipeline(parse_args("prt.i --bin y=8 py=16 -v y py -q".split()), CONFIG_2D).run_plot()._initialize()
+    compile_plot_pipeline(parse_args("prt.i --bin y=8 py=16 -v y py -q".split()), CONFIG_2D).run_plot()._initialize()
 
     assert histogram_calls, "expected the binning pipeline to run the histogram kernel"
     oversized = {shape for shape in histogram_calls if shape != (8, 16)}
@@ -124,7 +124,7 @@ def test_drawing_a_frame_histograms_only_that_step(histogram_calls):
     """Binning stays lazy, so each frame recomputes its slice of the grid. Each t
     bin is its own slice of the stack, so dask must cull the frame's computation
     down to that step's partitions — per-frame cost must not scale with the run."""
-    plot = compile_pipeline(parse_args("prt.i --bin y=8 py=16 -v y py -q".split()), CONFIG_2D).run_plot()
+    plot = compile_plot_pipeline(parse_args("prt.i --bin y=8 py=16 -v y py -q".split()), CONFIG_2D).run_plot()
     plot._initialize()
     after_initialize = len(histogram_calls)
 
@@ -145,7 +145,7 @@ def test_drawing_a_frame_histograms_only_that_step(histogram_calls):
 def test_compute_after_bin_materializes_the_grid(histogram_calls):
     """`--bin ... -c` is how a user buys the plot-sized grid once: the histogram
     runs during .run_plot(), and no frame may re-run it over the particle files."""
-    plot = compile_pipeline(parse_args("prt.i --bin y=8 py=16 -c -v y py -q".split()), CONFIG_2D).run_plot()
+    plot = compile_plot_pipeline(parse_args("prt.i --bin y=8 py=16 -c -v y py -q".split()), CONFIG_2D).run_plot()
     after_run_plot = len(histogram_calls)
     plot._initialize()
     for frame in range(plot.n_frames):

@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 from conftest import CONFIG_2D, make_save
 
-from lib.data.compile import compile_pipeline, compile_run
+from lib.data.compile import compile_plot_pipeline, compile_run
 from lib.parsing.parse import parse_args
 from lib.parsing.parse_save import SaveSpec, parse_save
 
@@ -100,7 +100,7 @@ def test_parse_save_errors(args, message_fragment):
     ],
 )
 def test_save_file_stem(args_list, expected_stem):
-    actual_stem = compile_pipeline(parse_args(args_list), CONFIG_2D).get_save_file_stem()
+    actual_stem = compile_plot_pipeline(parse_args(args_list), CONFIG_2D).get_save_file_stem()
     assert actual_stem == expected_stem
 
 

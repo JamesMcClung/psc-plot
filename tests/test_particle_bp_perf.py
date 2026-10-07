@@ -16,7 +16,7 @@ import pytest
 from synthetic_particles import write_steps, write_steps_bp
 
 from lib.config import PscPlotConfig
-from lib.data.compile import compile_pipeline
+from lib.data.compile import compile_plot_pipeline
 
 
 def _run_h5_pipeline(data_dir: pathlib.Path, result_queue: mp.Queue) -> None:
@@ -30,7 +30,7 @@ def _run_h5_pipeline(data_dir: pathlib.Path, result_queue: mp.Queue) -> None:
     # Time the whole pipeline: binning is lazy, so the histogram actually runs
     # during ._initialize() (the color bounds), not during .run_plot().
     t0 = time.perf_counter()
-    compile_pipeline(args, PscPlotConfig.create_minimal(data_root=data_dir)).run_plot()._initialize()
+    compile_plot_pipeline(args, PscPlotConfig.create_minimal(data_root=data_dir)).run_plot()._initialize()
     elapsed = time.perf_counter() - t0
     result_queue.put(elapsed)
 
@@ -46,7 +46,7 @@ def _run_bp_pipeline(data_dir: pathlib.Path, result_queue: mp.Queue) -> None:
     # Time the whole pipeline: binning is lazy, so the histogram actually runs
     # during ._initialize() (the color bounds), not during .run_plot().
     t0 = time.perf_counter()
-    compile_pipeline(args, PscPlotConfig.create_minimal(data_root=data_dir)).run_plot()._initialize()
+    compile_plot_pipeline(args, PscPlotConfig.create_minimal(data_root=data_dir)).run_plot()._initialize()
     elapsed = time.perf_counter() - t0
     result_queue.put(elapsed)
 

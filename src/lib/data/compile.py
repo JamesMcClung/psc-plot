@@ -20,7 +20,7 @@ def _with_versus(adaptors: list[Adaptor]) -> list[Adaptor]:
     return adaptors
 
 
-def compile_pipeline(args: Args, config: PscPlotConfig) -> PlotPipeline:
+def compile_plot_pipeline(args: Args, config: PscPlotConfig) -> PlotPipeline:
     return PlotPipeline(config, _with_versus(args.adaptors), args.hooks)
 
 
@@ -43,7 +43,7 @@ class CompiledRun:
 
 
 def compile_run(args: Args, config: PscPlotConfig) -> CompiledRun:
-    pipeline = compile_pipeline(args, config)
+    pipeline = compile_plot_pipeline(args, config)
 
     if args.profile and args.dask_graph:
         print("error: --profile and --dask-graph are mutually exclusive", file=sys.stderr)
