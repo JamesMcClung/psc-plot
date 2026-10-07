@@ -88,6 +88,19 @@ def test_parse_save_errors(args, message_fragment):
         parse_save(args)
 
 
+@pytest.mark.parametrize(
+    "spec, expected",
+    [
+        (SaveSpec(), Path("stem.png")),
+        (SaveSpec(dir=Path("out")), Path("out/stem.png")),
+        (SaveSpec(name="fig", format="gif"), Path("fig.png")),
+    ],
+)
+def test_resolve_path(spec, expected):
+    """Falls back to the cwd and the default stem; the extension is the caller's, not `spec.format`."""
+    assert spec.resolve_path("stem", "png") == expected
+
+
 # --- 2. The derived filename stem ---------------------------------------------------
 
 
