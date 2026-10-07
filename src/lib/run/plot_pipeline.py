@@ -18,8 +18,7 @@ class PlotPipeline:
     hooks: tuple[Hook, ...]
 
     def get_save_file_stem(self) -> str:
-        fragments = self.pipeline.get_name_fragments() + [frag for hook in self.hooks for frag in hook.get_name_fragments()]
-        return file_util.sanitize_stem("-".join(fragments))
+        return file_util.stem_from_fragments(self.pipeline.get_name_fragments() + [frag for hook in self.hooks for frag in hook.get_name_fragments()])
 
     def run_world(self) -> DataWorld:
         return self.pipeline.run(DataWorld(config=self.config))

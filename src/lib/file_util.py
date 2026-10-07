@@ -24,3 +24,7 @@ def split_prepath(prepath: Prepath) -> tuple[Path, str]:
 
 def sanitize_stem(stem: str) -> str:
     return stem.replace("/", "__").replace(":", "_")
+
+
+def stem_from_fragments(name_fragments: list[str]) -> str:
+    return sanitize_stem("-".join(name_fragments))
