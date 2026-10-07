@@ -129,13 +129,13 @@ def test_save_animated_gif(tmp_path):
 
 
 def test_no_save_flag_produces_no_plot_actions():
-    assert compile_run(parse_args(_BASE), CONFIG_2D).plot_actions == []
+    assert compile_run(parse_args(_BASE), CONFIG_2D).actions == ()
 
 
 def test_save_uses_derived_stem_by_default(tmp_path):
     run = compile_run(parse_args([*_BASE, "-s", f"{tmp_path}/"]), CONFIG_2D)
     run.execute()
-    assert (tmp_path / f"{run.pipeline.get_save_file_stem()}.png").exists()
+    assert (tmp_path / f"{run.plot_pipeline.get_save_file_stem()}.png").exists()
 
 
 def test_save_name_and_format_override_the_output_path(tmp_path):

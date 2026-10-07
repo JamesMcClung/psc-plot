@@ -26,32 +26,39 @@ def compile_plot_pipeline(args: Args, config: PscPlotConfig) -> PlotPipeline:
 
 
 @dataclass(frozen=True)
-class CompiledRun:
-    pipeline: PlotPipeline
-    plot_actions: list[PlotAction]
-    dask_graph: DaskGraph | None
-    """When set, `plot_actions` is empty."""
+class PlotRun:
+    plot_pipeline: PlotPipeline
+    actions: tuple[PlotAction, ...]
 
     def execute(self) -> None:
-        if self.dask_graph is not None:
-            self.dask_graph.run(self.pipeline.run_world())
-            return
-        if not self.plot_actions:
+        if not self.actions:
             return  # e.g. -q without -s; don't load anything
-        plot = self.pipeline.run_plot()
-        for action in self.plot_actions:
+        plot = self.plot_pipeline.run_plot()
+        for action in self.actions:
             action.run(plot)
 
 
+@dataclass(frozen=True)
+class DaskGraphRun:
+    plot_pipeline: PlotPipeline
+    dask_graph: DaskGraph
+
+    def execute(self) -> None:
+        self.dask_graph.run(self.plot_pipeline.run_world())
+
+
+type CompiledRun = PlotRun | DaskGraphRun
+
+
 def compile_run(args: Args, config: PscPlotConfig) -> CompiledRun:
-    pipeline = compile_plot_pipeline(args, config)
+    plot_pipeline = compile_plot_pipeline(args, config)
 
     if args.profile and args.dask_graph:
         print("error: --profile and --dask-graph are mutually exclusive", file=sys.stderr)
         sys.exit(1)
 
     if args.dask_graph:
-        return CompiledRun(pipeline, [], DaskGraph(save=args.save or SaveSpec(), show=args.show, default_stem=pipeline.get_save_file_stem()))
+        return DaskGraphRun(plot_pipeline, DaskGraph(save=args.save or SaveSpec(), show=args.show, default_stem=plot_pipeline.get_save_file_stem()))
 
     plot_actions = []
 
@@ -64,8 +71,8 @@ def compile_run(args: Args, config: PscPlotConfig) -> CompiledRun:
             print("error: format=mp4 requires ffmpeg", file=sys.stderr)
             sys.exit(1)
 
-        plot_actions.append(SavePlot(save=args.save, save_dpi=args.save_dpi, default_stem=pipeline.get_save_file_stem()))
+        plot_actions.append(SavePlot(save=args.save, save_dpi=args.save_dpi, default_stem=plot_pipeline.get_save_file_stem()))
     elif args.profile:
         plot_actions.append(RenderPlot())
 
-    return CompiledRun(pipeline, plot_actions, None)
+    return PlotRun(plot_pipeline, tuple(plot_actions))

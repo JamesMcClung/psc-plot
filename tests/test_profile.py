@@ -16,17 +16,17 @@ _STATIC = ["pfd", "hx_fc", "-i", "t=-1", "-v", "y", "time="]
 
 
 def test_profile_renders_offscreen_instead_of_showing():
-    [action] = compile_run(parse_args([*_ANIMATED, "--profile"]), CONFIG_2D).plot_actions
+    [action] = compile_run(parse_args([*_ANIMATED, "--profile"]), CONFIG_2D).actions
     assert isinstance(action, RenderPlot)
 
 
 def test_profile_with_save_only_saves(tmp_path):
-    [action] = compile_run(parse_args([*_ANIMATED, "--profile", "-s", f"{tmp_path}/"]), CONFIG_2D).plot_actions
+    [action] = compile_run(parse_args([*_ANIMATED, "--profile", "-s", f"{tmp_path}/"]), CONFIG_2D).actions
     assert isinstance(action, SavePlot)
 
 
 def test_without_profile_still_shows():
-    assert any(isinstance(action, ShowPlot) for action in compile_run(parse_args(_ANIMATED), CONFIG_2D).plot_actions)
+    assert any(isinstance(action, ShowPlot) for action in compile_run(parse_args(_ANIMATED), CONFIG_2D).actions)
 
 
 def test_profile_and_dask_graph_conflict(capsys):
