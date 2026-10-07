@@ -11,9 +11,9 @@ from pathlib import Path
 import pytest
 from conftest import CONFIG_2D, make_save
 
-from lib.data.compile import compile_plot_pipeline, compile_run
 from lib.parsing.parse import parse_args
 from lib.parsing.parse_save import SaveSpec, parse_save
+from lib.run.compile import compile_plot_pipeline, compile_run
 
 # --- 1. The --save argument grammar -------------------------------------------------
 

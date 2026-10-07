@@ -12,8 +12,8 @@ silently causing dead loads of every column in every file.
 from conftest import _DATA_DIR
 
 from lib.config import PscPlotConfig
-from lib.data.compile import compile_plot_pipeline
 from lib.parsing.parse import parse_args
+from lib.run.compile import compile_plot_pipeline
 
 
 def _read_keys_for_columns(args_list: list[str], data_dir: str = "test-2d") -> list[str]:

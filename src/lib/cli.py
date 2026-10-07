@@ -2,12 +2,12 @@ import dask
 import matplotlib
 
 from lib.config import PscPlotConfig
-from lib.data.compile import compile_run
 from lib.parsing.parse import parse_args
 from lib.profiling.environment import EnvironmentReport
 from lib.profiling.profiler import Profiler
 from lib.profiling.report import ProfileReport
 from lib.profiling.sampler import ProcessTreeSampler
+from lib.run.compile import compile_run
 
 
 def main():

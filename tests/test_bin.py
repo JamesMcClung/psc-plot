@@ -17,9 +17,9 @@ import numpy as np
 import pytest
 from conftest import CONFIG_2D
 
-from lib.data.compile import compile_plot_pipeline
 from lib.data.data_with_attrs import Field, List
 from lib.parsing.parse import parse_args
+from lib.run.compile import compile_plot_pipeline
 
 
 def _pull_world(argv: str):

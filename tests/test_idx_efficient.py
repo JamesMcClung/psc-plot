@@ -12,8 +12,8 @@ from __future__ import annotations
 import pytest
 from conftest import CONFIG_2D
 
-from lib.data.compile import compile_plot_pipeline
 from lib.parsing.parse import parse_args
+from lib.run.compile import compile_plot_pipeline
 
 
 @pytest.fixture

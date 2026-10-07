@@ -16,7 +16,7 @@ import pytest
 from synthetic_particles import write_steps, write_steps_bp
 
 from lib.config import PscPlotConfig
-from lib.data.compile import compile_plot_pipeline
+from lib.run.compile import compile_plot_pipeline
 
 
 def _run_h5_pipeline(data_dir: pathlib.Path, result_queue: mp.Queue) -> None:

@@ -31,8 +31,8 @@ def _run_pipeline(data_dir: pathlib.Path, chunksize: int, argv: str, result_queu
 
     matplotlib.use("Agg")
 
-    from lib.data.compile import compile_plot_pipeline
     from lib.parsing.parse import parse_args
+    from lib.run.compile import compile_plot_pipeline
 
     args = parse_args(argv.split())
     plot = compile_plot_pipeline(args, PscPlotConfig.create_minimal(data_root=data_dir, dask_chunk_size=chunksize)).run_plot()

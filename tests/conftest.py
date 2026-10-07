@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import pytest
 
 from lib.config import PscPlotConfig
-from lib.data.compile import compile_plot_pipeline
 from lib.parsing.parse import parse_args
 from lib.plotting.plot import SaveFormat
+from lib.run.compile import compile_plot_pipeline
 
 _TESTS_DIR = Path(__file__).parent
 _DATA_DIR = _TESTS_DIR / "data"
