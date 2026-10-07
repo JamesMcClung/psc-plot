@@ -34,9 +34,7 @@ The following variables can be derived: {get_derivable_keys(data, config)}."""
 
     token = _DERIVING.set((*chain, (prepath, key)))
     try:
-        world = DataWorld({prepath: data}, prepath, config=config)
-        for step in pipeline:
-            world = step.apply_world(world)
+        world = pipeline.run(DataWorld({prepath: data}, prepath, config=config))
     finally:
         _DERIVING.reset(token)
 

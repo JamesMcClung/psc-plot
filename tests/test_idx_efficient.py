@@ -12,8 +12,8 @@ from __future__ import annotations
 import pytest
 from conftest import CONFIG_2D
 
-from lib.data.compile import compile_plot_node
 from lib.parsing.parse import parse_args
+from lib.run.compile import compile_plot_pipeline
 
 
 @pytest.fixture
@@ -34,7 +34,7 @@ def files_and_vars(monkeypatch: pytest.MonkeyPatch):
 
 def test_field_idx_t(files_and_vars):
     args = parse_args("pfd ex_ec --idx t=-1 -v y z time= --compute".split())
-    compile_plot_node(args, CONFIG_2D).pull()._initialize()
+    compile_plot_pipeline(args, CONFIG_2D).run_plot()._initialize()
 
     files_read = {f for f, var in files_and_vars if var == "ex_ec"}
     assert len(files_read) == 1, f"--idx t=-1 read 'ex_ec' from {len(files_read)} files; expected 1. files: {sorted(files_read)}"
@@ -42,7 +42,7 @@ def test_field_idx_t(files_and_vars):
 
 def test_particle_bp_idx_t(files_and_vars):
     args = parse_args("prt.e --idx t=-1 -v y z time= --compute".split())
-    compile_plot_node(args, CONFIG_2D).pull()._initialize()
+    compile_plot_pipeline(args, CONFIG_2D).run_plot()._initialize()
 
     # Particle position columns; if any of these is read from >1 file, the
     # loader is scanning steps it shouldn't.
@@ -54,7 +54,7 @@ def test_particle_bp_idx_t(files_and_vars):
 def test_field_pos_t(files_and_vars):
     # t=999 is past max(t) in test-2d, so "nearest" resolves to the last file.
     args = parse_args("pfd ex_ec --pos t=999 -v y z time= --compute".split())
-    compile_plot_node(args, CONFIG_2D).pull()._initialize()
+    compile_plot_pipeline(args, CONFIG_2D).run_plot()._initialize()
 
     files_read = {f for f, var in files_and_vars if var == "ex_ec"}
     assert len(files_read) == 1, f"--pos t=999 read 'ex_ec' from {len(files_read)} files; expected 1. files: {sorted(files_read)}"
@@ -62,7 +62,7 @@ def test_field_pos_t(files_and_vars):
 
 def test_particle_bp_pos_t(files_and_vars):
     args = parse_args("prt.e --pos t=999 -v y z time= --compute".split())
-    compile_plot_node(args, CONFIG_2D).pull()._initialize()
+    compile_plot_pipeline(args, CONFIG_2D).run_plot()._initialize()
 
     position_vars = {"y", "z"}
     files_read = {f for f, var in files_and_vars if var in position_vars}

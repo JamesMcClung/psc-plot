@@ -37,12 +37,14 @@ def _get_parser() -> argparse.ArgumentParser:
         default=None,
         help="dots per inch of saved figure (defaults to Matplotlib's default)",
     )
-    parser.add_argument(
+    # a choice, not a necessity: profiling --dask-graph would still time the adaptors' eager work, but nothing has needed it yet
+    profile_or_dask_graph = parser.add_mutually_exclusive_group()
+    profile_or_dask_graph.add_argument(
         "--dask-graph",
         action="store_true",
         help="visualize the pipeline's dask graph as SVG instead of rendering a plot",
     )
-    parser.add_argument(
+    profile_or_dask_graph.add_argument(
         "--profile",
         action="store_true",
         help="report the environment, the resolved config, and the time and memory each pipeline stage takes. Never shows the figure: profiles --save if given, else renders every frame offscreen. With no pipeline, reports only the environment",

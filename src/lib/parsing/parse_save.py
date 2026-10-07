@@ -8,12 +8,16 @@ from lib.parsing import parse_util
 @dataclass(frozen=True)
 class SaveSpec:
     """The components of a save path, each None when the user did not specify it.
-    Resolution of the defaults happens in SavePlotNode, which needs the Plot to
-    decide a default format."""
+    `resolve_path` fills in the dir and name; the format's default is resolved
+    by SavePlot, which needs the Plot to decide it."""
 
     dir: Path | None = None
     name: str | None = None
     format: str | None = None
+
+    def resolve_path(self, default_stem: str, ext: str) -> Path:
+        """`dir/name.ext`, defaulting to the cwd and `default_stem`. `ext` is the resolved format, or a fixed extension."""
+        return (self.dir or Path(".")) / f"{self.name or default_stem}.{ext}"
 
 
 _KEYS = ("dir", "name", "format")

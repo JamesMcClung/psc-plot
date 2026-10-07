@@ -17,13 +17,13 @@ import numpy as np
 import pytest
 from conftest import CONFIG_2D
 
-from lib.data.compile import compile_data_node, compile_plot_node
 from lib.data.data_with_attrs import Field, List
 from lib.parsing.parse import parse_args
+from lib.run.compile import compile_plot_pipeline
 
 
 def _pull_world(argv: str):
-    return compile_data_node(parse_args(argv.split()), CONFIG_2D).pull()
+    return compile_plot_pipeline(parse_args(argv.split()), CONFIG_2D).run_world()
 
 
 def _pull_active(argv: str):
@@ -113,7 +113,7 @@ def histogram_calls(monkeypatch: pytest.MonkeyPatch):
 def test_time_axis_is_not_part_of_the_per_partition_histogram(histogram_calls):
     """Each partition holds one timestep, so histogramming t per partition would
     allocate the whole y-by-py-by-t grid to write one t slice of it."""
-    compile_plot_node(parse_args("prt.i --bin y=8 py=16 -v y py -q".split()), CONFIG_2D).pull()._initialize()
+    compile_plot_pipeline(parse_args("prt.i --bin y=8 py=16 -v y py -q".split()), CONFIG_2D).run_plot()._initialize()
 
     assert histogram_calls, "expected the binning pipeline to run the histogram kernel"
     oversized = {shape for shape in histogram_calls if shape != (8, 16)}
@@ -124,7 +124,7 @@ def test_drawing_a_frame_histograms_only_that_step(histogram_calls):
     """Binning stays lazy, so each frame recomputes its slice of the grid. Each t
     bin is its own slice of the stack, so dask must cull the frame's computation
     down to that step's partitions — per-frame cost must not scale with the run."""
-    plot = compile_plot_node(parse_args("prt.i --bin y=8 py=16 -v y py -q".split()), CONFIG_2D).pull()
+    plot = compile_plot_pipeline(parse_args("prt.i --bin y=8 py=16 -v y py -q".split()), CONFIG_2D).run_plot()
     plot._initialize()
     after_initialize = len(histogram_calls)
 
@@ -144,9 +144,9 @@ def test_drawing_a_frame_histograms_only_that_step(histogram_calls):
 
 def test_compute_after_bin_materializes_the_grid(histogram_calls):
     """`--bin ... -c` is how a user buys the plot-sized grid once: the histogram
-    runs during .pull(), and no frame may re-run it over the particle files."""
-    plot = compile_plot_node(parse_args("prt.i --bin y=8 py=16 -c -v y py -q".split()), CONFIG_2D).pull()
-    after_pull = len(histogram_calls)
+    runs during .run_plot(), and no frame may re-run it over the particle files."""
+    plot = compile_plot_pipeline(parse_args("prt.i --bin y=8 py=16 -c -v y py -q".split()), CONFIG_2D).run_plot()
+    after_run_plot = len(histogram_calls)
     plot._initialize()
     for frame in range(plot.n_frames):
         for renderer in plot.renderers:
@@ -154,8 +154,8 @@ def test_compute_after_bin_materializes_the_grid(histogram_calls):
             np.asarray(renderer.plot_info.data)
 
     n_partitions = len(_pull_active("prt.i -v y py").metadata.partition_ranges)
-    assert after_pull == n_partitions, f"expected one histogram call per partition ({n_partitions}) at --compute, got {after_pull}"
-    assert len(histogram_calls) == after_pull, f"bounds and {plot.n_frames} frames re-ran the histogram {len(histogram_calls) - after_pull} times"
+    assert after_run_plot == n_partitions, f"expected one histogram call per partition ({n_partitions}) at --compute, got {after_run_plot}"
+    assert len(histogram_calls) == after_run_plot, f"bounds and {plot.n_frames} frames re-ran the histogram {len(histogram_calls) - after_run_plot} times"
 
 
 @pytest.mark.parametrize("n_t_bins", [3, 11, 25])

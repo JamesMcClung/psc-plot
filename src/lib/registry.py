@@ -15,7 +15,7 @@ from lib.latex import Latex
 from lib.var_info import Geometry, VarInfo
 
 if TYPE_CHECKING:
-    from lib.data.adaptor import WorldAdaptor
+    from lib.data.pipeline import Pipeline
 
 SHARED_FILE_STEM = "shared"
 _FIELDS = ("display", "unit", "geometry", "pipeline")
@@ -30,7 +30,7 @@ class RegistryError(ValueError): ...
 @dataclass(frozen=True)
 class RegistryEntry:
     var_info: VarInfo
-    pipeline: list[WorldAdaptor] | None = None
+    pipeline: Pipeline | None = None
 
 
 def _normalize_prefix(prefix: str | None) -> str | None:
@@ -79,7 +79,7 @@ def _check_latex(where: str, name: str, value: object) -> str:
     return value
 
 
-def _parse_entry(path: Path, prefix: str | None, key: object, raw: object, parse_steps: Callable[[list[str]], list[WorldAdaptor]]) -> RegistryEntry:
+def _parse_entry(path: Path, prefix: str | None, key: object, raw: object, parse_pipeline: Callable[[list[str]], Pipeline]) -> RegistryEntry:
     if not isinstance(key, str):
         raise RegistryError(f"{path.name}: key {key!r} must be a string; quote it (YAML reads e.g. on/off/yes/no as booleans)")
     where = f"{path.name}: {key}"
@@ -106,7 +106,7 @@ def _parse_entry(path: Path, prefix: str | None, key: object, raw: object, parse
         if prefix is None:
             raise RegistryError(f"{where}: entries in {SHARED_FILE_STEM}.yml cannot have a pipeline")
         try:
-            pipeline = parse_steps(raw_pipeline)
+            pipeline = parse_pipeline(raw_pipeline)
         except ValueError as e:
             raise RegistryError(f"{where}: {e}") from e
 
@@ -120,14 +120,18 @@ class Registry:
     @classmethod
     def load(cls, files: list[Path]) -> Registry:
         # Deferred: the parser imports every adaptor, and several adaptors reach the registry via config.
+        from lib.data.pipeline import Pipeline
         from lib.parsing.parse import parse_steps
+
+        def parse_pipeline(steps: list[str]) -> Pipeline:
+            return Pipeline(tuple(parse_steps(steps)))
 
         entries: dict[tuple[str | None, str], RegistryEntry] = {}
         sources: dict[tuple[str | None, str], Path] = {}
         for path in files:
             prefix = None if path.stem == SHARED_FILE_STEM else path.stem
             for key, raw in _read_yaml(path).items():
-                entry = _parse_entry(path, prefix, key, raw, parse_steps)
+                entry = _parse_entry(path, prefix, key, raw, parse_pipeline)
                 if (prefix, key) in sources:
                     raise RegistryError(f"{path}: {key} already defined in {sources[(prefix, key)]}")
                 entries[(prefix, key)] = entry
@@ -145,7 +149,7 @@ class Registry:
 
         return VarInfo(Latex(key), Latex(""), key=key)
 
-    def pipeline(self, prefix: str | None, key: str) -> list[WorldAdaptor] | None:
+    def pipeline(self, prefix: str | None, key: str) -> Pipeline | None:
         entry = self.entry(prefix, key)
         return entry.pipeline if entry else None
 

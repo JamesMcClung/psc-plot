@@ -2,6 +2,7 @@ import numpy as np
 
 from lib.data import data_util
 from lib.data.adaptor import MetadataAdaptor
+from lib.data.adaptors.idx import Idx
 from lib.data.data_with_attrs import Field, List
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
@@ -36,9 +37,6 @@ class Pos(MetadataAdaptor):
         return data.with_active(data=data.require_active_subdata().sel(dim_names_to_pos, method="nearest").sel(dim_names_to_slice))
 
     def apply_list(self, data: List) -> List:
-        # Lazy-import Idx to avoid a circular import via lib.plotting.animated_plot.
-        from lib.data.adaptors.idx import Idx
-
         coord_isels: dict[str, int | slice] = {}
         value_sels: dict[str, slice] = {}
         for dim, sel in self.dim_names_to_sel.items():

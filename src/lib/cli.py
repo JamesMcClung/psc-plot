@@ -1,16 +1,27 @@
+import sys
+
 import dask
 import matplotlib
 
 from lib.config import PscPlotConfig
-from lib.data.compile import compile_action_nodes
 from lib.parsing.parse import parse_args
 from lib.profiling.environment import EnvironmentReport
 from lib.profiling.profiler import Profiler
 from lib.profiling.report import ProfileReport
 from lib.profiling.sampler import ProcessTreeSampler
+from lib.run.compile import compile_run
+from lib.run.usage_error import UsageError
 
 
 def main():
+    try:
+        _main()
+    except UsageError as e:
+        print(f"error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def _main():
     config = PscPlotConfig.from_env()
 
     dask.config.set(num_workers=config.dask_num_workers)
@@ -25,14 +36,13 @@ def main():
     args = parse_args()
 
     if args.profile:
-        # never show a window; see compile_action_nodes
+        # never show a window; see compile_run
         matplotlib.use("Agg")
 
-    actions = compile_action_nodes(args, config)
+    run = compile_run(args, config)
 
     if not args.profile:
-        for action in actions:
-            action.pull()
+        run.execute()
         return
 
     # collected after dask setup, so a distributed cluster's workers already exist
@@ -44,8 +54,7 @@ def main():
     with ProcessTreeSampler() as sampler:
         profiler = Profiler(sampler)
         with profiler.run():
-            for action in actions:
-                action.pull()
+            run.execute()
 
     print()
     print(ProfileReport(environment, profiler.records, profiler.total).format_text())

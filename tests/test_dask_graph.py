@@ -9,18 +9,20 @@ operation (e.g. an inline `map_partitions(lambda)`) blocks projection pushdown,
 silently causing dead loads of every column in every file.
 """
 
-from conftest import _DATA_DIR
+import pytest
+from conftest import _DATA_DIR, CONFIG_2D
 
 from lib.config import PscPlotConfig
-from lib.data.compile import compile_data_node
 from lib.parsing.parse import parse_args
+from lib.run.compile import compile_plot_pipeline, compile_run
+from lib.run.usage_error import UsageError
 
 
 def _read_keys_for_columns(args_list: list[str], data_dir: str = "test-2d") -> list[str]:
     """Optimize each dask collection produced by `args_list` and return
     the set of per-column file-read task key strings in the optimized graph."""
     config = PscPlotConfig.create_minimal(data_root=_DATA_DIR / data_dir)
-    data = compile_data_node(parse_args(args_list), config).pull().active_data
+    data = compile_plot_pipeline(parse_args(args_list), config).run_world().active_data
     collections = data.dask_collections()
     assert collections, "expected particle pipeline to be dask-backed"
     read_keys: list[str] = []
@@ -49,3 +51,8 @@ def test_particle_load_projects_columns_in_binned_pipeline():
     unwanted = ["px", "pz", "x", "z"]
     leaked = sorted({c for c in unwanted if any(f"-{c}-" in k for k in read_keys)})
     assert not leaked, f"unprojected columns still being read from disk: {leaked}"
+
+
+def test_eager_data_is_a_usage_error():
+    with pytest.raises(UsageError, match="--dask-graph requires dask-backed data"):
+        compile_run(parse_args(["prt.i", "-c", "--dask-graph", "-q"]), CONFIG_2D).execute()
