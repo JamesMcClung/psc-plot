@@ -1,7 +1,6 @@
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from pathlib import Path
 
 from lib.data.data_world import DataWorld
 from lib.parsing.parse_save import SaveSpec
@@ -43,9 +42,8 @@ class SavePlot(PlotAction):
 
                 save_format = plot.default_save_format()
 
-            save_dir = self.save.dir or Path(".")
-            save_dir.mkdir(exist_ok=True, parents=True)
-            path = save_dir / f"{self.save.name or self.default_stem}.{save_format}"
+            path = self.save.resolve_path(self.default_stem, save_format)
+            path.parent.mkdir(exist_ok=True, parents=True)
             plot.save_to_path(path, dpi=self.save_dpi)
             print(f"wrote to {path}")
 
@@ -73,9 +71,8 @@ class DaskGraph:
         import dask
 
         # save.format is ignored: the extension here is always .daskgraph.svg
-        save_dir = self.save.dir or Path.cwd()
-        save_dir.mkdir(exist_ok=True, parents=True)
-        path = save_dir / f"{self.save.name or self.default_stem}.daskgraph.svg"
+        path = self.save.resolve_path(self.default_stem, "daskgraph.svg")
+        path.parent.mkdir(exist_ok=True, parents=True)
         # dask.visualize's optimize_graph flag only lowers legacy HLG collections
         # (e.g. dask Arrays), not new-style Expr ones (dask DataFrames) — without
         # pre-optimizing the latter, un-lowered nodes (e.g. Concat from dd.concat)
