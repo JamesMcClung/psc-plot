@@ -57,7 +57,7 @@ class DaskGraph:
     default_stem: str
 
     def run(self, world: DataWorld) -> None:
-        data = world.active_data
+        data = world.require_active_data()
 
         collections = data.dask_collections()
         if not collections:
