@@ -1,4 +1,3 @@
-import sys
 from dataclasses import dataclass
 
 from lib.config import PscPlotConfig
@@ -9,6 +8,7 @@ from lib.parsing.args import Args
 from lib.parsing.parse_save import SaveSpec
 from lib.run.actions import DaskGraph, PlotAction, RenderPlot, SavePlot, ShowPlot
 from lib.run.plot_pipeline import PlotPipeline
+from lib.run.usage_error import UsageError
 
 
 def _with_versus(adaptors: list[Adaptor]) -> list[Adaptor]:
@@ -64,8 +64,7 @@ def compile_run(args: Args, config: PscPlotConfig) -> CompiledRun:
 
     if args.save is not None:
         if args.save.format == "mp4" and not config.ffmpeg_bin:
-            print("error: format=mp4 requires ffmpeg", file=sys.stderr)
-            sys.exit(1)
+            raise UsageError("format=mp4 requires ffmpeg")
 
         plot_actions.append(SavePlot(save=args.save, save_dpi=args.save_dpi, default_stem=plot_pipeline.get_save_file_stem()))
     elif args.profile:

@@ -1,3 +1,5 @@
+import sys
+
 import dask
 import matplotlib
 
@@ -8,9 +10,18 @@ from lib.profiling.profiler import Profiler
 from lib.profiling.report import ProfileReport
 from lib.profiling.sampler import ProcessTreeSampler
 from lib.run.compile import compile_run
+from lib.run.usage_error import UsageError
 
 
 def main():
+    try:
+        _main()
+    except UsageError as e:
+        print(f"error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def _main():
     config = PscPlotConfig.from_env()
 
     dask.config.set(num_workers=config.dask_num_workers)

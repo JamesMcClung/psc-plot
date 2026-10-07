@@ -14,6 +14,7 @@ from conftest import CONFIG_2D, make_save
 from lib.parsing.parse import parse_args
 from lib.parsing.parse_save import SaveSpec, parse_save
 from lib.run.compile import compile_plot_pipeline, compile_run
+from lib.run.usage_error import UsageError
 
 # --- 1. The --save argument grammar -------------------------------------------------
 
@@ -168,3 +169,8 @@ def test_save_incompatible_format_falls_back_to_default(tmp_path):
     with pytest.warns(UserWarning, match="jpg is incompatible with the data; reverting to default"):
         run.execute()
     assert (tmp_path / "myfig.png").exists()
+
+
+def test_mp4_without_ffmpeg_is_a_usage_error(tmp_path):
+    with pytest.raises(UsageError, match="format=mp4 requires ffmpeg"):
+        compile_run(parse_args([*_BASE, "-s", f"{tmp_path}/myfig.mp4"]), CONFIG_2D)
