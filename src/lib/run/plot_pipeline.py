@@ -2,39 +2,27 @@ from dataclasses import dataclass
 
 from lib import file_util
 from lib.config import PscPlotConfig
-from lib.data.adaptor import Adaptor
 from lib.data.data_world import DataWorld
+from lib.data.pipeline import Pipeline
 from lib.plotting.get_plot import get_plot
 from lib.plotting.hook import Hook
 from lib.plotting.plot import Plot
 from lib.profiling.profiler import PLOT_INIT, profile_stage
 
 
-def _stage_name(adaptor: Adaptor) -> str:
-    """The adaptor's class name, plus its name fragments; the CLI text isn't kept after parsing."""
-    name = type(adaptor).__name__
-    if fragments := adaptor.get_name_fragments():
-        name += f" ({'-'.join(fragments)})"
-    return name
-
-
 @dataclass(frozen=True)
 class PlotPipeline:
     config: PscPlotConfig
-    adaptors: list[Adaptor]
+    pipeline: Pipeline
     """Starts with the implicit `With` of the positional args, and includes a `Versus`."""
-    hooks: list[Hook]
+    hooks: tuple[Hook, ...]
 
     def get_save_file_stem(self) -> str:
-        fragments = [frag for adaptor in self.adaptors for frag in adaptor.get_name_fragments()] + [frag for hook in self.hooks for frag in hook.get_name_fragments()]
+        fragments = self.pipeline.get_name_fragments() + [frag for hook in self.hooks for frag in hook.get_name_fragments()]
         return file_util.sanitize_stem("-".join(fragments))
 
     def run_world(self) -> DataWorld:
-        world = DataWorld(config=self.config)
-        for adaptor in self.adaptors:
-            with profile_stage(_stage_name(adaptor)):
-                world = adaptor.apply_world(world)
-        return world
+        return self.pipeline.run(DataWorld(config=self.config))
 
     def run_plot(self) -> Plot:
         world = self.run_world()

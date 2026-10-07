@@ -5,6 +5,7 @@ from lib.config import PscPlotConfig
 from lib.data.actions import DaskGraph, PlotAction, RenderPlot, SavePlot, ShowPlot
 from lib.data.adaptor import Adaptor
 from lib.data.adaptors.versus import Versus
+from lib.data.pipeline import Pipeline
 from lib.parsing.args import Args
 from lib.parsing.parse_save import SaveSpec
 from lib.run.plot_pipeline import PlotPipeline
@@ -21,7 +22,7 @@ def _with_versus(adaptors: list[Adaptor]) -> list[Adaptor]:
 
 
 def compile_plot_pipeline(args: Args, config: PscPlotConfig) -> PlotPipeline:
-    return PlotPipeline(config, _with_versus(args.adaptors), args.hooks)
+    return PlotPipeline(config, Pipeline(tuple(_with_versus(args.adaptors))), tuple(args.hooks))
 
 
 @dataclass(frozen=True)
