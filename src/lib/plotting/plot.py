@@ -45,8 +45,8 @@ class Plot(ABC):
     def save_to_path(self, path: Path, *, dpi: float | None = None): ...
 
     @abstractmethod
-    def render_offscreen(self):
-        """Render every frame to the canvas and discard it, without showing or saving."""
+    def render_offscreen(self, max_frames: int | None = None):
+        """Render every frame, or the first `max_frames`, to the canvas and discard it, without showing or saving."""
 
     @abstractmethod
     def allowed_save_formats(self) -> list[SaveFormat]: ...

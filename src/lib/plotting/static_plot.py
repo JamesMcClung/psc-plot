@@ -13,7 +13,7 @@ class StaticPlot(Plot):
         with profile_stage(FRAME_RENDER):
             self.fig.savefig(path, dpi=dpi or "figure")
 
-    def render_offscreen(self):
+    def render_offscreen(self, max_frames: int | None = None):
         self._initialize()
         with profile_stage(FRAME_RENDER):
             self.fig.canvas.draw()

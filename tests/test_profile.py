@@ -9,7 +9,7 @@ from lib.parsing.parse import parse_args
 from lib.profiling.profiler import FINISH, FRAME_RENDER, FRAME_UPDATE, PLOT_INIT, Profiler
 from lib.profiling.sampler import ProcessTreeSampler
 from lib.run.actions import RenderPlot, SavePlot, ShowPlot
-from lib.run.compile import compile_run
+from lib.run.compile import compile_plot_pipeline, compile_run
 
 _ANIMATED = ["pfd", "hx_fc", "-v", "y"]
 _STATIC = ["pfd", "hx_fc", "-i", "t=-1", "-v", "y", "time="]
@@ -126,3 +126,28 @@ def test_every_canvas_draw_is_in_a_stage(monkeypatch, tmp_path, save):
     monkeypatch.setattr(FigureCanvasAgg, "draw", recording_draw)
     _profile([*_ANIMATED, *(["-s", f"{tmp_path}/out.gif"] if save else [])])
     assert unattributed == []
+
+
+def _profile_render(args_list: list[str], max_frames: int) -> Profiler:
+    plot = compile_plot_pipeline(parse_args(args_list), CONFIG_2D).run_plot()
+    with ProcessTreeSampler() as sampler:
+        profiler = Profiler(sampler)
+        with profiler.run():
+            RenderPlot(max_frames=max_frames).run(plot)
+    return profiler
+
+
+def test_render_plot_max_frames():
+    profiler = _profile_render(_ANIMATED, max_frames=3)
+    assert _count(profiler, FRAME_RENDER) == 3
+    assert _count(profiler, FRAME_UPDATE) == 4  # Animation.save redraws frame 0 as its initial draw
+
+
+def test_render_plot_max_frames_above_frame_count_renders_all():
+    profiler = _profile_render(_ANIMATED, max_frames=20)
+    assert _count(profiler, FRAME_RENDER) == 11
+
+
+def test_render_plot_max_frames_static():
+    profiler = _profile_render(_STATIC, max_frames=3)
+    assert _count(profiler, FRAME_RENDER) == 1
