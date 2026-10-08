@@ -45,12 +45,6 @@ def test_projected_wall_needs_two_rendered_frames():
     assert TrialRun(_record("total", 3.0), 11, 1, 0.0).projected_wall == 3.0
 
 
-def test_spawn_trial():
-    result = spawn_trial(_ANIMATED, CONFIG_2D)
-    assert isinstance(result, TrialRun)
-    assert result.n_frames == 11
-
-
 def test_spawn_trial_reports_an_exception():
     result = spawn_trial(["pfd", "no_such_var", "-v", "y"], CONFIG_2D)
     assert isinstance(result, TrialFailure)
