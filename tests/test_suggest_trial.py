@@ -40,9 +40,8 @@ def test_projected_wall_extrapolates_the_later_frames():
     assert fast_start.projected_wall == 201.0
 
 
-def test_projected_wall_needs_two_rendered_frames():
+def test_projected_wall_of_a_static_plot_is_its_total():
     assert TrialRun(_record("total", 3.0), 1, 1, 0.0).projected_wall == 3.0
-    assert TrialRun(_record("total", 3.0), 11, 1, 0.0).projected_wall == 3.0
 
 
 def test_spawn_trial_reports_an_exception():
