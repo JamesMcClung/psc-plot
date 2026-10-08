@@ -2,14 +2,13 @@ import datetime
 from dataclasses import dataclass
 
 from lib.config import PscPlotConfig, format_config_value
-from lib.profiling.units import format_bytes
+from lib.profiling.units import format_bytes, format_cores
 from lib.profiling.worker_count import WorkerCount
 from lib.suggest.trial import TrialFailure, TrialResult, TrialRun
 
 _DATA_DIR_KEY = "PSC_PLOT_DATA_DIR"
 _DASK_SCHEDULER_KEY = "PSC_PLOT_DASK_SCHEDULER"
 _DASK_NUM_WORKERS_KEY = "PSC_PLOT_DASK_NUM_WORKERS"
-_MIN_WALL_FOR_CORES = 0.05
 
 
 @dataclass(frozen=True)
@@ -46,8 +45,7 @@ class ConfigSuggestion:
                 lines.append(f"{mark} {scheduler:<12}failed: {reason}")
                 continue
             total = result.total
-            cores = f"{total.cpu / total.wall:.1f}" if total.wall >= _MIN_WALL_FOR_CORES else "-"
-            lines.append(f"{mark} {scheduler:<12}{total.wall:>8.1f}s{result.projected_wall:>10.1f}s{total.cpu:>8.1f}s{cores:>7}{format_bytes(total.peak_rss):>10}")
+            lines.append(f"{mark} {scheduler:<12}{total.wall:>8.1f}s{result.projected_wall:>10.1f}s{total.cpu:>8.1f}s{format_cores(total.cpu, total.wall):>7}{format_bytes(total.peak_rss):>10}")
         return lines
 
     def format_yaml(self) -> str:
