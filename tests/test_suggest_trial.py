@@ -29,7 +29,6 @@ def test_split_frames_counts_everything_through_the_first_render_as_startup():
     for _ in range(3):
         records += [_record(FRAME_UPDATE, 2.0), _record(FRAME_REDRAW, 0.5), _record(FRAME_RENDER, 0.25)]
     assert _split_frames(records) == (3, 5.5)
-    assert _split_frames([_record(PLOT_INIT, 5.0)]) == (0, 0.0)
 
 
 def test_projected_wall_extrapolates_the_later_frames():

@@ -45,8 +45,6 @@ type TrialResult = TrialRun | TrialFailure
 def _split_frames(records: list[StageRecord]) -> tuple[int, float]:
     """The number of frames rendered, and the wall of every frame but the first. A frame ends with its render, so everything up to the first render, including the pipeline, plot init and the first frame, counts as startup."""
     renders = [i for i, record in enumerate(records) if record.name == FRAME_RENDER]
-    if not renders:
-        return 0, 0.0
     return len(renders), sum(record.wall for record in records[renders[0] + 1 :])
 
 
