@@ -15,7 +15,7 @@ from lib.run.compile import compile_plot_pipeline
 from lib.run.dask_setup import configure_dask
 
 # frames per trial: enough to rank schedulers by per-frame cost without paying for the whole animation
-TRIAL_FRAMES = 3
+TRIAL_FRAMES = 6
 
 
 @dataclass(frozen=True)

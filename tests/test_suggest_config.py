@@ -49,7 +49,7 @@ def test_with_pipeline_times_every_candidate(monkeypatch, capsys):
     captured = capsys.readouterr()
     values = yaml.safe_load(captured.out)
     assert values["PSC_PLOT_DASK_SCHEDULER"] in candidate_schedulers()
-    assert "(3 of 11 frames, after a warm-up run)" in captured.out
+    assert "(6 of 11 frames, after a warm-up run)" in captured.out
     assert "measured: pfd hx_fc -v y " in captured.out
     for scheduler in candidate_schedulers():
         assert f"trial {scheduler}" in captured.err
