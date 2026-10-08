@@ -52,7 +52,7 @@ def _get_parser() -> argparse.ArgumentParser:
     exclusive_modes.add_argument(
         "--suggest-config",
         action="store_true",
-        help="print a config.yml for this machine and job to stdout. With a pipeline, chooses the dask scheduler by timing the pipeline and its first 6 frames under each candidate, projected to every frame; without one, guesses from the environment. Never shows or saves the figure",
+        help="print a config.yml for this machine and job to stdout. With a pipeline, chooses the dask scheduler by timing the pipeline and its first few frames under each candidate, projected to every frame; without one, guesses from the environment. Never shows or saves the figure",
     )
 
     for custom_arg in CUSTOM_ARGS:
