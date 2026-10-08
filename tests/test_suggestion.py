@@ -13,9 +13,9 @@ _CONFIG = PscPlotConfig.create_minimal(data_root=Path("/data"), ffmpeg_bin=Path(
 _WORKERS = WorkerCount(28, "NCPUS", "min of NCPUS=28, affinity=56, physical=28")
 _DATE = datetime.date(2026, 10, 7)
 _TRIALS = {
-    "threads": TrialRun(StageRecord("total", 41.2, 44.0, 3 * 2**30), 201),
+    "threads": TrialRun(StageRecord("total", 41.2, 44.0, 3 * 2**30), 201, 3, 0.0),
     "processes": TrialFailure("exited with code -9"),
-    "distributed": TrialRun(StageRecord("total", 13.1, 118.9, 10 * 2**30), 201),
+    "distributed": TrialRun(StageRecord("total", 13.1, 118.9, 10 * 2**30), 201, 3, 0.0),
 }
 
 
