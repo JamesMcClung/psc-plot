@@ -10,7 +10,7 @@ from lib.profiling.worker_count import WorkerCount
 from lib.run.usage_error import UsageError
 from lib.suggest.candidates import candidate_schedulers, guess_scheduler
 from lib.suggest.suggestion import ConfigSuggestion, Measurement, fastest
-from lib.suggest.trial import TRIAL_FRAMES, TrialFailure, spawn_trial
+from lib.suggest.trial import TrialFailure, spawn_trial
 
 
 def _progress(message: str) -> None:
@@ -39,5 +39,5 @@ def suggest_config(argv: list[str], has_pipeline: bool, config: PscPlotConfig, e
     if scheduler is None:
         raise UsageError("every trial failed: " + "; ".join(f"{name}: {result.reason}" for name, result in trials.items()))
 
-    measurement = Measurement(shlex.join(argv), min(TRIAL_FRAMES, warm_up.n_frames), warm_up.n_frames, trials)
+    measurement = Measurement(shlex.join(argv), warm_up.frames_rendered, warm_up.n_frames, trials)
     return suggestion(scheduler=scheduler, measurement=measurement)
