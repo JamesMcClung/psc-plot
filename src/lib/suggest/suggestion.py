@@ -21,9 +21,9 @@ class Measurement:
 
 
 def fastest(trials: dict[str, TrialResult]) -> str | None:
-    """The scheduler whose trial finished in the least wall time, or None if every trial failed."""
+    """The scheduler whose trial projects the least wall time for the whole animation, or None if every trial failed."""
     runs = {scheduler: result for scheduler, result in trials.items() if isinstance(result, TrialRun)}
-    return min(runs, key=lambda scheduler: runs[scheduler].total.wall, default=None)
+    return min(runs, key=lambda scheduler: runs[scheduler].projected_wall, default=None)
 
 
 @dataclass(frozen=True)
@@ -37,7 +37,7 @@ class ConfigSuggestion:
 
     def format_table(self) -> list[str]:
         assert self.measurement is not None
-        lines = [f"  {'scheduler':<12}{'wall':>9}{'cpu':>9}{'cores':>7}{'peak rss':>10}"]
+        lines = [f"  {'scheduler':<12}{'wall':>9}{'projected':>11}{'cpu':>9}{'cores':>7}{'peak rss':>10}"]
         for scheduler, result in self.measurement.trials.items():
             mark = "*" if scheduler == self.scheduler else " "
             if isinstance(result, TrialFailure):
@@ -47,7 +47,7 @@ class ConfigSuggestion:
                 continue
             total = result.total
             cores = f"{total.cpu / total.wall:.1f}" if total.wall >= _MIN_WALL_FOR_CORES else "-"
-            lines.append(f"{mark} {scheduler:<12}{total.wall:>8.1f}s{total.cpu:>8.1f}s{cores:>7}{format_bytes(total.peak_rss):>10}")
+            lines.append(f"{mark} {scheduler:<12}{total.wall:>8.1f}s{result.projected_wall:>10.1f}s{total.cpu:>8.1f}s{cores:>7}{format_bytes(total.peak_rss):>10}")
         return lines
 
     def format_yaml(self) -> str:
@@ -58,8 +58,10 @@ class ConfigSuggestion:
         else:
             measurement = self.measurement
             lines.append(f"# measured: {measurement.command}  ({measurement.frames_rendered} of {measurement.frames_total} frames, after a warm-up run)")
+            if measurement.frames_total > measurement.frames_rendered > 1:
+                lines.append(f"# projected: all {measurement.frames_total} frames, each unrendered one at the mean wall of frames 2-{measurement.frames_rendered}")
             lines.extend(f"# {line}" for line in self.format_table())
-            scheduler_comment = f"fastest of {len(measurement.trials)} trials"
+            scheduler_comment = f"least projected wall of {len(measurement.trials)} trials"
 
         values = self.config.to_mapping() | {_DATA_DIR_KEY: ".", _DASK_SCHEDULER_KEY: self.scheduler, _DASK_NUM_WORKERS_KEY: self.workers.yaml_value()}
         comments = {
