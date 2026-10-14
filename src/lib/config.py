@@ -1,5 +1,6 @@
 import glob
 import importlib.resources
+import math
 import os
 import re
 import shutil
@@ -97,6 +98,17 @@ class _LiteralLoader(yaml.SafeLoader):
 
 
 _LiteralLoader.yaml_implicit_resolvers = {first: [(tag, regexp) for tag, regexp in resolvers if tag == "tag:yaml.org,2002:null"] for first, resolvers in yaml.SafeLoader.yaml_implicit_resolvers.items()}
+
+
+def format_config_value(value: ConfigValue) -> str:
+    """YAML text that a config file reads back as `value`: plain where the literal loader allows, else quoted."""
+    if isinstance(value, str):
+        try:
+            if yaml.load(f"k: {value}", _LiteralLoader) == {"k": value}:
+                return value
+        except yaml.YAMLError:
+            pass
+    return yaml.safe_dump(value, default_flow_style=True, width=math.inf).removesuffix("\n...\n").removesuffix("\n")
 
 
 def _expand_vars(value: str, environ: Mapping[str, str]) -> str:

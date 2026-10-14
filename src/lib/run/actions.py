@@ -19,11 +19,14 @@ class ShowPlot(PlotAction):
         plot.show()
 
 
+@dataclass(frozen=True)
 class RenderPlot(PlotAction):
-    """Renders every frame offscreen and discards it, e.g. to profile a pipeline without showing or saving."""
+    """Renders every frame, or the first `max_frames`, offscreen and discards it, e.g. to profile a pipeline without showing or saving."""
+
+    max_frames: int | None = None
 
     def run(self, plot: Plot) -> None:
-        plot.render_offscreen()
+        plot.render_offscreen(self.max_frames)
 
 
 @dataclass(frozen=True)

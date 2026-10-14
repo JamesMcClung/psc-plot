@@ -3,8 +3,9 @@ import stat
 from pathlib import Path
 
 import pytest
+import yaml
 
-from lib.config import CONFIG_KEYS, CONFIG_PATH_KEY, ConfigError, PscPlotConfig
+from lib.config import CONFIG_KEYS, CONFIG_PATH_KEY, ConfigError, PscPlotConfig, _LiteralLoader, format_config_value
 
 # --- create_minimal ---
 
@@ -293,3 +294,23 @@ def test_missing_config_file(clean_env, tmp_path):
     clean_env.setenv(CONFIG_PATH_KEY, str(tmp_path / "nope.yml"))
     with pytest.raises(ConfigError, match="nope.yml does not exist"):
         PscPlotConfig.from_env()
+
+
+@pytest.mark.parametrize(
+    "value, text",
+    [
+        ("500", "500"),
+        ("true", "true"),
+        ("$NCPUS", "$NCPUS"),
+        (".", "."),
+        ("/usr/bin/ffmpeg", "/usr/bin/ffmpeg"),
+        (None, "null"),
+        ("null", "'null'"),
+        ("a: b#c", "'a: b#c'"),
+        ([], "[]"),
+        (["a.yml", "b/*.yml"], "[a.yml, b/*.yml]"),
+    ],
+)
+def test_format_config_value_round_trips(value, text):
+    assert format_config_value(value) == text
+    assert yaml.load(f"k: {text}", _LiteralLoader) == {"k": value}

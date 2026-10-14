@@ -69,7 +69,11 @@ class AnimatedPlot(Plot):
 
         self._run_writer(path, writer, dpi)
 
-    def render_offscreen(self):
+    def render_offscreen(self, max_frames: int | None = None):
+        # the animation's frame count is fixed when _initialize builds it
+        assert not self._initialized
+        if max_frames is not None:
+            self.n_frames = min(self.n_frames, max_frames)
         # the same anim.save path as a real save, so offscreen and saved profiles are comparable
         self._run_writer(Path(os.devnull), _DiscardingWriter(), None)
 

@@ -13,3 +13,4 @@ class Args(argparse.Namespace):
     save_dpi: float | None
     dask_graph: bool
     profile: bool
+    suggest_config: bool
