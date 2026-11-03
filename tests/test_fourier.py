@@ -52,3 +52,47 @@ def test_inverse_restores_data_and_coords(angle):
     data = _pfd_hy()
     inverse = Fourier({"k_y": angle}).apply(Fourier({"y": angle}).apply(data))
     xr.testing.assert_allclose(inverse["hy_fc"].real.transpose(*data["hy_fc"].dims), data["hy_fc"])
+
+
+def _hy_with_ny(ny: int):
+    data = _pfd_hy()
+    return data.with_active(data=data["hy_fc"].isel(y=slice(0, ny)))
+
+
+def test_parse_options():
+    assert parse_fourier(["dropnyquist", "y=rad"]).drop_nyquist
+
+
+@pytest.mark.parametrize("arg", ["nyquist", "dropnyquist=1"])
+def test_parse_rejects_unknown_option(arg):
+    with pytest.raises(argparse.ArgumentTypeError):
+        parse_fourier([arg, "y=rad"])
+
+
+def test_dropnyquist_drops_lowest_mode_of_even_length_dim():
+    full = Fourier({"y": "rad"}).apply(_hy_with_ny(8))["hy_fc"]
+    dropped = Fourier({"y": "rad"}, drop_nyquist=True).apply(_hy_with_ny(8))["hy_fc"]
+    assert full.sizes["k_y"] == 8
+    xr.testing.assert_equal(dropped, full.isel(k_y=slice(1, None)))
+    np.testing.assert_allclose(dropped.coords["k_y"], -dropped.coords["k_y"][::-1])
+
+
+def test_dropnyquist_keeps_every_mode_of_odd_length_dim():
+    full = Fourier({"y": "rad"}).apply(_hy_with_ny(7))["hy_fc"]
+    dropped = Fourier({"y": "rad"}, drop_nyquist=True).apply(_hy_with_ny(7))["hy_fc"]
+    xr.testing.assert_equal(dropped, full)
+
+
+def test_dropnyquist_rejects_inverse():
+    k_data = Fourier({"y": "rad"}).apply(_pfd_hy())
+    with pytest.raises(ValueError, match="dropnyquist"):
+        Fourier({"k_y": "rad"}, drop_nyquist=True).apply(k_data)
+
+
+def test_name_fragment_includes_options():
+    assert Fourier({"y": "rad"}, drop_nyquist=True).get_name_fragments() == ["fourier_dropnyquist_y=rad"]
+
+
+def test_parse_requires_a_dim():
+    with pytest.raises(argparse.ArgumentTypeError, match="at least one"):
+        parse_fourier(["dropnyquist"])
