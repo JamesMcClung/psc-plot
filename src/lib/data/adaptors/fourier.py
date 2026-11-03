@@ -90,7 +90,7 @@ class Fourier(MetadataAdaptor):
 
 FORWARD_ONLY_OPTIONS = ("positiveonly", "dropnyquist")
 FOURIER_OPTIONS = {"nodisplay": "no_display", "positiveonly": "positive_only", "dropnyquist": "drop_nyquist"}
-FOURIER_FORMAT = f"[{'] ['.join(FOURIER_OPTIONS)}] dim_key={{rev,rad}}"
+FOURIER_FORMAT = f"[{'] ['.join(FOURIER_OPTIONS)}] dim_key[,dim_key...]={{rev,rad}} [...]"
 
 
 @arg_parser(
@@ -108,11 +108,13 @@ def parse_fourier(args: list[str]) -> Fourier:
             option = parse_util.parse_value(arg, "option", FOURIER_OPTIONS)
             options[FOURIER_OPTIONS[option]] = True
             continue
-        dim_key, angle = parse_util.parse_assignment(arg, FOURIER_FORMAT)
-        parse_util.parse_identifier(dim_key, "dim_key")
-        dims[dim_key] = parse_util.parse_value(angle, "angle", FOURIER_ANGLES)
+        dims_arg, angle_arg = parse_util.parse_assignment(arg, FOURIER_FORMAT)
+        angle = parse_util.parse_value(angle_arg, "angle", FOURIER_ANGLES)
+        for dim_key in parse_util.parse_comma_separated_list(dims_arg):
+            parse_util.parse_identifier(dim_key, "dim_key")
+            dims[dim_key] = angle
 
     if not dims:
-        raise argparse.ArgumentTypeError(f"Expected at least one dimension of form 'dim_key={{rev,rad}}'; got only options {args}")
+        raise argparse.ArgumentTypeError(f"Expected at least one dimension of form 'dim_key[,dim_key...]={{rev,rad}}'; got only options {args}")
 
     return Fourier(dims, **options)
