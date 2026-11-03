@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import KW_ONLY, dataclass, field
+from dataclasses import KW_ONLY, dataclass, field, replace
 from typing import Literal
 
 from lib.data.types import VarKey
@@ -13,12 +13,18 @@ RADIAN = Latex("\\text{rad}")
 FOURIER_KEY_PREFIX = "k_"
 
 
-def _toggle_unit_fourier(unit: Latex) -> Latex:
+type FourierAngle = Literal["rev", "rad"]
+FOURIER_ANGLES: tuple[FourierAngle, ...] = ("rev", "rad")
+
+
+def _fourier_unit(unit: Latex, angle: FourierAngle) -> Latex:
+    angle_unit = f"\\text{{{angle}}}"
     inverse_suffix = "^{-1}"
+    if not unit:
+        return Latex(angle_unit)
     if unit.ends_with(inverse_suffix):
-        return unit.remove_suffix(inverse_suffix)
-    else:
-        return unit.append(inverse_suffix)
+        return unit.remove_suffix(inverse_suffix).prepend(f"{angle_unit}\\,")
+    return unit.prepend(f"{angle_unit}/")
 
 
 type Geometry = Literal["linear", "polar:r", "polar:theta", "spherical:r", "spherical:theta", "spherical:phi"]
@@ -32,6 +38,7 @@ class VarInfo:
     _: KW_ONLY
     key: VarKey = None
     scale: Scale = field(default_factory=LinearScale)
+    fourier_origin: FourierOrigin | None = None
 
     def __post_init__(self):
         if self.key is None:
@@ -47,18 +54,36 @@ class VarInfo:
             display = Latex(display)
         if isinstance(unit, str):
             unit = Latex(unit)
-        return VarInfo(display or self.display, unit or self.unit, self.geometry, key=self.key, scale=self.scale)
+        return replace(self, display=display or self.display, unit=unit or self.unit)
 
-    def toggle_fourier(self) -> VarInfo:
+    def to_fourier(self, angle: FourierAngle) -> VarInfo:
+        """The var-info of this dim's Fourier conjugate, in `angle`s per this dim's unit."""
         # TODO make t <-> omega
-        toggled_unit = _toggle_unit_fourier(self.unit)
-        if self.is_fourier():
-            return VarInfo(self.display.remove_prefix(FOURIER_KEY_PREFIX), toggled_unit, self.geometry)
-        else:
-            return VarInfo(self.display.prepend(FOURIER_KEY_PREFIX), toggled_unit, self.geometry)
+        return VarInfo(
+            self.display.prepend(FOURIER_KEY_PREFIX),
+            _fourier_unit(self.unit, angle),
+            self.geometry,
+            fourier_origin=FourierOrigin(angle, self),
+        )
+
+    def from_fourier(self) -> VarInfo:
+        """The var-info this Fourier dim was transformed from."""
+        if self.fourier_origin is None:
+            raise ValueError(f"{self.key} is not a Fourier dimension")
+        return self.fourier_origin.original
+
+    @property
+    def fourier_angle(self) -> FourierAngle | None:
+        return self.fourier_origin and self.fourier_origin.angle
 
     def is_fourier(self) -> bool:
-        return self.display.starts_with(FOURIER_KEY_PREFIX)
+        return self.fourier_origin is not None
+
+
+@dataclass(frozen=True)
+class FourierOrigin:
+    angle: FourierAngle
+    original: VarInfo
 
 
 def check_unit_compatibility(dim_1: VarInfo, dim_2: VarInfo, dest_geometry: str):

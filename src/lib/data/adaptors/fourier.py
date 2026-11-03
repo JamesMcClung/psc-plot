@@ -9,20 +9,21 @@ from lib.parsing.args_registry import arg_parser
 from lib.var_info import VarInfo
 
 
-def toggle_fourier(da: xr.DataArray, info: VarInfo) -> xr.DataArray:
+def toggle_fourier(da: xr.DataArray, info: VarInfo, f_info: VarInfo) -> xr.DataArray:
     temp_prefix = "temp_"
-    f_info = info.toggle_fourier()
 
-    # multiply/or divide coords by 2pi to go from frequency <-> angular frequency
+    # xrft's frequencies are in revolutions; multiply/divide by 2pi to go to/from radians
 
     if info.is_fourier():
-        da = da.assign_coords({info.key: da.coords[info.key] / (2 * np.pi)})
+        if info.fourier_angle == "rad":
+            da = da.assign_coords({info.key: da.coords[info.key] / (2 * np.pi)})
         da = xrft.ifft(da, dim=info.key, prefix=temp_prefix, lag=0.0)
         da = da.rename({temp_prefix + info.key: f_info.key})
     else:
         da = xrft.fft(da, dim=info.key, prefix=temp_prefix)
         da = da.rename({temp_prefix + info.key: f_info.key})
-        da = da.assign_coords({f_info.key: da.coords[f_info.key] * (2 * np.pi)})
+        if f_info.fourier_angle == "rad":
+            da = da.assign_coords({f_info.key: da.coords[f_info.key] * (2 * np.pi)})
 
     return da
 
@@ -41,9 +42,9 @@ class Fourier(MetadataAdaptor):
 
         for key in self.dim_keys:
             info = new_var_infos[key]
-            f_info = info.toggle_fourier()
+            f_info = info.from_fourier() if info.is_fourier() else info.to_fourier("rad")
             new_var_infos[f_info.key] = f_info
-            da = toggle_fourier(da, info)
+            da = toggle_fourier(da, info, f_info)
 
         old_active_info = data.active_info
         new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{old_active_info.display}]"
