@@ -3,8 +3,8 @@ import typing
 import numpy as np
 import xarray as xr
 
-from lib.data.adaptor import BareAdaptor
-from lib.data.data_with_attrs import Metadata
+from lib.data.adaptor import Adaptor
+from lib.data.data_with_attrs import Field
 from lib.latex import Latex
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
@@ -38,20 +38,24 @@ REDUCE_FUNCS: dict[str, tuple[ReduceFunc, ModifyDisplayLatex]] = {
 }
 
 
-class Reduce(BareAdaptor):
+class Reduce(Adaptor):
     def __init__(self, dim_names: str | list[str], func_name: str):
         self.dim_names = [dim_names] if isinstance(dim_names, str) else dim_names
         self.func_name = func_name
 
-    def apply_field_bare(self, da: xr.DataArray) -> xr.DataArray:
+    def apply_field(self, data: Field) -> Field:
         if not self.dim_names:
-            return da
-        return REDUCE_FUNCS[self.func_name][0](da, self.dim_names)
+            return data
+        reduce_func, modify_display_latex = REDUCE_FUNCS[self.func_name]
+        da = data.require_active_subdata()
+        info = data.metadata.active_var_info
 
-    def get_modified_display_latex(self, metadata: Metadata) -> Latex:
-        if not self.dim_names:
-            return metadata.active_var_info.display
-        return Latex(REDUCE_FUNCS[self.func_name][1](metadata.active_var_info.display.latex, self.dim_names))
+        # label with each dim's display, not its key
+        var_infos = data.metadata.var_infos
+        labeled_dims = [var_infos[dim].display.latex if dim in var_infos else dim for dim in self.dim_names]
+        info = info.assign(display=Latex(modify_display_latex(info.display.latex, labeled_dims)))
+
+        return data.with_active(data=reduce_func(da, self.dim_names), info=info)
 
     def get_name_fragments(self) -> list[str]:
         if not self.dim_names:
