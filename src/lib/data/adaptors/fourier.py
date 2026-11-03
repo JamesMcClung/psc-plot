@@ -45,28 +45,27 @@ def _conjugate_info(info: VarInfo, angle: FourierAngle) -> VarInfo:
 
 
 class Fourier(MetadataAdaptor):
-    def __init__(self, dims: dict[str, FourierAngle], *, positive_only: bool = False, drop_nyquist: bool = False):
+    def __init__(self, dims: dict[str, FourierAngle], *, no_display: bool = False, positive_only: bool = False, drop_nyquist: bool = False):
         self.dims = dims
+        self.no_display = no_display
         self.positive_only = positive_only
         self.drop_nyquist = drop_nyquist
 
-    def _forward_only_options(self) -> list[str]:
-        flags = {"positiveonly": self.positive_only, "dropnyquist": self.drop_nyquist}
-        return [option for option, flag in flags.items() if flag]
-
     def _options(self) -> list[str]:
-        return self._forward_only_options()
+        flags = {"nodisplay": self.no_display, "positiveonly": self.positive_only, "dropnyquist": self.drop_nyquist}
+        return [option for option, flag in flags.items() if flag]
 
     def apply_field(self, data: Field) -> Field:
         pre_dim_latexs = [data.metadata.var_infos[key].display.latex for key in self.dims]
+        forward_only_options = [option for option in self._options() if option in FORWARD_ONLY_OPTIONS]
 
         da = data.require_active_subdata()
         new_var_infos = data.metadata.var_infos.copy()
 
         for key, angle in self.dims.items():
             info = new_var_infos[key]
-            if info.is_fourier() and self._forward_only_options():
-                raise ValueError(f"--fourier {' '.join(self._forward_only_options())} only applies to forward transforms, but {key} is already a Fourier dimension")
+            if info.is_fourier() and forward_only_options:
+                raise ValueError(f"--fourier {' '.join(forward_only_options)} only applies to forward transforms, but {key} is already a Fourier dimension")
             f_info = _conjugate_info(info, angle)
             new_var_infos[f_info.key] = f_info
             da = toggle_fourier(da, info, f_info)
@@ -77,9 +76,10 @@ class Fourier(MetadataAdaptor):
             if self.positive_only:
                 da = da.isel({f_info.key: da.coords[f_info.key].values > 0})
 
-        old_active_info = data.active_info
-        new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{old_active_info.display}]"
-        new_var_infos[data.metadata.active_key] = old_active_info.assign(display=new_display)
+        if not self.no_display:
+            old_active_info = data.active_info
+            new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{old_active_info.display}]"
+            new_var_infos[data.metadata.active_key] = old_active_info.assign(display=new_display)
 
         return data.with_active(data=da).assign(var_infos=new_var_infos)
 
@@ -88,7 +88,8 @@ class Fourier(MetadataAdaptor):
         return ["_".join(["fourier", *self._options(), dims])]
 
 
-FOURIER_OPTIONS = {"positiveonly": "positive_only", "dropnyquist": "drop_nyquist"}
+FORWARD_ONLY_OPTIONS = ("positiveonly", "dropnyquist")
+FOURIER_OPTIONS = {"nodisplay": "no_display", "positiveonly": "positive_only", "dropnyquist": "drop_nyquist"}
 FOURIER_FORMAT = f"[{'] ['.join(FOURIER_OPTIONS)}] dim_key={{rev,rad}}"
 
 
@@ -96,7 +97,7 @@ FOURIER_FORMAT = f"[{'] ['.join(FOURIER_OPTIONS)}] dim_key={{rev,rad}}"
     dest="adaptors",
     flags=["--fourier", "-f"],
     metavar=FOURIER_FORMAT,
-    help="perform a Fourier transform along the given dimensions, measuring the conjugate dimension in revolutions (rev) or radians (rad) per original unit; transforming a Fourier dimension (e.g. k_y) inverts it. Options: positiveonly keeps only modes with k > 0; dropnyquist drops the unpaired Nyquist mode of even-length dimensions",
+    help="perform a Fourier transform along the given dimensions, measuring the conjugate dimension in revolutions (rev) or radians (rad) per original unit; transforming a Fourier dimension (e.g. k_y) inverts it. Options: nodisplay leaves the variable's label alone; positiveonly keeps only modes with k > 0; dropnyquist drops the unpaired Nyquist mode of even-length dimensions",
     nargs="+",
 )
 def parse_fourier(args: list[str]) -> Fourier:
