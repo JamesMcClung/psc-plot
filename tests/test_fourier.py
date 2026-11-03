@@ -17,6 +17,10 @@ def test_parse_dims_with_angles():
     assert parse_fourier(["y=rad", "z=rev"]).dims == {"y": "rad", "z": "rev"}
 
 
+def test_parse_comma_separated_dims():
+    assert parse_fourier(["x,y=rad", "z=rev"]).dims == {"x": "rad", "y": "rad", "z": "rev"}
+
+
 @pytest.mark.parametrize("arg", ["y", "y=deg", "y="])
 def test_parse_requires_angle(arg):
     with pytest.raises(argparse.ArgumentTypeError):
