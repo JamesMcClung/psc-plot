@@ -96,3 +96,26 @@ def test_name_fragment_includes_options():
 def test_parse_requires_a_dim():
     with pytest.raises(argparse.ArgumentTypeError, match="at least one"):
         parse_fourier(["dropnyquist"])
+
+
+@pytest.mark.parametrize("ny", [7, 8])
+def test_positiveonly_keeps_strictly_positive_modes(ny):
+    full = Fourier({"y": "rad"}).apply(_hy_with_ny(ny))["hy_fc"]
+    positive = Fourier({"y": "rad"}, positive_only=True).apply(_hy_with_ny(ny))["hy_fc"]
+    xr.testing.assert_equal(positive, full.where(full.k_y > 0, drop=True))
+    assert positive.sizes["k_y"] == 3
+
+
+def test_positiveonly_rejects_inverse():
+    k_data = Fourier({"y": "rad"}).apply(_pfd_hy())
+    with pytest.raises(ValueError, match="positiveonly"):
+        Fourier({"k_y": "rad"}, positive_only=True).apply(k_data)
+
+
+def test_parse_positiveonly():
+    assert parse_fourier(["positiveonly", "y=rad"]).positive_only
+
+
+def test_name_fragment_orders_options():
+    fourier = parse_fourier(["dropnyquist", "positiveonly", "y=rad"])
+    assert fourier.get_name_fragments() == ["fourier_positiveonly_dropnyquist_y=rad"]

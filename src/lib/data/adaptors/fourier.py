@@ -45,12 +45,14 @@ def _conjugate_info(info: VarInfo, angle: FourierAngle) -> VarInfo:
 
 
 class Fourier(MetadataAdaptor):
-    def __init__(self, dims: dict[str, FourierAngle], *, drop_nyquist: bool = False):
+    def __init__(self, dims: dict[str, FourierAngle], *, positive_only: bool = False, drop_nyquist: bool = False):
         self.dims = dims
+        self.positive_only = positive_only
         self.drop_nyquist = drop_nyquist
 
     def _forward_only_options(self) -> list[str]:
-        return ["dropnyquist"] * self.drop_nyquist
+        flags = {"positiveonly": self.positive_only, "dropnyquist": self.drop_nyquist}
+        return [option for option, flag in flags.items() if flag]
 
     def _options(self) -> list[str]:
         return self._forward_only_options()
@@ -72,6 +74,8 @@ class Fourier(MetadataAdaptor):
             # xrft orders modes from -N/2 up, so an even length's unpaired Nyquist mode comes first
             if self.drop_nyquist and da.sizes[f_info.key] % 2 == 0:
                 da = da.isel({f_info.key: slice(1, None)})
+            if self.positive_only:
+                da = da.isel({f_info.key: da.coords[f_info.key].values > 0})
 
         old_active_info = data.active_info
         new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{old_active_info.display}]"
@@ -84,7 +88,7 @@ class Fourier(MetadataAdaptor):
         return ["_".join(["fourier", *self._options(), dims])]
 
 
-FOURIER_OPTIONS = {"dropnyquist": "drop_nyquist"}
+FOURIER_OPTIONS = {"positiveonly": "positive_only", "dropnyquist": "drop_nyquist"}
 FOURIER_FORMAT = f"[{'] ['.join(FOURIER_OPTIONS)}] dim_key={{rev,rad}}"
 
 
@@ -92,7 +96,7 @@ FOURIER_FORMAT = f"[{'] ['.join(FOURIER_OPTIONS)}] dim_key={{rev,rad}}"
     dest="adaptors",
     flags=["--fourier", "-f"],
     metavar=FOURIER_FORMAT,
-    help="perform a Fourier transform along the given dimensions, measuring the conjugate dimension in revolutions (rev) or radians (rad) per original unit; transforming a Fourier dimension (e.g. k_y) inverts it. Options: dropnyquist drops the unpaired Nyquist mode of even-length dimensions",
+    help="perform a Fourier transform along the given dimensions, measuring the conjugate dimension in revolutions (rev) or radians (rad) per original unit; transforming a Fourier dimension (e.g. k_y) inverts it. Options: positiveonly keeps only modes with k > 0; dropnyquist drops the unpaired Nyquist mode of even-length dimensions",
     nargs="+",
 )
 def parse_fourier(args: list[str]) -> Fourier:
