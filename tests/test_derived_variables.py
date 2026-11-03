@@ -37,6 +37,13 @@ def test_fourier_dims_get_var_infos():
     assert data.metadata.var_infos["k_y"].display.latex == "k_y"
 
 
+def test_fourier_spectra_drop_nyquist_only_from_even_length_dims():
+    data = load(CONFIG_2D, "pfd")
+    data = data.assign({key: da.isel(y=slice(0, 7)) for key, da in data.data.items()})
+    spectrum = ensure_derived(data, "hhat2_yz", CONFIG_2D)["hhat2_yz"]
+    assert (spectrum.sizes["k_y"], spectrum.sizes["k_z"]) == (7, 7)
+
+
 def test_unknown_key_lists_derivable_keys():
     with pytest.raises(ValueError, match=r"(?s)No variable named 'nope'.*h2_cc"):
         ensure_derived(load(CONFIG_2D, "pfd"), "nope", CONFIG_2D)
