@@ -50,10 +50,11 @@ class Reduce(Adaptor):
         da = data.require_active_subdata()
         info = data.metadata.active_var_info
 
-        # label with each dim's display, not its key
+        # label with each dim's display, skipping length-1 dims (reducing them is a no-op)
         var_infos = data.metadata.var_infos
-        labeled_dims = [var_infos[dim].display.latex if dim in var_infos else dim for dim in self.dim_names]
-        info = info.assign(display=Latex(modify_display_latex(info.display.latex, labeled_dims)))
+        labeled_dims = [var_infos[dim].display.latex if dim in var_infos else dim for dim in self.dim_names if da.sizes[dim] > 1]
+        if labeled_dims:
+            info = info.assign(display=Latex(modify_display_latex(info.display.latex, labeled_dims)))
 
         return data.with_active(data=reduce_func(da, self.dim_names), info=info)
 
