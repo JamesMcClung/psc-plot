@@ -14,8 +14,8 @@ def test_steps_parse_in_order():
 
 
 def test_multi_value_step_is_one_adaptor():
-    [fourier] = parse_steps(["--fourier x y z"])
-    assert isinstance(fourier, Fourier) and fourier.dim_keys == ["x", "y", "z"]
+    [fourier] = parse_steps(["--fourier x=rad y=rad z=rad"])
+    assert isinstance(fourier, Fourier) and fourier.dims == {"x": "rad", "y": "rad", "z": "rad"}
 
 
 def test_steps_do_not_leak_into_each_other():
