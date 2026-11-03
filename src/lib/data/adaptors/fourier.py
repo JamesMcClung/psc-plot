@@ -9,6 +9,11 @@ from lib.parsing.args_registry import arg_parser
 from lib.var_info import FOURIER_ANGLES, FourierAngle, VarInfo
 
 
+def _scale_coord(da: xr.DataArray, key: str, factor: float) -> xr.DataArray:
+    coord = da.coords[key]
+    return da.assign_coords({key: (coord * factor).assign_attrs(coord.attrs)})
+
+
 def toggle_fourier(da: xr.DataArray, info: VarInfo, f_info: VarInfo) -> xr.DataArray:
     temp_prefix = "temp_"
 
@@ -16,14 +21,15 @@ def toggle_fourier(da: xr.DataArray, info: VarInfo, f_info: VarInfo) -> xr.DataA
 
     if info.is_fourier():
         if info.fourier_angle == "rad":
-            da = da.assign_coords({info.key: da.coords[info.key] / (2 * np.pi)})
-        da = xrft.ifft(da, dim=info.key, prefix=temp_prefix, lag=0.0)
+            da = _scale_coord(da, info.key, 1 / (2 * np.pi))
+        # fft recorded the original coords' offset; passing it back restores them
+        da = xrft.ifft(da, dim=info.key, prefix=temp_prefix, lag=da.coords[info.key].attrs["direct_lag"])
         da = da.rename({temp_prefix + info.key: f_info.key})
     else:
         da = xrft.fft(da, dim=info.key, prefix=temp_prefix)
         da = da.rename({temp_prefix + info.key: f_info.key})
         if f_info.fourier_angle == "rad":
-            da = da.assign_coords({f_info.key: da.coords[f_info.key] * (2 * np.pi)})
+            da = _scale_coord(da, f_info.key, 2 * np.pi)
 
     return da
 

@@ -45,3 +45,10 @@ def test_inverse_angle_must_match():
 
 def test_name_fragment_includes_angles():
     assert Fourier({"y": "rad", "z": "rev"}).get_name_fragments() == ["fourier_y=rad,z=rev"]
+
+
+@pytest.mark.parametrize("angle", ["rad", "rev"])
+def test_inverse_restores_data_and_coords(angle):
+    data = _pfd_hy()
+    inverse = Fourier({"k_y": angle}).apply(Fourier({"y": angle}).apply(data))
+    xr.testing.assert_allclose(inverse["hy_fc"].real.transpose(*data["hy_fc"].dims), data["hy_fc"])
