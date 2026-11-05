@@ -52,8 +52,7 @@ class Fourier(MetadataAdaptor):
         self.drop_nyquist = drop_nyquist
 
     def _options(self) -> list[str]:
-        flags = {"nodisplay": self.no_display, "positiveonly": self.positive_only, "dropnyquist": self.drop_nyquist}
-        return [option for option, flag in flags.items() if flag]
+        return [option for option, attr in FOURIER_OPTIONS.items() if getattr(self, attr)]
 
     def apply_field(self, data: Field) -> Field:
         pre_dim_latexs = [data.metadata.var_infos[key].display.latex for key in self.dims]
