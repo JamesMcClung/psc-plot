@@ -70,7 +70,7 @@ def test_animated_1d_rolling():
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_static_2d_spectogram():
     """Spectrogram of wavenumber vs. time."""
-    return make_plot("pfd ey_ec -f y --mag --pow 2 --pos k_y=0: --nan0 --scale log -v t k_y".split())
+    return make_plot("pfd ey_ec -f y=rad --mag --pow 2 --pos k_y=0: --nan0 --scale log -v t k_y".split())
 
 
 # --- Multiplots ---
@@ -166,7 +166,7 @@ def test_crossdir_with():
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_spectrum_1d():
     """1D power spectrum of the x-component of the magnetic field. Note `--pos` and `-i` to remove negative and 0-mode, respectively. The `--mul 2` recovers the (symmetric) power of negative modes."""
-    return make_plot("pfd hx_fc -f y z --mag --pow 2 --pos k_y=0: -i k_y=1: --mul 2 --scale log k_y=log -v k_y".split())
+    return make_plot("pfd hx_fc -f y=rad z=rad --mag --pow 2 --pos k_y=0: -i k_y=1: --mul 2 --scale log k_y=log -v k_y".split())
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)

@@ -37,12 +37,10 @@ hxzhat2_xyz:
   display: '|\hat{B}_x|^2 + |\hat{B}_z|^2'
   pipeline:
     - --copy bx=hx_fc
-    - --fourier x y z
-    - '--idx k_x=1: k_y=1: k_z=1:'
+    - --fourier dropnyquist x=rad y=rad z=rad
     - --mag
     - --copy bz=hz_fc
-    - --fourier x y z
-    - '--idx k_x=1: k_y=1: k_z=1:'
+    - --fourier dropnyquist x=rad y=rad z=rad
     - --mag
     - --derive hxzhat2_xyz=bx^2+bz^2
 
@@ -50,12 +48,10 @@ hxzhat2_yz:
   display: '|\hat{B}_x|^2 + |\hat{B}_z|^2'
   pipeline:
     - --copy bx=hx_fc
-    - --fourier y z
-    - '--idx k_y=1: k_z=1:'
+    - --fourier dropnyquist y=rad z=rad
     - --mag
     - --copy bz=hz_fc
-    - --fourier y z
-    - '--idx k_y=1: k_z=1:'
+    - --fourier dropnyquist y=rad z=rad
     - --mag
     - --derive hxzhat2_yz=bx^2+bz^2
 
@@ -63,8 +59,7 @@ hhat2_xyz:
   display: '|\hat{B}|^2'
   pipeline:
     - --copy by=hy_fc
-    - --fourier x y z
-    - '--idx k_x=1: k_y=1: k_z=1:'
+    - --fourier dropnyquist x=rad y=rad z=rad
     - --mag
     - --derive hhat2_xyz=hxzhat2_xyz+by^2
 
@@ -72,8 +67,7 @@ hhat2_yz:
   display: '|\hat{B}|^2'
   pipeline:
     - --copy by=hy_fc
-    - --fourier y z
-    - '--idx k_y=1: k_z=1:'
+    - --fourier dropnyquist y=rad z=rad
     - --mag
     - --derive hhat2_yz=hxzhat2_yz+by^2
 

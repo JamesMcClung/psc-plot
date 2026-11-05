@@ -80,7 +80,7 @@ class ArgparseArgAdder[ArgType]:
                 # When one of my parsers specifies nargs=None, it means the parser maps one
                 # command-line argument to a single arg instance. However, since it is common
                 # to chain multiple instances of an arg together, it is convenient to be able
-                # to write e.g. "--fourier x y" as a shorthand for "--fourier x --fourier y".
+                # to write e.g. "--fourier x=rad y=rad" as a shorthand for "--fourier x=rad --fourier y=rad".
                 # Therefore, the nargs that argparse receives is "+", with the "extend" action.
                 parser.add_argument(*self.flags, dest=self.dest, help=self.help, action="extend", type=self.type, metavar=self.metavar, nargs="+")
             elif self.nargs == "just one":

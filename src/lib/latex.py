@@ -20,26 +20,17 @@ class Latex:
     def __post_init__(self):
         object.__setattr__(self, "plain", strip_latex(self.latex))
 
-    def starts_with(self, latex: str) -> bool:
-        return self.latex.startswith(latex)
-
     def ends_with(self, latex: str) -> bool:
         return self.latex.endswith(latex)
 
     def replace(self, old_latex: str, new_latex: str) -> Latex:
         return Latex(self.latex.replace(old_latex, new_latex))
 
-    def remove_prefix(self, latex: str) -> Latex:
-        return Latex(self.latex.removeprefix(latex))
-
     def remove_suffix(self, latex: str) -> Latex:
         return Latex(self.latex.removesuffix(latex))
 
     def prepend(self, latex: str) -> Latex:
         return Latex(latex + self.latex)
-
-    def append(self, latex: str) -> Latex:
-        return Latex(self.latex + latex)
 
     def maybe_with_dollars(self) -> str:
         if self:
