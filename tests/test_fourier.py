@@ -63,8 +63,9 @@ def _hy_with_ny(ny: int):
     return data.with_active(data=data["hy_fc"].isel(y=slice(0, ny)))
 
 
-def test_parse_options():
-    assert parse_fourier(["dropnyquist", "y=rad"]).drop_nyquist
+@pytest.mark.parametrize("option, attr", [("nodisplay", "no_display"), ("positiveonly", "positive_only"), ("dropnyquist", "drop_nyquist")])
+def test_parse_options(option, attr):
+    assert getattr(parse_fourier([option, "y=rad"]), attr)
 
 
 @pytest.mark.parametrize("arg", ["nyquist", "dropnyquist=1"])
@@ -87,14 +88,16 @@ def test_dropnyquist_keeps_every_mode_of_odd_length_dim():
     xr.testing.assert_equal(dropped, full)
 
 
-def test_dropnyquist_rejects_inverse():
+@pytest.mark.parametrize("option", ["positiveonly", "dropnyquist"])
+def test_forward_only_options_reject_inverse(option):
     k_data = Fourier({"y": "rad"}).apply(_pfd_hy())
-    with pytest.raises(ValueError, match="dropnyquist"):
-        Fourier({"k_y": "rad"}, drop_nyquist=True).apply(k_data)
+    with pytest.raises(ValueError, match=option):
+        parse_fourier([option, "k_y=rad"]).apply(k_data)
 
 
-def test_name_fragment_includes_options():
-    assert Fourier({"y": "rad"}, drop_nyquist=True).get_name_fragments() == ["fourier_dropnyquist_y=rad"]
+def test_name_fragment_lists_options_in_canonical_order():
+    fourier = parse_fourier(["dropnyquist", "positiveonly", "nodisplay", "y=rad"])
+    assert fourier.get_name_fragments() == ["fourier_nodisplay_positiveonly_dropnyquist_y=rad"]
 
 
 def test_parse_requires_a_dim():
@@ -108,21 +111,6 @@ def test_positiveonly_keeps_strictly_positive_modes(ny):
     positive = Fourier({"y": "rad"}, positive_only=True).apply(_hy_with_ny(ny))["hy_fc"]
     xr.testing.assert_equal(positive, full.where(full.k_y > 0, drop=True))
     assert positive.sizes["k_y"] == 3
-
-
-def test_positiveonly_rejects_inverse():
-    k_data = Fourier({"y": "rad"}).apply(_pfd_hy())
-    with pytest.raises(ValueError, match="positiveonly"):
-        Fourier({"k_y": "rad"}, positive_only=True).apply(k_data)
-
-
-def test_parse_positiveonly():
-    assert parse_fourier(["positiveonly", "y=rad"]).positive_only
-
-
-def test_name_fragment_orders_options():
-    fourier = parse_fourier(["dropnyquist", "positiveonly", "y=rad"])
-    assert fourier.get_name_fragments() == ["fourier_positiveonly_dropnyquist_y=rad"]
 
 
 def test_display_wraps_active_var_by_default():
@@ -139,8 +127,3 @@ def test_nodisplay_keeps_active_var_display():
 def test_nodisplay_allows_inverse():
     k_data = Fourier({"y": "rad"}).apply(_pfd_hy())
     assert Fourier({"k_y": "rad"}, no_display=True).apply(k_data).active_info.display.latex == "\\mathcal{F}_{y}[B_y]"
-
-
-def test_name_fragment_puts_nodisplay_first():
-    fourier = parse_fourier(["positiveonly", "nodisplay", "y=rad"])
-    assert fourier.get_name_fragments() == ["fourier_nodisplay_positiveonly_y=rad"]
