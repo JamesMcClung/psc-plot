@@ -97,7 +97,7 @@ class Concat(WorldAdaptor):
         first = world.require_active_data()
         second = world.datas[self.prepath] if self.prepath in world.datas else load(world.config, self.prepath)
         if not isinstance(first, List) or not isinstance(second, List):
-            raise ValueError(f"--concat only accepts list data (e.g. particles); try --concat before --bin")
+            raise ValueError("--concat only accepts list data (e.g. particles); try --concat before --bin")
         return world.with_active(data=concat_lists(first, second, world.config))
 
     def get_name_fragments(self) -> list[str]:
