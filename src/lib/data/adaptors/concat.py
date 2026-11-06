@@ -74,7 +74,7 @@ def concat_lists(first: List, second: List, config: PscPlotConfig) -> List:
 
         # Keep the per-step partition layout that --idx and --bin rely on.
         md1, md2 = first.metadata, second.metadata
-        if md1.partition_dim is not None and md1.partition_dim == md2.partition_dim and md1.partition_ranges is not None and md2.partition_ranges is not None:
+        if md1.partition_ranges is not None and md2.partition_ranges is not None and md1.partition_dim == md2.partition_dim:
             order, partition_ranges = _interleaved_partition_order(md1.partition_ranges, md2.partition_ranges, first_df.npartitions)
             df = df.partitions[order]
             partition_dim = md1.partition_dim
