@@ -35,6 +35,10 @@ class AssignNewVariable(Transformer):
         [tok] = toks
         return float(tok)
 
+    def imaginary(self, toks: list):
+        [tok] = toks
+        return complex(str(tok)[:-1] + "j")
+
     def new_variable(self, toks: list):
         [tok] = toks
         return str(tok)
@@ -101,6 +105,7 @@ _expression_0 : "(" expression ")"
               | variable
               | scoped_variable
               | number
+              | imaginary
 _expression_1 : _expression_0
               | exponentiation
 _expression_2 : _expression_1
@@ -119,6 +124,10 @@ subtraction    : _expression_3 "-" _expression_2
 variable        : CNAME
 scoped_variable : prepath "::" CNAME
 number          : SIGNED_NUMBER
+imaginary       : IMAGINARY
+
+# a number immediately followed by `i`, e.g. `1i` or `-2.5e3i`; a bare `i` is a variable
+IMAGINARY : SIGNED_NUMBER "i"
 
 prepath : PREFIX
 # DIR    : /[^\/]+/ TODO figure out a way to make dirs work; as is, the arbitrary chars are incompatible with math symbols, especially /
@@ -139,7 +148,7 @@ _DERIVE_FORMAT = "new_var_key=expression"
     dest="adaptors",
     flags="--derive",
     metavar=_DERIVE_FORMAT,
-    help=f"Create a new variable with the given name. The expression can be any mathematical expression using the standard operators (+, -, *, /, ^), parentheses, signed floating point numbers, and other variable names. A name may be scoped to another prefix as `prepath::key` (similar to `--with`).",
+    help=f"Create a new variable with the given name. The expression can be any mathematical expression using the standard operators (+, -, *, /, ^), parentheses, signed floating point numbers, imaginary numbers written as a number immediately followed by `i` (e.g. `1i`, `0.5i`; a bare `i` is a variable name), and other variable names. A name may be scoped to another prefix as `prepath::key` (similar to `--with`).",
 )
 def parse_derive(arg: str) -> Derive:
     return Derive(arg)
