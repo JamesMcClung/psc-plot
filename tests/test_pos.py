@@ -61,3 +61,28 @@ def test_pos_mask_combines_with_dim_selection():
 def test_pos_mask_rejects_single_value():
     with pytest.raises(ValueError, match="range"):
         _pull_active("pfd hx_fc --pos hx_fc=1 -v y z")
+
+
+def test_pos_without_key_masks_active_variable():
+    raw = _pull_active("pfd hx_fc -v y z").require_active_subdata().values
+    lo, hi = _bounds(raw)
+    explicit = _pull_active(f"pfd hx_fc --pos hx_fc={lo}:{hi} -v y z").require_active_subdata().values
+    implicit = _pull_active(f"pfd hx_fc --pos {lo}:{hi} -v y z").require_active_subdata().values
+    np.testing.assert_array_equal(implicit, explicit)
+
+
+def test_pos_without_key_filters_active_column():
+    explicit = _pull_active("prt.e py --pos py=0: -v y z")
+    implicit = _pull_active("prt.e py --pos 0: -v y z")
+    assert len(implicit.data) == len(explicit.data) < len(_pull_active("prt.e py -v y z").data)
+
+
+def test_pos_without_key_name_fragment():
+    pipeline = compile_plot_pipeline(parse_args("pfd hx_fc --pos 1:2 y=0: -v y z".split()), CONFIG_2D)
+    assert "pos_1.0_2.0_y=0.0" in pipeline.get_save_file_stem()
+
+
+def test_pos_without_key_accepts_negative_lower_bound():
+    raw = _pull_active("pfd hx_fc -v y z").require_active_subdata().values
+    masked = _pull_active("pfd hx_fc --pos -1e9:0 -v y z").require_active_subdata().values
+    np.testing.assert_array_equal(np.isnan(masked), raw >= 0)
