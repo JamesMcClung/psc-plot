@@ -32,6 +32,18 @@ def test_static_2d():
 
 
 @pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_static_2d_contour():
+    """`test_static_2d` with `--contour` lines over the image."""
+    return make_plot("prt.i --bin px=20 pz=20 -v px pz --contour 5".split())
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
+def test_static_2d_contour_log():
+    """`--contour` on a log color scale, so the contour levels are logarithmically spaced."""
+    return make_plot("prt.i --bin px=20 pz=20 --scale log --nan0 -v px pz --contour 5".split())
+
+
+@pytest.mark.mpl_image_compare(**MPL_KWARGS)
 def test_animated_2d_derived():
     """2D view of magnetic field square-amplitude. Since each component of H is centered differently, and `--derive` doesn't currently support recentering, use the builtin derived field `h2_cc`."""
     return make_plot("pfd h2_cc -v y z".split())
