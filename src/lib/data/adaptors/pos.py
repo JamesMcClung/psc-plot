@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+import xarray as xr
 
 from lib.data import data_util
 from lib.data.adaptor import MetadataAdaptor
@@ -19,6 +21,17 @@ def _sel_to_isel(coords: np.ndarray, sel: float | slice, include_bounds: tuple[b
     return slice(start, stop)
 
 
+def _in_range[T: (xr.DataArray, pd.Series)](values: T, sel: slice, include_bounds: tuple[bool, bool]) -> T:
+    """Whether each value lies within the selection's bounds."""
+    inc_lo, inc_hi = include_bounds
+    mask = values == values  # all true, except for nans
+    if sel.start is not None:
+        mask &= (values >= sel.start) if inc_lo else (values > sel.start)
+    if sel.stop is not None:
+        mask &= (values <= sel.stop) if inc_hi else (values < sel.stop)
+    return mask
+
+
 class Pos(MetadataAdaptor):
     def __init__(
         self,
@@ -32,9 +45,24 @@ class Pos(MetadataAdaptor):
             self.dim_names_to_include_bounds.setdefault(dim_name, (True, False))
 
     def apply_field(self, data: Field) -> Field:
-        dim_names_to_pos = {dim_name: pos for dim_name, pos in self.dim_names_to_sel.items() if isinstance(pos, float)}
-        dim_names_to_slice = {dim_name: s for dim_name, s in self.dim_names_to_sel.items() if isinstance(s, slice)}
-        return data.with_active(data=data.require_active_subdata().sel(dim_names_to_pos, method="nearest").sel(dim_names_to_slice))
+        active = data.require_active_subdata()
+        dim_names_to_pos: dict[str, float] = {}
+        dim_names_to_slice: dict[str, slice] = {}
+        var_masks: list[xr.DataArray] = []
+        for name, sel in self.dim_names_to_sel.items():
+            if name in active.dims or name not in data.data:
+                if isinstance(sel, float):
+                    dim_names_to_pos[name] = sel
+                else:
+                    dim_names_to_slice[name] = sel
+            elif isinstance(sel, slice):
+                var_masks.append(_in_range(data[name], sel, self.dim_names_to_include_bounds[name]))
+            else:
+                raise ValueError(f"--pos on variable '{name}' needs a range (lower?:upper?), not a single value")
+
+        for mask in var_masks:
+            active = active.where(mask)
+        return data.with_active(data=active.sel(dim_names_to_pos, method="nearest").sel(dim_names_to_slice))
 
     def apply_list(self, data: List) -> List:
         coord_isels: dict[str, int | slice] = {}
@@ -53,11 +81,7 @@ class Pos(MetadataAdaptor):
         if value_sels:
             df = data.data
             for dim, sel in value_sels.items():
-                inc_lo, inc_hi = self.dim_names_to_include_bounds[dim]
-                if sel.start is not None:
-                    df = df[df[dim] >= sel.start] if inc_lo else df[df[dim] > sel.start]
-                if sel.stop is not None:
-                    df = df[df[dim] <= sel.stop] if inc_hi else df[df[dim] < sel.stop]
+                df = df[_in_range(df[dim], sel, self.dim_names_to_include_bounds[dim])]
             data = data.assign(df)
 
         return data
@@ -74,7 +98,7 @@ POS_FORMAT = "dim_name=[pos | lower?:upper?]"
     dest="adaptors",
     flags="--pos",
     metavar=POS_FORMAT,
-    help="select data nearest to the given position, or between the lower position (inclusive) and upper position (exclusive)",
+    help="select data nearest to the given position, or between the lower position (inclusive) and upper position (exclusive); a variable name in place of dim_name keeps the rows (particles) or values (fields; others become nan) where that variable is in the range",
     nargs="+",
 )
 def parse_pos(args: list[str]) -> Pos:
