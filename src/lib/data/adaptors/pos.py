@@ -35,28 +35,40 @@ def _in_range[T: (xr.DataArray, pd.Series)](values: T, sel: slice, include_bound
 class Pos(MetadataAdaptor):
     def __init__(
         self,
-        dim_names_to_sel: dict[str, float | slice],
-        dim_names_to_include_bounds: dict[str, tuple[bool, bool]] | None = None,
+        dim_names_to_sel: dict[str | None, float | slice],
+        dim_names_to_include_bounds: dict[str | None, tuple[bool, bool]] | None = None,
     ):
+        """A `None` dim name stands for the active key."""
         self.dim_names_to_sel = dim_names_to_sel
 
         self.dim_names_to_include_bounds = dim_names_to_include_bounds or {}
         for dim_name in self.dim_names_to_sel:
             self.dim_names_to_include_bounds.setdefault(dim_name, (True, False))
 
+    def _resolve_active_key(self, data: Field | List) -> tuple[dict[str, float | slice], dict[str, tuple[bool, bool]]]:
+        if None not in self.dim_names_to_sel:
+            return self.dim_names_to_sel, self.dim_names_to_include_bounds
+        active_key = data.require_active_key()
+        resolve = lambda name: active_key if name is None else name
+        return (
+            {resolve(name): sel for name, sel in self.dim_names_to_sel.items()},
+            {resolve(name): bounds for name, bounds in self.dim_names_to_include_bounds.items()},
+        )
+
     def apply_field(self, data: Field) -> Field:
+        dim_names_to_sel, dim_names_to_include_bounds = self._resolve_active_key(data)
         active = data.require_active_subdata()
         dim_names_to_pos: dict[str, float] = {}
         dim_names_to_slice: dict[str, slice] = {}
         var_masks: list[xr.DataArray] = []
-        for name, sel in self.dim_names_to_sel.items():
+        for name, sel in dim_names_to_sel.items():
             if name in active.dims or name not in data.data:
                 if isinstance(sel, float):
                     dim_names_to_pos[name] = sel
                 else:
                     dim_names_to_slice[name] = sel
             elif isinstance(sel, slice):
-                var_masks.append(_in_range(data[name], sel, self.dim_names_to_include_bounds[name]))
+                var_masks.append(_in_range(data[name], sel, dim_names_to_include_bounds[name]))
             else:
                 raise ValueError(f"--pos on variable '{name}' needs a range (lower?:upper?), not a single value")
 
@@ -65,11 +77,12 @@ class Pos(MetadataAdaptor):
         return data.with_active(data=active.sel(dim_names_to_pos, method="nearest").sel(dim_names_to_slice))
 
     def apply_list(self, data: List) -> List:
+        dim_names_to_sel, dim_names_to_include_bounds = self._resolve_active_key(data)
         coord_isels: dict[str, int | slice] = {}
         value_sels: dict[str, slice] = {}
-        for dim, sel in self.dim_names_to_sel.items():
+        for dim, sel in dim_names_to_sel.items():
             if dim in data.coordss():
-                coord_isels[dim] = _sel_to_isel(data.coordss()[dim], sel, self.dim_names_to_include_bounds[dim])
+                coord_isels[dim] = _sel_to_isel(data.coordss()[dim], sel, dim_names_to_include_bounds[dim])
             elif isinstance(sel, slice):
                 value_sels[dim] = sel
             else:
@@ -81,32 +94,35 @@ class Pos(MetadataAdaptor):
         if value_sels:
             df = data.data
             for dim, sel in value_sels.items():
-                df = df[_in_range(df[dim], sel, self.dim_names_to_include_bounds[dim])]
+                df = df[_in_range(df[dim], sel, dim_names_to_include_bounds[dim])]
             data = data.assign(df)
 
         return data
 
     def get_name_fragments(self) -> list[str]:
-        subfrags = "_".join(f"{dim_name}={data_util.sel_to_frag(sel)}" for dim_name, sel in self.dim_names_to_sel.items())
+        subfrags = "_".join(data_util.sel_to_frag(sel) if dim_name is None else f"{dim_name}={data_util.sel_to_frag(sel)}" for dim_name, sel in self.dim_names_to_sel.items())
         return [f"pos_{subfrags}"]
 
 
-POS_FORMAT = "dim_name=[pos | lower?:upper?]"
+POS_FORMAT = "[dim_name=][pos | lower?:upper?]"
 
 
 @arg_parser(
     dest="adaptors",
     flags="--pos",
     metavar=POS_FORMAT,
-    help="select data nearest to the given position, or between the lower position (inclusive) and upper position (exclusive); a variable name in place of dim_name keeps the rows (particles) or values (fields; others become nan) where that variable is in the range",
+    help="select data nearest to the given position, or between the lower position (inclusive) and upper position (exclusive); a variable name in place of dim_name keeps the rows (particles) or values (fields; others become nan) where that variable is in the range; omitting dim_name= means the active variable",
     nargs="+",
 )
 def parse_pos(args: list[str]) -> Pos:
-    dim_names_to_sel = {}
+    dim_names_to_sel: dict[str | None, float | slice] = {}
     for arg in args:
-        [dim_name, sel_arg] = parse_util.parse_assignment(arg, POS_FORMAT)
+        if "=" in arg:
+            [dim_name, sel_arg] = parse_util.parse_assignment(arg, POS_FORMAT)
+            parse_util.parse_identifier(dim_name, "dim_name")
+        else:
+            dim_name, sel_arg = None, arg
 
-        parse_util.parse_identifier(dim_name, "dim_name")
         if ":" in sel_arg:
             dim_names_to_sel[dim_name] = parse_util.parse_slice(sel_arg, float)
         else:
