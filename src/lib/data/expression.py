@@ -3,9 +3,10 @@
 An evaluator is a lark `Transformer` that turns a parsed expression into a value.
 `ExpressionEvaluator` does the arithmetic; subclasses decide what a name means."""
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any
 
+import numpy as np
 from lark import Lark, Tree
 from lark.exceptions import VisitError
 from lark.visitors import Transformer
@@ -19,6 +20,7 @@ new_variable : CNAME
 ?expression : _expression_3
 
 _expression_0 : "(" expression ")"
+              | function_call
               | variable
               | scoped_variable
               | number
@@ -38,6 +40,7 @@ division       : _expression_2 "/" _expression_1
 addition       : _expression_3 "+" _expression_2
 subtraction    : _expression_3 "-" _expression_2
 
+function_call   : CNAME "(" expression ")"
 variable        : CNAME
 scoped_variable : prepath "::" CNAME
 number          : SIGNED_NUMBER
@@ -57,6 +60,8 @@ PREFIX : /[.\w\d]+/
 """
 
 EXPRESSION_PARSER = Lark(_GRAMMAR)
+
+EXPRESSION_FUNCTIONS: dict[str, Callable] = {"log": np.log, "exp": np.exp}
 
 
 def split_assignment(tree: Tree) -> tuple[str, Tree]:
@@ -98,6 +103,13 @@ class ExpressionEvaluator(Transformer):
     def new_variable(self, toks: list):
         [tok] = toks
         return str(tok)
+
+    def function_call(self, toks: list):
+        [name, arg] = toks
+        name = str(name)
+        if name not in EXPRESSION_FUNCTIONS:
+            raise ValueError(f"unknown function '{name}'")
+        return EXPRESSION_FUNCTIONS[name](arg)
 
     def prepath(self, toks: list):
         return "/".join(str(tok) for tok in toks)

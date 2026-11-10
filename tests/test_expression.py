@@ -30,3 +30,7 @@ def test_bound_evaluator_rejects_scoped():
     _, expr = split_assignment(EXPRESSION_PARSER.parse("f=pfd::q"))
     with pytest.raises(ValueError, match="prepath::key"):
         evaluate(BoundEvaluator({}), expr)
+
+
+def test_function_names_without_parens_are_variables():
+    assert variable_names(EXPRESSION_PARSER.parse("f=log*exp+log(x)")) == {"log", "exp", "x"}

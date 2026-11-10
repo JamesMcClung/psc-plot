@@ -58,7 +58,7 @@ _DERIVE_FORMAT = "new_var_key=expression"
     dest="adaptors",
     flags="--derive",
     metavar=_DERIVE_FORMAT,
-    help=f"Create a new variable with the given name. The expression can be any mathematical expression using the standard operators (+, -, *, /, ^), parentheses, signed floating point numbers, imaginary numbers written as a number immediately followed by `i` (e.g. `1i`, `0.5i`; a bare `i` is a variable name), and other variable names. A name may be scoped to another prefix as `prepath::key` (similar to `--with`).",
+    help=f"Create a new variable with the given name. The expression can be any mathematical expression using the standard operators (+, -, *, /, ^), parentheses, signed floating point numbers, imaginary numbers written as a number immediately followed by `i` (e.g. `1i`, `0.5i`; a bare `i` is a variable name), the functions `log(…)` (natural log) and `exp(…)`, and other variable names. A name may be scoped to another prefix as `prepath::key` (similar to `--with`).",
 )
 def parse_derive(arg: str) -> Derive:
     return Derive(arg)
