@@ -1,17 +1,17 @@
 import numpy as np
 from matplotlib.contour import QuadContourSet
 
-from lib.parsing.args_registry import const_arg
+from lib.parsing import parse_util
+from lib.parsing.args_registry import arg_parser
 from lib.plotting.hook import DrawMessage, Hook
 from lib.plotting.plot_info import ImageInfo
 from lib.scale import LogScale
 
-N_INTERVALS = 10
-
 
 class Contour(Hook):
-    def __init__(self):
+    def __init__(self, n_intervals: int):
         self.contours: QuadContourSet | None = None
+        self.n_intervals = n_intervals
 
     def post_init_fig(self, message):
         self._draw(message)
@@ -27,9 +27,9 @@ class Contour(Hook):
         if isinstance(info.dim_scales[info.color_dim], LogScale):
             data = np.asarray(info.data)
             positive = data[data > 0]
-            levels = np.geomspace(positive.min(), positive.max(), N_INTERVALS + 1)
+            levels = np.geomspace(positive.min(), positive.max(), self.n_intervals + 1)
         else:
-            levels = np.linspace(np.nanmin(info.data), np.nanmax(info.data), N_INTERVALS + 1)
+            levels = np.linspace(np.nanmin(info.data), np.nanmax(info.data), self.n_intervals + 1)
         self.contours = message.axes.contour(
             info.data,
             levels=levels,
@@ -40,13 +40,16 @@ class Contour(Hook):
         )
 
     def get_name_fragments(self) -> list[str]:
-        return ["contour"]
+        return [f"contour_{self.n_intervals}"]
 
 
-@const_arg(
+@arg_parser(
     flags="--contour",
+    metavar="n_intervals",
     help="(2d only) draw contours at 10 evenly spaced intervals spanning the data range; logarithmically spaced if the color scale is log",
     dest="hooks",
+    nargs="just one",
 )
-def get() -> Contour:
-    return Contour()
+def get(arg: str) -> Contour:
+    n_intervals = parse_util.parse_number(arg, "n_intervals", int)
+    return Contour(n_intervals)
