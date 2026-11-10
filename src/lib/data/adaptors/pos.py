@@ -35,15 +35,15 @@ def _get_mask[T: xr.DataArray | pd.Series](values: T, sel: slice, include_bounds
 class Pos(MetadataAdaptor):
     def __init__(
         self,
-        dim_names_to_sel: dict[str | None, float | slice],
-        dim_names_to_include_bounds: dict[str | None, tuple[bool, bool]] | None = None,
+        var_keys_to_sel: dict[str | None, float | slice],
+        var_keys_to_include_bounds: dict[str | None, tuple[bool, bool]] | None = None,
     ):
-        """A `None` dim name stands for the active key."""
-        self.var_keys_to_sel = dim_names_to_sel
+        """A `None` key stands for the active key."""
+        self.var_keys_to_sel = var_keys_to_sel
 
-        self.var_keys_to_include_bounds = dim_names_to_include_bounds or {}
-        for dim_name in self.var_keys_to_sel:
-            self.var_keys_to_include_bounds.setdefault(dim_name, (True, False))
+        self.var_keys_to_include_bounds = var_keys_to_include_bounds or {}
+        for key in self.var_keys_to_sel:
+            self.var_keys_to_include_bounds.setdefault(key, (True, False))
 
     def _resolve_active_key(self, data: Field | List) -> tuple[dict[str, float | slice], dict[str, tuple[bool, bool]]]:
         if None not in self.var_keys_to_sel:
