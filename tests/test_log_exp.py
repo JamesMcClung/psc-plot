@@ -56,7 +56,7 @@ def test_log_parse():
 
 def test_exp_field():
     data = _positive_hx()
-    out = Exp().apply(data)
+    out = Exp(None).apply(data)
     xr.testing.assert_allclose(out["hx_fc"], np.exp(data["hx_fc"]))
     assert out.active_info.display.latex == f"\\exp({data.active_info.display.latex})"
     assert out.active_info.unit == data.active_info.unit
@@ -65,15 +65,36 @@ def test_exp_field():
 
 def test_log_exp_round_trip():
     data = _positive_hx()
-    out = Exp().apply(Log(None).apply(data))
+    out = Exp(None).apply(Log(None).apply(data))
     xr.testing.assert_allclose(out["hx_fc"], data["hx_fc"])
     assert out.active_info.unit == data.active_info.unit
     assert out.active_info.scale == data.active_info.scale
 
 
+def test_exp_base_10():
+    data = _positive_hx()
+    out = Exp(10.0).apply(data)
+    xr.testing.assert_allclose(out["hx_fc"], 10.0 ** data["hx_fc"])
+    assert out.active_info.display.latex == f"10.0^{{{data.active_info.display.latex}}}"
+
+
+def test_exp_list():
+    prt = load(CONFIG_2D, "prt.e").with_active(key="w")
+    out = Exp(2.0).apply(prt).data["w"].compute()
+    pd.testing.assert_series_equal(out, 2.0 ** prt.data["w"].compute())
+
+
+def test_log_exp_round_trip_base_10():
+    data = _positive_hx()
+    out = Exp(10.0).apply(Log(10.0).apply(data))
+    xr.testing.assert_allclose(out["hx_fc"], data["hx_fc"])
+
+
 def test_exp_parse():
-    [adaptor] = parse_steps(["--exp"])
-    assert isinstance(adaptor, Exp)
+    [natural] = parse_steps(["--exp"])
+    assert isinstance(natural, Exp) and natural.base is None
+    [base2] = parse_steps(["--exp 2"])
+    assert isinstance(base2, Exp) and base2.base == 2.0
 
 
 def test_empty_display_stays_empty():
@@ -82,4 +103,5 @@ def test_empty_display_stays_empty():
     data = data.with_active(info=replace(data.active_info, display=Latex("")))
     assert not Log(None).apply(data).active_info.display
     assert not Log(2.0).apply(data).active_info.display
-    assert not Exp().apply(data).active_info.display
+    assert not Exp(None).apply(data).active_info.display
+    assert not Exp(2.0).apply(data).active_info.display

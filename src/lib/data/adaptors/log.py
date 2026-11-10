@@ -12,7 +12,7 @@ from lib.parsing.args_registry import arg_parser
 
 
 class Log(BareAdaptor):
-    """Takes the logarithm; keeps the unit and scale, so a later `--exp` returns to the same axis."""
+    """Takes the logarithm; keeps the unit and scale, so a later `--exp` of the same base returns to the same axis."""
 
     def __init__(self, base: float | None):
         self.base = base
