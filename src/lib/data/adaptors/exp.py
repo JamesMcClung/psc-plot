@@ -31,8 +31,6 @@ class Exp(BareAdaptor):
         return ["exp" if self.base is None else f"exp{self.base}"]
 
     def get_modified_display_latex(self, metadata: Metadata) -> Latex:
-        if not metadata.active_var_info.display:
-            return metadata.active_var_info.display
         if self.base is None:
             return Latex(f"\\exp({metadata.active_var_info.display})")
         return Latex(f"{float_to_latex_str(self.base)}^{{{metadata.active_var_info.display}}}")
