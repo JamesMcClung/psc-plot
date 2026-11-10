@@ -155,7 +155,7 @@ class UnitLabeler(Labeler):
 
     def has_common_display(self) -> bool:
         """Whether the sources all agree on display, so that the label shows it."""
-        return len({info.dim_displays[self._get_key(info)] for info in self.sources}) == 1
+        return len({display for info in self.sources if (display := info.dim_displays[self._get_key(info)])}) == 1
 
     def _get_key(self, info: PlotInfo) -> VarKey:
         match self.axis_name:
@@ -172,7 +172,8 @@ class UnitLabeler(Labeler):
     def _get_label(self) -> str:
         keys = [self._get_key(info) for info in self.sources]
 
-        displays = {info.dim_displays[key] for info, key in zip(self.sources, keys)}
+        # an empty display is unnamed (e.g. a --fit curve), so it defers to the others
+        displays = {display for info, key in zip(self.sources, keys) if (display := info.dim_displays[key])}
         if self.require_display_match and len(displays) > 1:
             raise ValueError(f"{self.axis_name} displays must all be the same, but found {displays}")
 
