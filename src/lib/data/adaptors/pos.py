@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+import xarray as xr
 
 from lib.data import data_util
 from lib.data.adaptor import MetadataAdaptor
@@ -19,73 +21,107 @@ def _sel_to_isel(coords: np.ndarray, sel: float | slice, include_bounds: tuple[b
     return slice(start, stop)
 
 
+def _get_mask[T: xr.DataArray | pd.Series](values: T, sel: slice, include_bounds: tuple[bool, bool]) -> T:
+    """Whether each value lies within the selection's bounds."""
+    inc_lo, inc_hi = include_bounds
+    mask = values == values  # all true, except for nans
+    if sel.start is not None:
+        mask &= (values >= sel.start) if inc_lo else (values > sel.start)
+    if sel.stop is not None:
+        mask &= (values <= sel.stop) if inc_hi else (values < sel.stop)
+    return mask
+
+
 class Pos(MetadataAdaptor):
     def __init__(
         self,
-        dim_names_to_sel: dict[str, float | slice],
-        dim_names_to_include_bounds: dict[str, tuple[bool, bool]] | None = None,
+        var_keys_to_sel: dict[str | None, float | slice],
+        var_keys_to_include_bounds: dict[str | None, tuple[bool, bool]] | None = None,
     ):
-        self.dim_names_to_sel = dim_names_to_sel
+        """A `None` key stands for the active key."""
+        self.var_keys_to_sel = var_keys_to_sel
 
-        self.dim_names_to_include_bounds = dim_names_to_include_bounds or {}
-        for dim_name in self.dim_names_to_sel:
-            self.dim_names_to_include_bounds.setdefault(dim_name, (True, False))
+        self.var_keys_to_include_bounds = var_keys_to_include_bounds or {}
+        for key in self.var_keys_to_sel:
+            self.var_keys_to_include_bounds.setdefault(key, (True, False))
+
+    def _resolve_active_key(self, data: Field | List) -> tuple[dict[str, float | slice], dict[str, tuple[bool, bool]]]:
+        return (
+            {key or data.require_active_key(): sel for key, sel in self.var_keys_to_sel.items()},
+            {key or data.require_active_key(): bounds for key, bounds in self.var_keys_to_include_bounds.items()},
+        )
 
     def apply_field(self, data: Field) -> Field:
-        dim_names_to_pos = {dim_name: pos for dim_name, pos in self.dim_names_to_sel.items() if isinstance(pos, float)}
-        dim_names_to_slice = {dim_name: s for dim_name, s in self.dim_names_to_sel.items() if isinstance(s, slice)}
-        return data.with_active(data=data.require_active_subdata().sel(dim_names_to_pos, method="nearest").sel(dim_names_to_slice))
+        var_keys_to_sel, var_keys_to_include_bounds = self._resolve_active_key(data)
+        active = data.require_active_subdata()
+        var_keys_to_pos: dict[str, float] = {}
+        var_keys_to_slice: dict[str, slice] = {}
+        var_masks: list[xr.DataArray] = []
+        for key, sel in var_keys_to_sel.items():
+            if key in active.dims or key not in data.data:
+                if isinstance(sel, float):
+                    var_keys_to_pos[key] = sel
+                else:
+                    var_keys_to_slice[key] = sel
+            elif isinstance(sel, slice):
+                var_masks.append(_get_mask(data[key], sel, var_keys_to_include_bounds[key]))
+            else:
+                raise ValueError(f"--pos on field '{key}' needs a range (lower?:upper?), not a single value")
+
+        for mask in var_masks:
+            active = active.where(mask)
+        return data.with_active(data=active.sel(var_keys_to_pos, method="nearest").sel(var_keys_to_slice))
 
     def apply_list(self, data: List) -> List:
+        var_keys_to_sel, var_keys_to_include_bounds = self._resolve_active_key(data)
         coord_isels: dict[str, int | slice] = {}
         value_sels: dict[str, slice] = {}
-        for dim, sel in self.dim_names_to_sel.items():
-            if dim in data.coordss():
-                coord_isels[dim] = _sel_to_isel(data.coordss()[dim], sel, self.dim_names_to_include_bounds[dim])
+        for key, sel in var_keys_to_sel.items():
+            if key in data.coordss():
+                coord_isels[key] = _sel_to_isel(data.coordss()[key], sel, var_keys_to_include_bounds[key])
             elif isinstance(sel, slice):
-                value_sels[dim] = sel
+                value_sels[key] = sel
             else:
-                raise ValueError(f"Data has no coordinate information for dimension {dim}")
+                raise ValueError(f"Data has no coordinate information for key {key}")
 
         if coord_isels:
             data = Idx(coord_isels).apply_list(data)
 
         if value_sels:
             df = data.data
-            for dim, sel in value_sels.items():
-                inc_lo, inc_hi = self.dim_names_to_include_bounds[dim]
-                if sel.start is not None:
-                    df = df[df[dim] >= sel.start] if inc_lo else df[df[dim] > sel.start]
-                if sel.stop is not None:
-                    df = df[df[dim] <= sel.stop] if inc_hi else df[df[dim] < sel.stop]
+            for key, sel in value_sels.items():
+                df = df[_get_mask(df[key], sel, var_keys_to_include_bounds[key])]
             data = data.assign(df)
 
         return data
 
     def get_name_fragments(self) -> list[str]:
-        subfrags = "_".join(f"{dim_name}={data_util.sel_to_frag(sel)}" for dim_name, sel in self.dim_names_to_sel.items())
+        subfrags = "_".join(data_util.sel_to_frag(sel) if key is None else f"{key}={data_util.sel_to_frag(sel)}" for key, sel in self.var_keys_to_sel.items())
         return [f"pos_{subfrags}"]
 
 
-POS_FORMAT = "dim_name=[pos | lower?:upper?]"
+POS_FORMAT = "[var_key=][pos | lower?:upper?]"
 
 
 @arg_parser(
     dest="adaptors",
     flags="--pos",
     metavar=POS_FORMAT,
-    help="select data nearest to the given position, or between the lower position (inclusive) and upper position (exclusive)",
+    help="select data nearest to the given position, or between the lower position (inclusive) and upper position (exclusive); if var_key points to a field, the active field is nan'd where the given field lies outside of the given range",
     nargs="+",
 )
 def parse_pos(args: list[str]) -> Pos:
-    dim_names_to_sel = {}
+    var_keys_to_sel: dict[str | None, float | slice] = {}
     for arg in args:
-        [dim_name, sel_arg] = parse_util.parse_assignment(arg, POS_FORMAT)
-
-        parse_util.parse_identifier(dim_name, "dim_name")
-        if ":" in sel_arg:
-            dim_names_to_sel[dim_name] = parse_util.parse_slice(sel_arg, float)
+        if "=" in arg:
+            [key, sel_arg] = parse_util.parse_assignment(arg, POS_FORMAT)
+            parse_util.parse_identifier(key, "var_key")
         else:
-            dim_names_to_sel[dim_name] = parse_util.parse_number(sel_arg, "pos", float)
+            key, sel_arg = None, arg
 
-    return Pos(dim_names_to_sel)
+        if ":" in sel_arg:
+            var_keys_to_sel[key] = parse_util.parse_slice(sel_arg, float)
+        else:
+            var_keys_to_sel[key] = parse_util.parse_number(sel_arg, "pos", float)
+
+    return Pos(var_keys_to_sel)
