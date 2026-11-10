@@ -17,3 +17,8 @@ def _blank_hx():
 def test_metadata_adaptor_keeps_empty_display(step):
     [adaptor] = parse_steps([step])
     assert not adaptor.apply(_blank_hx()).active_info.display
+
+
+def test_fourier_keeps_empty_display():
+    [adaptor] = parse_steps(["--fourier y=rev"])
+    assert not adaptor.apply(_blank_hx()).active_info.display

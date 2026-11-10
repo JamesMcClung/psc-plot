@@ -75,7 +75,7 @@ class Fourier(MetadataAdaptor):
             if self.positive_only:
                 da = da.isel({f_info.key: da.coords[f_info.key].values > 0})
 
-        if not self.no_display:
+        if not self.no_display and data.active_info.display:
             old_active_info = data.active_info
             new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{old_active_info.display}]"
             new_var_infos[data.metadata.active_key] = old_active_info.assign(display=new_display)
