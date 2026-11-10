@@ -4,9 +4,8 @@ import pandas as pd
 import xarray as xr
 
 from lib.data.adaptor import BareAdaptor
-from lib.data.adaptors.math_op import float_to_latex_str
 from lib.data.data_with_attrs import Metadata
-from lib.latex import Latex
+from lib.latex import Latex, float_to_latex_str
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 

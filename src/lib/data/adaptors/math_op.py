@@ -6,21 +6,9 @@ import xarray as xr
 
 from lib.data.adaptor import BareAdaptor
 from lib.data.data_with_attrs import Metadata
-from lib.latex import Latex
+from lib.latex import Latex, float_to_latex_str
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
-
-
-def float_to_latex_str(f: float) -> str:
-    fs = str(f).lower()
-
-    if "e" not in fs:
-        return fs
-
-    coefficient, exponent = fs.split("e")
-    if coefficient == "1":
-        return f"10^{{{exponent}}}"
-    return f"{coefficient}\\times10^{{{exponent}}}"
 
 
 class MathOp(BareAdaptor):

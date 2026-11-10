@@ -12,6 +12,18 @@ def strip_latex(latex: str) -> str:
     return plain
 
 
+def float_to_latex_str(f: float) -> str:
+    fs = str(f).lower()
+
+    if "e" not in fs:
+        return fs
+
+    coefficient, exponent = fs.split("e")
+    if coefficient == "1":
+        return f"10^{{{exponent}}}"
+    return f"{coefficient}\\times10^{{{exponent}}}"
+
+
 @dataclass(frozen=True, unsafe_hash=True)
 class Latex:
     latex: str
