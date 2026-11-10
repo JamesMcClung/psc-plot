@@ -46,7 +46,7 @@ class Contour(Hook):
 @arg_parser(
     flags="--contour",
     metavar="n_intervals",
-    help="(2d only) draw contours at 10 evenly spaced intervals spanning the data range; logarithmically spaced if the color scale is log",
+    help="(2d only) draw contours around evenly spaced intervals spanning the data range; logarithmically spaced if the color scale is log",
     dest="hooks",
     nargs="just one",
 )
