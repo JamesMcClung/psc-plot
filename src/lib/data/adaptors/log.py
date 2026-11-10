@@ -32,6 +32,8 @@ class Log(BareAdaptor):
         return ["log" if self.base is None else f"log{self.base}"]
 
     def get_modified_display_latex(self, metadata: Metadata) -> Latex:
+        if not metadata.active_var_info.display:
+            return metadata.active_var_info.display
         func = "\\ln" if self.base is None else f"\\log_{{{float_to_latex_str(self.base)}}}"
         return Latex(f"{func}({metadata.active_var_info.display})")
 

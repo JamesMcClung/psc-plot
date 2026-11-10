@@ -27,4 +27,6 @@ class Exp(BareAdaptor):
         return ["exp"]
 
     def get_modified_display_latex(self, metadata: Metadata) -> Latex:
+        if not metadata.active_var_info.display:
+            return metadata.active_var_info.display
         return Latex(f"\\exp({metadata.active_var_info.display})")
