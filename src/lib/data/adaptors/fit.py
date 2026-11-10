@@ -69,6 +69,11 @@ class Fit(WorldAdaptor):
         values = dict(zip(self.independent_keys, xs)) | dict(zip(self.coef_keys, params))
         return evaluate(BoundEvaluator(values), self.expression)
 
+    def _model_is_finite(self, independents: dict):
+        """Where the model is finite, at the initial guess. Elsewhere (e.g. log(k) at k=0) a point can't inform the fit."""
+        with np.errstate(all="ignore"):
+            return np.isfinite(evaluate(BoundEvaluator(independents | {key: 1.0 for key in self.coef_keys}), self.expression))
+
     def _check_per_value_dims(self, dims: list[str], kind: str):
         for key in self.per_value_dims:
             if key not in dims:
@@ -106,8 +111,11 @@ class Fit(WorldAdaptor):
         pooled = [dim for dim in dims if dim not in fit_dims and dim not in self.per_value_dims]
         if dask.is_dask_collection(active):
             active = active.chunk({dim: -1 for dim in [*fit_dims, *pooled]})
-
-        self._check_enough_points(active.notnull().sum([*fit_dims, *pooled]))
+        # non-finite points (NaNs, or e.g. -inf from --log of zero) are skipped
+        active = active.where(np.isfinite(active) & self._model_is_finite({key: active[key] for key in self.independent_keys}))
+        counts = active.notnull().sum([*fit_dims, *pooled])
+        # blank groups too small to fit, which curvefit can't handle but treats an empty group as NaN; they raise below
+        active = active.where(counts >= len(self.coef_keys))
 
         result = active.curvefit(
             coords=[active[key] for key in self.independent_keys],
@@ -118,11 +126,16 @@ class Fit(WorldAdaptor):
             skipna=True,
             errors="ignore",
         )
-        coefs = {key: result.curvefit_coefficients.sel(param=key, drop=True) for key in self.coef_keys}
+        lazy_coefs = [result.curvefit_coefficients.sel(param=key, drop=True) for key in self.coef_keys]
+        # the coefficients are small: compute them (and the point counts) in one pass over the data
+        counts, *coef_values = dask.compute(counts, *lazy_coefs)
+        self._check_enough_points(counts)
+        coefs = dict(zip(self.coef_keys, coef_values))
         self._warn_if_unconverged(coefs)
 
         values = {key: active[key] for key in self.independent_keys} | coefs
-        curve = evaluate(BoundEvaluator(values), self.expression)
+        with np.errstate(all="ignore"):  # the curve is non-finite wherever the model is (e.g. log(k) at k=0)
+            curve = evaluate(BoundEvaluator(values), self.expression)
         curve = curve.broadcast_like(active).transpose(*dims)
         return self._finish(data, curve, coefs, data.active_info, config)
 
@@ -138,6 +151,11 @@ class Fit(WorldAdaptor):
         df = data.data[[active_key, *self.independent_keys, *self.per_value_dims]]
         if isinstance(df, dd.DataFrame):
             df = df.compute()
+        # non-finite rows (NaNs, or e.g. -inf from --log of zero) are skipped
+        usable = np.isfinite(df[active_key]) & self._model_is_finite({key: df[key] for key in self.independent_keys})
+        for key in self.independent_keys:
+            usable &= np.isfinite(df[key])
+        df = df[usable]
 
         per_value_coordss = [coordss[dim] for dim in self.per_value_dims]
         coef_arrays = np.full((len(self.coef_keys), *map(len, per_value_coordss)), np.nan)
@@ -145,14 +163,15 @@ class Fit(WorldAdaptor):
             group = df
             for dim, coords, i in zip(self.per_value_dims, per_value_coordss, index):
                 group = group[group[dim] == coords[i]]
-            coef_arrays[(slice(None), *index)] = self._fit_rows(group.dropna(subset=[active_key, *self.independent_keys]), active_key)
+            coef_arrays[(slice(None), *index)] = self._fit_rows(group, active_key)
 
         coefs = {key: xr.DataArray(arr, coords=dict(zip(self.per_value_dims, per_value_coordss)), dims=self.per_value_dims) for key, arr in zip(self.coef_keys, coef_arrays)}
         self._warn_if_unconverged(coefs)
 
         eval_coordss = {key: coordss[key] if key in coordss else self._artificial_coords(df[key], data.metadata.var_infos.get(key)) for key in self.independent_keys}
         values = {key: xr.DataArray(coords, coords={key: coords}, dims=key) for key, coords in eval_coordss.items()} | coefs
-        curve = evaluate(BoundEvaluator(values), self.expression).transpose(*self.independent_keys, *self.per_value_dims)
+        with np.errstate(all="ignore"):  # the curve is non-finite wherever the model is (e.g. log(k) at k=0)
+            curve = evaluate(BoundEvaluator(values), self.expression).transpose(*self.independent_keys, *self.per_value_dims)
 
         _, prefix = split_prepath(data.metadata.prepath)
         dim_infos = {key: data.metadata.var_infos.get(key) or config.registry.lookup(prefix, key) for key in curve.dims}

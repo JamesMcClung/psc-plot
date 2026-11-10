@@ -289,3 +289,55 @@ def test_fit_curve_shares_the_data_axis_and_label():
     [axes] = fig.axes
     assert "B" in axes.get_ylabel()
     assert axes.get_yscale() == "log"
+
+
+# --- non-finite values and dask (from review) ---
+
+
+def test_field_fit_skips_infinite_data():
+    """e.g. --log of a zero gives -inf, which is as unusable as a NaN."""
+    y = np.arange(1.0, 7.0)
+    f = 2 * y
+    f[2] = -np.inf
+    curve = _fit(_field(xr.DataArray(f, coords={"y": y}, dims="y")), ["a"], "fit=a*y")["fit"]
+    assert float(curve.coords["a"]) == pytest.approx(2.0)
+
+
+def test_list_fit_skips_infinite_data():
+    u = np.linspace(1, 4, 20)
+    f = 2 * u
+    f[[3, 7]] = -np.inf
+    curve = _fit(_list(pd.DataFrame({"u": u, "f": f})), ["a"], "fit=a*u")["fit"]
+    assert float(curve.coords["a"]) == pytest.approx(2.0)
+
+
+def test_field_fit_skips_points_where_the_model_is_infinite():
+    """log(k) at k=0 is -inf for any coefficients; those points can't inform the fit (and used to return p0 silently)."""
+    k = np.arange(0.0, 6.0)
+    with np.errstate(divide="ignore"):
+        f = np.where(k > 0, 2 - 1.5 * np.log(k), 7.0)
+    curve = _fit(_field(xr.DataArray(f, coords={"k": k}, dims="k")), ["c", "gamma"], "fit=c-gamma*log(k)")["fit"]
+    assert float(curve.coords["c"]) == pytest.approx(2.0)
+    assert float(curve.coords["gamma"]) == pytest.approx(1.5)
+
+
+def test_list_fit_skips_points_where_the_model_is_infinite():
+    k = np.arange(0.0, 6.0)
+    with np.errstate(divide="ignore"):
+        f = np.where(k > 0, 2 - 1.5 * np.log(k), 7.0)
+    curve = _fit(_list(pd.DataFrame({"k": k, "f": f})), ["c", "gamma"], "fit=c-gamma*log(k)")["fit"]
+    assert float(curve.coords["c"]) == pytest.approx(2.0)
+    assert float(curve.coords["gamma"]) == pytest.approx(1.5)
+
+
+def test_dask_field_fit_reads_the_data_once():
+    import dask
+    from dask.callbacks import Callback
+
+    computes = []
+    pfd = load(CONFIG_2D, "pfd").with_active(key="hx_fc")
+    assert dask.is_dask_collection(pfd["hx_fc"])
+    with Callback(start=lambda dsk: computes.append(1)):
+        curve = _fit(pfd, ["a", "b", "t"], "fit=a*y+b")["fit"]
+        curve.values
+    assert len(computes) == 1
