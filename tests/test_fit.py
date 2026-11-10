@@ -1,6 +1,7 @@
 """Tests for `--fit`."""
 
 import numpy as np
+import pandas as pd
 import pytest
 import scipy.stats
 import xarray as xr
@@ -8,7 +9,7 @@ from conftest import CONFIG_2D
 
 from lib.data.adaptors.fit import Fit
 from lib.data.adaptors.log import Log
-from lib.data.data_with_attrs import Field, FieldMetadata
+from lib.data.data_with_attrs import Field, FieldMetadata, FullList, ListMetadata
 from lib.data.data_world import DataWorld
 from lib.data.loader import load
 from lib.latex import Latex
@@ -138,3 +139,117 @@ def test_fit_real_field():
     curve = _fit(pfd, ["a", "b", "t"], "fit=a*y+b")["fit"]
     assert set(curve.dims) == set(pfd["hx_fc"].dims)
     assert curve.coords["a"].dims == ("t",)
+
+
+# --- lists ---
+
+
+def _list(df: pd.DataFrame, coordss: dict[str, np.ndarray] | None = None, **infos: VarInfo) -> FullList:
+    """A list whose active variable is the column `f`, with unit U and a log scale."""
+    var_infos = {key: _info(key) for key in df.columns} | {"f": _info("f", "U", scale=LogScale())} | infos
+    return FullList(df, ListMetadata(prepath="prt.e", active_key="f", var_infos=var_infos, coordss=coordss or {}))
+
+
+def _u_t_list() -> FullList:
+    """Rows of f = (t+1) * u for u = 0..4, t in {0, 1}."""
+    u = np.tile(np.linspace(0, 4, 50), 2)
+    t = np.repeat([0.0, 1.0], 50)
+    return _list(pd.DataFrame({"u": u, "t": t, "f": (t + 1) * u}), {"t": np.array([0.0, 1.0])})
+
+
+def test_list_fit_artificial_coords():
+    data = _fit(_u_t_list(), ["a", "t"], "fit=a*u")
+    assert isinstance(data, Field)
+    curve = data["fit"]
+    assert curve.dims == ("u", "t")
+    np.testing.assert_allclose(curve.coords["u"], np.linspace(0, 4, 100))
+    np.testing.assert_allclose(curve.coords["a"], [1, 2])
+    assert curve.coords["a"].dims == ("t",)
+
+
+def test_list_fit_output_metadata():
+    data = _fit(_u_t_list(), ["a", "t"], "fit=a*u")
+    info = data.active_info
+    assert data.active_key == "fit" and info.key == "fit" and not info.display
+    assert info.unit == Latex("U") and info.scale == LogScale()
+    assert {"a", "u", "t"} <= data.metadata.var_infos.keys()
+
+
+def test_list_fit_uses_existing_coords():
+    x = np.linspace(0, 4, 30)
+    grid = np.arange(4.0)
+    curve = _fit(_list(pd.DataFrame({"x": x, "f": 2 * x}), {"x": grid}), ["a"], "fit=a*x")["fit"]
+    np.testing.assert_allclose(curve.coords["x"], grid)
+    np.testing.assert_allclose(curve, 2 * grid)
+
+
+def test_list_fit_pools_unlisted_coords():
+    rng = np.random.default_rng(0)
+    x, y = rng.uniform(0, 4, 40), rng.uniform(0, 4, 40)
+    data = _list(pd.DataFrame({"x": x, "y": y, "f": 2 * x}), {"x": np.arange(4.0), "y": np.arange(4.0)})
+    curve = _fit(data, ["a"], "fit=a*x")["fit"]
+    assert curve.dims == ("x",)
+    assert float(curve.coords["a"]) == pytest.approx(2.0)
+
+
+def test_log_scaled_artificial_coords_are_geometric():
+    u = np.geomspace(1, 100, 20)
+    data = _list(pd.DataFrame({"u": u, "f": 2 * u}), u=_info("u", scale=LogScale()))
+    curve = _fit(data, ["a"], "fit=a*u")["fit"]
+    np.testing.assert_allclose(curve.coords["u"], np.geomspace(1, 100, 100))
+
+
+def test_log_scaled_artificial_coords_need_positive_range():
+    u = np.linspace(0, 100, 20)
+    data = _list(pd.DataFrame({"u": u, "f": 2 * u}), u=_info("u", scale=LogScale()))
+    with pytest.raises(ValueError, match="positive range"):
+        _fit(data, ["a"], "fit=a*u")
+
+
+def test_list_power_law_matches_linregress():
+    k = np.linspace(1, 20, 40)
+    f = 3 * k**-1.7 * (1 + 0.01 * np.sin(k))
+    data = Log(None).apply(_list(pd.DataFrame({"k": k, "f": f})))
+    curve = _fit(data, ["c", "gamma"], "fit=c-gamma*log(k)")["fit"]
+    slope, intercept, *_ = scipy.stats.linregress(np.log(k), np.log(f))
+    assert float(curve.coords["gamma"]) == pytest.approx(-slope, rel=1e-6)
+    assert float(curve.coords["c"]) == pytest.approx(intercept, rel=1e-6)
+
+
+def test_list_fit_skips_nans():
+    u = np.linspace(0, 4, 20)
+    f = 2 * u
+    f[[3, 7]] = np.nan
+    curve = _fit(_list(pd.DataFrame({"u": u, "f": f})), ["a"], "fit=a*u")["fit"]
+    assert float(curve.coords["a"]) == pytest.approx(2.0)
+
+
+def test_list_degenerate_group_errors():
+    data = _u_t_list()
+    data = data.assign(coordss={"t": np.array([0.0, 1.0, 2.0])})  # no rows at t=2
+    with pytest.raises(ValueError, match="fewer"):
+        _fit(data, ["a", "t"], "fit=a*u")
+
+
+def test_list_per_value_dim_without_coords_errors():
+    with pytest.raises(ValueError, match="'u'"):
+        _fit(_u_t_list(), ["a", "u"], "fit=a*t")
+
+
+def test_list_unknown_variable_errors():
+    with pytest.raises(ValueError, match="'q'"):
+        _fit(_u_t_list(), ["a"], "fit=a*q")
+
+
+def test_list_fit_real_particles():
+    prt = load(CONFIG_2D, "prt.e").with_active(key="px")
+    curve = _fit(prt, ["a", "b", "t"], "fit=a*py+b")["fit"]
+    assert curve.dims == ("py", "t")
+    assert curve.coords["a"].dims == ("t",)
+    assert len(curve.coords["py"]) == 100
+
+
+def test_list_coefficient_may_shadow_a_coord():
+    curve = _fit(_u_t_list(), ["t"], "fit=t*u")["fit"]
+    assert curve.dims == ("u",)
+    assert float(curve.coords["t"]) == pytest.approx(1.5)
