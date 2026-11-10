@@ -5,6 +5,7 @@ import pandas as pd
 import xarray as xr
 from conftest import CONFIG_2D
 
+from lib.data.adaptors.exp import Exp
 from lib.data.adaptors.log import Log
 from lib.data.loader import load
 from lib.parsing.parse import parse_steps
@@ -48,3 +49,25 @@ def test_log_parse():
     assert isinstance(natural, Log) and natural.base is None
     [base2] = parse_steps(["--log 2"])
     assert isinstance(base2, Log) and base2.base == 2.0
+
+
+def test_exp_field():
+    data = _positive_hx()
+    out = Exp().apply(data)
+    xr.testing.assert_allclose(out["hx_fc"], np.exp(data["hx_fc"]))
+    assert out.active_info.display.latex == f"\\exp({data.active_info.display.latex})"
+    assert out.active_info.unit == data.active_info.unit
+    assert out.active_info.scale == data.active_info.scale
+
+
+def test_log_exp_round_trip():
+    data = _positive_hx()
+    out = Exp().apply(Log(None).apply(data))
+    xr.testing.assert_allclose(out["hx_fc"], data["hx_fc"])
+    assert out.active_info.unit == data.active_info.unit
+    assert out.active_info.scale == data.active_info.scale
+
+
+def test_exp_parse():
+    [adaptor] = parse_steps(["--exp"])
+    assert isinstance(adaptor, Exp)
