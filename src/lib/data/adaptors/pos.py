@@ -48,11 +48,9 @@ class Pos(MetadataAdaptor):
     def _resolve_active_key(self, data: Field | List) -> tuple[dict[str, float | slice], dict[str, tuple[bool, bool]]]:
         if None not in self.var_keys_to_sel:
             return self.var_keys_to_sel, self.var_keys_to_include_bounds
-        active_key = data.require_active_key()
-        resolve = lambda key: active_key if key is None else key
         return (
-            {resolve(name): sel for name, sel in self.var_keys_to_sel.items()},
-            {resolve(name): bounds for name, bounds in self.var_keys_to_include_bounds.items()},
+            {key or data.require_active_key(): sel for key, sel in self.var_keys_to_sel.items()},
+            {key or data.require_active_key(): bounds for key, bounds in self.var_keys_to_include_bounds.items()},
         )
 
     def apply_field(self, data: Field) -> Field:
