@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 import scipy.stats
 import xarray as xr
-from conftest import CONFIG_2D
+from conftest import CONFIG_2D, make_plot
 
 from lib.data.adaptors.fit import Fit
 from lib.data.adaptors.log import Log
@@ -13,6 +13,7 @@ from lib.data.data_with_attrs import Field, FieldMetadata, FullList, ListMetadat
 from lib.data.data_world import DataWorld
 from lib.data.loader import load
 from lib.latex import Latex
+from lib.parsing.parse import StepParseError, parse_steps
 from lib.scale import LogScale
 from lib.var_info import VarInfo
 
@@ -253,3 +254,38 @@ def test_list_coefficient_may_shadow_a_coord():
     curve = _fit(_u_t_list(), ["t"], "fit=t*u")["fit"]
     assert curve.dims == ("u",)
     assert float(curve.coords["t"]) == pytest.approx(1.5)
+
+
+# --- parsing ---
+
+
+def test_parse_fit_classifies_names():
+    [fit] = parse_steps(["--fit c gamma t fit=c-gamma*log(k_s)"])
+    assert isinstance(fit, Fit)
+    assert fit.coef_keys == ["c", "gamma"] and fit.per_value_dims == ["t"] and fit.new_key == "fit"
+
+
+@pytest.mark.parametrize(
+    "step, match",
+    [
+        ("--fit a b", "exactly one"),
+        ("--fit a f=a*y g=a*y", "exactly one"),
+        ("--fit a fit=b*y", "at least one coefficient"),
+        ("--fit a-b fit=a*y", "identifier"),
+        ("--fit a fit=a*", "argument --fit: .*fit=a\\*"),
+    ],
+)
+def test_parse_fit_errors(step, match):
+    with pytest.raises(StepParseError, match=match):
+        parse_steps([step])
+
+
+# --- plotting ---
+
+
+def test_fit_curve_shares_the_data_axis_and_label():
+    """The curve copies the data's unit and scale, so it lands on the data's y axis; its empty display defers to the data's."""
+    fig = make_plot("pfd hhat2_xyz --scatter --transform-spherical k_y k_z k_x --pos k_s=1e-8: --scale hhat2_xyz=log -cv k_s hhat2_xyz --pos k_s=25:45 --log --fit c gamma t fit=c-gamma*log(k_s) --exp -v k_s".split(), data_dir="test-3d")
+    [axes] = fig.axes
+    assert "B" in axes.get_ylabel()
+    assert axes.get_yscale() == "log"

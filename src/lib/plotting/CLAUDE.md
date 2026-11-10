@@ -44,7 +44,7 @@ Rules learned the hard way:
   - `subject` is `PlotInfo.subject`: the display of `subject_dim`, **without its unit**; for scatter, `ScatterInfo.list_subject`.
 - **`YAxisLabeler`** — a y axis's `display [unit]`, via a wrapped `UnitLabeler(require_display_match=False)`. Its children are the legend entries of lines whose `subject_dim` is their `y_dim` (other legend entries hang off the title). When the axis shows a display, that *is* their subject, so it **absorbs** it from them and the subject appears only on the axis. Otherwise it's transparent: it offers, and forwards lifts of, whatever its children have in common.
 - **`ColorbarLabeler`** — a leaf for a colorbar whose `color_dim` is the `subject_dim`: `subject (sublabels) [unit]`. It never offers its subject, so the title gets only the sublabels.
-- **`UnitLabeler`** — plain axis/colorbar text (`display [unit]`): x axes, and colorbars not of the subject (e.g. scatter color). It holds several sources and raises if they disagree on unit (or on display, if `require_display_match`). `is_compatible(info)` is a trial append/rollback — that's what `Panel.can_wire_unit_labeler_xy` uses to decide left-vs-right y-axis.
+- **`UnitLabeler`** — plain axis/colorbar text (`display [unit]`): x axes, and colorbars not of the subject (e.g. scatter color). It holds several sources and raises if they disagree on unit (or on display, if `require_display_match`). An empty display (e.g. a `--fit` curve's) is unnamed and defers to the other sources, so it neither blanks the label nor counts as a disagreement. `is_compatible(info)` is a trial append/rollback — that's what `Panel.can_wire_unit_labeler_xy` uses to decide left-vs-right y-axis.
 
 `Grid` wires the suptitle only once a second panel appears; stacking panels removes their titles, reparenting their children to the suptitle.
 
@@ -52,4 +52,4 @@ Labelers are driven by `Grid.update_labels()` each animation frame. `Panel.updat
 
 ## Hooks
 
-Hooks (`src/lib/plotting/hooks/`) — currently `--grid`, `--vline`, `--fit`, `--show-com`, `--contour` — subclass `Hook` (`src/lib/plotting/hook.py`) and implement `post_init_fig(message)` / `post_update_fig(message)`, receiving a `DrawMessage(plot_info, axes, frame_data)`. `PlotPipeline.run_plot` (`src/lib/run/plot_pipeline.py`) attaches them and `Plot._initialize()` calls `post_init_fig` after building the figure. **Currently hooks are applied to the first renderer/axes only** — see the TODO in `plot.py`.
+Hooks (`src/lib/plotting/hooks/`) — currently `--grid`, `--vline`, `--show-com`, `--contour` — subclass `Hook` (`src/lib/plotting/hook.py`) and implement `post_init_fig(message)` / `post_update_fig(message)`, receiving a `DrawMessage(plot_info, axes, frame_data)`. `PlotPipeline.run_plot` (`src/lib/run/plot_pipeline.py`) attaches them and `Plot._initialize()` calls `post_init_fig` after building the figure. **Currently hooks are applied to the first renderer/axes only** — see the TODO in `plot.py`.

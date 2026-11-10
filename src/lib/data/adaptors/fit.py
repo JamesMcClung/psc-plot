@@ -1,4 +1,5 @@
 import warnings
+from argparse import ArgumentTypeError
 from dataclasses import replace
 
 import dask
@@ -7,6 +8,7 @@ import numpy as np
 import pandas as pd
 import scipy.optimize
 import xarray as xr
+from lark.exceptions import LarkError
 
 from lib.config import PscPlotConfig
 from lib.data.adaptor import WorldAdaptor
@@ -15,6 +17,8 @@ from lib.data.data_world import DataWorld
 from lib.data.expression import EXPRESSION_PARSER, BoundEvaluator, evaluate, split_assignment, variable_names
 from lib.file_util import split_prepath
 from lib.latex import Latex
+from lib.parsing import parse_util
+from lib.parsing.args_registry import arg_parser
 from lib.scale import LogScale
 from lib.var_info import VarInfo
 
@@ -177,3 +181,24 @@ class Fit(WorldAdaptor):
                 raise ValueError(f"--fit: log-spaced coords for '{key}' need a positive range, but it spans [{lower}, {upper}]")
             return np.geomspace(lower, upper, ARTIFICIAL_COORD_COUNT)
         return np.linspace(lower, upper, ARTIFICIAL_COORD_COUNT)
+
+
+_FIT_FORMAT = "name... new_var_key=expression"
+
+
+@arg_parser(
+    dest="adaptors",
+    flags="--fit",
+    metavar=_FIT_FORMAT,
+    help="Fit the active variable to an expression (same grammar as --derive), replacing it with the fitted curve, a field. Names the expression uses are coefficients, which become coords of the curve; names it doesn't use are dims to fit each value of separately (e.g. t); all other dims are pooled into one fit. E.g. a power law fit in log-log space: --log --fit c gamma fit=c-gamma*log(k) --exp",
+    nargs="+",
+)
+def parse_fit(args: list[str]) -> Fit:
+    assignments = [arg for arg in args if "=" in arg]
+    if len(assignments) != 1:
+        raise ArgumentTypeError(f"expected exactly one {_FIT_FORMAT.split()[-1]} argument, got {len(assignments)}")
+    names = [parse_util.parse_identifier(arg, "name") for arg in args if "=" not in arg]
+    try:
+        return Fit(names, assignments[0])
+    except (ValueError, LarkError) as e:
+        raise ArgumentTypeError(f"in '{assignments[0]}': {e}") from e
