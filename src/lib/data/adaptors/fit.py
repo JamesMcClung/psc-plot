@@ -1,0 +1,121 @@
+import warnings
+from dataclasses import replace
+
+import dask
+import numpy as np
+import xarray as xr
+
+from lib.config import PscPlotConfig
+from lib.data.adaptor import WorldAdaptor
+from lib.data.data_with_attrs import DataWithAttrs, Field, List
+from lib.data.data_world import DataWorld
+from lib.data.expression import EXPRESSION_PARSER, BoundEvaluator, evaluate, split_assignment, variable_names
+from lib.file_util import split_prepath
+from lib.latex import Latex
+from lib.var_info import VarInfo
+
+ARTIFICIAL_COORD_COUNT = 100
+"""How many coords to evaluate a list fit's curve on, along a variable that has none."""
+
+
+class Fit(WorldAdaptor):
+    """Fits the active variable to an expression, replacing it with the fitted curve.
+
+    Of the bare `names`, those the expression uses are coefficients, and the rest are
+    dims along which to fit each value separately. Every other dim is pooled into one fit.
+    The coefficients end up as coords of the curve, so they label the plot."""
+
+    def __init__(self, names: list[str], assignment: str):
+        self.names = names
+        self.assignment = assignment
+
+        tree = EXPRESSION_PARSER.parse(assignment)
+        if any(tree.find_data("scoped_variable")):
+            raise ValueError("--fit expressions can't use prepath::key names")
+        self.new_key, self.expression = split_assignment(tree)
+
+        used = variable_names(self.expression)
+        self.coef_keys = [name for name in names if name in used]
+        self.per_value_dims = [name for name in names if name not in used]
+        self.independent_keys = sorted(used - set(self.coef_keys))
+
+        if not self.coef_keys:
+            raise ValueError(f"--fit needs at least one coefficient, i.e. a name used in '{assignment}'")
+        if not self.independent_keys:
+            raise ValueError(f"--fit expression '{assignment}' must use at least one variable besides the coefficients")
+
+    def apply_world(self, world: DataWorld) -> DataWorld:
+        data = world.require_active_data()
+        if isinstance(data, List):
+            data = self._fit_list(data, world.config)
+        else:
+            data = self._fit_field(data, world.config)
+        return world.with_active(data=data)
+
+    def get_name_fragments(self) -> list[str]:
+        return [f'fit_{"_".join(self.names)}_"{self.assignment}"']
+
+    def _model(self, x: np.ndarray, *params: float):
+        """The expression as a fitter's model: `x` stacks the independent variables, or is the only one."""
+        xs = [x] if len(self.independent_keys) == 1 else list(x)
+        values = dict(zip(self.independent_keys, xs)) | dict(zip(self.coef_keys, params))
+        return evaluate(BoundEvaluator(values), self.expression)
+
+    def _check_names(self, dims: list[str], kind: str):
+        for key in self.per_value_dims:
+            if key not in dims:
+                raise ValueError(f"--fit: '{key}' isn't used in the expression, so it must be a dim to fit per value, but the {kind} has no dim '{key}'")
+        for key in self.coef_keys:
+            if key in dims:
+                raise ValueError(f"--fit: coefficient '{key}' has the same name as a dim")
+
+    def _check_enough_points(self, counts: xr.DataArray):
+        if (counts < len(self.coef_keys)).any():
+            raise ValueError(f"--fit: some fits have fewer usable points ({int(counts.min())}) than coefficients ({len(self.coef_keys)})")
+
+    def _warn_if_unconverged(self, coefs: dict[str, xr.DataArray]):
+        if any(bool(coef.isnull().any()) for coef in coefs.values()):
+            warnings.warn(f"--fit: some fits of '{self.assignment}' didn't converge; their coefficients are NaN")
+
+    def _finish(self, data: DataWithAttrs, curve: xr.DataArray, coefs: dict[str, xr.DataArray], active_info: VarInfo, config: PscPlotConfig) -> Field:
+        """Wrap the curve, with the coefficients as coords, as the active variable of a field."""
+        curve = curve.assign_coords(coefs).rename(self.new_key)
+        _, prefix = split_prepath(data.metadata.prepath)
+        info = replace(active_info, key=self.new_key, display=Latex(""))
+        coef_infos = {key: config.registry.lookup(prefix, key) for key in self.coef_keys}
+        return data.assign(var_infos=data.metadata.var_infos | coef_infos).with_active(data=curve, key=self.new_key, info=info)
+
+    def _fit_field(self, data: Field, config: PscPlotConfig) -> Field:
+        active = data.require_active_subdata()
+        dims = list(active.dims)
+        for key in self.independent_keys:
+            if key not in dims:
+                raise ValueError(f"--fit on a field can only use its dims as variables; '{key}' isn't one (--scatter first to fit against a variable)")
+        self._check_names(dims, "field")
+
+        fit_dims = {dim for key in self.independent_keys for dim in active[key].dims}
+        pooled = [dim for dim in dims if dim not in fit_dims and dim not in self.per_value_dims]
+        if dask.is_dask_collection(active):
+            active = active.chunk({dim: -1 for dim in [*fit_dims, *pooled]})
+
+        self._check_enough_points(active.notnull().sum([*fit_dims, *pooled]))
+
+        result = active.curvefit(
+            coords=[active[key] for key in self.independent_keys],
+            func=self._model,
+            reduce_dims=pooled,
+            p0={key: 1 for key in self.coef_keys},
+            param_names=self.coef_keys,
+            skipna=True,
+            errors="ignore",
+        )
+        coefs = {key: result.curvefit_coefficients.sel(param=key, drop=True) for key in self.coef_keys}
+        self._warn_if_unconverged(coefs)
+
+        values = {key: active[key] for key in self.independent_keys} | coefs
+        curve = evaluate(BoundEvaluator(values), self.expression)
+        curve = curve.broadcast_like(active).transpose(*dims)
+        return self._finish(data, curve, coefs, data.active_info, config)
+
+    def _fit_list(self, data: List, config: PscPlotConfig) -> Field:
+        raise NotImplementedError
