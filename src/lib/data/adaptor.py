@@ -48,7 +48,7 @@ class Adaptor(WorldAdaptor):
 
 
 class MetadataAdaptor(Adaptor):
-    """Wraps `apply` to perform standard metadata mutations."""
+    """Wraps `apply` to perform standard metadata mutations. An empty display stays empty: there's nothing to modify."""
 
     def get_modified_display_latex(self, metadata: Metadata) -> Latex:
         return metadata.active_var_info.display
@@ -60,7 +60,7 @@ class MetadataAdaptor(Adaptor):
         data = super().apply(data)
 
         if info := data.active_info:
-            display_latex = self.get_modified_display_latex(data.metadata)
+            display_latex = self.get_modified_display_latex(data.metadata) if info.display else info.display
             unit_latex = self.get_modified_unit_latex(data.metadata)
             data = data.with_active(info=info.assign(display=display_latex, unit=unit_latex))
 
