@@ -54,7 +54,7 @@ class VarInfo:
             display = Latex(display)
         if isinstance(unit, str):
             unit = Latex(unit)
-        return replace(self, display=display or self.display, unit=unit or self.unit)
+        return replace(self, display=self.display if display is None else display, unit=self.unit if unit is None else unit)
 
     def to_fourier(self, angle: FourierAngle) -> VarInfo:
         """The var-info of this dim's Fourier conjugate, in `angle`s per this dim's unit."""
