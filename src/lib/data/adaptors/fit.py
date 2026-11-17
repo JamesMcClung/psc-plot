@@ -79,9 +79,9 @@ class Fit(WorldAdaptor):
             if key not in dims:
                 raise ValueError(f"--fit: '{key}' isn't used in the expression, so it must be a dim to fit per value, but the {kind} has no coords for '{key}'")
 
-    def _check_enough_points(self, counts: xr.DataArray):
-        if (counts < len(self.coef_keys)).any():
-            raise ValueError(f"--fit: some fits have fewer usable points ({int(counts.min())}) than coefficients ({len(self.coef_keys)})")
+    def _check_enough_points(self, min_count: int):
+        if min_count < len(self.coef_keys):
+            raise ValueError(f"--fit: some fits have fewer usable points ({min_count}) than coefficients ({len(self.coef_keys)})")
 
     def _warn_if_unconverged(self, coefs: dict[str, xr.DataArray]):
         if any(bool(coef.isnull().any()) for coef in coefs.values()):
@@ -129,7 +129,7 @@ class Fit(WorldAdaptor):
         lazy_coefs = [result.curvefit_coefficients.sel(param=key, drop=True) for key in self.coef_keys]
         # the coefficients are small: compute them (and the point counts) in one pass over the data
         counts, *coef_values = dask.compute(counts, *lazy_coefs)
-        self._check_enough_points(counts)
+        self._check_enough_points(int(counts.min()))
         coefs = dict(zip(self.coef_keys, coef_values))
         self._warn_if_unconverged(coefs)
 
@@ -180,8 +180,7 @@ class Fit(WorldAdaptor):
 
     def _fit_rows(self, rows: pd.DataFrame, active_key: str) -> np.ndarray:
         """Fit one group's rows; NaNs if it doesn't converge."""
-        if len(rows) < len(self.coef_keys):
-            raise ValueError(f"--fit: some fits have fewer usable points ({len(rows)}) than coefficients ({len(self.coef_keys)})")
+        self._check_enough_points(len(rows))
         xs = [rows[key].to_numpy() for key in self.independent_keys]
         xdata = xs[0] if len(xs) == 1 else np.vstack(xs)
         try:
