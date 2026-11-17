@@ -12,6 +12,21 @@ def strip_latex(latex: str) -> str:
     return plain
 
 
+def float_to_latex_str(f: float, format_spec: str = "") -> str:
+    """`f` as LaTeX, in full or formatted by `format_spec`, with any exponent as a power of 10."""
+    fs = format(f, format_spec) if format_spec else str(f)
+    fs = fs.lower()
+
+    if "e" not in fs:
+        return fs
+
+    coefficient, exponent = fs.split("e")
+    exponent = int(exponent)  # drop the sign and padding of e.g. `e+05`
+    if coefficient == "1":
+        return f"10^{{{exponent}}}"
+    return f"{coefficient}\\times10^{{{exponent}}}"
+
+
 @dataclass(frozen=True, unsafe_hash=True)
 class Latex:
     latex: str

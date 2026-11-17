@@ -43,3 +43,10 @@ def test_assign_keeps_fourier_origin():
 
 def test_to_fourier_of_unitless_dim_is_just_the_angle():
     assert VarInfo(Latex("i"), Latex("")).to_fourier("rev").unit.latex == "\\text{rev}"
+
+
+def test_assign_empty_replaces():
+    info = VarInfo(Latex("B"), Latex("U"))
+    blank = info.assign(display="", unit="")
+    assert blank.display == Latex("") and blank.unit == Latex("")
+    assert info.assign() == info

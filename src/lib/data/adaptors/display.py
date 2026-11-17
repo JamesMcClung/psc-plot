@@ -34,7 +34,7 @@ _DISPLAY_FORMAT = "[name=]display_latex"
     dest="adaptors",
     flags="--display",
     metavar=_DISPLAY_FORMAT,
-    help=("Override the LaTeX used to render the given quantity's name. The name may be the active variable (default) or a dimension name."),
+    help=("Override the LaTeX used to render the given quantity's name. The name may be the active variable (default) or a dimension name. An empty display (e.g. `name=`) stays empty through other adaptors."),
 )
 def parse_display(arg: str) -> Display:
     if "=" in arg:

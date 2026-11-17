@@ -33,7 +33,7 @@ def test_empty_steps():
     "step, match",
     [
         ("-v y", "versus"),
-        ("--fit 10:20", "unrecognized"),
+        ("--fit 10:20", "--fit"),
         ("-s", "unrecognized"),
         ("-q", "unrecognized"),
         ("--dask-graph", "unrecognized"),

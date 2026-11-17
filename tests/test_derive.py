@@ -1,5 +1,6 @@
 """Tests for `--derive`'s expression grammar."""
 
+import numpy as np
 import pytest
 import xarray as xr
 from conftest import CONFIG_2D
@@ -35,3 +36,18 @@ def test_bare_i_is_a_variable():
 def test_i_must_touch_its_number(expression):
     with pytest.raises(Exception):
         Derive(expression)
+
+
+def test_log_function():
+    hx = load(CONFIG_2D, "pfd")["hx_fc"]
+    xr.testing.assert_allclose(_derive("w=log(hx_fc^2+1)"), np.log(hx**2 + 1))
+
+
+def test_exp_function():
+    hx = load(CONFIG_2D, "pfd")["hx_fc"]
+    xr.testing.assert_allclose(_derive("w=2*exp(hx_fc)"), 2 * np.exp(hx))
+
+
+def test_unknown_function():
+    with pytest.raises(ValueError, match="unknown function 'sin'"):
+        _derive("w=sin(hx_fc)")

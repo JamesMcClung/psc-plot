@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from typing import Callable, Literal
 
 from lib.data.types import VarKey
+from lib.latex import Latex
 from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor
 
 
@@ -155,7 +156,11 @@ class UnitLabeler(Labeler):
 
     def has_common_display(self) -> bool:
         """Whether the sources all agree on display, so that the label shows it."""
-        return len({info.dim_displays[self._get_key(info)] for info in self.sources}) == 1
+        return len(self._named_displays()) == 1
+
+    def _named_displays(self) -> set[Latex]:
+        """The sources' displays, except empty ones: those are unnamed (e.g. a --fit curve), so they defer to the others."""
+        return {display for info in self.sources if (display := info.dim_displays[self._get_key(info)])}
 
     def _get_key(self, info: PlotInfo) -> VarKey:
         match self.axis_name:
@@ -172,7 +177,7 @@ class UnitLabeler(Labeler):
     def _get_label(self) -> str:
         keys = [self._get_key(info) for info in self.sources]
 
-        displays = {info.dim_displays[key] for info, key in zip(self.sources, keys)}
+        displays = self._named_displays()
         if self.require_display_match and len(displays) > 1:
             raise ValueError(f"{self.axis_name} displays must all be the same, but found {displays}")
 
