@@ -11,9 +11,11 @@ from lib.data.data_world import DataWorld
 from lib.data.loader import load
 
 
-def _derive(expression: str):
+def _derive(*expressions: str):
     world = DataWorld({"pfd": load(CONFIG_2D, "pfd")}, "pfd", config=CONFIG_2D)
-    data = Derive(expression).apply_world(world).require_active_data()
+    for expression in expressions:
+        world = Derive(expression).apply_world(world)
+    data = world.require_active_data()
     return data[data.active_key]
 
 
@@ -54,14 +56,6 @@ def test_unknown_function():
         _derive("w=sin(hx_fc)")
 
 
-def _derive_all(*expressions: str):
-    world = DataWorld({"pfd": load(CONFIG_2D, "pfd")}, "pfd", config=CONFIG_2D)
-    for expression in expressions:
-        world = Derive(expression).apply_world(world)
-    data = world.require_active_data()
-    return data[data.active_key]
-
-
 def test_dim_coordinate():
     hx = load(CONFIG_2D, "pfd")["hx_fc"]
     xr.testing.assert_allclose(_derive("w=hx_fc*y"), hx * hx.y)
@@ -88,4 +82,4 @@ def test_fit_coefficient():
 
 def test_variable_shadows_coordinate():
     hx = load(CONFIG_2D, "pfd")["hx_fc"]
-    xr.testing.assert_allclose(_derive_all("y=2*hx_fc", "w=y"), 2 * hx)
+    xr.testing.assert_allclose(_derive("y=2*hx_fc", "w=y"), 2 * hx)
