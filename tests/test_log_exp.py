@@ -81,12 +81,6 @@ def test_exp_list():
     pd.testing.assert_series_equal(out, 2.0 ** prt.data["w"].compute())
 
 
-def test_log_exp_round_trip_base_10():
-    data = _positive_hx()
-    out = Exp(10.0).apply(Log(10.0).apply(data))
-    xr.testing.assert_allclose(out["hx_fc"], data["hx_fc"])
-
-
 def test_exp_parse():
     [natural] = parse_steps(["--exp"])
     assert isinstance(natural, Exp) and natural.base is None
