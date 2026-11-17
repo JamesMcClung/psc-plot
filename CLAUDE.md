@@ -175,7 +175,7 @@ Known limitations:
 - Steps can't express "the non-trivial spatial dims", so geometry-dependent variables come as dim-suffixed variants (`hhat2_xyz`/`hhat2_yz`, `hxzhat2_*`, `div_h_cc_*`).
 - Every prepath, including those inside pipelines, resolves from the data root.
 
-`--derive` works for both field and particle data. It can reference any variable already present or resolvable from the derived-variable registry, and, for fields, any coord (`Field.coord`: the active variable's, else the first variable's that has it; e.g. `y`, `t`, or a `--fit` coefficient). A variable shadows a coord of the same name, and a coord shadows a registry-derived variable. It updates `active_key` to point to the newly created variable.
+`--derive` works for both field and particle data. It can reference any variable already present or resolvable from the derived-variable registry, and, for fields, any coord (`Field.coord`; e.g. `y`, `t`, or a `--fit` coefficient). A variable shadows a coord of the same name, and a coord shadows a registry-derived variable. It updates `active_key` to point to the newly created variable.
 
 The grammar and the arithmetic live in `src/lib/data/expression.py`, shared with `--fit`: `ExpressionEvaluator` evaluates arithmetic and the functions `log(…)`/`exp(…)`, and subclasses decide what a name means (`AssignNewVariable` resolves it from the world, `BoundEvaluator` from a mapping).
 
