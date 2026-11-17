@@ -6,13 +6,16 @@ import xarray as xr
 from conftest import CONFIG_2D
 
 from lib.data.adaptors.derive import Derive
+from lib.data.adaptors.fit import Fit
 from lib.data.data_world import DataWorld
 from lib.data.loader import load
 
 
-def _derive(expression: str):
+def _derive(*expressions: str):
     world = DataWorld({"pfd": load(CONFIG_2D, "pfd")}, "pfd", config=CONFIG_2D)
-    data = Derive(expression).apply_world(world).require_active_data()
+    for expression in expressions:
+        world = Derive(expression).apply_world(world)
+    data = world.require_active_data()
     return data[data.active_key]
 
 
@@ -51,3 +54,32 @@ def test_exp_function():
 def test_unknown_function():
     with pytest.raises(ValueError, match="unknown function 'sin'"):
         _derive("w=sin(hx_fc)")
+
+
+def test_dim_coordinate():
+    hx = load(CONFIG_2D, "pfd")["hx_fc"]
+    xr.testing.assert_allclose(_derive("w=hx_fc*y"), hx * hx.y)
+
+
+def test_bare_coordinate():
+    hx = load(CONFIG_2D, "pfd")["hx_fc"]
+    xr.testing.assert_allclose(_derive("w=2*t"), 2 * hx.t)
+
+
+def test_scoped_coordinate():
+    hx = load(CONFIG_2D, "pfd")["hx_fc"]
+    xr.testing.assert_allclose(_derive("w=hx_fc*pfd_moments::z"), hx * hx.z)
+
+
+def test_fit_coefficient():
+    """A --fit coefficient is a (non-dim) coord of the curve, so --derive can use it."""
+    pfd = load(CONFIG_2D, "pfd")
+    world = DataWorld({"pfd": pfd.with_active(key="hx_fc")}, "pfd", config=CONFIG_2D)
+    world = Fit(["c"], "f=c*y").apply_world(world)
+    data = Derive("w=c*y").apply_world(world).require_active_data()
+    xr.testing.assert_allclose(data["w"].broadcast_like(data["f"]).transpose(*data["f"].dims), data["f"])
+
+
+def test_variable_shadows_coordinate():
+    hx = load(CONFIG_2D, "pfd")["hx_fc"]
+    xr.testing.assert_allclose(_derive("y=2*hx_fc", "w=y"), 2 * hx)

@@ -141,6 +141,14 @@ class Field(DataWithAttrs[dict[str, xr.DataArray], xr.DataArray, FieldMetadata])
 
         return ret
 
+    def coord(self, key: str) -> xr.DataArray | None:
+        """The coord named `key`, dim or not, of the active variable, else of the first variable that has it."""
+        subdatas = [self.active_subdata] if self.active_key is not None else []
+        for subdata in [*subdatas, *self.data.values()]:
+            if key in subdata.coords:
+                return subdata.coords[key]
+        return None
+
     def coordss(self, key: SubdataKey | None = None) -> dict[DimKey, Coords]:
         subdata = self[key or self.active_key]
         return {dim: np.array(subdata.coords[dim]) for dim in subdata.coords.keys()}
