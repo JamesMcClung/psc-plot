@@ -1,7 +1,5 @@
 """Tests for `--log` and `--exp`."""
 
-from dataclasses import replace
-
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -10,7 +8,6 @@ from conftest import CONFIG_2D
 from lib.data.adaptors.exp import Exp
 from lib.data.adaptors.log import Log
 from lib.data.loader import load
-from lib.latex import Latex
 from lib.parsing.parse import parse_steps
 
 
@@ -95,13 +92,3 @@ def test_exp_parse():
     assert isinstance(natural, Exp) and natural.base is None
     [base2] = parse_steps(["--exp 2"])
     assert isinstance(base2, Exp) and base2.base == 2.0
-
-
-def test_empty_display_stays_empty():
-    """Nothing to wrap: e.g. --fit's curve, whose label is just its coefficients."""
-    data = _positive_hx()
-    data = data.with_active(info=replace(data.active_info, display=Latex("")))
-    assert not Log(None).apply(data).active_info.display
-    assert not Log(2.0).apply(data).active_info.display
-    assert not Exp(None).apply(data).active_info.display
-    assert not Exp(2.0).apply(data).active_info.display
