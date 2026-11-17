@@ -7,10 +7,17 @@ import numpy as np
 from matplotlib.typing import LineStyleType
 
 from lib.data.types import VarKey
-from lib.latex import Latex
+from lib.latex import Latex, float_to_latex_str
 from lib.scale import Scale
 
 type Projection = Literal["rectilinear", "polar"]
+
+
+def _format_coord_value(value: float) -> str:
+    """Fixed-point (e.g. a time), unless that would hide the value's magnitude (e.g. a small fitted coefficient)."""
+    if value == 0 or 1e-3 <= abs(value) < 1e6:
+        return f"{value:.3f}"
+    return float_to_latex_str(value, ".4g")
 
 
 @dataclass
@@ -37,10 +44,10 @@ class PlotInfo(ABC):
 
     def get_coord_label(self, dim: VarKey) -> Latex:
         display = self.dim_displays.get(dim, f"\\text{{{dim}}}")
-        coord_val = self.scalar_coord_values[dim]
+        coord_val = _format_coord_value(float(self.scalar_coord_values[dim]))
         unit = self.dim_units.get(dim, "")
         maybe_space = "\\ " if unit else ""
-        return Latex(f"{display} = {coord_val:.3f}{maybe_space}{unit}")
+        return Latex(f"{display} = {coord_val}{maybe_space}{unit}")
 
     def get_sublabels(self) -> list[str]:
         return [self.get_coord_label(dim).maybe_with_dollars() for dim in self.scalar_coord_values]

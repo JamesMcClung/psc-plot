@@ -15,3 +15,7 @@ from lib.latex import float_to_latex_str
 )
 def test_float_to_latex_str(f, latex):
     assert float_to_latex_str(f) == latex
+
+
+def test_float_to_latex_str_format_spec():
+    assert float_to_latex_str(1.23456e-5, ".4g") == "1.235\\times10^{-5}"

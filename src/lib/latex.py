@@ -12,8 +12,10 @@ def strip_latex(latex: str) -> str:
     return plain
 
 
-def float_to_latex_str(f: float) -> str:
-    fs = str(f).lower()
+def float_to_latex_str(f: float, format_spec: str = "") -> str:
+    """`f` as LaTeX, in full or formatted by `format_spec`, with any exponent as a power of 10."""
+    fs = format(f, format_spec) if format_spec else str(f)
+    fs = fs.lower()
 
     if "e" not in fs:
         return fs
