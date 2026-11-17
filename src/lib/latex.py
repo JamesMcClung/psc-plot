@@ -19,6 +19,7 @@ def float_to_latex_str(f: float) -> str:
         return fs
 
     coefficient, exponent = fs.split("e")
+    exponent = int(exponent)  # drop the sign and padding of e.g. `e+05`
     if coefficient == "1":
         return f"10^{{{exponent}}}"
     return f"{coefficient}\\times10^{{{exponent}}}"
