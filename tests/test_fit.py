@@ -89,10 +89,12 @@ def test_field_fit_pools_unlisted_dims():
     assert set(curve.dims) == {"y", "t"}
 
 
-def test_field_fit_skips_nans():
+def test_field_fit_skips_nonfinite_data():
+    """NaNs, and e.g. the -inf of --log of a zero."""
     y = np.arange(1.0, 8.0)
     f = 2 * y
     f[[1, 4]] = np.nan
+    f[2] = -np.inf
     curve = _fit(_field(xr.DataArray(f, coords={"y": y}, dims="y")), ["a"], "fit=a*y")["fit"]
     assert float(curve.coords["a"]) == pytest.approx(2.0)
 
@@ -217,10 +219,11 @@ def test_list_power_law_matches_linregress():
     assert float(curve.coords["c"]) == pytest.approx(intercept, rel=1e-6)
 
 
-def test_list_fit_skips_nans():
+def test_list_fit_skips_nonfinite_data():
     u = np.linspace(0, 4, 20)
     f = 2 * u
     f[[3, 7]] = np.nan
+    f[[5, 9]] = -np.inf
     curve = _fit(_list(pd.DataFrame({"u": u, "f": f})), ["a"], "fit=a*u")["fit"]
     assert float(curve.coords["a"]) == pytest.approx(2.0)
 
@@ -291,24 +294,7 @@ def test_fit_curve_shares_the_data_axis_and_label():
     assert axes.get_yscale() == "log"
 
 
-# --- non-finite values and dask (from review) ---
-
-
-def test_field_fit_skips_infinite_data():
-    """e.g. --log of a zero gives -inf, which is as unusable as a NaN."""
-    y = np.arange(1.0, 7.0)
-    f = 2 * y
-    f[2] = -np.inf
-    curve = _fit(_field(xr.DataArray(f, coords={"y": y}, dims="y")), ["a"], "fit=a*y")["fit"]
-    assert float(curve.coords["a"]) == pytest.approx(2.0)
-
-
-def test_list_fit_skips_infinite_data():
-    u = np.linspace(1, 4, 20)
-    f = 2 * u
-    f[[3, 7]] = -np.inf
-    curve = _fit(_list(pd.DataFrame({"u": u, "f": f})), ["a"], "fit=a*u")["fit"]
-    assert float(curve.coords["a"]) == pytest.approx(2.0)
+# --- where the model is non-finite, and dask ---
 
 
 def test_field_fit_skips_points_where_the_model_is_infinite():
