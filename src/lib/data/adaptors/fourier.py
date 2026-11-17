@@ -5,7 +5,8 @@ import xarray as xr
 import xrft
 
 from lib.data.adaptor import MetadataAdaptor
-from lib.data.data_with_attrs import Field
+from lib.data.data_with_attrs import Field, Metadata
+from lib.latex import Latex
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
 from lib.var_info import FOURIER_ANGLES, FourierAngle, VarInfo
@@ -55,7 +56,6 @@ class Fourier(MetadataAdaptor):
         return [option for option, attr in FOURIER_OPTIONS.items() if getattr(self, attr)]
 
     def apply_field(self, data: Field) -> Field:
-        pre_dim_latexs = [data.metadata.var_infos[key].display.latex for key in self.dims]
         forward_only_options = [option for option in self._options() if option in FORWARD_ONLY_OPTIONS]
 
         da = data.require_active_subdata()
@@ -75,12 +75,15 @@ class Fourier(MetadataAdaptor):
             if self.positive_only:
                 da = da.isel({f_info.key: da.coords[f_info.key].values > 0})
 
-        if not self.no_display and data.active_info.display:
-            old_active_info = data.active_info
-            new_display = f"\\mathcal{{F}}_{{{','.join(pre_dim_latexs)}}}[{old_active_info.display}]"
-            new_var_infos[data.metadata.active_key] = old_active_info.assign(display=new_display)
-
         return data.with_active(data=da).assign(var_infos=new_var_infos)
+
+    def get_modified_display_latex(self, metadata: Metadata) -> Latex:
+        display = metadata.active_var_info.display
+        if self.no_display:
+            return display
+        # the transformed dims keep their var-infos, alongside their conjugates'
+        dim_latexs = [metadata.var_infos[key].display.latex for key in self.dims]
+        return Latex(f"\\mathcal{{F}}_{{{','.join(dim_latexs)}}}[{display}]")
 
     def get_name_fragments(self) -> list[str]:
         dims = ",".join(f"{key}={angle}" for key, angle in self.dims.items())
