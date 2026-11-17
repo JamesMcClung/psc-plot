@@ -69,10 +69,14 @@ class Fit(WorldAdaptor):
         values = dict(zip(self.independent_keys, xs)) | dict(zip(self.coef_keys, params))
         return evaluate(BoundEvaluator(values), self.expression)
 
+    def _evaluate_quietly(self, values: dict):
+        """The expression, without floating-point warnings: it's non-finite wherever the model is (e.g. log(k) at k=0)."""
+        with np.errstate(all="ignore"):
+            return evaluate(BoundEvaluator(values), self.expression)
+
     def _model_is_finite(self, independents: dict):
         """Where the model is finite, at the initial guess. Elsewhere (e.g. log(k) at k=0) a point can't inform the fit."""
-        with np.errstate(all="ignore"):
-            return np.isfinite(evaluate(BoundEvaluator(independents | {key: 1.0 for key in self.coef_keys}), self.expression))
+        return np.isfinite(self._evaluate_quietly(independents | {key: 1.0 for key in self.coef_keys}))
 
     def _check_per_value_dims(self, dims: list[str], kind: str):
         for key in self.per_value_dims:
@@ -134,9 +138,7 @@ class Fit(WorldAdaptor):
         self._warn_if_unconverged(coefs)
 
         values = {key: active[key] for key in self.independent_keys} | coefs
-        with np.errstate(all="ignore"):  # the curve is non-finite wherever the model is (e.g. log(k) at k=0)
-            curve = evaluate(BoundEvaluator(values), self.expression)
-        curve = curve.broadcast_like(active).transpose(*dims)
+        curve = self._evaluate_quietly(values).broadcast_like(active).transpose(*dims)
         return self._finish(data, curve, coefs, data.active_info, config)
 
     def _fit_list(self, data: List, config: PscPlotConfig) -> Field:
@@ -170,8 +172,7 @@ class Fit(WorldAdaptor):
 
         eval_coordss = {key: coordss[key] if key in coordss else self._artificial_coords(df[key], data.metadata.var_infos.get(key)) for key in self.independent_keys}
         values = {key: xr.DataArray(coords, coords={key: coords}, dims=key) for key, coords in eval_coordss.items()} | coefs
-        with np.errstate(all="ignore"):  # the curve is non-finite wherever the model is (e.g. log(k) at k=0)
-            curve = evaluate(BoundEvaluator(values), self.expression).transpose(*self.independent_keys, *self.per_value_dims)
+        curve = self._evaluate_quietly(values).transpose(*self.independent_keys, *self.per_value_dims)
 
         _, prefix = split_prepath(data.metadata.prepath)
         dim_infos = {key: data.metadata.var_infos.get(key) or config.registry.lookup(prefix, key) for key in curve.dims}
