@@ -8,10 +8,10 @@ class StaticPlot(Plot):
     def allowed_save_formats(self) -> list[SaveFormat]:
         return ["png"]
 
-    def save_to_path(self, path: Path, *, dpi: float | None = None):
+    def save_to_path(self, path: Path):
         self._initialize()
         with profile_stage(FRAME_RENDER):
-            self.fig.savefig(path, dpi=dpi or "figure")
+            self.fig.savefig(path, dpi="figure")
 
     def render_offscreen(self, max_frames: int | None = None):
         self._initialize()

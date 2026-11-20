@@ -7,6 +7,7 @@ from lib.data.adaptors.versus import Versus
 from lib.data.pipeline import Pipeline
 from lib.parsing.args import Args
 from lib.parsing.parse_save import SaveSpec
+from lib.plotting.layout.options import LayoutOptions
 from lib.run.actions import DaskGraph, PlotAction, RenderPlot, SavePlot, ShowPlot
 from lib.run.plot_pipeline import PlotPipeline
 from lib.run.usage_error import UsageError
@@ -19,7 +20,7 @@ def _with_versus(adaptors: list[Adaptor]) -> tuple[Adaptor, ...]:
 
 
 def compile_plot_pipeline(args: Args, config: PscPlotConfig) -> PlotPipeline:
-    return PlotPipeline(config, Pipeline(_with_versus(args.adaptors)), tuple(args.hooks))
+    return PlotPipeline(config, Pipeline(_with_versus(args.adaptors)), tuple(args.hooks), LayoutOptions(args.figsize, args.dpi))
 
 
 @dataclass(frozen=True)
@@ -65,7 +66,7 @@ def compile_run(args: Args, config: PscPlotConfig) -> CompiledRun:
         if args.save.format == "mp4" and not config.ffmpeg_bin:
             raise UsageError("format=mp4 requires ffmpeg")
 
-        plot_actions.append(SavePlot(save=args.save, save_dpi=args.save_dpi, default_stem=plot_pipeline.get_save_file_stem()))
+        plot_actions.append(SavePlot(save=args.save, default_stem=plot_pipeline.get_save_file_stem()))
     elif args.profile:
         plot_actions.append(RenderPlot())
 

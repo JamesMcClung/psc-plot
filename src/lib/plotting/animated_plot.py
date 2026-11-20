@@ -9,6 +9,7 @@ from matplotlib.animation import AbstractMovieWriter, FFMpegWriter, FuncAnimatio
 from lib.config import PscPlotConfig
 from lib.data.data_with_attrs import DataWithAttrs
 from lib.plotting.hook import DrawMessage
+from lib.plotting.layout.options import LayoutOptions
 from lib.plotting.plot import Plot, SaveFormat
 from lib.plotting.renderer import Renderer
 from lib.profiling.profiler import FRAME_REDRAW, FRAME_RENDER, FRAME_UPDATE, profile_stage
@@ -34,8 +35,8 @@ class _DiscardingWriter(AbstractMovieWriter):
 
 
 class AnimatedPlot(Plot):
-    def __init__(self, renderers: list[Renderer[DataWithAttrs]], config: PscPlotConfig, n_frames: int):
-        super().__init__(renderers, config)
+    def __init__(self, renderers: list[Renderer[DataWithAttrs]], config: PscPlotConfig, layout_options: LayoutOptions, n_frames: int):
+        super().__init__(renderers, config, layout_options)
         self.n_frames = n_frames
 
     def _initialize(self):
@@ -58,7 +59,7 @@ class AnimatedPlot(Plot):
         else:
             return ["gif"]
 
-    def save_to_path(self, path: Path, *, dpi: float | None = None):
+    def save_to_path(self, path: Path):
         if path.suffix == ".mp4":
             from matplotlib import pyplot as plt
 
@@ -67,7 +68,7 @@ class AnimatedPlot(Plot):
         else:
             writer = PillowWriter()
 
-        self._run_writer(path, writer, dpi)
+        self._run_writer(path, writer)
 
     def render_offscreen(self, max_frames: int | None = None):
         # the animation's frame count is fixed when _initialize builds it
@@ -75,9 +76,9 @@ class AnimatedPlot(Plot):
         if max_frames is not None:
             self.n_frames = min(self.n_frames, max_frames)
         # the same anim.save path as a real save, so offscreen and saved profiles are comparable
-        self._run_writer(Path(os.devnull), _DiscardingWriter(), None)
+        self._run_writer(Path(os.devnull), _DiscardingWriter())
 
-    def _run_writer(self, path: Path, writer: AbstractMovieWriter, dpi: float | None):
+    def _run_writer(self, path: Path, writer: AbstractMovieWriter):
         self._initialize()
 
         grab_frame = writer.grab_frame
@@ -96,4 +97,4 @@ class AnimatedPlot(Plot):
                 post_draw(*args, **kwargs)
 
         self.anim._post_draw = profiled_post_draw
-        self.anim.save(path, writer=writer, dpi=dpi)
+        self.anim.save(path, writer=writer)  # at the figure's dpi

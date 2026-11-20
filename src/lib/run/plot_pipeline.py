@@ -6,6 +6,7 @@ from lib.data.data_world import DataWorld
 from lib.data.pipeline import Pipeline
 from lib.plotting.get_plot import get_plot
 from lib.plotting.hook import Hook
+from lib.plotting.layout.options import LayoutOptions
 from lib.plotting.plot import Plot
 from lib.profiling.profiler import PLOT_INIT, profile_stage
 
@@ -16,6 +17,7 @@ class PlotPipeline:
     pipeline: Pipeline
     """Starts with the implicit `With` of the positional args, and includes a `Versus`."""
     hooks: tuple[Hook, ...]
+    layout_options: LayoutOptions
 
     def get_save_file_stem(self) -> str:
         return file_util.stem_from_fragments(self.pipeline.get_name_fragments() + [frag for hook in self.hooks for frag in hook.get_name_fragments()])
@@ -26,7 +28,7 @@ class PlotPipeline:
     def run_plot(self) -> Plot:
         world = self.run_world()
         with profile_stage(PLOT_INIT):
-            plot = get_plot(world)
+            plot = get_plot(world, self.layout_options)
             for hook in self.hooks:
                 plot.add_hook(hook)
         return plot

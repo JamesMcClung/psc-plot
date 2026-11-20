@@ -9,6 +9,7 @@ from lib.plotting import plt_util
 from lib.plotting.axis_id import AxIdXY
 from lib.plotting.data_setter import DataSetter
 from lib.plotting.grid import Grid
+from lib.plotting.layout.options import LayoutOptions
 from lib.plotting.panel import Panel
 from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor, PolarMeshInfo
 
@@ -110,8 +111,11 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
         return setup_panel_polar(ax, infos)
 
 
-def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, Grid]:
-    figure = plt.figure(layout="constrained")
+def setup_fig(plot_infos: list[PlotInfo], options: LayoutOptions) -> tuple[Figure, Grid]:
+    # auto sides keep matplotlib's default until the layout engine sizes them
+    default_width, default_height = plt.rcParams["figure.figsize"]
+    figsize = (options.figsize.width or default_width, options.figsize.height or default_height)
+    figure = plt.figure(layout="constrained", figsize=figsize, dpi=options.dpi)
 
     grid = Grid(figure, plot_infos)
     for loc, infos in grid.infos.items():
