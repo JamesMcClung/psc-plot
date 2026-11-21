@@ -102,15 +102,14 @@ def _min_plot_sizes(decorations: dict[AxesIdx, PanelDecorations]) -> dict[AxesId
     return {(col, row): (col_width[col], row_height[row]) for col, row in own}
 
 
-def _panel_margins(decorations: PanelDecorations, plot_height: float, axes_right: float) -> Margins:
+def _panel_margins(decorations: PanelDecorations, axes_right: float) -> Margins:
     """Everything outside the plot area, colorbars included. Colorbars start past `axes_right`, the widest axes
     decorations in the panel's column."""
     axes = decorations.axes_margins
     # A vertical colorbar's texts fit in its gaps, so it never reaches past its panel's top or bottom. A horizontal
     # one sits above the plot area, under the title (which the layout raises over it).
     top = max([axes.top, *(_horizontal_colorbar_height(cbar) for cbar in decorations.colorbars if cbar.horizontal)])
-    bottom = axes.bottom
-    return Margins(left=axes.left, right=_panel_right_margin(decorations, axes_right), bottom=bottom, top=top)
+    return Margins(left=axes.left, right=_panel_right_margin(decorations, axes_right), bottom=axes.bottom, top=top)
 
 
 def _plot_sizes(grid: Grid, options: LayoutOptions, cols: list[int], rows: list[int], col_margins: float, row_margins: float, min_sizes: dict[AxesIdx, tuple[float, float]]) -> tuple[dict[AxesIdx, tuple[float, float]], float]:
@@ -173,48 +172,38 @@ def compute_layout(grid: Grid, options: LayoutOptions, decorations: dict[AxesIdx
     def col_flush_right(col: int) -> bool:
         return col in grid.flush_col_boundaries
 
-    # Margins, first with the auto heights; colorbar gaps depend on the plot heights only weakly, so recompute after.
-    def margins_for(sizes: dict[AxesIdx, tuple[float, float]]) -> dict[AxesIdx, Margins]:
-        margins = {}
-        axes_right = {col: max(deco.axes_margins.right for loc, deco in decorations.items() if loc[0] == col) for col in cols}
-        for loc, deco in decorations.items():
-            m = _panel_margins(deco, sizes[loc][1], axes_right[loc[0]])
-            # Panels in a stack sit flush, so their facing edges reserve nothing.
-            col, row = loc
-            if row_flush_below(row):
-                m = Margins(m.left, m.right, 0.0, m.top)
-            if row_flush_below(row - 1):
-                m = Margins(m.left, m.right, m.bottom, 0.0)
-            # Likewise panels sharing a y axis.
-            if col_flush_right(col):
-                m = Margins(m.left, 0.0, m.bottom, m.top)
-            if col_flush_right(col - 1):
-                m = Margins(0.0, m.right, m.bottom, m.top)
-            margins[loc] = m
-        return margins
-
-    def totals(margins: dict[AxesIdx, Margins]) -> tuple[dict[int, float], dict[int, float], dict[int, float], dict[int, float], float, float]:
-        col_left = {col: max(m.left for loc, m in margins.items() if loc[0] == col) for col in cols}
-        col_right = {col: max(m.right for loc, m in margins.items() if loc[0] == col) for col in cols}
-        row_top = {row: max(m.top for loc, m in margins.items() if loc[1] == row) for row in rows}
-        row_bottom = {row: max(m.bottom for loc, m in margins.items() if loc[1] == row) for row in rows}
-        col_gaps = sum(0.0 if col_flush_right(col) else PANEL_GAP for col in cols[:-1])
-        col_fixed = 2 * FIGURE_PAD + sum(col_left.values()) + sum(col_right.values()) + col_gaps
-        row_gaps = sum(0.0 if row_flush_below(row) else PANEL_GAP for row in rows[:-1])
-        suptitle_room = suptitle_height + FIGURE_PAD if suptitle_height else 0.0
-        row_fixed = 2 * FIGURE_PAD + suptitle_room + sum(row_top.values()) + sum(row_bottom.values()) + row_gaps
-        return col_left, col_right, row_top, row_bottom, col_fixed, row_fixed
-
-    auto = auto_plot_sizes(grid.infos, options.dpi)
-    margins = margins_for(auto)
-    *_, col_fixed, row_fixed = totals(margins)
-    sizes, shortfall = _plot_sizes(grid, options, cols, rows, col_fixed, row_fixed, _min_plot_sizes(decorations))
-    margins = margins_for(sizes)
-    col_left, col_right, row_top, row_bottom, col_fixed, row_fixed = totals(margins)
-
-    col_width = {col: max(sizes[loc][0] for loc in sizes if loc[0] == col) for col in cols}
     # Colorbars down a column line up, past the widest axes decorations in it.
     col_axes_right = {col: max(deco.axes_margins.right for loc, deco in decorations.items() if loc[0] == col) for col in cols}
+
+    margins = {}
+    for loc, deco in decorations.items():
+        m = _panel_margins(deco, col_axes_right[loc[0]])
+        # Panels in a stack sit flush, so their facing edges reserve nothing.
+        col, row = loc
+        if row_flush_below(row):
+            m = Margins(m.left, m.right, 0.0, m.top)
+        if row_flush_below(row - 1):
+            m = Margins(m.left, m.right, m.bottom, 0.0)
+        # Likewise panels sharing a y axis.
+        if col_flush_right(col):
+            m = Margins(m.left, 0.0, m.bottom, m.top)
+        if col_flush_right(col - 1):
+            m = Margins(0.0, m.right, m.bottom, m.top)
+        margins[loc] = m
+
+    col_left = {col: max(m.left for loc, m in margins.items() if loc[0] == col) for col in cols}
+    col_right = {col: max(m.right for loc, m in margins.items() if loc[0] == col) for col in cols}
+    row_top = {row: max(m.top for loc, m in margins.items() if loc[1] == row) for row in rows}
+    row_bottom = {row: max(m.bottom for loc, m in margins.items() if loc[1] == row) for row in rows}
+    col_gaps = sum(0.0 if col_flush_right(col) else PANEL_GAP for col in cols[:-1])
+    col_fixed = 2 * FIGURE_PAD + sum(col_left.values()) + sum(col_right.values()) + col_gaps
+    row_gaps = sum(0.0 if row_flush_below(row) else PANEL_GAP for row in rows[:-1])
+    suptitle_room = suptitle_height + FIGURE_PAD if suptitle_height else 0.0
+    row_fixed = 2 * FIGURE_PAD + suptitle_room + sum(row_top.values()) + sum(row_bottom.values()) + row_gaps
+
+    sizes, shortfall = _plot_sizes(grid, options, cols, rows, col_fixed, row_fixed, _min_plot_sizes(decorations))
+
+    col_width = {col: max(sizes[loc][0] for loc in sizes if loc[0] == col) for col in cols}
     row_height = {row: max(sizes[loc][1] for loc in sizes if loc[1] == row) for row in rows}
 
     content_width = col_fixed + sum(col_width.values())
@@ -235,7 +224,7 @@ def compute_layout(grid: Grid, options: LayoutOptions, decorations: dict[AxesIdx
         x += col_left[col] + col_width[col] + col_right[col] + (0.0 if col_flush_right(col) else PANEL_GAP)
 
     row_y1 = {}
-    y = fig_height - y_offset - FIGURE_PAD - (suptitle_height + FIGURE_PAD if suptitle_height else 0.0)
+    y = fig_height - y_offset - FIGURE_PAD - suptitle_room
     for row in rows:
         row_y1[row] = y - row_top[row]
         y -= row_top[row] + row_height[row] + row_bottom[row] + (0.0 if row_flush_below(row) else PANEL_GAP)
