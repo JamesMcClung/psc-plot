@@ -280,3 +280,14 @@ def test_stack_stays_flush_beside_a_taller_panel():
     upper, lower = [_box_in(ax) for ax in lines]
     assert _box_in(image).height > upper.height + 0.1  # the premise
     assert sizes_close(upper.y0, lower.y1, DPI)
+
+
+def test_equal_scale_panels_share_one_scale():
+    """Both images span z from 0 to 0.5; the right spans half the y. One inches-per-d_e for both: same heights,
+    the right half as wide."""
+    fig = make_plot("pfd hx_fc -i t=-1 --copy -v y z --copy hx_fc -i y=0:8 -v y z loc=2,1".split())
+    left, right = sorted([ax for ax in fig.axes if ax.images], key=lambda ax: ax.get_position().x0)
+    left_box, right_box = _box_in(left), _box_in(right)
+    assert sizes_close(left_box.height, right_box.height, DPI)
+    assert right_box.width == pytest.approx(left_box.width / 2, abs=2 / DPI)
+    assert left_box.width * left_box.height == pytest.approx(DEFAULT_PLOT_SIZE[0] * DEFAULT_PLOT_SIZE[1], rel=0.01)  # the largest gets the default area

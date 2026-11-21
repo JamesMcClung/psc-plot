@@ -13,7 +13,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from lib.plotting.grid import AxesIdx, Grid
-from lib.plotting.layout.auto_size import auto_plot_size, is_aspect_locked
+from lib.plotting.layout.auto_size import auto_plot_sizes, is_aspect_locked
 from lib.plotting.layout.geometry import Box, Margins, even_figure_size, sizes_close
 from lib.plotting.layout.measure import ColorbarDecorations, PanelDecorations, measure_panel, measure_text_height, widest_frame_texts
 from lib.plotting.layout.options import LayoutOptions
@@ -91,7 +91,7 @@ def _plot_sizes(grid: Grid, options: LayoutOptions, cols: list[int], rows: list[
     `min_sizes`. Also returns how many inches short of its minimum a fixed side left a plot area, the most for any
     (0 if none): growing past an auto side is just auto sizing."""
     dpi = options.dpi
-    auto = {loc: auto_plot_size(infos, dpi) for loc, infos in grid.infos.items()}
+    auto = auto_plot_sizes(grid.infos, dpi)
     locked = {loc: is_aspect_locked(infos) for loc, infos in grid.infos.items()}
     sizes = dict(auto)
 
@@ -178,7 +178,7 @@ def compute_layout(grid: Grid, options: LayoutOptions, decorations: dict[AxesIdx
         row_fixed = 2 * FIGURE_PAD + suptitle_room + sum(row_top.values()) + sum(row_bottom.values()) + row_gaps
         return col_left, col_right, row_top, row_bottom, col_fixed, row_fixed
 
-    auto = {loc: auto_plot_size(infos, options.dpi) for loc, infos in grid.infos.items()}
+    auto = auto_plot_sizes(grid.infos, options.dpi)
     margins = margins_for(auto)
     *_, col_fixed, row_fixed = totals(margins)
     sizes, shortfall = _plot_sizes(grid, options, cols, rows, col_fixed, row_fixed, _min_plot_sizes(decorations))

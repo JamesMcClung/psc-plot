@@ -4,7 +4,7 @@ from matplotlib.figure import Figure
 
 from lib.plotting import plt_util, tick_labels
 from lib.plotting.labeler import SubjectLabeler
-from lib.plotting.layout.auto_size import auto_plot_size
+from lib.plotting.layout.auto_size import auto_plot_sizes
 from lib.plotting.layout.geometry import sizes_close
 from lib.plotting.panel import Panel
 from lib.plotting.plot_info import PlotInfo
@@ -53,7 +53,7 @@ class Grid:
     def share_x_axes_vertically(self, dpi: float):
         """Stack panels down each column where they can share an x axis. Plot edges line up across the whole
         grid, so a row boundary is flush only if every column with panels on both sides of it can share there."""
-        sizes = {loc: auto_plot_size(infos, dpi) for loc, infos in self.infos.items()}
+        sizes = auto_plot_sizes(self.infos, dpi)
 
         for row in range(1, self.nrows):
             pairs = [(self.panels[(col, row)], self.panels[(col, row + 1)], (col, row)) for col in range(1, self.ncols + 1) if (col, row) in self.panels and (col, row + 1) in self.panels]
@@ -68,7 +68,7 @@ class Grid:
         """Put panels side by side along each row where they can share a y axis. Plot edges line up across the
         whole grid, so a column boundary is flush only if every row with panels on both sides of it can share
         there. Sizes come first: plot heights must already match."""
-        sizes = {loc: auto_plot_size(infos, dpi) for loc, infos in self.infos.items()}
+        sizes = auto_plot_sizes(self.infos, dpi)
 
         for col in range(1, self.ncols):
             pairs = [(self.panels[(col, row)], self.panels[(col + 1, row)], (col, row)) for row in range(1, self.nrows + 1) if (col, row) in self.panels and (col + 1, row) in self.panels]
