@@ -246,3 +246,27 @@ def test_auto_size_never_warns():
     with warnings.catch_warnings():
         warnings.simplefilter("error", UserWarning)
         make_plot("-w pfd::hx_fc -i t=3 -cv y z loc=1,1 -w pfd::hy_fc -i t=3 --mul 1e-5 -cv y z loc=1,2 -w pfd::hz_fc -i t=3 -cv y z loc=1,3".split())
+
+
+def test_title_room_for_widest_frame():
+    """Frame 5's time is far longer than the others', so its title is wider: the layout reserves room for it from
+    the start, and nothing moves."""
+    plot = compile_plot_pipeline(parse_args("pfd hx_fc -v y --figsize 2.5,auto".split()), PscPlotConfig.create_minimal(data_root=_DATA_DIR / "test-2d")).run_plot()
+    assert isinstance(plot, AnimatedPlot)
+    [renderer] = plot.renderers
+    original = renderer.get_scalar_coord_values
+    renderer.get_scalar_coord_values = lambda frame: {**original(frame), "t": 123456.789} if frame == 5 else original(frame)
+    renderer.plot_info.frames_scalar_coord_values = [renderer.get_scalar_coord_values(frame) for frame in range(renderer.get_n_frames())]
+    plot._initialize()
+
+    fig = plot.fig
+    [ax] = fig.axes
+    positions = [tuple(a.get_position().bounds) for a in fig.axes]
+    for frame in range(plot.n_frames):
+        plot._next_frame(frame)
+        fig.draw_without_rendering()
+        renderer_ = fig.canvas.get_renderer()
+        title = ax.title.get_window_extent(renderer_)
+        assert fig.bbox.x0 - 1 <= title.x0 and title.x1 <= fig.bbox.x1 + 1 and title.y1 <= fig.bbox.y1 + 1, (frame, title, fig.bbox)
+        assert title.y0 >= ax.get_window_extent(renderer_).y1 - 1, frame
+        assert [tuple(a.get_position().bounds) for a in fig.axes] == positions

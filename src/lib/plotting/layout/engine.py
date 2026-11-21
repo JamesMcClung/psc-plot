@@ -15,7 +15,7 @@ from matplotlib.figure import Figure
 from lib.plotting.grid import AxesIdx, Grid
 from lib.plotting.layout.auto_size import auto_plot_size, is_aspect_locked
 from lib.plotting.layout.geometry import Box, Margins, even_figure_size, sizes_close
-from lib.plotting.layout.measure import ColorbarDecorations, PanelDecorations, measure_panel, measure_text_height
+from lib.plotting.layout.measure import ColorbarDecorations, PanelDecorations, measure_panel, measure_text_height, widest_frame_texts
 from lib.plotting.layout.options import LayoutOptions
 
 FIGURE_PAD = 0.1
@@ -244,6 +244,12 @@ def run_layout(fig: Figure, grid: Grid, options: LayoutOptions):
     no_decorations = {loc: PanelDecorations(Margins(), [ColorbarDecorations(Margins()) for _ in panel.colorbars]) for loc, panel in grid.panels.items()}
     layout = compute_layout(grid, options, no_decorations, 0.0)
 
+    # Lay out with every text at its widest on any frame, so no frame's text needs more room than it has.
+    widest = widest_frame_texts(grid, fig.canvas.get_renderer())
+    frame_0 = {text: text.get_text() for text in widest}
+    for text, string in widest.items():
+        text.set_text(string)
+
     for _ in range(MAX_LAYOUT_PASSES):
         apply_layout(fig, grid, layout)
         fig.draw_without_rendering()
@@ -262,6 +268,9 @@ def run_layout(fig: Figure, grid: Grid, options: LayoutOptions):
         apply_layout(fig, grid, layout)
         fig.draw_without_rendering()
         grid.adjust_to_draw()
+
+    for text, string in frame_0.items():
+        text.set_text(string)
 
     if layout.shortfall > 0:
         warnings.warn(f"--figsize leaves too little room for the plots (short by {layout.shortfall:.2f}in); enlarging the figure so every plot area is at least {MIN_PLOT_SIDE}in a side and fits two tick labels on each axis")

@@ -5,6 +5,7 @@ from matplotlib.colorbar import Colorbar
 from matplotlib.text import Text
 from matplotlib.transforms import Bbox
 
+from lib.plotting.grid import Grid
 from lib.plotting.layout.geometry import Margins
 from lib.plotting.panel import Panel
 from lib.plotting.tick_labels import two_label_length
@@ -63,6 +64,51 @@ def measure_panel(panel: Panel, renderer: RendererBase, dpi: float) -> PanelDeco
     min_height = max((two_label_length(ax.yaxis, renderer) for ax in cartesian), default=0.0) / dpi
 
     return PanelDecorations(_overhang(tight, box, dpi), [measure_colorbar(cbar, renderer, dpi) for cbar in panel.colorbars], (min_width, min_height))
+
+
+def _layout_texts(grid: Grid) -> list[Text]:
+    """The texts that take layout room and change between frames: titles, the suptitle and colorbar labels. (Legends
+    sit inside their axes.)"""
+    texts = [panel.axes[0].title for panel in grid.panels.values()] + [grid.suptitle]
+    return texts + [colorbar_text.top for panel in grid.panels.values() for colorbar_text in panel.colorbar_texts]
+
+
+def _set_frame(grid: Grid, frame: int):
+    for infos in grid.infos.values():
+        for info in infos:
+            if info.frames_scalar_coord_values:
+                info.scalar_coord_values = info.frames_scalar_coord_values[min(frame, len(info.frames_scalar_coord_values) - 1)]
+    grid.update_label_texts()
+
+
+def widest_frame_texts(grid: Grid, renderer: RendererBase) -> dict[Text, str]:
+    """For each layout text whose string changes between frames, its widest string (then tallest), to lay out with.
+    Leaves every text as on frame 0. Each distinct string is measured once."""
+    n_frames = max((len(info.frames_scalar_coord_values) for infos in grid.infos.values() for info in infos), default=1)
+    if n_frames <= 1:
+        return {}
+
+    texts = _layout_texts(grid)
+    stringss: dict[Text, dict[str, None]] = {text: {} for text in texts}  # a dict keeps the order
+    for frame in range(n_frames):
+        _set_frame(grid, frame)
+        for text in texts:
+            stringss[text][text.get_text()] = None
+    _set_frame(grid, 0)
+
+    widest = {}
+    for text, strings in stringss.items():
+        if len(strings) <= 1:
+            continue
+        frame_0 = text.get_text()
+        sizes = {}
+        for string in strings:
+            text.set_text(string)
+            extent = text.get_window_extent(renderer)
+            sizes[string] = (extent.width, extent.height)
+        text.set_text(frame_0)
+        widest[text] = max(strings, key=lambda string: sizes[string])
+    return widest
 
 
 def measure_text_height(text: Text, renderer: RendererBase, dpi: float) -> float:
