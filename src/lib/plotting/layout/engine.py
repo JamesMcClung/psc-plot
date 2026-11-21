@@ -247,12 +247,12 @@ def compute_layout(grid: Grid, options: LayoutOptions, decorations: dict[AxesIdx
             if assignment.orientation == "horizontal":
                 box = plot_boxes[loc]
                 gap_left, gap_right = _colorbar_gaps(cbar_deco, box.width)
-                colorbar_boxes[cbar.ax] = Box(box.x0 + gap_left, box.y0 + box.height + COLORBAR_PAD + cbar_deco.margins.bottom, box.width - gap_left - gap_right, COLORBAR_THICKNESS)
+                colorbar_boxes[cbar.ax] = Box(box.x0 + gap_left, box.y1 + COLORBAR_PAD + cbar_deco.margins.bottom, box.width - gap_left - gap_right, COLORBAR_THICKNESS)
                 title_offsets[panel.axes[0]] = plt.rcParams["axes.titlepad"] + _horizontal_colorbar_height(cbar_deco) * 72
                 continue
             # Beside every run it keys, spanning them all.
             boxes = [plot_boxes[anchor] for anchor in assignment.anchors]
-            y0, y1 = min(box.y0 for box in boxes), max(box.y0 + box.height for box in boxes)
+            y0, y1 = min(box.y0 for box in boxes), max(box.y1 for box in boxes)
             gap_top, gap_bottom = _colorbar_gaps(cbar_deco, y1 - y0)
             colorbar_boxes[cbar.ax] = Box(cbar_x, y0 + gap_bottom, COLORBAR_THICKNESS, y1 - y0 - gap_top - gap_bottom)
             cbar_x += COLORBAR_THICKNESS + cbar_deco.margins.right + COLORBAR_PAD
