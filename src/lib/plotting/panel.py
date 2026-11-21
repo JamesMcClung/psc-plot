@@ -23,6 +23,7 @@ from lib.plotting.bounds_setter import BoundsSetter
 from lib.plotting.data_setter import DataSetter
 from lib.plotting.labeler import ColorbarLabeler, Labeler, SubjectLabeler, UnitLabeler, YAxisLabeler
 from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PolarMeshInfo
+from lib.plotting.style import scaled_font_size
 from lib.scale import LinearScale, Scale
 
 type AxAndIdXY = tuple[Axes, AxIdXY]
@@ -66,7 +67,7 @@ class Panel:
                 if legend := axes.get_legend():
                     legend.remove()
             else:
-                axes.legend()  # required for label redraw
+                axes.legend(fontsize=scaled_font_size("legend.fontsize"))  # required for label redraw
 
     def get_labelers(self) -> list[Labeler]:
         maybe_labelers = [
@@ -88,7 +89,14 @@ class Panel:
     def wire_title(self, title: Text):
         """Must come first, so the labelers wired after it can join the title's tree."""
         assert not self.get_labelers()
+        title.set_fontsize(scaled_font_size("axes.titlesize"))
         self.title_labeler = SubjectLabeler(title.set_text)
+
+    def add_axes(self, ax: Axes):
+        """Add one of the panel's axes, main first."""
+        ax.xaxis.label.set_fontsize(scaled_font_size("axes.labelsize"))
+        ax.yaxis.label.set_fontsize(scaled_font_size("axes.labelsize"))
+        self.axes.append(ax)
 
     def wire_legend_label(self, artist: Artist, info: PlotInfo):
         legend_labeler = SubjectLabeler(artist.set_label, info)

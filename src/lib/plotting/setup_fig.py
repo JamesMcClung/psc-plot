@@ -12,12 +12,14 @@ from lib.plotting.grid import Grid
 from lib.plotting.layout.options import LayoutOptions
 from lib.plotting.panel import Panel
 from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor, PolarMeshInfo
+from lib.plotting.style import scaled_font_size
 
 
 def setup_colorbar(ax: Axes, target: ScalarMappable, info: PlotInfoColor | PlotInfoMaybeColor) -> Colorbar:
     assert info.color_dim
     fig = ax.get_figure(root=True)
     cbar = fig.colorbar(target, cax=fig.add_axes((0.0, 0.0, 1.0, 1.0)))  # the layout engine places it
+    cbar.ax.yaxis.label.set_fontsize(scaled_font_size("axes.labelsize"))
     # TODO work into everything
     data_lower, data_upper = info.dim_bounds[info.color_dim]
     plt_util.update_cbar(target, data_min_override=data_lower, data_max_override=data_upper)
@@ -47,7 +49,7 @@ def wire_axis(panel: Panel, ax: Axes, id: AxIdXY, info: PlotInfo2D) -> bool:
 def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
     panel = Panel()
     panel.wire_title(ax.title)
-    panel.axes.append(ax)
+    panel.add_axes(ax)
 
     infos_with_legends_last = sorted(infos, key=lambda info: info.has_legend())
 
@@ -69,7 +71,7 @@ def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
 
         if not right_ax:
             right_ax = left_ax.twinx()
-            panel.axes.append(right_ax)
+            panel.add_axes(right_ax)
 
         if wire_axis(panel, right_ax, "y", info):
             setup_data_setter(panel, right_ax, info)
@@ -85,7 +87,7 @@ def setup_panel_polar(ax: PolarAxes, infos: list[PolarMeshInfo]) -> Panel:
 
     panel = Panel()
     panel.wire_title(ax.title)
-    panel.axes.append(ax)
+    panel.add_axes(ax)
 
     if len(polar_mesh_infos) > 1:
         raise NotImplementedError("don't yet support overplotting polar meshes")

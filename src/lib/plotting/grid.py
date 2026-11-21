@@ -8,6 +8,7 @@ from lib.plotting.layout.auto_size import auto_plot_size
 from lib.plotting.layout.geometry import sizes_close
 from lib.plotting.panel import Panel
 from lib.plotting.plot_info import PlotInfo
+from lib.plotting.style import scaled_font_size
 
 type AxesIdx = tuple[int, int]
 
@@ -17,7 +18,7 @@ class Grid:
         self.fig = fig
         self.infos: dict[AxesIdx, list[PlotInfo]] = {}
         self.panels: dict[AxesIdx, Panel] = {}
-        self.suptitle = self.fig.suptitle("")
+        self.suptitle = self.fig.suptitle("", fontsize=scaled_font_size("figure.titlesize"))
         self.suptitle_labeler = SubjectLabeler(self.suptitle.set_text)
 
         for info in infos:

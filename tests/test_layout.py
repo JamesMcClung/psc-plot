@@ -203,9 +203,10 @@ def test_layout_independent_of_device_pixel_ratio():
 
     plot.fig.canvas._set_device_pixel_ratio(2)
     run_layout(plot.fig, plot.grid, plot.layout_options)
-    assert tuple(plot.fig.get_size_inches()) == pytest.approx(size)
-    # text renders a hair differently at 2x, so within a dot rather than exactly
-    assert np.allclose([ax.get_position().bounds for ax in plot.fig.axes], positions, atol=1e-3)
+    # text renders a hair differently at 2x, which can flip the even-dot rounding
+    assert tuple(plot.fig.get_size_inches()) == pytest.approx(size, abs=2.01 / DPI)
+    # text renders a hair differently at 2x, so within a few dots rather than exactly; doubled margins are ~0.1
+    assert np.allclose([ax.get_position().bounds for ax in plot.fig.axes], positions, atol=5e-3)
 
 
 def test_colorbars_line_up_down_a_column():
