@@ -74,12 +74,12 @@ def _plot_sizes(grid: Grid, options: LayoutOptions, cols: list[int], rows: list[
     # A fixed side is split among the columns (rows) in proportion to their auto sizes: a uniform scale.
     if fixed_width is not None:
         auto_widths = sum(max(auto[loc][0] for loc in auto if loc[0] == col) for col in cols)
-        sx = (fixed_width - col_margins) / auto_widths
+        sx = max(fixed_width - col_margins, 0.0) / auto_widths  # no room at all leaves plot areas to the snap below
         sizes = {loc: (w * sx, h * sx if locked[loc] else h) for loc, (w, h) in sizes.items()}
 
     if fixed_height is not None:
         auto_heights = sum(max(sizes[loc][1] for loc in sizes if loc[1] == row) for row in rows)
-        sy = (fixed_height - row_margins) / auto_heights
+        sy = max(fixed_height - row_margins, 0.0) / max(auto_heights, 1e-9)
         scaled = {}
         for loc, (w, h) in sizes.items():
             if not locked[loc]:
@@ -94,8 +94,9 @@ def _plot_sizes(grid: Grid, options: LayoutOptions, cols: list[int], rows: list[
     shortfall = max((MIN_PLOT_SIDE - min(w, h) for w, h in too_small.values()), default=0.0)
     for loc, (w, h) in too_small.items():
         if locked[loc]:
-            s = MIN_PLOT_SIDE / min(w, h)
-            sizes[loc] = (w * s, h * s)
+            aw, ah = auto[loc]  # its shape, even if the scaling above shrank it to nothing
+            s = MIN_PLOT_SIDE / min(aw, ah)
+            sizes[loc] = (aw * s, ah * s)
         else:
             sizes[loc] = (max(w, MIN_PLOT_SIDE), max(h, MIN_PLOT_SIDE))
 
