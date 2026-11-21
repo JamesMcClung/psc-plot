@@ -37,3 +37,9 @@ def test_far_from_every_color_beneath():
     beneath = _rgba((1, 1, 1), (0, 0, 0))
     result = get_contrasting_color(beneath)
     assert _distance(result, beneath) > 0.3
+
+
+@pytest.mark.parametrize("rgb", [(0.47, 0.02, 0.13), (0.05, 0.24, 0.45)])
+def test_near_tie_stays_neutral(rgb):
+    """RdBu's dark ends: yellow is only a few percent farther than white, not enough to be worth a hue."""
+    assert get_contrasting_color(_rgba(rgb)) == pytest.approx((1.0, 1.0, 1.0))

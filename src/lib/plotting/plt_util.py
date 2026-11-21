@@ -91,14 +91,22 @@ _CANDIDATES = np.stack(np.meshgrid(_CANDIDATE_LEVELS, _CANDIDATE_LEVELS, _CANDID
 """sRGB colors to choose among: a grid through the whole gamut, its corners (black, white, primaries,
 secondaries) included."""
 _CANDIDATES_OKLAB = _srgb_to_oklab(_CANDIDATES)
+_NEUTRALS = (0, len(_CANDIDATES) - 1)
+"""The indices of black and white among `_CANDIDATES`."""
+NEUTRAL_PREFERENCE = 1.1
+"""A color is picked over black or white only if it's this many times as far."""
 
 
 def get_contrasting_color(rgba: np.ndarray) -> tuple[float, float, float]:
     """The color that stands out most against all the given colors (of shape `(..., 4)`): of `_CANDIDATES`, the one
     whose least distance to any of them, in OKLab, is greatest. OKLab being perceptually uniform, distance there is
     difference as a person sees it. Over a white background that's black, and over black, white; over mid-tones,
-    where neither stands out much, it's a saturated color."""
+    where neither stands out much, it's a saturated color, if clearly farther (`NEUTRAL_PREFERENCE`)."""
     beneath = np.unique(_srgb_to_oklab(rgba.reshape(-1, 4)[:, :3]).round(4), axis=0)
     distances = np.linalg.norm(_CANDIDATES_OKLAB[:, None, :] - beneath[None, :, :], axis=-1).min(axis=1)
-    r, g, b = _CANDIDATES[np.argmax(distances)]
+    best = int(np.argmax(distances))
+    neutral = max(_NEUTRALS, key=lambda i: distances[i])
+    if distances[best] < NEUTRAL_PREFERENCE * distances[neutral]:
+        best = neutral  # a hue barely farther than black or white just looks odd
+    r, g, b = _CANDIDATES[best]
     return (float(r), float(g), float(b))
