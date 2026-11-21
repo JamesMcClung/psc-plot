@@ -96,3 +96,11 @@ def test_shared_x_covers_both_panels_data():
     for ax in (upper, lower):
         for line in ax.lines:
             assert left <= line.get_xdata().min() and line.get_xdata().max() <= right
+
+
+def test_junction_label_kept_when_not_crowded():
+    """The left panel's last x label (0.8) is far from the shared edge, so the right panel keeps its 0.0."""
+    fig = make_plot("pfd hx_fc -v y loc=1,1 -w hx_fc -v y loc=2,1".split())
+    fig.draw_without_rendering()
+    left, right = _main_axes(fig)
+    assert "0.0" in [label.get_text() for label in visible_tick_labels(right.xaxis)]

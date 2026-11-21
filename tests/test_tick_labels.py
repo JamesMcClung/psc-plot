@@ -98,3 +98,12 @@ def test_stacked_upper_panels_keep_x_labels_hidden():
     for upper in plot_axes[:-1]:
         assert not visible_tick_labels(upper.xaxis)
     assert visible_tick_labels(plot_axes[-1].xaxis)
+
+
+def test_stacked_images_drop_a_crowding_junction_label():
+    """Stacked images span z from 0 to 0.5 exactly, so the upper's 0.0 and the lower's 0.5 meet at the edge: one goes."""
+    fig = make_plot(PLOTS[2].split())
+    fig.draw_without_rendering()
+    upper, middle, _ = sorted([ax for ax in fig.axes if not hasattr(ax, "_colorbar")], key=lambda ax: -ax.get_position().y1)
+    assert "0.0" in [label.get_text() for label in visible_tick_labels(upper.yaxis)]
+    assert "0.5" not in [label.get_text() for label in visible_tick_labels(middle.yaxis)]

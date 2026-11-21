@@ -1,4 +1,5 @@
 from matplotlib.axes import Axes
+from matplotlib.backend_bases import RendererBase
 from matplotlib.figure import Figure
 
 from lib.plotting import plt_util, tick_labels
@@ -63,12 +64,6 @@ class Grid:
                     above.share_x_axis(below)
                 self.flush_row_boundaries.add(row)
 
-        # The panel below drops its top y tick, so its label can't crowd the bottom one of the panel above.
-        for col in self.contiguous_cols():
-            for above, below in zip(col[:-1], col[1:]):
-                if above.shares_x_with(below):
-                    below.prune_y_ticks("upper")
-
     def share_y_axes_horizontally(self, dpi: float):
         """Put panels side by side along each row where they can share a y axis. Plot edges line up across the
         whole grid, so a column boundary is flush only if every row with panels on both sides of it can share
@@ -82,9 +77,17 @@ class Grid:
             if all(left.can_share_y_axis(right) and sizes_close(sizes[loc][1], sizes[(loc[0] + 1, loc[1])][1], dpi) for left, right, loc in pairs):
                 for left, right, _ in pairs:
                     left.share_y_axis(right)
-                    # The right panel drops its leftmost x tick, so its label can't crowd the left panel's last one.
-                    tick_labels.prune_ticks(right.axes[0].xaxis, "lower")
                 self.flush_col_boundaries.add(col)
+
+    def separate_junction_labels(self, renderer: RendererBase):
+        """Where panels sit flush, hide the label of the panel below (or right) nearest the edge if it crowds its
+        neighbor's."""
+        for panel in self.panels.values():
+            if below := panel.shared_x_below:
+                for above_ax, below_ax in zip(panel.axes, below.axes):  # main axes, and twins if both have one
+                    tick_labels.separate_junction_labels(above_ax.yaxis, below_ax.yaxis, renderer)
+            if right := panel.shared_y_right:
+                tick_labels.separate_junction_labels(panel.axes[0].xaxis, right.axes[0].xaxis, renderer)
 
     def stacks(self) -> list[list[Panel]]:
         """Each column's runs of panels that share an x axis all the way down, top to bottom."""
@@ -107,8 +110,10 @@ class Grid:
         for panel in self.panels.values():
             panel.thin_crowded_ticks(self.fig.canvas.get_renderer())
         self.fig.draw_without_rendering()
+        renderer = self.fig.canvas.get_renderer()
         for panel in self.panels.values():
-            panel.tuck_tick_labels(self.fig.canvas.get_renderer())
+            panel.tuck_tick_labels(renderer)
+        self.separate_junction_labels(renderer)
         for panel in self.panels.values():
             panel.update_cbar_bottom_texts()
 

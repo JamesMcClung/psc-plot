@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Callable, Literal
+from typing import Callable
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -29,7 +29,6 @@ from lib.scale import LinearScale, Scale
 
 type AxAndIdXY = tuple[Axes, AxIdXY]
 type AxAndId = tuple[Axes, AxIdXY] | tuple[PolarAxes, AxIdPolar]
-type YEnd = Literal["lower", "upper"]
 
 
 COLORBAR_TEXT_PAD = 4.0
@@ -240,11 +239,6 @@ class Panel:
         set_scale(new_scale.to_axis_scale())
         if axis_id != "r" and (minor_locator := new_scale.minor_locator()):
             (ax.xaxis if axis_id == "x" else ax.yaxis).set_minor_locator(minor_locator)
-
-    def prune_y_ticks(self, end: YEnd):
-        for ax, axis_id in self.scales_per_axis:
-            if axis_id == "y":
-                tick_labels.prune_ticks(ax.yaxis, end)
 
     def _tick_label_axes(self) -> list[Axis]:
         """Every axis with tick labels to keep tidy: the plot area's (not polar) and the colorbars'."""
