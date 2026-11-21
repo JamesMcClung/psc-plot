@@ -7,16 +7,16 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
+from matplotlib.axis import Axis
 from matplotlib.backend_bases import RendererBase
 from matplotlib.colorbar import Colorbar
 from matplotlib.colors import to_rgba
 from matplotlib.projections import PolarAxes
 from matplotlib.text import Text
-from matplotlib.ticker import MaxNLocator
 from matplotlib.transforms import Bbox, ScaledTranslation
 
 from lib.latex import float_to_latex_str
-from lib.plotting import plt_util
+from lib.plotting import plt_util, tick_labels
 from lib.plotting.axis_id import AxId, AxIdPolar, AxIdXY
 from lib.plotting.bounds_setter import BoundsSetter
 from lib.plotting.data_setter import DataSetter
@@ -87,8 +87,6 @@ class Panel:
     y_labelers_per_axes: dict[Axes, YAxisLabeler] = field(init=False, default_factory=dict)
     bounds_setters_per_axis: dict[AxAndIdXY, BoundsSetter] = field(init=False, default_factory=dict)
     scales_per_axis: dict[AxAndId, Scale] = field(init=False, default_factory=dict)
-    flush_y_ends: set[YEnd] = field(init=False, default_factory=set)
-    """Ends at which this panel touches its vertical neighbour, so nothing may stick out past them."""
     axes: list[Axes] = field(init=False, default_factory=list)
     """The panel's axes, main first, then any twin."""
     shared_x_below: Panel | None = field(init=False, default=None)
@@ -242,13 +240,22 @@ class Panel:
         return [ax for ax, axis_id in self.bounds_setters_per_axis if axis_id == "x"]
 
     def prune_y_ticks(self, end: YEnd):
-        """Drop the y tick (and its label) at `end`. Locators that can't prune (log, say) are left alone."""
         for ax, axis_id in self.scales_per_axis:
-            if axis_id != "y":
-                continue
-            locator = ax.yaxis.get_major_locator()
-            if isinstance(locator, MaxNLocator):
-                locator.set_params(prune=end)
+            if axis_id == "y":
+                tick_labels.prune_ticks(ax.yaxis, end)
+
+    def _tick_label_axes(self) -> list[Axis]:
+        """Every axis with tick labels to keep tidy: the plot area's (not polar) and the colorbars'."""
+        axes = [axis for ax in self.axes if ax.name != "polar" for axis in (ax.xaxis, ax.yaxis)]
+        return axes + [cbar.ax.yaxis for cbar in self.colorbars]
+
+    def thin_crowded_ticks(self, renderer: RendererBase):
+        for axis in self._tick_label_axes():
+            tick_labels.thin_crowded_ticks(axis, renderer)
+
+    def tuck_tick_labels(self, renderer: RendererBase):
+        for axis in self._tick_label_axes():
+            tick_labels.tuck_tick_labels(axis, renderer)
 
     def add_inward_ticks(self):
         """Inward ticks on every side of the plot area (polar axes keep their own) and on both long sides of each
@@ -277,29 +284,6 @@ class Panel:
         colors = np.concatenate(colors)
         alpha = colors[:, 3:]
         return np.concatenate([alpha * colors[:, :3] + (1 - alpha) * background[:3], np.ones_like(alpha)], axis=1)
-
-    def tuck_y_tick_labels(self, renderer: RendererBase):
-        """Anchor every y tick label that overhangs a flush end to that end, so constrained layout doesn't reserve
-        room past it. Labels are reset to the default alignment first, so ticks that moved away are let go."""
-        if not self.flush_y_ends:
-            return
-
-        axs = [ax for ax, axis_id in self.scales_per_axis if axis_id == "y"]
-        default_va = plt.rcParams["ytick.alignment"]  # what matplotlib itself aligns y tick labels by
-
-        for ax in axs:
-            box = ax.get_window_extent(renderer)
-            for label in ax.get_yticklabels():
-                if not label.get_visible():
-                    continue
-
-                label.set_va(default_va)
-                bbox = label.get_window_extent(renderer)
-
-                if "upper" in self.flush_y_ends and bbox.y0 < box.y1 < bbox.y1:
-                    label.set_va("top")
-                elif "lower" in self.flush_y_ends and bbox.y0 < box.y0 < bbox.y1:
-                    label.set_va("bottom")
 
     def shares_x_with(self, below: Panel) -> bool:
         return self.shared_x_below is below

@@ -61,18 +61,11 @@ class Grid:
                     above.share_x_axis(below)
                 self.flush_row_boundaries.add(row)
 
+        # The panel below drops its top y tick, so its label can't crowd the bottom one of the panel above.
         for col in self.contiguous_cols():
             for above, below in zip(col[:-1], col[1:]):
-                if not above.shares_x_with(below):
-                    continue
-                # The axes above keep their bottom tick, its label tucked up; the axes below drop their top one.
-                above.flush_y_ends.add("lower")
-                below.flush_y_ends.add("upper")
-                below.prune_y_ticks("upper")
-
-        for stack in self.stacks():
-            if len(stack) > 1:
-                stack[-1].flush_y_ends.add("lower")
+                if above.shares_x_with(below):
+                    below.prune_y_ticks("upper")
 
     def stacks(self) -> list[list[Panel]]:
         """Each column's runs of panels that share an x axis all the way down, top to bottom."""
@@ -86,19 +79,17 @@ class Grid:
                     stacks.append([below])
         return stacks
 
-    def tuck_y_tick_labels(self):
-        renderer = self.fig.canvas.get_renderer()
-
-        for panel in self.panels.values():
-            panel.tuck_y_tick_labels(renderer)
-
     def update_ticks(self):
         for panel in self.panels.values():
             panel.update_ticks()
 
     def adjust_to_draw(self):
         """Steps that measure where things were drawn. The layout engine runs them after each of its passes."""
-        self.tuck_y_tick_labels()
+        for panel in self.panels.values():
+            panel.thin_crowded_ticks(self.fig.canvas.get_renderer())
+        self.fig.draw_without_rendering()
+        for panel in self.panels.values():
+            panel.tuck_tick_labels(self.fig.canvas.get_renderer())
         for panel in self.panels.values():
             panel.update_cbar_bottom_texts()
 
