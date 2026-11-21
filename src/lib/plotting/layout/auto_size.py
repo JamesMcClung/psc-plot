@@ -8,11 +8,13 @@ DEFAULT_POLAR_SIZE = 4.5
 MIN_DOTS_PER_CELL = 2
 """So every cell of an image is visible."""
 MAX_EQUAL_SCALE_RATIO = 2.5
-"""Equal x and y scales may make one side at most this much longer than the other: 2, with some wiggle room."""
+"""Equal x and y scales may make one side at most this much longer than the other (2, with some wiggle room). Past
+it, equal scale is given up entirely."""
 
 
 def _get_equal_scale_aspect(infos: list[PlotInfo2D]) -> float | None:
-    """The plot area's height / width that gives x and y the same scale, clamped, or `None` if they shouldn't share one."""
+    """The plot area's height / width that gives x and y the same scale, or `None` if they shouldn't share one: their
+    units differ, or the plot area would be more than `MAX_EQUAL_SCALE_RATIO` times longer one way than the other."""
     aspects = set()
     for info in infos:
         x_unit, y_unit = info.dim_units.get(info.x_dim), info.dim_units.get(info.y_dim)
@@ -26,7 +28,10 @@ def _get_equal_scale_aspect(infos: list[PlotInfo2D]) -> float | None:
 
     if len(aspects) != 1:
         return None
-    return min(max(aspects.pop(), 1 / MAX_EQUAL_SCALE_RATIO), MAX_EQUAL_SCALE_RATIO)
+    aspect = aspects.pop()
+    if not 1 / MAX_EQUAL_SCALE_RATIO <= aspect <= MAX_EQUAL_SCALE_RATIO:
+        return None  # too lopsided: each side is sized on its own instead
+    return aspect
 
 
 def auto_plot_size(infos: list[PlotInfo], dpi: float) -> tuple[float, float]:

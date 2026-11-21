@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from lib.latex import Latex
-from lib.plotting.layout.auto_size import auto_plot_size
+from lib.plotting.layout.auto_size import auto_plot_size, is_aspect_locked
 from lib.plotting.plot_info import ImageInfo, LineInfo, PolarMeshInfo
 
 DEFAULT_AREA = 5.0 * 3.75
@@ -34,9 +34,24 @@ def test_equal_scale_image_keeps_data_aspect():
     assert w * h == pytest.approx(DEFAULT_AREA)
 
 
-def test_equal_scale_clamped_at_2_5():
-    w, h = auto_plot_size([_image(16, 8, 10.0, 1.0, same_unit=True)], 100)
+def test_equal_scale_dropped_past_2_5():
+    """Past 2.5:1, equal scale is given up entirely: each side is sized on its own, as if the units differed."""
+    infos = [_image(16, 8, 10.0, 1.0, same_unit=True)]
+    assert auto_plot_size(infos, 100) == pytest.approx((5.0, 3.75))
+    assert not is_aspect_locked(infos)
+
+
+def test_equal_scale_kept_at_2_5():
+    infos = [_image(16, 8, 2.5, 1.0, same_unit=True)]
+    w, h = auto_plot_size(infos, 100)
     assert w / h == pytest.approx(2.5)
+    assert is_aspect_locked(infos)
+
+
+def test_long_thin_image_sizes_sides_independently():
+    """A 1024x1 image with equal units (e.g. a 1D run plotted vs y and z) doesn't stretch its one row tall."""
+    w, h = auto_plot_size([_image(1024, 1, 12.8, 0.0125, same_unit=True)], 100)
+    assert (w, h) == pytest.approx((20.48, 3.75))
 
 
 def test_big_image_two_dots_per_cell():
