@@ -52,3 +52,11 @@ def auto_plot_size(infos: list[PlotInfo], dpi: float) -> tuple[float, float]:
 
     growth = max(1.0, min_width / width, min_height / height)
     return (width * growth, height * growth)
+
+
+def is_aspect_locked(infos: list[PlotInfo]) -> bool:
+    """Whether the plot area's aspect is fixed by its data (equal x/y scale, or polar), so it scales as a whole."""
+    if any(isinstance(info, PolarMeshInfo) for info in infos):
+        return True
+    infos_2d = [info for info in infos if isinstance(info, PlotInfo2D)]
+    return bool(infos_2d) and _get_equal_scale_aspect(infos_2d) is not None
