@@ -91,7 +91,7 @@ class Grid:
         return shareable
 
     def _x_stacks(self) -> list[list[AxesIdx]]:
-        """`stacks`, by location."""
+        """Each column's runs of panels that share an x axis all the way down, top to bottom."""
         stacks = []
         for loc in sorted(self.panels, key=lambda loc: (loc[0], loc[1])):
             above = self.panels.get((loc[0], loc[1] - 1))
@@ -148,18 +148,6 @@ class Grid:
             if right := panel.shared_y_right:
                 tick_labels.separate_junction_labels(panel.axes[0].xaxis, right.axes[0].xaxis, renderer)
 
-    def stacks(self) -> list[list[Panel]]:
-        """Each column's runs of panels that share an x axis all the way down, top to bottom."""
-        stacks = []
-        for col in self.contiguous_cols():
-            stacks.append([col[0]])
-            for above, below in zip(col[:-1], col[1:]):
-                if above.shares_x_with(below):
-                    stacks[-1].append(below)
-                else:
-                    stacks.append([below])
-        return stacks
-
     def update_ticks(self):
         for panel in self.panels.values():
             panel.update_ticks()
@@ -175,20 +163,6 @@ class Grid:
         self.separate_junction_labels(renderer)
         for panel in self.panels.values():
             panel.update_cbar_bottom_texts()
-
-    def contiguous_cols(self) -> list[list[Panel]]:
-        cols = []
-        for x in range(1, self.ncols + 1):
-            col = []
-            for y in range(1, self.nrows + 1):
-                if panel := self.panels.get((x, y)):
-                    col.append(panel)
-                elif col:
-                    cols.append(col)
-                    col = []
-            if col:
-                cols.append(col)
-        return cols
 
     def _wire_suptitle(self, panel: Panel):
         for subject_labeler in panel.get_subject_labelers(toplevel_only=True):
