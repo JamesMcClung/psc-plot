@@ -15,8 +15,9 @@ from matplotlib.markers import TICKDOWN, TICKUP
 from matplotlib.projections import PolarAxes
 from matplotlib.text import Text
 from matplotlib.ticker import MaxNLocator
-from matplotlib.transforms import Bbox
+from matplotlib.transforms import Bbox, ScaledTranslation
 
+from lib.latex import float_to_latex_str
 from lib.plotting import plt_util
 from lib.plotting.axis_id import AxId, AxIdPolar, AxIdXY
 from lib.plotting.bounds_setter import BoundsSetter
@@ -31,12 +32,47 @@ type AxAndId = tuple[Axes, AxIdXY] | tuple[PolarAxes, AxIdPolar]
 type YEnd = Literal["lower", "upper"]
 
 
+COLORBAR_TEXT_PAD = 4.0
+"""Points between a colorbar's end and its text."""
+
+
+@dataclass
+class ColorbarText:
+    """A colorbar's horizontal texts: its label above the bar, and its multiplier/offset below it. They hang off the
+    bar's left edge, in fixed units, so the bar can move and resize under them."""
+
+    cbar: Colorbar
+    top: Text
+    bottom: Text
+    multiplier_exponent: int = 0
+
+    @staticmethod
+    def create(cbar: Colorbar) -> ColorbarText:
+        ax = cbar.ax
+        fig = ax.get_figure(root=True)
+        size = scaled_font_size("axes.labelsize")
+        pad = COLORBAR_TEXT_PAD / 72
+        top = ax.text(0.0, 1.0, "", transform=ax.transAxes + ScaledTranslation(0.0, pad, fig.dpi_scale_trans), ha="left", va="bottom", multialignment="left", fontsize=size)
+        bottom = ax.text(0.0, 0.0, "", transform=ax.transAxes + ScaledTranslation(0.0, -pad, fig.dpi_scale_trans), ha="left", va="top", fontsize=size)
+        return ColorbarText(cbar, top, bottom)
+
+    def update_bottom(self):
+        # matplotlib's offset text folds in the multiplier too, so build the offset from the formatter instead.
+        self.cbar.ax.yaxis.get_offset_text().set_visible(False)
+        offset = getattr(self.cbar.ax.yaxis.get_major_formatter(), "offset", 0.0)
+
+        multiplier = f"$\\times 10^{{{self.multiplier_exponent}}}$" if self.multiplier_exponent else ""
+        shift = f"${'+' if offset > 0 else ''}{float_to_latex_str(offset, '.4g')}$" if offset else ""
+        self.bottom.set_text(" ".join(part for part in [multiplier, shift] if part))
+
+
 @dataclass
 class Panel:
     title_labeler: SubjectLabeler | None = field(init=False, default=None)
     legend_labelers_per_axes: dict[Axes, list[SubjectLabeler]] = field(init=False, default_factory=dict)
     cbar_labeler: Labeler | None = field(init=False, default=None)
     colorbars: list[Colorbar] = field(init=False, default_factory=list)
+    colorbar_texts: list[ColorbarText] = field(init=False, default_factory=list)
     data_setters: list[DataSetter] = field(init=False, default_factory=list)
     x_labelers_per_axes: dict[Axes, UnitLabeler] = field(init=False, default_factory=dict)
     y_labelers_per_axes: dict[Axes, YAxisLabeler] = field(init=False, default_factory=dict)
@@ -113,23 +149,25 @@ class Panel:
 
     def wire_cbar_label(self, cbar: Colorbar, info: PlotInfoColor):
         self.colorbars.append(cbar)
+        texts = ColorbarText.create(cbar)
+        self.colorbar_texts.append(texts)
 
         # Log and symlog scales label their ticks with the exponent already.
         is_linear = isinstance(info.dim_scales[info.color_dim], LinearScale)
-        multiplier_exponent = plt_util.move_cbar_multiplier_to_label(cbar) if is_linear else 0
-
-        # The multiplier gets the first line, which (the label reading bottom to top) is nearest the tick labels.
-        multiplier = f"$\\times 10^{{{multiplier_exponent}}}$" if multiplier_exponent else ""
-
-        def set_label(text: str):
-            cbar.set_label("\n".join(line for line in [multiplier, text] if line))
+        texts.multiplier_exponent = plt_util.move_cbar_multiplier_to_label(cbar) if is_linear else 0
 
         if info.subject_dim == info.color_dim:
-            self.cbar_labeler = ColorbarLabeler(set_label, info)
+            self.cbar_labeler = ColorbarLabeler(texts.top.set_text, info)
             if self.title_labeler:
                 self.title_labeler.add_child(self.cbar_labeler)
         else:
-            self.cbar_labeler = UnitLabeler(set_label, "color", [info])
+            self.cbar_labeler = UnitLabeler(texts.top.set_text, "color", [info], line_break_before_unit=True)
+
+    def update_cbar_bottom_texts(self):
+        """Move each colorbar's offset (e.g. `+1e3`) below the bar, beside its multiplier. The offset is only known
+        once the ticks are drawn, so the layout engine calls this after each of its draws."""
+        for texts in self.colorbar_texts:
+            texts.update_bottom()
 
     def wire_data_setter(self, data_setter: DataSetter):
         self.data_setters.append(data_setter)

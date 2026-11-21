@@ -51,13 +51,19 @@ def _panel_right_margin(decorations: PanelDecorations, axes_right: float) -> flo
     return right
 
 
+def _colorbar_gaps(decorations: ColorbarDecorations, plot_height: float) -> tuple[float, float]:
+    """How much shorter than its panel a colorbar is at the top and bottom: room for its texts, and at least
+    `COLORBAR_MIN_GAP_FRACTION` of the panel."""
+    min_gap = COLORBAR_MIN_GAP_FRACTION * plot_height
+    return (max(min_gap, decorations.margins.top), max(min_gap, decorations.margins.bottom))
+
+
 def _panel_margins(decorations: PanelDecorations, plot_height: float, axes_right: float) -> Margins:
     """Everything outside the plot area, colorbars included. Colorbars start past `axes_right`, the widest axes
     decorations in the panel's column."""
     axes = decorations.axes_margins
-    gap = COLORBAR_MIN_GAP_FRACTION * plot_height
-    top = max([axes.top, *(cbar.margins.top - gap for cbar in decorations.colorbars)])
-    bottom = max([axes.bottom, *(cbar.margins.bottom - gap for cbar in decorations.colorbars)])
+    # A colorbar's texts fit in its gaps, so colorbars never reach past their panel's top or bottom.
+    top, bottom = axes.top, axes.bottom
     return Margins(left=axes.left, right=_panel_right_margin(decorations, axes_right), bottom=bottom, top=top)
 
 
@@ -182,9 +188,9 @@ def compute_layout(grid: Grid, options: LayoutOptions, decorations: dict[AxesIdx
 
         deco = decorations[loc]
         cbar_x = col_x0[col] + col_width[col] + col_axes_right[col] + COLORBAR_PAD
-        cbar_height = (1 - 2 * COLORBAR_MIN_GAP_FRACTION) * h
         for cbar, cbar_deco in zip(grid.panels[loc].colorbars, deco.colorbars):
-            colorbar_boxes[cbar.ax] = Box(cbar_x, box.y0 + (h - cbar_height) / 2, COLORBAR_THICKNESS, cbar_height)
+            gap_top, gap_bottom = _colorbar_gaps(cbar_deco, h)
+            colorbar_boxes[cbar.ax] = Box(cbar_x, box.y0 + gap_bottom, COLORBAR_THICKNESS, h - gap_top - gap_bottom)
             cbar_x += COLORBAR_THICKNESS + cbar_deco.margins.right + COLORBAR_PAD
 
     return Layout(fig_width, fig_height, plot_boxes, colorbar_boxes, suptitle_top, shortfall)

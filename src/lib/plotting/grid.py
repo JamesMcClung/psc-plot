@@ -1,6 +1,5 @@
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from matplotlib.transforms import ScaledTranslation
 
 from lib.plotting import plt_util
 from lib.plotting.labeler import SubjectLabeler
@@ -99,29 +98,11 @@ class Grid:
         for panel in self.panels.values():
             panel.update_interior_x_ticks()
 
-    def right_align_cbar_labels(self):
-        """Line up the right edges of the colorbar labels down each column. Only moves labels rightward, up to the
-        furthest one, so constrained layout doesn't reserve any more room for them."""
-        renderer = self.fig.canvas.get_renderer()
-
-        for col in self.contiguous_cols():
-            cbars = [cbar for panel in col for cbar in panel.colorbars]
-            if len(cbars) < 2:
-                continue
-
-            right = max(plt_util.get_default_cbar_label_left(cbar, renderer) + cbar.ax.yaxis.label.get_window_extent(renderer).width for cbar in cbars)
-
-            for cbar in cbars:
-                # The label reads bottom to top, so its bottom is its right edge. Pinned in fixed units, not
-                # axes fractions, since the bar can still resize at the next layout.
-                offset = (right - cbar.ax.get_window_extent(renderer).x1) / self.fig.dpi
-                cbar.ax.yaxis.label.set_va("bottom")
-                cbar.ax.yaxis.set_label_coords(1.0, 0.5, transform=cbar.ax.transAxes + ScaledTranslation(offset, 0.0, self.fig.dpi_scale_trans))
-
     def adjust_to_draw(self):
         """Steps that measure where things were drawn. The layout engine runs them after each of its passes."""
         self.tuck_y_tick_labels()
-        self.right_align_cbar_labels()
+        for panel in self.panels.values():
+            panel.update_cbar_bottom_texts()
 
     def contiguous_cols(self) -> list[list[Panel]]:
         cols = []

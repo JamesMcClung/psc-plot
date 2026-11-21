@@ -99,15 +99,3 @@ def get_opposite_color(rgba: np.ndarray) -> tuple[float, float, float]:
     lightness, a, b = _srgb_to_oklab(rgba.reshape(-1, 4)[:, :3]).mean(axis=0)
     r, g, b = _oklab_to_srgb(np.array([1.0 - lightness, -a, -b]))
     return (float(r), float(g), float(b))
-
-
-def get_default_cbar_label_left(cbar: Colorbar, renderer: RendererBase) -> float:
-    """Where matplotlib puts the left edge of a vertical colorbar's label, in display coordinates: a label pad
-    past its tick labels, or past the bar itself if they don't reach any further.
-
-    Measures the tick labels where they were last drawn, so the figure must already have been laid out.
-    """
-    ax = cbar.ax
-    rights = [ax.get_window_extent(renderer).x1]
-    rights += [label.get_window_extent(renderer).x1 for label in ax.get_yticklabels() if label.get_visible()]
-    return max(rights) + ax.yaxis.labelpad * ax.get_figure(root=True).dpi / 72

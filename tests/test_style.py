@@ -18,7 +18,7 @@ def test_image_text_twice_default():
     assert ax.title.get_fontsize() == TITLE
     assert ax.xaxis.label.get_fontsize() == LABEL
     assert ax.yaxis.label.get_fontsize() == LABEL
-    assert cax.yaxis.label.get_fontsize() == LABEL
+    assert all(text.get_fontsize() == LABEL for text in cax.texts)
     assert all(label.get_fontsize() == TICK for label in _tick_labels(fig))
 
 

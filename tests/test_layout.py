@@ -106,8 +106,9 @@ def test_colorbar_geometry():
     [cax] = _cbar_axes(fig)
     plot_box, cbar_box = _box_in(ax), _box_in(cax)
     assert cbar_box.width == pytest.approx(COLORBAR_THICKNESS, abs=1 / DPI)
-    assert cbar_box.height <= 0.8 * plot_box.height + 1 / DPI
-    assert (cbar_box.y0 + cbar_box.y1) / 2 == pytest.approx((plot_box.y0 + plot_box.y1) / 2, abs=1 / DPI)
+    # at least 10% shorter than the panel at each end, leaving room for its texts
+    assert cbar_box.y0 >= plot_box.y0 + 0.1 * plot_box.height - 1 / DPI
+    assert cbar_box.y1 <= plot_box.y1 - 0.1 * plot_box.height + 1 / DPI
     assert cbar_box.x0 >= plot_box.x1
     _assert_inside_figure(fig)
 
