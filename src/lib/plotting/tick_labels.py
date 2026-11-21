@@ -2,7 +2,6 @@
 engine runs them inside its passes (never per frame)."""
 
 import weakref
-from typing import Literal
 
 from matplotlib import pyplot as plt
 from matplotlib.axis import Axis, XAxis
@@ -185,8 +184,24 @@ def two_label_length(axis: Axis, renderer: RendererBase) -> float:
     return need
 
 
-def prune_ticks(axis: Axis, end: Literal["lower", "upper"]):
-    """Drop the tick (and its label) at `end`. Locators that can't prune (log, say) are left alone."""
-    locator = axis.get_major_locator()
-    if isinstance(locator, MaxNLocator):
-        locator.set_params(prune=end)
+def separate_junction_labels(first: Axis, second: Axis, renderer: RendererBase):
+    """Where two axes meet edge to edge along the same direction (`first` before `second`: left of it, or above
+    it), hide `second`'s label nearest the junction if it crowds `first`'s. Tucked, they can't overlap, but they can
+    touch, e.g. "1.0" and "0.0" reading as "1.00.0". `thin_crowded_ticks` gives it another chance each pass."""
+    first_labels, second_labels = visible_tick_labels(first), visible_tick_labels(second)
+    if not first_labels or not second_labels:
+        return
+    gap = TICK_LABEL_MIN_GAP * first.get_figure(root=True).dpi / 72
+    first_extents = [label.get_window_extent(renderer) for label in first_labels]
+    second_extents = [(label, label.get_window_extent(renderer)) for label in second_labels]
+    if isinstance(first, XAxis):  # side by side: first's rightmost label, second's leftmost
+        edge = max(extent.x1 for extent in first_extents)
+        label, extent = min(second_extents, key=lambda pair: pair[1].x0)
+        crowded = extent.x0 - edge < gap
+    else:  # stacked: first's bottom label, second's top one
+        edge = min(extent.y0 for extent in first_extents)
+        label, extent = max(second_extents, key=lambda pair: pair[1].y1)
+        crowded = edge - extent.y1 < gap
+    if crowded:
+        label.set_visible(False)
+        _HIDDEN_LABELS.setdefault(second, []).append(label)
