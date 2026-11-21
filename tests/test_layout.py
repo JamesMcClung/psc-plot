@@ -215,3 +215,8 @@ def test_colorbars_line_up_down_a_column():
     lefts = [_box_in(cax).x0 for cax in _cbar_axes(fig)]
     assert len(lefts) == 3
     assert all(sizes_close(left, lefts[0], DPI) for left in lefts), lefts
+
+
+def test_polar_has_no_legend():
+    fig = make_plot("pfd hx_fc -i t=-1 --transform-polar y z -v r_p theta time=".split())
+    assert not [ax for ax in fig.axes if ax.get_legend()]

@@ -148,7 +148,7 @@ class PolarMeshInfo(PlotInfoColor):
     projection: Projection = field(default="polar", init=False)
 
     def has_legend(self) -> bool:
-        return True
+        return False  # like an image, its colorbar says what it is
 
     def has_colorbar(self) -> bool:
         return True
