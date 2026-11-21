@@ -15,7 +15,7 @@ it, equal scale is given up entirely."""
 def _get_equal_scale_aspect(infos: list[PlotInfo2D]) -> float | None:
     """The plot area's height / width that gives x and y the same scale, or `None` if they shouldn't share one: their
     units differ, or the plot area would be more than `MAX_EQUAL_SCALE_RATIO` times longer one way than the other."""
-    aspects = set()
+    aspects = []
     for info in infos:
         x_unit, y_unit = info.dim_units.get(info.x_dim), info.dim_units.get(info.y_dim)
         if not x_unit or x_unit != y_unit:
@@ -24,11 +24,11 @@ def _get_equal_scale_aspect(infos: list[PlotInfo2D]) -> float | None:
         (x_lo, x_hi), (y_lo, y_hi) = info.dim_bounds.get(info.x_dim, (None, None)), info.dim_bounds.get(info.y_dim, (None, None))
         if None in (x_lo, x_hi, y_lo, y_hi) or x_hi == x_lo:
             return None
-        aspects.add(abs((y_hi - y_lo) / (x_hi - x_lo)))
+        aspects.append(abs((y_hi - y_lo) / (x_hi - x_lo)))
 
-    if len(aspects) != 1:
-        return None
-    aspect = aspects.pop()
+    aspect = aspects[0]
+    if not all(math.isclose(other, aspect) for other in aspects):
+        return None  # a ratio, so compared relatively, not in dots like `sizes_close`
     if not 1 / MAX_EQUAL_SCALE_RATIO <= aspect <= MAX_EQUAL_SCALE_RATIO:
         return None  # too lopsided: each side is sized on its own instead
     return aspect

@@ -74,3 +74,11 @@ def test_big_equal_scale_image_scales_uniformly():
 def test_polar_panel_is_square():
     polar = PolarMeshInfo(data=np.zeros((4, 4)), r_vertices=np.arange(5.0), theta_vertices=np.arange(5.0), r_dim="r", theta_dim="theta", color_dim="f")
     assert auto_plot_size([polar], 100) == pytest.approx((4.5, 4.5))
+
+
+def test_equal_scale_survives_rounding_between_panels():
+    """Two images whose aspects differ only by float rounding (0.4 - 0.1 != 0.3) still share equal scale."""
+    a = _image(16, 8, 0.3, 0.5, same_unit=True)
+    b = _image(16, 8, 0.3, 0.5, same_unit=True)
+    b.dim_bounds["y"] = (0.1, 0.4)
+    assert is_aspect_locked([a, b])
