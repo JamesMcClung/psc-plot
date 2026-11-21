@@ -28,7 +28,7 @@ COLORBAR_THICKNESS = 0.25
 COLORBAR_MIN_GAP_FRACTION = 0.1
 """A colorbar is shorter than its panel by at least this fraction of the panel at each end."""
 MIN_PLOT_SIDE = 0.5
-"""Inches: a too-small `--figsize` can't shrink a plot area below this."""
+"""Inches: a too-small `--figsize` can't shrink a plot area below this, nor below what its tick labels need."""
 MAX_LAYOUT_PASSES = 4
 
 
@@ -41,7 +41,7 @@ class Layout:
     suptitle_top: float
     """Inches from the figure's bottom to the suptitle's top."""
     shortfall: float = 0.0
-    """Inches by which `--figsize` was too small for the smallest plot area, which was enlarged to `MIN_PLOT_SIDE`."""
+    """Inches by which a fixed side of `--figsize` left a plot area short of its minimum size, the most for any."""
 
 
 def _panel_right_margin(decorations: PanelDecorations, axes_right: float) -> float:
@@ -58,6 +58,25 @@ def _colorbar_gaps(decorations: ColorbarDecorations, plot_height: float) -> tupl
     return (max(min_gap, decorations.margins.top), max(min_gap, decorations.margins.bottom))
 
 
+def _min_height_for_colorbar(decorations: ColorbarDecorations) -> float:
+    """The least plot height whose colorbar, less its gaps (see `_colorbar_gaps`), is `min_length` long."""
+    need, top, bottom = decorations.min_length, decorations.margins.top, decorations.margins.bottom
+    if need <= 0:
+        return 0.0
+    f = COLORBAR_MIN_GAP_FRACTION
+    # Each gap is the larger of a fraction of the height and its text, so every combination must leave room.
+    return max(need / (1 - 2 * f), (need + top) / (1 - f), (need + bottom) / (1 - f), need + top + bottom)
+
+
+def _min_plot_sizes(decorations: dict[AxesIdx, PanelDecorations]) -> dict[AxesIdx, tuple[float, float]]:
+    """Each panel's least plot-area size: `MIN_PLOT_SIDE`, and room for two tick labels on each axis and colorbar.
+    Taken per column (widths) and per row (heights), so panels sharing an edge keep sharing it."""
+    own = {loc: (max(MIN_PLOT_SIDE, deco.min_plot_size[0]), max(MIN_PLOT_SIDE, deco.min_plot_size[1], *(_min_height_for_colorbar(cbar) for cbar in deco.colorbars))) for loc, deco in decorations.items()}
+    col_width = {col: max(w for (c, _), (w, _) in own.items() if c == col) for col, _ in own}
+    row_height = {row: max(h for (_, r), (_, h) in own.items() if r == row) for _, row in own}
+    return {(col, row): (col_width[col], row_height[row]) for col, row in own}
+
+
 def _panel_margins(decorations: PanelDecorations, plot_height: float, axes_right: float) -> Margins:
     """Everything outside the plot area, colorbars included. Colorbars start past `axes_right`, the widest axes
     decorations in the panel's column."""
@@ -67,9 +86,10 @@ def _panel_margins(decorations: PanelDecorations, plot_height: float, axes_right
     return Margins(left=axes.left, right=_panel_right_margin(decorations, axes_right), bottom=bottom, top=top)
 
 
-def _plot_sizes(grid: Grid, options: LayoutOptions, cols: list[int], rows: list[int], col_margins: float, row_margins: float) -> tuple[dict[AxesIdx, tuple[float, float]], float]:
-    """Each panel's plot-area size: the auto size, scaled to fit any fixed side of the figure. Also returns how many
-    inches short of `MIN_PLOT_SIDE` a fixed side left the smallest plot area (0 if none)."""
+def _plot_sizes(grid: Grid, options: LayoutOptions, cols: list[int], rows: list[int], col_margins: float, row_margins: float, min_sizes: dict[AxesIdx, tuple[float, float]]) -> tuple[dict[AxesIdx, tuple[float, float]], float]:
+    """Each panel's plot-area size: the auto size, scaled to fit any fixed side of the figure, and grown to at least
+    `min_sizes`. Also returns how many inches short of its minimum a fixed side left a plot area, the most for any
+    (0 if none): growing past an auto side is just auto sizing."""
     dpi = options.dpi
     auto = {loc: auto_plot_size(infos, dpi) for loc, infos in grid.infos.items()}
     locked = {loc: is_aspect_locked(infos) for loc, infos in grid.infos.items()}
@@ -96,15 +116,22 @@ def _plot_sizes(grid: Grid, options: LayoutOptions, cols: list[int], rows: list[
                 scaled[loc] = (w * s, h * s)
         sizes = scaled
 
-    too_small = {loc: (w, h) for loc, (w, h) in sizes.items() if min(w, h) < MIN_PLOT_SIDE - 1e-9}
-    shortfall = max((MIN_PLOT_SIDE - min(w, h) for w, h in too_small.values()), default=0.0)
-    for loc, (w, h) in too_small.items():
+    shortfall = 0.0
+    for loc, (w, h) in sizes.items():
+        min_w, min_h = min_sizes[loc]
+        short_w, short_h = min_w - w, min_h - h
+        if max(short_w, short_h) <= 1e-9:
+            continue
+        # A locked plot area grows as a whole, so a fixed side on either is to blame.
+        blamed = (short_w, short_h) if locked[loc] else (short_w if fixed_width is not None else 0.0, short_h if fixed_height is not None else 0.0)
+        if fixed_width is not None or fixed_height is not None:
+            shortfall = max(shortfall, *blamed)
         if locked[loc]:
             aw, ah = auto[loc]  # its shape, even if the scaling above shrank it to nothing
-            s = MIN_PLOT_SIDE / min(aw, ah)
-            sizes[loc] = (aw * s, ah * s)
+            s = max(min_w / aw, min_h / ah) if (w < min_w - 1e-9 or h < min_h - 1e-9) else 1.0
+            sizes[loc] = (max(w, aw * s), max(h, ah * s)) if s == 1.0 else (aw * s, ah * s)
         else:
-            sizes[loc] = (max(w, MIN_PLOT_SIDE), max(h, MIN_PLOT_SIDE))
+            sizes[loc] = (max(w, min_w), max(h, min_h))
 
     return sizes, shortfall
 
@@ -145,7 +172,7 @@ def compute_layout(grid: Grid, options: LayoutOptions, decorations: dict[AxesIdx
     auto = {loc: auto_plot_size(infos, options.dpi) for loc, infos in grid.infos.items()}
     margins = margins_for(auto)
     *_, col_fixed, row_fixed = totals(margins)
-    sizes, shortfall = _plot_sizes(grid, options, cols, rows, col_fixed, row_fixed)
+    sizes, shortfall = _plot_sizes(grid, options, cols, rows, col_fixed, row_fixed, _min_plot_sizes(decorations))
     margins = margins_for(sizes)
     col_left, col_right, row_top, row_bottom, col_fixed, row_fixed = totals(margins)
 
@@ -237,4 +264,4 @@ def run_layout(fig: Figure, grid: Grid, options: LayoutOptions):
         grid.adjust_to_draw()
 
     if layout.shortfall > 0:
-        warnings.warn(f"--figsize leaves too little room for the plots (short by {layout.shortfall:.2f}in); enlarging the figure so every plot area is at least {MIN_PLOT_SIDE}in a side")
+        warnings.warn(f"--figsize leaves too little room for the plots (short by {layout.shortfall:.2f}in); enlarging the figure so every plot area is at least {MIN_PLOT_SIDE}in a side and fits two tick labels on each axis")

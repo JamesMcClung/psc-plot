@@ -7,6 +7,7 @@ from matplotlib.transforms import Bbox
 
 from lib.plotting.layout.geometry import Margins
 from lib.plotting.panel import Panel
+from lib.plotting.tick_labels import two_label_length
 
 
 @dataclass(frozen=True)
@@ -14,6 +15,8 @@ class ColorbarDecorations:
     """How far, in inches, a colorbar's tick labels and labels extend past the bar itself."""
 
     margins: Margins
+    min_length: float = 0.0
+    """Inches of bar its tick labels need: room for two of them."""
 
 
 @dataclass(frozen=True)
@@ -23,6 +26,8 @@ class PanelDecorations:
 
     axes_margins: Margins
     colorbars: list[ColorbarDecorations]
+    min_plot_size: tuple[float, float] = (0.0, 0.0)
+    """Inches of plot area its axes' tick labels need: room for two of them along each axis."""
 
 
 def _overhang(outer: Bbox, inner: Bbox, dpi: float) -> Margins:
@@ -43,7 +48,7 @@ def _tight_bbox(artist, renderer: RendererBase) -> Bbox | None:
 def measure_colorbar(cbar: Colorbar, renderer: RendererBase, dpi: float) -> ColorbarDecorations:
     box = cbar.ax.get_window_extent(renderer)
     tight = _tight_bbox(cbar.ax, renderer) or box
-    return ColorbarDecorations(_overhang(tight, box, dpi))
+    return ColorbarDecorations(_overhang(tight, box, dpi), two_label_length(cbar.ax.yaxis, renderer) / dpi)
 
 
 def measure_panel(panel: Panel, renderer: RendererBase, dpi: float) -> PanelDecorations:
@@ -53,7 +58,11 @@ def measure_panel(panel: Panel, renderer: RendererBase, dpi: float) -> PanelDeco
     tights = [tight for ax in panel.axes if (tight := _tight_bbox(ax, renderer))]
     tight = Bbox.union([box, *tights])
 
-    return PanelDecorations(_overhang(tight, box, dpi), [measure_colorbar(cbar, renderer, dpi) for cbar in panel.colorbars])
+    cartesian = [ax for ax in panel.axes if ax.name != "polar"]
+    min_width = max((two_label_length(ax.xaxis, renderer) for ax in cartesian), default=0.0) / dpi
+    min_height = max((two_label_length(ax.yaxis, renderer) for ax in cartesian), default=0.0) / dpi
+
+    return PanelDecorations(_overhang(tight, box, dpi), [measure_colorbar(cbar, renderer, dpi) for cbar in panel.colorbars], (min_width, min_height))
 
 
 def measure_text_height(text: Text, renderer: RendererBase, dpi: float) -> float:

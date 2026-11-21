@@ -164,7 +164,7 @@ def test_too_small_figsize_warns_and_snaps():
         fig = make_plot("pfd hx_fc -i t=-1 -v y z --figsize 1,1".split())
     [ax] = _plot_axes(fig)
     box = _box_in(ax)
-    assert min(box.width, box.height) == pytest.approx(MIN_PLOT_SIDE, abs=1 / DPI)
+    assert min(box.width, box.height) >= MIN_PLOT_SIDE - 1 / DPI  # more, if its tick labels need it
     w, h = fig.get_size_inches()
     assert w > 1 and h > 1
     _assert_inside_figure(fig)
@@ -226,3 +226,23 @@ def test_colorbars_line_up_down_a_column():
 def test_polar_has_no_legend():
     fig = make_plot("pfd hx_fc -i t=-1 --transform-polar y z -v r_p theta time=".split())
     assert not [ax for ax in fig.axes if ax.get_legend()]
+
+
+@pytest.mark.parametrize("args", ["pfd hx_fc -i t=-1 -v y --figsize 1.6,auto", "pfd hx_fc -i t=-1 -v y z --figsize auto,1"])
+def test_plots_grow_to_fit_two_tick_labels(args: str):
+    """Every axis and colorbar keeps at least two tick labels, enlarging a too-small --figsize (with a warning)."""
+    from lib.plotting.tick_labels import visible_tick_labels
+
+    with pytest.warns(UserWarning, match="--figsize"):
+        fig = make_plot(args.split())
+    fig.draw_without_rendering()
+    axes = [axis for ax in _plot_axes(fig) for axis in (ax.xaxis, ax.yaxis)] + [cax.yaxis for cax in _cbar_axes(fig)]
+    for axis in axes:
+        assert len(visible_tick_labels(axis)) >= 2, (axis, [label.get_text() for label in visible_tick_labels(axis)])
+    _assert_inside_figure(fig)
+
+
+def test_auto_size_never_warns():
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        make_plot("-w pfd::hx_fc -i t=3 -cv y z loc=1,1 -w pfd::hy_fc -i t=3 --mul 1e-5 -cv y z loc=1,2 -w pfd::hz_fc -i t=3 -cv y z loc=1,3".split())
