@@ -19,6 +19,8 @@ def setup_colorbar(ax: Axes, target: ScalarMappable, info: PlotInfoColor | PlotI
     assert info.color_dim
     fig = ax.get_figure(root=True)
     cbar = fig.colorbar(target, cax=fig.add_axes((0.0, 0.0, 1.0, 1.0)))  # the layout engine places it
+    if minor_locator := info.dim_scales[info.color_dim].minor_locator():
+        cbar.minorlocator = minor_locator
     # TODO work into everything
     data_lower, data_upper = info.dim_bounds[info.color_dim]
     plt_util.update_cbar(target, data_min_override=data_lower, data_max_override=data_upper)

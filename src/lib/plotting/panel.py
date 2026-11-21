@@ -234,6 +234,8 @@ class Panel:
 
         self.scales_per_axis[(ax, axis_id)] = new_scale
         set_scale(new_scale.to_axis_scale())
+        if axis_id != "r" and (minor_locator := new_scale.minor_locator()):
+            (ax.xaxis if axis_id == "x" else ax.yaxis).set_minor_locator(minor_locator)
 
     def _get_x_axs(self) -> list[Axes]:
         # Sharing an axis takes it out of `scales_per_axis`, but not out of `bounds_setters_per_axis`.

@@ -90,3 +90,36 @@ def test_ticks_drawn_at_the_edges():
     left = int(box.x0) + 20  # past any y tick label overhanging the top
     assert top > 0
     assert np.all(pixels[:top, left:] == 255)
+
+
+def _minor_locs_within(axis) -> list[float]:
+    lower, upper = sorted(axis.get_view_interval())
+    return [loc for loc in axis.get_minorticklocs() if lower <= loc <= upper]
+
+
+def test_log_colorbar_has_minor_ticks():
+    plot = _plot("prt.i --bin px=20 pz=20 --scale log --nan0 -v px pz")
+    [cbar] = plot.grid.panels[(1, 1)].colorbars
+    assert _minor_locs_within(cbar.ax.yaxis)
+
+
+def test_symlog_colorbar_has_minor_ticks():
+    plot = _plot("pfd hx_fc -i t=-1 --scale symlog#.001 -v y z")
+    [cbar] = plot.grid.panels[(1, 1)].colorbars
+    assert _minor_locs_within(cbar.ax.yaxis)
+
+
+def test_symlog_axis_has_minor_ticks():
+    plot = _plot("pfd hx_fc -i t=-1 --scale symlog#.001 -v y")
+    assert _minor_locs_within(plot.grid.panels[(1, 1)].axes[0].yaxis)
+
+
+def test_minor_ticks_get_inward_markers():
+    plot = _plot("pfd hx_fc -i t=-1 --scale symlog#.001 -v y")
+    ticks = _ticks(plot, plot.grid.panels[(1, 1)].axes[0])
+    assert len(ticks.artists[("left", True)].get_offsets()) > 0
+
+
+def test_linear_axis_has_no_minor_ticks():
+    plot = _plot("pfd hx_fc -i t=-1 -v y")
+    assert not _minor_locs_within(plot.grid.panels[(1, 1)].axes[0].yaxis)
