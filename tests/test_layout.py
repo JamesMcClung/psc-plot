@@ -303,3 +303,17 @@ def test_fixed_side_keeps_shared_axes_aligned(figsize: str):
         for b in plots:
             if a is not b and a.get_shared_x_axes().joined(a, b):
                 assert sizes_close(_box_in(a).width, _box_in(b).width, DPI)
+
+
+def test_movie_saves_at_requested_dpi(tmp_path):
+    """HiDPI backends (macOS on a Retina screen) double the figure's dpi; a movie must still come out at `--dpi`."""
+    from PIL import Image
+
+    plot = _plot("pfd hx_fc -v y z")
+    assert isinstance(plot, AnimatedPlot)
+    plot._initialize()
+    width, height = plot.fig.get_size_inches()
+    plot.fig.dpi = 2 * DPI  # what such a backend does
+    path = tmp_path / "movie.gif"
+    plot.save_to_path(path)
+    assert Image.open(path).size == (round(width * DPI), round(height * DPI))

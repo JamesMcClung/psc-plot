@@ -97,4 +97,5 @@ class AnimatedPlot(Plot):
                 post_draw(*args, **kwargs)
 
         self.anim._post_draw = profiled_post_draw
-        self.anim.save(path, writer=writer)  # at the figure's dpi
+        # Explicitly: HiDPI backends (e.g. macOS on a Retina screen) raise the figure's dpi past `--dpi`.
+        self.anim.save(path, writer=writer, dpi=self.layout_options.dpi)
