@@ -109,3 +109,18 @@ def test_no_ambiguous_colorbar(args: str):
     keyed = [loc for _, assignment in _colorbars(plot) for loc in assignment.keyed]
     images = [loc for loc, panel in plot.grid.panels.items() if panel.color_artists]
     assert sorted(keyed) == sorted(images)
+
+
+def test_panel_with_two_color_quantities_gets_a_bar_each():
+    """An image with particles colored by another quantity on top: each keeps its own bar and color limits."""
+    plot = _plot("pfd ey_ec -i t=-1 -v y z -w prt.i -i t=-1 -cv y z color=pz loc=1,1")
+    bars = _colorbars(plot)
+    assert len(bars) == 2
+    labels = {texts.top.get_text().split("\n")[0] for panel in plot.grid.panels.values() for texts in panel.colorbar_texts}
+    assert any("E_y" in label for label in labels) and any("u_z" in label for label in labels)
+
+
+def test_panel_with_two_color_quantities_sits_apart():
+    plot = _plot("pfd ey_ec -i t=-1 -v y z loc=1,1 -w ey_ec -v y z loc=2,1 -w prt.i -i t=-1 -cv y z color=pz loc=2,1")
+    assert plot.grid.flush_col_boundaries == set()
+    assert all(assignment.orientation == "vertical" for _, assignment in _colorbars(plot)) and len(_colorbars(plot)) == 3

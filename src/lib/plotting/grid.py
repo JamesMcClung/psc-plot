@@ -7,7 +7,7 @@ from lib.plotting.labeler import SharedColorbarLabel, SubjectLabeler, UnitLabele
 from lib.plotting.layout.auto_size import auto_plot_sizes
 from lib.plotting.layout.colorbars import CellModel, ColorbarAssignment, GridModel, assign_colorbars
 from lib.plotting.layout.geometry import sizes_close
-from lib.plotting.panel import Panel
+from lib.plotting.panel import Panel, color_key
 from lib.plotting.plot_info import PlotInfo
 from lib.plotting.style import scaled_font_size
 
@@ -76,7 +76,8 @@ class Grid:
         shareable = set()
         for col in range(1, self.ncols):
             pairs = self._col_pairs(col)
-            if pairs and all(self.panels[left].can_share_y_axis(self.panels[right]) and sizes_close(sizes[left][1], sizes[right][1], dpi) for left, right in pairs):
+            # A panel with several color quantities needs a vertical bar for each, so it sits apart from its neighbors.
+            if pairs and all(not self.panels[left].has_mixed_colors() and not self.panels[right].has_mixed_colors() and self.panels[left].can_share_y_axis(self.panels[right]) and sizes_close(sizes[left][1], sizes[right][1], dpi) for left, right in pairs):
                 shareable.add(col)
         return shareable
 
@@ -104,10 +105,12 @@ class Grid:
             self.flush_col_boundaries.add(col)
 
         for assignment in plan.colorbars:
-            self._add_colorbar(assignment)
+            keyed = [(self.panels[loc], artist, info) for loc in assignment.keyed for artist, info in self.panels[loc].color_artists]
+            # Images keyed together share a color quantity, unless a lone panel mixes several: then one bar each.
+            for key in dict.fromkeys(color_key(info) for _, _, info in keyed):
+                self._add_colorbar(assignment, [(panel, artist, info) for panel, artist, info in keyed if color_key(info) == key])
 
-    def _add_colorbar(self, assignment: ColorbarAssignment):
-        keyed = [(self.panels[loc], artist, info) for loc, panel in ((loc, self.panels[loc]) for loc in assignment.keyed) for artist, info in panel.color_artists]
+    def _add_colorbar(self, assignment: ColorbarAssignment, keyed: list):
         _, first_artist, first_info = keyed[0]
         cbar = self.fig.colorbar(first_artist, cax=self.fig.add_axes((0.0, 0.0, 1.0, 1.0)), orientation=assignment.orientation)  # the layout engine places it
         if minor_locator := first_info.dim_scales[first_info.color_dim].minor_locator():

@@ -182,7 +182,7 @@ class Panel:
         keys = {color_key(info) for _, info in self.color_artists}
         if not keys:
             return None
-        if len(keys) > 1:
+        if self.has_mixed_colors():
             return ("unshareable", id(self))
         [key] = keys
         if self.title_labeler is None:
@@ -191,6 +191,10 @@ class Panel:
             frames = {tuple(tuple(sorted((dim, float(value)) for dim, value in values.items())) for values in info.frames_scalar_coord_values) for _, info in self.color_artists}
             key = (key, tuple(sorted(frames)))
         return key
+
+    def has_mixed_colors(self) -> bool:
+        """Whether its images (or colored scatter) show more than one color quantity, each needing a bar of its own."""
+        return len({color_key(info) for _, info in self.color_artists}) > 1
 
     def add_colorbar(self, cbar: Colorbar, assignment: ColorbarAssignment, info: PlotInfoColor) -> ColorbarText:
         """Own `cbar`, which keys `info` (and maybe others like it)."""
