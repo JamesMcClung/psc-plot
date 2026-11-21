@@ -54,13 +54,14 @@ class ColorbarText:
 
     @staticmethod
     def create(cbar: Colorbar) -> ColorbarText:
-        """On a vertical bar, the label goes above it and the multiplier below; on a horizontal one, the label above
-        and the multiplier at its right end."""
+        """On a vertical bar, the label goes above it, from its left edge, and the multiplier below; on a horizontal
+        one, the label centered above and the multiplier at its right end."""
         ax = cbar.ax
         fig = ax.get_figure(root=True)
         size = scaled_font_size("axes.labelsize")
         pad = COLORBAR_TEXT_PAD / 72
-        top = ax.text(0.0, 1.0, "", transform=ax.transAxes + ScaledTranslation(0.0, pad, fig.dpi_scale_trans), ha="left", va="bottom", multialignment="left", fontsize=size)
+        x, ha = (0.5, "center") if cbar.orientation == "horizontal" else (0.0, "left")
+        top = ax.text(x, 1.0, "", transform=ax.transAxes + ScaledTranslation(0.0, pad, fig.dpi_scale_trans), ha=ha, va="bottom", multialignment=ha, fontsize=size)
         tick_size = FontProperties(size=plt.rcParams["ytick.labelsize"]).get_size_in_points()  # it qualifies the tick labels
         if cbar.orientation == "horizontal":
             bottom = ax.text(1.0, 0.5, "", transform=ax.transAxes + ScaledTranslation(pad, 0.0, fig.dpi_scale_trans), ha="left", va="center", fontsize=tick_size)

@@ -76,6 +76,8 @@ def test_horizontal_bar_above_panel():
         [texts] = [texts for texts in plot.grid.panels[loc].colorbar_texts if texts.cbar is cbar]
         assert "\n" not in texts.top.get_text()
         assert texts.top.get_window_extent(renderer).y0 >= cbar.ax.get_window_extent(renderer).y1
+        label, bar = texts.top.get_window_extent(renderer), cbar.ax.get_window_extent(renderer)
+        assert (label.x0 + label.x1) / 2 == pytest.approx((bar.x0 + bar.x1) / 2, abs=1)  # centered over the bar
         if texts.bottom.get_text():
             assert texts.bottom.get_window_extent(renderer).x0 >= cbar.ax.get_window_extent(renderer).x1
     # The titles sit above the bars.
