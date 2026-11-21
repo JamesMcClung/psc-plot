@@ -12,7 +12,6 @@ from lib.plotting.grid import Grid
 from lib.plotting.layout.options import LayoutOptions
 from lib.plotting.panel import Panel
 from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor, PolarMeshInfo
-from lib.plotting.style import scaled_font_size
 
 
 def setup_colorbar(ax: Axes, target: ScalarMappable, info: PlotInfoColor | PlotInfoMaybeColor) -> Colorbar:

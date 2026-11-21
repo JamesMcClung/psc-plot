@@ -22,7 +22,7 @@ from lib.plotting.bounds_setter import BoundsSetter
 from lib.plotting.data_setter import DataSetter
 from lib.plotting.labeler import ColorbarLabeler, Labeler, SubjectLabeler, UnitLabeler, YAxisLabeler
 from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PolarMeshInfo
-from lib.plotting.style import scaled_font_size
+from lib.plotting.style import LEGEND_TEXT_SCALE, scaled_font_size
 from lib.plotting.ticks import InwardTicks
 from lib.scale import LinearScale, Scale
 
@@ -109,7 +109,7 @@ class Panel:
                 if legend := axes.get_legend():
                     legend.remove()
             else:
-                axes.legend(fontsize=scaled_font_size("legend.fontsize"))  # required for label redraw
+                axes.legend(fontsize=scaled_font_size("legend.fontsize", LEGEND_TEXT_SCALE))  # required for label redraw
 
     def get_labelers(self) -> list[Labeler]:
         maybe_labelers = [

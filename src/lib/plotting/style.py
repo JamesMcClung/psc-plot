@@ -4,10 +4,11 @@ style context that resets rcParams."""
 from matplotlib import pyplot as plt
 from matplotlib.font_manager import FontProperties
 
-TEXT_SCALE = 2.0
-"""All text but tick labels is this many times matplotlib's default size."""
+TEXT_SCALE = 1.5
+"""All text but tick labels and legends is this many times matplotlib's default size."""
+LEGEND_TEXT_SCALE = 1.25
 
 
-def scaled_font_size(rc_key: str) -> float:
-    """`TEXT_SCALE` times the size, in points, that `rc_key` (e.g. `"axes.titlesize"`) gives text by default."""
-    return FontProperties(size=plt.rcParams[rc_key]).get_size_in_points() * TEXT_SCALE
+def scaled_font_size(rc_key: str, scale: float = TEXT_SCALE) -> float:
+    """`scale` times the size, in points, that `rc_key` (e.g. `"axes.titlesize"`) gives text by default."""
+    return FontProperties(size=plt.rcParams[rc_key]).get_size_in_points() * scale
