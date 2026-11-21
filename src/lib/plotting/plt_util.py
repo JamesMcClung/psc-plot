@@ -86,16 +86,9 @@ def _srgb_to_oklab(rgb: np.ndarray) -> np.ndarray:
     return np.cbrt(linear @ _LINEAR_SRGB_TO_LMS.T) @ _LMS_ROOT_TO_OKLAB.T
 
 
-def _oklab_to_srgb(lab: np.ndarray) -> np.ndarray:
-    linear = (lab @ np.linalg.inv(_LMS_ROOT_TO_OKLAB).T) ** 3 @ np.linalg.inv(_LINEAR_SRGB_TO_LMS).T
-    linear = np.clip(linear, 0.0, 1.0)  # the opposite of an in-gamut color needn't be in gamut
-    return np.where(linear <= 0.0031308, linear * 12.92, 1.055 * linear ** (1 / 2.4) - 0.055)
-
-
-def get_opposite_color(rgba: np.ndarray) -> tuple[float, float, float]:
-    """The opposite of the average of the given colors (of shape `(..., 4)`), in OKLab: lightness mirrored
-    about the middle and hue turned half way round. OKLab being perceptually uniform, the average is one a
-    person would agree with, and the opposite is about as far from it as it looks."""
-    lightness, a, b = _srgb_to_oklab(rgba.reshape(-1, 4)[:, :3]).mean(axis=0)
-    r, g, b = _oklab_to_srgb(np.array([1.0 - lightness, -a, -b]))
-    return (float(r), float(g), float(b))
+def get_contrasting_color(rgba: np.ndarray) -> tuple[float, float, float]:
+    """Black or white, whichever stands out more against the average of the given colors (of shape `(..., 4)`):
+    black when their OKLab lightness is past the middle, else white. OKLab being perceptually uniform, the average
+    is one a person would agree with."""
+    lightness = _srgb_to_oklab(rgba.reshape(-1, 4)[:, :3])[:, 0].mean()
+    return (0.0, 0.0, 0.0) if lightness > 0.5 else (1.0, 1.0, 1.0)

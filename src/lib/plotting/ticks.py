@@ -83,7 +83,7 @@ class InwardTicks:
 
             size_key = f"{'x' if side in ('bottom', 'top') else 'y'}tick.{'minor' if minor else 'major'}.size"
             length = plt.rcParams[size_key] * self.ax.get_figure(root=True).dpi / 72
-            artist.set_edgecolor([plt_util.get_opposite_color(self.colors_beneath(self._tick_bbox(side, offset, length))) for offset in offsets])
+            artist.set_edgecolor([plt_util.get_contrasting_color(self.colors_beneath(self._tick_bbox(side, offset, length))) for offset in offsets])
 
     def _tick_bbox(self, side: Side, offset: np.ndarray, length: float) -> Bbox:
         """The strip of display a tick covers, running inward from its edge."""

@@ -123,3 +123,12 @@ def test_minor_ticks_get_inward_markers():
 def test_linear_axis_has_no_minor_ticks():
     plot = _plot("pfd hx_fc -i t=-1 -v y")
     assert not _minor_locs_within(plot.grid.panels[(1, 1)].axes[0].yaxis)
+
+
+def test_tick_colors_black_or_white():
+    plot = _plot("pfd hx_fc -i t=-1 -v y z")
+    for panel in plot.grid.panels.values():
+        for ticks in panel.inward_ticks:
+            for artist in ticks.artists.values():
+                for color in artist.get_edgecolor():
+                    assert np.allclose(color[:3], 0.0, atol=1e-6) or np.allclose(color[:3], 1.0, atol=1e-6), color
