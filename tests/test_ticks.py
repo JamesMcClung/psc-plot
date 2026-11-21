@@ -21,7 +21,7 @@ def _ticks(plot, ax):
     return ticks
 
 
-@pytest.mark.parametrize("args", ["pfd hx_fc -i t=-1 -v y z", "pfd hx_fc -i t=-1 -v y", "pfd_moments Txx_i -i y=0 -v t -w pfd::hx_fc -i y=0 -v t"])
+@pytest.mark.parametrize("args", ["pfd hx_fc -i t=-1 -v y z", "pfd hx_fc -i t=-1 -v y", "pfd_moments px_e -i y=0 -v t -w pfd::hx_fc -i y=0 -v t"])
 def test_no_outward_ticks(args: str):
     plot = _plot(args)
     for ax in plot.fig.axes:

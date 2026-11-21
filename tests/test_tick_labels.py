@@ -15,7 +15,7 @@ PLOTS = [
     "pfd hx_fc -i t=-1 -v y z",
     "-w pfd::hx_fc -i t=3 -cv y z loc=1,1 -w pfd::hy_fc -i t=3 --mul 1e-5 -cv y z loc=1,2 -w pfd::hz_fc -i t=3 -cv y z loc=1,3",
     "pfd ex_ec --copy -i t=0 -v y --copy ex_ec -i t=-1 -v y loc=1,2 -w ex_ec -v t loc=1,3",
-    "pfd_moments Txx_i -i y=0 -v t -w pfd::hx_fc -i y=0 -v t",
+    "pfd_moments px_e -i y=0 -v t -w pfd::hx_fc -i y=0 -v t",
     "prt.i --bin px=20 pz=20 --scale log --nan0 -v px pz",
 ]
 

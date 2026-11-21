@@ -132,7 +132,13 @@ def test_stacks_separated_where_x_isnt_shared():
 
 
 def test_twin_axis_labels_fit():
-    fig = make_plot("pfd_moments Txx_i -i y=0 -v t -w pfd::hx_fc -i y=0 -v t".split())
+    """u_x has a unit and B_x hasn't, so B_x gets its own y axis on the right."""
+    fig = make_plot("pfd_moments px_e -i y=0 -v t -w pfd::hx_fc -i y=0 -v t".split())
+    assert len(fig.axes) == 2
+    fig.draw_without_rendering()
+    for ax in fig.axes:
+        assert ax.yaxis.label.get_text()
+        assert [label for label in ax.yaxis.get_ticklabels() if label.get_visible() and label.get_text()]
     _assert_inside_figure(fig)
 
 
