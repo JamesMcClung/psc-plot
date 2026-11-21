@@ -32,7 +32,6 @@ class RenderPlot(PlotAction):
 @dataclass(frozen=True)
 class SavePlot(PlotAction):
     save: SaveSpec
-    save_dpi: float | None
     default_stem: str
 
     def run(self, plot: Plot) -> None:
@@ -47,7 +46,7 @@ class SavePlot(PlotAction):
 
             path = self.save.resolve_path(self.default_stem, save_format)
             path.parent.mkdir(exist_ok=True, parents=True)
-            plot.save_to_path(path, dpi=self.save_dpi)
+            plot.save_to_path(path)
             print(f"wrote to {path}")
 
 

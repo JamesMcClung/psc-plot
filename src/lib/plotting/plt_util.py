@@ -36,6 +36,15 @@ def update_cbar(mappable: _ScalarMappable, *, data_min_override: float | None = 
     mappable.set_cmap(plt.get_cmap(cmap))
 
 
+def update_shared_cbar(mappables: list[_ScalarMappable], boundss: list[tuple[float, float]]):
+    """Give every mappable the same color limits and colormap, spanning all their bounds, so one colorbar keys
+    them all."""
+    lower = min(lower for lower, _ in boundss)
+    upper = max(upper for _, upper in boundss)
+    for mappable in mappables:
+        update_cbar(mappable, data_min_override=lower, data_max_override=upper)
+
+
 def _get_multiplier_exponent(lower: float, upper: float) -> int:
     """The power of ten that matplotlib would factor out of tick labels spanning `lower` to `upper`. 0 means none."""
     largest = max(abs(lower), abs(upper))
@@ -58,7 +67,7 @@ def move_cbar_multiplier_to_label(cbar: Colorbar) -> int:
     formatter = ScalarFormatter(useOffset=False)
     formatter.set_powerlimits((exponent, exponent))
     cbar.formatter = formatter
-    cbar.ax.yaxis.get_offset_text().set_visible(False)
+    cbar.long_axis.get_offset_text().set_visible(False)
 
     return exponent
 
@@ -86,28 +95,27 @@ def _srgb_to_oklab(rgb: np.ndarray) -> np.ndarray:
     return np.cbrt(linear @ _LINEAR_SRGB_TO_LMS.T) @ _LMS_ROOT_TO_OKLAB.T
 
 
-def _oklab_to_srgb(lab: np.ndarray) -> np.ndarray:
-    linear = (lab @ np.linalg.inv(_LMS_ROOT_TO_OKLAB).T) ** 3 @ np.linalg.inv(_LINEAR_SRGB_TO_LMS).T
-    linear = np.clip(linear, 0.0, 1.0)  # the opposite of an in-gamut color needn't be in gamut
-    return np.where(linear <= 0.0031308, linear * 12.92, 1.055 * linear ** (1 / 2.4) - 0.055)
+_CANDIDATE_LEVELS = np.linspace(0.0, 1.0, 5)
+_CANDIDATES = np.stack(np.meshgrid(_CANDIDATE_LEVELS, _CANDIDATE_LEVELS, _CANDIDATE_LEVELS, indexing="ij"), axis=-1).reshape(-1, 3)
+"""sRGB colors to choose among: a grid through the whole gamut, its corners (black, white, primaries,
+secondaries) included."""
+_CANDIDATES_OKLAB = _srgb_to_oklab(_CANDIDATES)
+_NEUTRALS = (0, len(_CANDIDATES) - 1)
+"""The indices of black and white among `_CANDIDATES`."""
+NEUTRAL_PREFERENCE = 1.1
+"""A color is picked over black or white only if it's this many times as far."""
 
 
-def get_opposite_color(rgba: np.ndarray) -> tuple[float, float, float]:
-    """The opposite of the average of the given colors (of shape `(..., 4)`), in OKLab: lightness mirrored
-    about the middle and hue turned half way round. OKLab being perceptually uniform, the average is one a
-    person would agree with, and the opposite is about as far from it as it looks."""
-    lightness, a, b = _srgb_to_oklab(rgba.reshape(-1, 4)[:, :3]).mean(axis=0)
-    r, g, b = _oklab_to_srgb(np.array([1.0 - lightness, -a, -b]))
+def get_contrasting_color(rgba: np.ndarray) -> tuple[float, float, float]:
+    """The color that stands out most against all the given colors (of shape `(..., 4)`): of `_CANDIDATES`, the one
+    whose least distance to any of them, in OKLab, is greatest. OKLab being perceptually uniform, distance there is
+    difference as a person sees it. Over a white background that's black, and over black, white; over mid-tones,
+    where neither stands out much, it's a saturated color, if clearly farther (`NEUTRAL_PREFERENCE`)."""
+    beneath = np.unique(_srgb_to_oklab(rgba.reshape(-1, 4)[:, :3]).round(4), axis=0)
+    distances = np.linalg.norm(_CANDIDATES_OKLAB[:, None, :] - beneath[None, :, :], axis=-1).min(axis=1)
+    best = int(np.argmax(distances))
+    neutral = max(_NEUTRALS, key=lambda i: distances[i])
+    if distances[best] < NEUTRAL_PREFERENCE * distances[neutral]:
+        best = neutral  # a hue barely farther than black or white just looks odd
+    r, g, b = _CANDIDATES[best]
     return (float(r), float(g), float(b))
-
-
-def get_default_cbar_label_left(cbar: Colorbar, renderer: RendererBase) -> float:
-    """Where matplotlib puts the left edge of a vertical colorbar's label, in display coordinates: a label pad
-    past its tick labels, or past the bar itself if they don't reach any further.
-
-    Measures the tick labels where they were last drawn, so the figure must already have been laid out.
-    """
-    ax = cbar.ax
-    rights = [ax.get_window_extent(renderer).x1]
-    rights += [label.get_window_extent(renderer).x1 for label in ax.get_yticklabels() if label.get_visible()]
-    return max(rights) + ax.yaxis.labelpad * ax.get_figure(root=True).dpi / 72

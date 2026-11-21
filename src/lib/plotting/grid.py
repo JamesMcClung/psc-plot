@@ -1,11 +1,16 @@
 from matplotlib.axes import Axes
+from matplotlib.backend_bases import RendererBase
 from matplotlib.figure import Figure
-from matplotlib.transforms import ScaledTranslation
 
-from lib.plotting import plt_util
-from lib.plotting.labeler import SubjectLabeler
-from lib.plotting.panel import Panel
+from lib.plotting import plt_util, tick_labels
+from lib.plotting.labeler import SharedColorbarLabel, SubjectLabeler, UnitLabeler
+from lib.plotting.layout.auto_size import auto_plot_sizes, is_aspect_locked
+from lib.plotting.layout.colorbars import CellModel, ColorbarAssignment, GridModel, assign_colorbars
+from lib.plotting.layout.geometry import sizes_close
+from lib.plotting.layout.options import LayoutOptions
+from lib.plotting.panel import Panel, color_key
 from lib.plotting.plot_info import PlotInfo
+from lib.plotting.style import scaled_font_size
 
 type AxesIdx = tuple[int, int]
 
@@ -15,7 +20,7 @@ class Grid:
         self.fig = fig
         self.infos: dict[AxesIdx, list[PlotInfo]] = {}
         self.panels: dict[AxesIdx, Panel] = {}
-        self.suptitle = self.fig.suptitle("")
+        self.suptitle = self.fig.suptitle("", fontsize=scaled_font_size("figure.titlesize"))
         self.suptitle_labeler = SubjectLabeler(self.suptitle.set_text)
 
         for info in infos:
@@ -23,7 +28,11 @@ class Grid:
 
         self.ncols = max(idx[0] for idx in self.infos)
         self.nrows = max(idx[1] for idx in self.infos)
-        self.gridspec = self.fig.add_gridspec(self.nrows, self.ncols)
+
+        self.flush_row_boundaries: set[int] = set()
+        """Rows `r` whose panels sit flush against those of row `r + 1`, sharing their x axes."""
+        self.flush_col_boundaries: set[int] = set()
+        """Columns `c` whose panels sit flush against those of column `c + 1`, sharing their y axes."""
 
     def setup_ax(self, loc: AxesIdx) -> Axes:
         infos = self.infos[loc]
@@ -31,7 +40,7 @@ class Grid:
         for info in infos[1:]:
             if info.projection != projection:
                 raise ValueError("incompatible plots (TODO: better error message)")
-        return self.fig.add_subplot(self.gridspec[loc[1] - 1, loc[0] - 1], projection=projection)
+        return self.fig.add_axes((0.0, 0.0, 1.0, 1.0), projection=projection)  # the layout engine places it
 
     def set_panel(self, loc: AxesIdx, panel: Panel):
         if len(self.panels) == 1:
@@ -43,99 +52,117 @@ class Grid:
 
         self.panels[loc] = panel
 
-    def share_x_axes_vertically(self):
-        # Each column splits into stacks: runs of panels that share an x axis all the way down.
-        stacks_per_col: list[list[list[Panel]]] = []
-        for col in self.contiguous_cols():
-            stacks = [[col[0]]]
-            for above, below in zip(col[:-1], col[1:]):
-                if above.try_share_x_axis(below):
-                    stacks[-1].append(below)
-                else:
-                    stacks.append([below])
-            stacks_per_col.append(stacks)
+    def _sizes_stay_matched(self, a: AxesIdx, b: AxesIdx, options: LayoutOptions) -> bool:
+        """Whether a fixed `--figsize` side scales `a` and `b` alike: it scales an aspect-locked plot area in both
+        directions and any other in one, so with a fixed side they must both be locked or both not."""
+        fixed = options.figsize.width is not None or options.figsize.height is not None
+        return not fixed or is_aspect_locked(self.infos[a]) == is_aspect_locked(self.infos[b])
 
-        if any(len(stack) > 1 for stacks in stacks_per_col for stack in stacks):
-            self._remove_vertical_space(stacks_per_col)
+    def share_x_axes_vertically(self, options: LayoutOptions):
+        """Stack panels down each column where they can share an x axis. Plot edges line up across the whole
+        grid, so a row boundary is flush only if every column with panels on both sides of it can share there."""
+        dpi = options.dpi
+        sizes = auto_plot_sizes(self.infos, dpi)
 
-    def _remove_vertical_space(self, stacks_per_col: list[list[list[Panel]]]):
-        """Push the panels of each stack flush together, keeping the usual space between stacks."""
-        # Constrained layout floors the gap between axes at h_pad, so zeroing hspace alone isn't enough. h_pad
-        # is also the figure's own top/bottom padding, and both are figure-wide, so put those paddings back.
-        layout_engine = self.fig.get_layout_engine()
-        assert layout_engine is not None
-        h_pad = layout_engine.get()["h_pad"]  # inches
-        pad = h_pad / self.fig.get_figheight()
-        layout_engine.set(h_pad=0.0, hspace=0.0, rect=(0.0, pad, 1.0, 1.0 - 2 * pad))
-        self.suptitle.set_transform(self.fig.transSubfigure + ScaledTranslation(0.0, -h_pad, self.fig.dpi_scale_trans))
-
-        for stacks in stacks_per_col:
-            for upper, lower in zip(stacks[:-1], stacks[1:]):
-                upper[-1].pad_y_end("lower", h_pad * 72)
-                lower[0].pad_y_end("upper", h_pad * 72)
-
-            for stack in stacks:
-                if len(stack) == 1:
-                    continue
-
-                # The axes above keep their bottom tick, its label tucked up; the axes below drop their top one.
-                for above, below in zip(stack[:-1], stack[1:]):
-                    above.flush_y_ends.add("lower")
-                    below.flush_y_ends.add("upper")
-                    below.prune_y_ticks("upper")
-                stack[-1].flush_y_ends.add("lower")
-
-                for panel in stack:
-                    panel.add_interior_x_ticks()
-
-    def tuck_y_tick_labels(self):
-        renderer = self.fig.canvas.get_renderer()
-
-        for panel in self.panels.values():
-            panel.tuck_y_tick_labels(renderer)
-
-    def update_interior_x_ticks(self):
-        for panel in self.panels.values():
-            panel.update_interior_x_ticks()
-
-    def right_align_cbar_labels(self):
-        """Line up the right edges of the colorbar labels down each column. Only moves labels rightward, up to the
-        furthest one, so constrained layout doesn't reserve any more room for them."""
-        renderer = self.fig.canvas.get_renderer()
-
-        for col in self.contiguous_cols():
-            cbars = [cbar for panel in col for cbar in panel.colorbars]
-            if len(cbars) < 2:
+        for row in range(1, self.nrows):
+            pairs = [(self.panels[(col, row)], self.panels[(col, row + 1)], (col, row)) for col in range(1, self.ncols + 1) if (col, row) in self.panels and (col, row + 1) in self.panels]
+            if not pairs:
                 continue
+            if all(above.can_share_x_axis(below) and sizes_close(sizes[loc][0], sizes[(loc[0], loc[1] + 1)][0], dpi) and self._sizes_stay_matched(loc, (loc[0], loc[1] + 1), options) for above, below, loc in pairs):
+                for above, below, _ in pairs:
+                    above.share_x_axis(below)
+                self.flush_row_boundaries.add(row)
 
-            right = max(plt_util.get_default_cbar_label_left(cbar, renderer) + cbar.ax.yaxis.label.get_window_extent(renderer).width for cbar in cbars)
+    def _col_pairs(self, col: int) -> list[tuple[AxesIdx, AxesIdx]]:
+        return [((col, row), (col + 1, row)) for row in range(1, self.nrows + 1) if (col, row) in self.panels and (col + 1, row) in self.panels]
 
-            for cbar in cbars:
-                # The label reads bottom to top, so its bottom is its right edge. Pinned in fixed units, not
-                # axes fractions, since the bar can still resize at the next layout.
-                offset = (right - cbar.ax.get_window_extent(renderer).x1) / self.fig.dpi
-                cbar.ax.yaxis.label.set_va("bottom")
-                cbar.ax.yaxis.set_label_coords(1.0, 0.5, transform=cbar.ax.transAxes + ScaledTranslation(offset, 0.0, self.fig.dpi_scale_trans))
+    def _shareable_col_boundaries(self, options: LayoutOptions) -> set[int]:
+        """Columns whose panels could sit flush against the next column's, sharing y axes, colorbars aside. Plot
+        edges line up across the whole grid, so every row with panels on both sides must be able to share, and
+        plot heights must already match, and stay matched under a fixed `--figsize` side."""
+        dpi = options.dpi
+        sizes = auto_plot_sizes(self.infos, dpi)
+        shareable = set()
+        for col in range(1, self.ncols):
+            pairs = self._col_pairs(col)
+            # A panel with several color quantities needs a vertical bar for each, so it sits apart from its neighbors.
+            if pairs and all(not self.panels[left].has_mixed_colors() and not self.panels[right].has_mixed_colors() and self.panels[left].can_share_y_axis(self.panels[right]) and sizes_close(sizes[left][1], sizes[right][1], dpi) and self._sizes_stay_matched(left, right, options) for left, right in pairs):
+                shareable.add(col)
+        return shareable
 
-    def adjust_to_last_draw(self):
-        """Steps that measure where things were last drawn, so they must run after a layout, after everything
-        else that affects it -- and again every frame, since what they measure moves with the bounds."""
-        self.tuck_y_tick_labels()
-        self.right_align_cbar_labels()
+    def _x_stacks(self) -> list[list[AxesIdx]]:
+        """Each column's runs of panels that share an x axis all the way down, top to bottom."""
+        stacks = []
+        for loc in sorted(self.panels, key=lambda loc: (loc[0], loc[1])):
+            above = self.panels.get((loc[0], loc[1] - 1))
+            if above is not None and above.shared_x_below is self.panels[loc]:
+                stacks[-1].append(loc)
+            else:
+                stacks.append([loc])
+        return stacks
 
-    def contiguous_cols(self) -> list[list[Panel]]:
-        cols = []
-        for x in range(1, self.ncols + 1):
-            col = []
-            for y in range(1, self.nrows + 1):
-                if panel := self.panels.get((x, y)):
-                    col.append(panel)
-                elif col:
-                    cols.append(col)
-                    col = []
-            if col:
-                cols.append(col)
-        return cols
+    def arrange_colorbars(self, options: LayoutOptions):
+        """Decide which colorbars the images get, and which column boundaries sit flush sharing y axes (they
+        constrain each other: see `layout.colorbars`); then share those y axes and make those colorbars. Call
+        after `share_x_axes_vertically`."""
+        model = GridModel({loc: CellModel(loc, panel.color_key()) for loc, panel in self.panels.items()}, self._x_stacks(), self._shareable_col_boundaries(options))
+        plan = assign_colorbars(model)
+
+        for col in sorted(plan.flush_col_boundaries):
+            for left, right in self._col_pairs(col):
+                self.panels[left].share_y_axis(self.panels[right])
+            self.flush_col_boundaries.add(col)
+
+        for assignment in plan.colorbars:
+            keyed = [(self.panels[loc], artist, info) for loc in assignment.keyed for artist, info in self.panels[loc].color_artists]
+            # Images keyed together share a color quantity, unless a lone panel mixes several: then one bar each.
+            for key in dict.fromkeys(color_key(info) for _, _, info in keyed):
+                self._add_colorbar(assignment, [(panel, artist, info) for panel, artist, info in keyed if color_key(info) == key])
+
+    def _add_colorbar(self, assignment: ColorbarAssignment, keyed: list):
+        _, first_artist, first_info = keyed[0]
+        cbar = self.fig.colorbar(first_artist, cax=self.fig.add_axes((0.0, 0.0, 1.0, 1.0)), orientation=assignment.orientation)  # the layout engine places it
+        if minor_locator := first_info.dim_scales[first_info.color_dim].minor_locator():
+            cbar.minorlocator = minor_locator
+        plt_util.update_shared_cbar([artist for _, artist, _ in keyed], [info.dim_bounds[info.color_dim] for _, _, info in keyed])
+
+        owner = self.panels[assignment.anchors[0]]
+        texts = owner.add_colorbar(cbar, assignment, first_info)
+        one_line = assignment.orientation == "horizontal"
+        infos = [info for _, _, info in keyed]
+        if all(info.subject_dim == info.color_dim for info in infos):
+            fallback = UnitLabeler(lambda _: None, "color", infos, line_break_before_unit=not one_line)._get_label()
+            shared = SharedColorbarLabel(texts.top.set_text, fallback)
+            for i, (panel, _, info) in enumerate(keyed):
+                panel.wire_colorbar_labeler(info, shared.setter(i), one_line=one_line, fallback_parent=self.suptitle_labeler)
+        else:  # e.g. particles colored by a quantity: no subject to name
+            owner.cbar_labelers.append(UnitLabeler(texts.top.set_text, "color", infos, line_break_before_unit=not one_line))
+
+    def separate_junction_labels(self, renderer: RendererBase):
+        """Where panels sit flush, hide the label of the panel below (or right) nearest the edge if it crowds its
+        neighbor's."""
+        for panel in self.panels.values():
+            if below := panel.shared_x_below:
+                for above_ax, below_ax in zip(panel.axes, below.axes):  # main axes, and twins if both have one
+                    tick_labels.separate_junction_labels(above_ax.yaxis, below_ax.yaxis, renderer)
+            if right := panel.shared_y_right:
+                tick_labels.separate_junction_labels(panel.axes[0].xaxis, right.axes[0].xaxis, renderer)
+
+    def update_ticks(self):
+        for panel in self.panels.values():
+            panel.update_ticks()
+
+    def adjust_to_draw(self):
+        """Steps that measure where things were drawn. The layout engine runs them after each of its passes."""
+        for panel in self.panels.values():
+            panel.thin_crowded_ticks(self.fig.canvas.get_renderer())
+        self.fig.draw_without_rendering()
+        renderer = self.fig.canvas.get_renderer()
+        for panel in self.panels.values():
+            panel.tuck_tick_labels(renderer)
+        self.separate_junction_labels(renderer)
+        for panel in self.panels.values():
+            panel.update_cbar_bottom_texts()
 
     def _wire_suptitle(self, panel: Panel):
         for subject_labeler in panel.get_subject_labelers(toplevel_only=True):
@@ -144,6 +171,14 @@ class Grid:
     def update_labels(self):
         for panel in self.panels.values():
             panel.update_labels()
+
+        if self.suptitle_labeler:
+            self.suptitle_labeler.update()
+
+    def update_label_texts(self):
+        """`update_labels`, but leaving the legends be: cheap enough to run for every frame up front."""
+        for panel in self.panels.values():
+            panel.update_label_texts()
 
         if self.suptitle_labeler:
             self.suptitle_labeler.update()
@@ -159,6 +194,5 @@ class Grid:
     def update(self):
         self.update_data()
         self.update_bounds()
-        self.update_interior_x_ticks()
+        self.update_ticks()
         self.update_labels()
-        self.adjust_to_last_draw()

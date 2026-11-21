@@ -194,3 +194,13 @@ def test_save_incompatible_format_falls_back_to_default(tmp_path):
 def test_mp4_without_ffmpeg_is_a_usage_error(tmp_path):
     with pytest.raises(UsageError, match="format=mp4 requires ffmpeg"):
         compile_run(parse_args([*_BASE, "-s", f"{tmp_path}/myfig.mp4"]), CONFIG_2D)
+
+
+def test_dpi_sets_saved_pixel_size(tmp_path):
+    """--figsize fixes the figure in inches and --dpi its dots per inch, so together they fix the saved pixels."""
+    from matplotlib.image import imread
+
+    run = compile_run(parse_args([*_BASE, "--figsize", "4,3", "--dpi", "50", "-s", f"{tmp_path}/myfig.png"]), CONFIG_2D)
+    run.execute()
+    height, width, _ = imread(tmp_path / "myfig.png").shape
+    assert (width, height) == (200, 150)

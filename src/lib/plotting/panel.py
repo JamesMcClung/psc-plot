@@ -1,51 +1,116 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Callable
 
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
+from matplotlib.axis import Axis
 from matplotlib.backend_bases import RendererBase
-from matplotlib.collections import PathCollection
+from matplotlib.cm import ScalarMappable
 from matplotlib.colorbar import Colorbar
 from matplotlib.colors import to_rgba
-from matplotlib.markers import TICKDOWN, TICKUP
-from matplotlib.offsetbox import AnnotationBbox, DrawingArea
+from matplotlib.font_manager import FontProperties
 from matplotlib.projections import PolarAxes
 from matplotlib.text import Text
-from matplotlib.ticker import MaxNLocator
-from matplotlib.transforms import Bbox
+from matplotlib.transforms import Bbox, ScaledTranslation
 
-from lib.plotting import plt_util
+from lib.latex import float_to_latex_str
+from lib.plotting import plt_util, tick_labels
 from lib.plotting.axis_id import AxId, AxIdPolar, AxIdXY
 from lib.plotting.bounds_setter import BoundsSetter
 from lib.plotting.data_setter import DataSetter
 from lib.plotting.labeler import ColorbarLabeler, Labeler, SubjectLabeler, UnitLabeler, YAxisLabeler
+from lib.plotting.layout.colorbars import ColorbarAssignment, ColorKey
 from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PolarMeshInfo
+from lib.plotting.style import LEGEND_TEXT_SCALE, scaled_font_size
+from lib.plotting.ticks import InwardTicks
 from lib.scale import LinearScale, Scale
 
 type AxAndIdXY = tuple[Axes, AxIdXY]
 type AxAndId = tuple[Axes, AxIdXY] | tuple[PolarAxes, AxIdPolar]
-type YEnd = Literal["lower", "upper"]
+
+
+COLORBAR_TEXT_PAD = 4.0
+"""Points between a colorbar's end and its text."""
+
+
+def color_key(info: PlotInfoColor) -> ColorKey:
+    """What images must agree on to share a colorbar: their color dim's display, unit and scale."""
+    return (info.dim_displays[info.color_dim], info.dim_units[info.color_dim], info.dim_scales[info.color_dim])
+
+
+@dataclass
+class ColorbarText:
+    """A colorbar's horizontal texts: its label above the bar, and its multiplier/offset below it. They hang off the
+    bar's left edge, in fixed units, so the bar can move and resize under them."""
+
+    cbar: Colorbar
+    top: Text
+    bottom: Text
+    multiplier_exponent: int = 0
+
+    @staticmethod
+    def create(cbar: Colorbar) -> ColorbarText:
+        """On a vertical bar, the label goes above it, from its left edge, and the multiplier below; on a horizontal
+        one, the label centered above and the multiplier at its right end."""
+        ax = cbar.ax
+        fig = ax.get_figure(root=True)
+        size = scaled_font_size("axes.labelsize")
+        pad = COLORBAR_TEXT_PAD / 72
+        x, ha = (0.5, "center") if cbar.orientation == "horizontal" else (0.0, "left")
+        top = ax.text(x, 1.0, "", transform=ax.transAxes + ScaledTranslation(0.0, pad, fig.dpi_scale_trans), ha=ha, va="bottom", multialignment=ha, fontsize=size)
+        tick_size = FontProperties(size=plt.rcParams["ytick.labelsize"]).get_size_in_points()  # it qualifies the tick labels
+        if cbar.orientation == "horizontal":
+            bottom = ax.text(1.0, 0.5, "", transform=ax.transAxes + ScaledTranslation(pad, 0.0, fig.dpi_scale_trans), ha="left", va="center", fontsize=tick_size)
+        else:
+            bottom = ax.text(0.0, 0.0, "", transform=ax.transAxes + ScaledTranslation(0.0, -pad, fig.dpi_scale_trans), ha="left", va="top", fontsize=tick_size)
+        return ColorbarText(cbar, top, bottom)
+
+    def update_bottom(self):
+        # matplotlib's offset text folds in the multiplier too, so build the offset from the formatter instead.
+        self.cbar.long_axis.get_offset_text().set_visible(False)
+        offset = getattr(self.cbar.long_axis.get_major_formatter(), "offset", 0.0)
+
+        multiplier = f"$\\times 10^{{{self.multiplier_exponent}}}$" if self.multiplier_exponent else ""
+        shift = f"${'+' if offset > 0 else ''}{float_to_latex_str(offset, '.4g')}$" if offset else ""
+        self.bottom.set_text(" ".join(part for part in [multiplier, shift] if part))
+
+
+def _get_colorbar_colors_beneath(cbar: Colorbar) -> Callable[[Bbox], np.ndarray]:
+    """What's beneath a point of a colorbar: its colormap at the value there."""
+
+    def colors_beneath(bbox: Bbox) -> np.ndarray:
+        x, y = cbar.ax.transData.inverted().transform(((bbox.x0 + bbox.x1) / 2, (bbox.y0 + bbox.y1) / 2))
+        return np.array(cbar.mappable.to_rgba(x if cbar.orientation == "horizontal" else y))[None, :]
+
+    return colors_beneath
 
 
 @dataclass
 class Panel:
     title_labeler: SubjectLabeler | None = field(init=False, default=None)
     legend_labelers_per_axes: dict[Axes, list[SubjectLabeler]] = field(init=False, default_factory=dict)
-    cbar_labeler: Labeler | None = field(init=False, default=None)
+    cbar_labelers: list[Labeler] = field(init=False, default_factory=list)
+    color_artists: list[tuple[ScalarMappable, PlotInfoColor]] = field(init=False, default_factory=list)
+    """What needs a colorbar (images, colored scatter), with its info. The grid decides which colorbars it gets."""
     colorbars: list[Colorbar] = field(init=False, default_factory=list)
+    """The colorbars this panel owns: it's the first they attach to. They may key other panels' images too."""
+    colorbar_assignments: list[ColorbarAssignment] = field(init=False, default_factory=list)
+    """Parallel to `colorbars`."""
+    colorbar_texts: list[ColorbarText] = field(init=False, default_factory=list)
     data_setters: list[DataSetter] = field(init=False, default_factory=list)
     x_labelers_per_axes: dict[Axes, UnitLabeler] = field(init=False, default_factory=dict)
     y_labelers_per_axes: dict[Axes, YAxisLabeler] = field(init=False, default_factory=dict)
     bounds_setters_per_axis: dict[AxAndIdXY, BoundsSetter] = field(init=False, default_factory=dict)
     scales_per_axis: dict[AxAndId, Scale] = field(init=False, default_factory=dict)
-    flush_y_ends: set[YEnd] = field(init=False, default_factory=set)
-    """Ends at which this panel touches its vertical neighbour, so nothing may stick out past them."""
-    interior_x_ticks: dict[tuple[Axes, YEnd], PathCollection] = field(init=False, default_factory=dict)
-    """Ticks drawn just inside the axes at an end, over the data, in addition to any axis ticks there."""
+    axes: list[Axes] = field(init=False, default_factory=list)
+    """The panel's axes, main first, then any twin."""
+    shared_x_below: Panel | None = field(init=False, default=None)
+    shared_y_right: Panel | None = field(init=False, default=None)
+    inward_ticks: list[InwardTicks] = field(init=False, default_factory=list)
 
     def update_data(self):
         for data_setter in self.data_setters:
@@ -56,20 +121,23 @@ class Panel:
             bounds_setter.update()
 
     def update_labels(self):
-        for labeler in self.get_labelers():
-            labeler.update()
-
+        self.update_label_texts()
         for axes, labelers in self.legend_labelers_per_axes.items():
             if not any(labeler._get_label() for labeler in labelers):
                 if legend := axes.get_legend():
                     legend.remove()
             else:
-                axes.legend()  # required for label redraw
+                axes.legend(fontsize=scaled_font_size("legend.fontsize", LEGEND_TEXT_SCALE))  # required for label redraw
+
+    def update_label_texts(self):
+        """Set every label's text for the current frame, but leave the legends be."""
+        for labeler in self.get_labelers():
+            labeler.update()
 
     def get_labelers(self) -> list[Labeler]:
         maybe_labelers = [
             self.title_labeler,
-            self.cbar_labeler,
+            *self.cbar_labelers,
             *(legend_labeler for labelers in self.legend_labelers_per_axes.values() for legend_labeler in labelers),
             *self.x_labelers_per_axes.values(),
             *self.y_labelers_per_axes.values(),
@@ -86,7 +154,14 @@ class Panel:
     def wire_title(self, title: Text):
         """Must come first, so the labelers wired after it can join the title's tree."""
         assert not self.get_labelers()
+        title.set_fontsize(scaled_font_size("axes.titlesize"))
         self.title_labeler = SubjectLabeler(title.set_text)
+
+    def add_axes(self, ax: Axes):
+        """Add one of the panel's axes, main first."""
+        ax.xaxis.label.set_fontsize(scaled_font_size("axes.labelsize"))
+        ax.yaxis.label.set_fontsize(scaled_font_size("axes.labelsize"))
+        self.axes.append(ax)
 
     def wire_legend_label(self, artist: Artist, info: PlotInfo):
         legend_labeler = SubjectLabeler(artist.set_label, info)
@@ -101,25 +176,51 @@ class Panel:
         elif self.title_labeler:
             self.title_labeler.add_child(legend_labeler)
 
-    def wire_cbar_label(self, cbar: Colorbar, info: PlotInfoColor):
+    def color_key(self) -> ColorKey | None:
+        """What a colorbar keying this panel's images must show: the display, unit and scale of their color dim.
+        `None` if nothing here needs a colorbar; a key of its own if its images can't share one bar."""
+        keys = {color_key(info) for _, info in self.color_artists}
+        if not keys:
+            return None
+        if self.has_mixed_colors():
+            return ("unshareable", id(self))
+        [key] = keys
+        if self.title_labeler is None:
+            # Without a title (e.g. stacked), only a colorbar's label can say which coord values each image shows,
+            # so it can only be shared with images showing the same ones on every frame.
+            frames = {tuple(tuple(sorted((dim, float(value)) for dim, value in values.items())) for values in info.frames_scalar_coord_values) for _, info in self.color_artists}
+            key = (key, tuple(sorted(frames)))
+        return key
+
+    def has_mixed_colors(self) -> bool:
+        """Whether its images (or colored scatter) show more than one color quantity, each needing a bar of its own."""
+        return len({color_key(info) for _, info in self.color_artists}) > 1
+
+    def add_colorbar(self, cbar: Colorbar, assignment: ColorbarAssignment, info: PlotInfoColor) -> ColorbarText:
+        """Own `cbar`, which keys `info` (and maybe others like it)."""
         self.colorbars.append(cbar)
+        self.colorbar_assignments.append(assignment)
+        texts = ColorbarText.create(cbar)
+        self.colorbar_texts.append(texts)
 
         # Log and symlog scales label their ticks with the exponent already.
         is_linear = isinstance(info.dim_scales[info.color_dim], LinearScale)
-        multiplier_exponent = plt_util.move_cbar_multiplier_to_label(cbar) if is_linear else 0
+        texts.multiplier_exponent = plt_util.move_cbar_multiplier_to_label(cbar) if is_linear else 0
+        return texts
 
-        # The multiplier gets the first line, which (the label reading bottom to top) is nearest the tick labels.
-        multiplier = f"$\\times 10^{{{multiplier_exponent}}}$" if multiplier_exponent else ""
+    def wire_colorbar_labeler(self, info: PlotInfoColor, set_text: Callable[[str], None], *, one_line: bool, fallback_parent: SubjectLabeler | None):
+        """Label `info`'s colorbar (which another panel may own) from this panel's tree, so its sublabels can go to
+        this panel's title; without one (e.g. stacked), from `fallback_parent`."""
+        labeler = ColorbarLabeler(set_text, info, one_line=one_line)
+        if parent := self.title_labeler or fallback_parent:
+            parent.add_child(labeler)
+        self.cbar_labelers.append(labeler)
 
-        def set_label(text: str):
-            cbar.set_label("\n".join(line for line in [multiplier, text] if line))
-
-        if info.subject_dim == info.color_dim:
-            self.cbar_labeler = ColorbarLabeler(set_label, info)
-            if self.title_labeler:
-                self.title_labeler.add_child(self.cbar_labeler)
-        else:
-            self.cbar_labeler = UnitLabeler(set_label, "color", [info])
+    def update_cbar_bottom_texts(self):
+        """Move each colorbar's offset (e.g. `+1e3`) below the bar, beside its multiplier. The offset is only known
+        once the ticks are drawn, so the layout engine calls this after each of its draws."""
+        for texts in self.colorbar_texts:
+            texts.update_bottom()
 
     def wire_data_setter(self, data_setter: DataSetter):
         self.data_setters.append(data_setter)
@@ -178,65 +279,43 @@ class Panel:
 
         self.scales_per_axis[(ax, axis_id)] = new_scale
         set_scale(new_scale.to_axis_scale())
+        if axis_id != "r" and (minor_locator := new_scale.minor_locator()):
+            (ax.xaxis if axis_id == "x" else ax.yaxis).set_minor_locator(minor_locator)
 
-    def _get_x_axs(self) -> list[Axes]:
-        # Sharing an axis takes it out of `scales_per_axis`, but not out of `bounds_setters_per_axis`.
-        return [ax for ax, axis_id in self.bounds_setters_per_axis if axis_id == "x"]
+    def _tick_label_axes(self) -> list[Axis]:
+        """Every axis with tick labels to keep tidy: the plot area's (not polar) and the colorbars'."""
+        axes = [axis for ax in self.axes if ax.name != "polar" for axis in (ax.xaxis, ax.yaxis)]
+        return axes + [cbar.long_axis for cbar in self.colorbars]
 
-    def prune_y_ticks(self, end: YEnd):
-        """Drop the y tick (and its label) at `end`. Locators that can't prune (log, say) are left alone."""
-        for ax, axis_id in self.scales_per_axis:
-            if axis_id != "y":
-                continue
-            locator = ax.yaxis.get_major_locator()
-            if isinstance(locator, MaxNLocator):
-                locator.set_params(prune=end)
+    def thin_crowded_ticks(self, renderer: RendererBase):
+        for axis in self._tick_label_axes():
+            tick_labels.thin_crowded_ticks(axis, renderer)
 
-    def pad_y_end(self, end: YEnd, pad: float):
-        """Have constrained layout leave `pad` points of room beyond the x label (lower end) or title (upper end).
-        It's an invisible spacer, since padding the text itself only moves it away from its own axes."""
-        for ax in self._get_x_axs():
-            text, xy, box_alignment = {"lower": (ax.xaxis.label, (0.5, 0.0), (0.5, 1.0)), "upper": (ax.title, (0.5, 1.0), (0.5, 0.0))}[end]
-            spacer = AnnotationBbox(DrawingArea(0.0, pad), xy, xycoords=text, box_alignment=box_alignment, frameon=False, pad=0.0, annotation_clip=False)
-            ax.add_artist(spacer)
+    def tuck_tick_labels(self, renderer: RendererBase):
+        for axis in self._tick_label_axes():
+            tick_labels.tuck_tick_labels(axis, renderer)
 
-    def add_interior_x_ticks(self):
-        """Draw x ticks just inside the top and bottom of the axes, over the data. They're artists of their own
-        because an axis' ticks at one end all point one way and share one color."""
-        size = plt.rcParams["xtick.major.size"]
-        width = plt.rcParams["xtick.major.width"]
+    def add_inward_ticks(self):
+        """Inward ticks on every side of the plot area (polar axes keep their own) and on both long sides of each
+        colorbar. Call `update_ticks` once the axes are laid out, and each frame."""
+        main = self.axes[0]
+        if main.name != "polar":
+            twin = self.axes[1] if len(self.axes) > 1 else None
+            self.inward_ticks.append(InwardTicks.for_axes(main, self._get_colors_beneath, twin=twin))
 
-        for ax in self._get_x_axs():
-            for end, marker in [("lower", TICKUP), ("upper", TICKDOWN)]:
-                ticks = ax.scatter([], [], s=size**2, marker=marker, facecolors="none", linewidths=width, transform=ax.get_xaxis_transform(), clip_on=False, zorder=2.5)
-                ticks.set_in_layout(False)
-                self.interior_x_ticks[(ax, end)] = ticks
+        for cbar in self.colorbars:
+            sides = ("bottom", "top") if cbar.orientation == "horizontal" else ("left", "right")
+            self.inward_ticks.append(InwardTicks.for_axes(cbar.ax, _get_colorbar_colors_beneath(cbar), sides=sides))
 
-    def update_interior_x_ticks(self):
-        """Put an interior tick at each major tick location, colored to stand out against what's beneath it."""
-        for (ax, end), ticks in self.interior_x_ticks.items():
-            lower, upper = sorted(ax.get_xlim())
-            xs = [x for x in ax.xaxis.get_majorticklocs() if lower <= x <= upper]
-            y, inward = {"lower": (0.0, 1.0), "upper": (1.0, -1.0)}[end]
-            ticks.set_offsets(np.array([(x, y) for x in xs]).reshape(-1, 2))
+    def update_ticks(self):
+        for ticks in self.inward_ticks:
+            ticks.update()
 
-            # What's beneath a tick is the strip of display it covers, running inward from the edge.
-            length = plt.rcParams["xtick.major.size"] * ax.get_figure(root=True).dpi / 72
-            colors = []
-            for x in xs:
-                tick_x, edge_y = ax.get_xaxis_transform().transform((x, y))
-                y0, y1 = sorted([edge_y, edge_y + inward * length])
-                bbox = Bbox.from_extents(tick_x - 0.5, y0, tick_x + 0.5, y1)
-                colors.append(plt_util.get_opposite_color(self._get_colors_beneath(ax, bbox)))
-
-            ticks.set_edgecolor(colors)
-
-    def _get_colors_beneath(self, ax: Axes, bbox: Bbox) -> np.ndarray:
-        """The colors drawn within `bbox` (in display coordinates) on `ax`, as an array of shape `(n, 4)`: those
-        of the data where it's known, composited over the axes' own background, or else just the background."""
-        background = np.array(to_rgba(ax.get_facecolor()))
-        data_setters = [data_setter for data_setter in self.data_setters if data_setter.artist.axes is ax]
-        colors = [colors.reshape(-1, 4) for data_setter in data_setters if (colors := data_setter.get_colors_within(bbox)) is not None]
+    def _get_colors_beneath(self, bbox: Bbox) -> np.ndarray:
+        """The colors drawn within `bbox` (in display coordinates) on the plot area, as an array of shape `(n, 4)`:
+        those of the data where it's known, composited over the background, or else just the background."""
+        background = np.array(to_rgba(self.axes[0].get_facecolor()))
+        colors = [colors.reshape(-1, 4) for data_setter in self.data_setters if (colors := data_setter.get_colors_within(bbox)) is not None]
         if not colors:
             return background[None, :]
 
@@ -245,30 +324,45 @@ class Panel:
         alpha = colors[:, 3:]
         return np.concatenate([alpha * colors[:, :3] + (1 - alpha) * background[:3], np.ones_like(alpha)], axis=1)
 
-    def tuck_y_tick_labels(self, renderer: RendererBase):
-        """Anchor every y tick label that overhangs a flush end to that end, so constrained layout doesn't reserve
-        room past it. Labels are reset to the default alignment first, so ticks that moved away are let go."""
-        if not self.flush_y_ends:
-            return
+    def can_share_y_axis(self, right: Panel) -> bool:
+        """Whether this panel's y axis can also serve the panel to its right: one y axis each (no twins), the same
+        scale, and a label that reads the same for both. The plot heights must match too; the grid checks those.
+        Colorbars are the grid's to arrange around it."""
+        if len(self.axes) != 1 or len(right.axes) != 1:
+            return False
+        my_ax, right_ax = self.axes[0], right.axes[0]
+        if (my_ax, "y") not in self.scales_per_axis or (right_ax, "y") not in right.scales_per_axis:
+            return False
+        if self.scales_per_axis[(my_ax, "y")] != right.scales_per_axis[(right_ax, "y")]:
+            return False
 
-        axs = [ax for ax, axis_id in self.scales_per_axis if axis_id == "y"]
-        default_va = plt.rcParams["ytick.alignment"]  # what matplotlib itself aligns y tick labels by
+        my_labeler = self.y_labelers_per_axes[my_ax].unit_labeler
+        right_labeler = right.y_labelers_per_axes[right_ax].unit_labeler
+        if not my_labeler.are_compatible(right_labeler.sources):
+            return False
+        # The shared label must read as each panel's own did, e.g. both B_x, or both just [c].
+        merged = UnitLabeler(my_labeler.set_text, "y", my_labeler.sources + right_labeler.sources, require_display_match=False)
+        return my_labeler._get_label() == right_labeler._get_label() == merged._get_label()
 
-        for ax in axs:
-            box = ax.get_window_extent(renderer)
-            for label in ax.get_yticklabels():
-                if not label.get_visible():
-                    continue
+    def share_y_axis(self, right: Panel):
+        """Share this panel's y axis with the panel to its right, which `can_share_y_axis` must allow."""
+        my_ax, right_ax = self.axes[0], right.axes[0]
+        my_labeler = self.y_labelers_per_axes[my_ax]
+        right_labeler = right.y_labelers_per_axes[right_ax]
 
-                label.set_va(default_va)
-                bbox = label.get_window_extent(renderer)
+        right_ax.sharey(my_ax)
+        self.shared_y_right = right
+        # One axis, so one bounds setter, over both panels' data: two would each set it, the last one winning.
+        self.bounds_setters_per_axis[(my_ax, "y")].infos.extend(right.bounds_setters_per_axis.pop((right_ax, "y")).infos)
+        right_ax.yaxis.set_tick_params(which="both", labelleft=False)
+        right_ax.yaxis.offsetText.set_visible(False)
+        for info in right_labeler.unit_labeler.sources:
+            my_labeler.add_source(info)
+        # The right labeler stays in its tree, still absorbing its legend entries' subjects, but says nothing.
+        right_labeler.set_text = right_labeler.unit_labeler.set_text = lambda _: None
+        right_ax.set_ylabel("")
 
-                if "upper" in self.flush_y_ends and bbox.y0 < box.y1 < bbox.y1:
-                    label.set_va("top")
-                elif "lower" in self.flush_y_ends and bbox.y0 < box.y0 < bbox.y1:
-                    label.set_va("bottom")
-
-    def try_share_x_axis(self, below: Panel) -> bool:
+    def can_share_x_axis(self, below: Panel) -> bool:
         my_axs = [ax for (ax, id) in self.scales_per_axis if id == "x"]
         below_axs = [ax for (ax, id) in below.scales_per_axis if id == "x"]
 
@@ -283,10 +377,19 @@ class Panel:
 
         my_labeler = self.x_labelers_per_axes[my_ax]
         below_labeler = below.x_labelers_per_axes[below_ax]
-        if not below_labeler.are_compatible(my_labeler.sources):
-            return False
+        return below_labeler.are_compatible(my_labeler.sources)
+
+    def share_x_axis(self, below: Panel):
+        """Share this panel's x axis with the panel below it, which `can_share_x_axis` must allow."""
+        [my_ax] = [ax for (ax, id) in self.scales_per_axis if id == "x"]
+        [below_ax] = [ax for (ax, id) in below.scales_per_axis if id == "x"]
+        my_labeler = self.x_labelers_per_axes[my_ax]
+        below_labeler = below.x_labelers_per_axes[below_ax]
 
         my_ax.sharex(below_ax)
+        self.shared_x_below = below
+        # One axis, so one bounds setter, over both panels' data: two would each set it, the last one winning.
+        below.bounds_setters_per_axis[(below_ax, "x")].infos.extend(self.bounds_setters_per_axis.pop((my_ax, "x")).infos)
         # Only strip the edge facing `below`. `label_outer` would go by the grid instead, and strip the bottom of
         # every axes above the last row, even one whose neighbour below it didn't share.
         my_ax.xaxis.set_tick_params(which="both", labelbottom=False, bottom=False)
@@ -300,5 +403,3 @@ class Panel:
 
         self.x_labelers_per_axes.pop(my_ax)
         self.scales_per_axis.pop((my_ax, "x"))
-
-        return True

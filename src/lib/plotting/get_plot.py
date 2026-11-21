@@ -2,6 +2,7 @@ from lib.data.data_with_attrs import Field, List
 from lib.data.data_world import DataWorld
 from lib.data.plot_target import SpatialDimsRTheta, SpatialDimsXY
 from lib.plotting.animated_plot import AnimatedPlot
+from lib.plotting.layout.options import LayoutOptions
 from lib.plotting.plot import Plot
 from lib.plotting.renderer import Renderer
 from lib.plotting.renderers.field_1d import Field1dRenderer
@@ -11,14 +12,14 @@ from lib.plotting.renderers.scatter import ScatterRenderer
 from lib.plotting.static_plot import StaticPlot
 
 
-def get_plot(world: DataWorld) -> Plot:
+def get_plot(world: DataWorld, layout_options: LayoutOptions) -> Plot:
     renderers = get_renderers(world)
     n_frames = max(r.get_n_frames() for r in renderers)
 
     if n_frames > 1:
-        return AnimatedPlot(renderers, world.config, n_frames)
+        return AnimatedPlot(renderers, world.config, layout_options, n_frames)
     else:
-        return StaticPlot(renderers, world.config)
+        return StaticPlot(renderers, world.config, layout_options)
 
 
 def get_renderers(world: DataWorld) -> list[Renderer]:

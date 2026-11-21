@@ -2,6 +2,7 @@ from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.cm import ScalarMappable
 from matplotlib.colorbar import Colorbar
+from matplotlib.colors import to_hex
 from matplotlib.figure import Figure
 from matplotlib.projections import PolarAxes
 
@@ -9,18 +10,9 @@ from lib.plotting import plt_util
 from lib.plotting.axis_id import AxIdXY
 from lib.plotting.data_setter import DataSetter
 from lib.plotting.grid import Grid
+from lib.plotting.layout.options import LayoutOptions
 from lib.plotting.panel import Panel
 from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor, PolarMeshInfo
-
-
-def setup_colorbar(ax: Axes, target: ScalarMappable, info: PlotInfoColor | PlotInfoMaybeColor) -> Colorbar:
-    assert info.color_dim
-    # Shrunk so that the colorbars of axes sitting flush against each other stay visibly apart.
-    cbar = ax.figure.colorbar(target, shrink=0.8)
-    # TODO work into everything
-    data_lower, data_upper = info.dim_bounds[info.color_dim]
-    plt_util.update_cbar(target, data_min_override=data_lower, data_max_override=data_upper)
-    return cbar
 
 
 def setup_data_setter(panel: Panel, ax: Axes, info: PlotInfo):
@@ -29,10 +21,7 @@ def setup_data_setter(panel: Panel, ax: Axes, info: PlotInfo):
     if info.has_legend():
         panel.wire_legend_label(setter.artist, info)
     if info.has_colorbar():
-        cbar = setup_colorbar(ax, setter.artist, info)
-        panel.wire_cbar_label(cbar, info)
-    if isinstance(info, PlotInfo2D):
-        ax.set_aspect(info.get_aspect())
+        panel.color_artists.append((setter.artist, info))  # the grid gives it a colorbar, once it knows the layout
     return setter
 
 
@@ -48,6 +37,7 @@ def wire_axis(panel: Panel, ax: Axes, id: AxIdXY, info: PlotInfo2D) -> bool:
 def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
     panel = Panel()
     panel.wire_title(ax.title)
+    panel.add_axes(ax)
 
     infos_with_legends_last = sorted(infos, key=lambda info: info.has_legend())
 
@@ -69,6 +59,8 @@ def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
 
         if not right_ax:
             right_ax = left_ax.twinx()
+            right_ax._get_lines = left_ax._get_lines  # one color cycle, so lines on either side differ
+            panel.add_axes(right_ax)
 
         if wire_axis(panel, right_ax, "y", info):
             setup_data_setter(panel, right_ax, info)
@@ -76,7 +68,21 @@ def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
 
         raise Exception(f"the y-axis of {info} and least two other plots are mutually incompatible")
 
+    if right_ax:
+        for side_ax in (left_ax, right_ax):
+            color_y_axis_by_its_lines(side_ax)
+
     return panel
+
+
+def color_y_axis_by_its_lines(ax: Axes):
+    """Color a twinned y axis' label and tick labels like its lines, to say which lines it describes. Only when
+    they're all one color; otherwise the color would say nothing."""
+    colors = {to_hex(line.get_color()) for line in ax.lines}
+    if len(colors) == 1:
+        [color] = colors
+        ax.yaxis.label.set_color(color)
+        ax.tick_params(axis="y", labelcolor=color)
 
 
 def setup_panel_polar(ax: PolarAxes, infos: list[PolarMeshInfo]) -> Panel:
@@ -84,6 +90,7 @@ def setup_panel_polar(ax: PolarAxes, infos: list[PolarMeshInfo]) -> Panel:
 
     panel = Panel()
     panel.wire_title(ax.title)
+    panel.add_axes(ax)
 
     if len(polar_mesh_infos) > 1:
         raise NotImplementedError("don't yet support overplotting polar meshes")
@@ -110,8 +117,10 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
         return setup_panel_polar(ax, infos)
 
 
-def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, Grid]:
-    figure = plt.figure(layout="constrained")
+def setup_fig(plot_infos: list[PlotInfo], options: LayoutOptions) -> tuple[Figure, Grid]:
+    """Build the figure's parts. They aren't placed until `run_layout`, which must come after anything else that
+    adds to them (e.g. hooks)."""
+    figure = plt.figure(dpi=options.dpi)
 
     grid = Grid(figure, plot_infos)
     for loc, infos in grid.infos.items():
@@ -119,12 +128,11 @@ def setup_fig(plot_infos: list[PlotInfo]) -> tuple[Figure, Grid]:
         panel = setup_panel(ax, infos)
         grid.set_panel(loc, panel)
 
-    grid.share_x_axes_vertically()
+    grid.share_x_axes_vertically(options)
+    grid.arrange_colorbars(options)
+    for panel in grid.panels.values():
+        panel.add_inward_ticks()
     grid.update_labels()
     grid.update_bounds()
-    grid.update_interior_x_ticks()
-
-    figure.draw_without_rendering()  # gives the first adjustment something to measure
-    grid.adjust_to_last_draw()
 
     return figure, grid

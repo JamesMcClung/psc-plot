@@ -6,7 +6,9 @@ from lib.data.adaptors.versus import Versus
 from lib.data.adaptors.with_ import WITH_FORMAT, parse_initial_with
 from lib.parsing.args import Args
 from lib.parsing.args_registry import CUSTOM_ARGS, get_store_combined_args_action
+from lib.parsing.parse_figsize import FIGSIZE_METAVAR, parse_figsize
 from lib.parsing.parse_save import SAVE_METAVAR, parse_save
+from lib.plotting.layout.options import DEFAULT_DPI, FigSizeSpec
 
 
 def _get_parser() -> argparse.ArgumentParser:
@@ -32,10 +34,17 @@ def _get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("-q", "--quiet", action="store_false", dest="show", help="don't show the figure")
     parser.add_argument(
-        "--save-dpi",
+        "--figsize",
+        type=parse_figsize,
+        default=FigSizeSpec(None, None),
+        metavar=FIGSIZE_METAVAR,
+        help="the figure's size in inches (an 'in' suffix is optional). Either side may be 'auto', computed from the plots; 'auto' alone means 'auto,auto', the default",
+    )
+    parser.add_argument(
+        "--dpi",
         type=float,
-        default=None,
-        help="dots per inch of saved figure (defaults to Matplotlib's default)",
+        default=DEFAULT_DPI,
+        help=f"dots per inch of the figure, both shown and saved. Auto sizes depend on it, since images get at least 2 dots per cell (default: {DEFAULT_DPI:g})",
     )
     # a choice, not a necessity: profiling --dask-graph would still time the adaptors' eager work, but nothing has needed it yet
     exclusive_modes = parser.add_mutually_exclusive_group()

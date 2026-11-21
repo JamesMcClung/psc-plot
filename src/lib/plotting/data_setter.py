@@ -72,7 +72,7 @@ class ImageSetter(DataSetter[AxesImage, ImageInfo]):
             extent=(*info.dim_bounds[info.x_dim], *info.dim_bounds[info.y_dim]),
             norm=info.dim_scales[info.color_dim].to_color_norm(),
             interpolation="nearest",
-            aspect=info.get_aspect(),
+            aspect="auto",  # the layout engine sizes the plot area to the aspect
         )
 
     def get_colors_within(self, bbox: Bbox) -> np.ndarray | None:
