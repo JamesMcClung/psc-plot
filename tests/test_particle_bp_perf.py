@@ -19,6 +19,13 @@ from lib.config import PscPlotConfig
 from lib.run.compile import compile_plot_pipeline
 
 
+def _build_figure(args, data_dir: pathlib.Path) -> None:
+    from lib.plotting.setup_fig import setup_fig
+
+    plot = compile_plot_pipeline(args, PscPlotConfig.create_minimal(data_root=data_dir)).run_plot()
+    setup_fig([renderer.plot_info for renderer in plot.renderers], plot.layout_options)
+
+
 def _run_h5_pipeline(data_dir: pathlib.Path, result_queue: mp.Queue) -> None:
     import matplotlib
 
@@ -28,9 +35,10 @@ def _run_h5_pipeline(data_dir: pathlib.Path, result_queue: mp.Queue) -> None:
 
     args = parse_args("prt --species i --bin y py -v y py".split())
     # Time the whole pipeline: binning is lazy, so the histogram actually runs
-    # during ._initialize() (the color bounds), not during .run_plot().
+    # while building the figure (the color bounds), not during .run_plot().
+    # Stops short of the layout, which costs the same for either format.
     t0 = time.perf_counter()
-    compile_plot_pipeline(args, PscPlotConfig.create_minimal(data_root=data_dir)).run_plot()._initialize()
+    _build_figure(args, data_dir)
     elapsed = time.perf_counter() - t0
     result_queue.put(elapsed)
 
@@ -44,9 +52,10 @@ def _run_bp_pipeline(data_dir: pathlib.Path, result_queue: mp.Queue) -> None:
 
     args = parse_args("prt.i --bin y py -v y py".split())
     # Time the whole pipeline: binning is lazy, so the histogram actually runs
-    # during ._initialize() (the color bounds), not during .run_plot().
+    # while building the figure (the color bounds), not during .run_plot().
+    # Stops short of the layout, which costs the same for either format.
     t0 = time.perf_counter()
-    compile_plot_pipeline(args, PscPlotConfig.create_minimal(data_root=data_dir)).run_plot()._initialize()
+    _build_figure(args, data_dir)
     elapsed = time.perf_counter() - t0
     result_queue.put(elapsed)
 

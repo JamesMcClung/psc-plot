@@ -9,6 +9,7 @@ from matplotlib import pyplot as plt
 from lib.config import PscPlotConfig
 from lib.data.data_with_attrs import DataWithAttrs
 from lib.plotting.hook import DrawMessage, Hook
+from lib.plotting.layout.engine import run_layout
 from lib.plotting.layout.options import LayoutOptions
 from lib.plotting.renderer import Renderer
 from lib.plotting.setup_fig import setup_fig
@@ -35,6 +36,8 @@ class Plot(ABC):
             self.fig, self.grid = setup_fig([r.plot_info for r in self.renderers], self.layout_options)
             # TODO hooks should be per-renderer; for now, just apply them to the 1st one
             self.post_init_fig(DrawMessage(plot_info=self.renderers[0].plot_info, axes=self.fig.axes[0], frame_data=self.renderers[0]._get_data_at_frame(0)))
+            run_layout(self.fig, self.grid, self.layout_options)
+            self.grid.update_interior_x_ticks()
 
     def add_hook(self, hook: Hook):
         self.hooks.append(hook)

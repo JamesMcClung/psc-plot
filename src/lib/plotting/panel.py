@@ -12,7 +12,6 @@ from matplotlib.collections import PathCollection
 from matplotlib.colorbar import Colorbar
 from matplotlib.colors import to_rgba
 from matplotlib.markers import TICKDOWN, TICKUP
-from matplotlib.offsetbox import AnnotationBbox, DrawingArea
 from matplotlib.projections import PolarAxes
 from matplotlib.text import Text
 from matplotlib.ticker import MaxNLocator
@@ -44,6 +43,9 @@ class Panel:
     scales_per_axis: dict[AxAndId, Scale] = field(init=False, default_factory=dict)
     flush_y_ends: set[YEnd] = field(init=False, default_factory=set)
     """Ends at which this panel touches its vertical neighbour, so nothing may stick out past them."""
+    axes: list[Axes] = field(init=False, default_factory=list)
+    """The panel's axes, main first, then any twin."""
+    shared_x_below: Panel | None = field(init=False, default=None)
     interior_x_ticks: dict[tuple[Axes, YEnd], PathCollection] = field(init=False, default_factory=dict)
     """Ticks drawn just inside the axes at an end, over the data, in addition to any axis ticks there."""
 
@@ -192,14 +194,6 @@ class Panel:
             if isinstance(locator, MaxNLocator):
                 locator.set_params(prune=end)
 
-    def pad_y_end(self, end: YEnd, pad: float):
-        """Have constrained layout leave `pad` points of room beyond the x label (lower end) or title (upper end).
-        It's an invisible spacer, since padding the text itself only moves it away from its own axes."""
-        for ax in self._get_x_axs():
-            text, xy, box_alignment = {"lower": (ax.xaxis.label, (0.5, 0.0), (0.5, 1.0)), "upper": (ax.title, (0.5, 1.0), (0.5, 0.0))}[end]
-            spacer = AnnotationBbox(DrawingArea(0.0, pad), xy, xycoords=text, box_alignment=box_alignment, frameon=False, pad=0.0, annotation_clip=False)
-            ax.add_artist(spacer)
-
     def add_interior_x_ticks(self):
         """Draw x ticks just inside the top and bottom of the axes, over the data. They're artists of their own
         because an axis' ticks at one end all point one way and share one color."""
@@ -268,7 +262,10 @@ class Panel:
                 elif "lower" in self.flush_y_ends and bbox.y0 < box.y0 < bbox.y1:
                     label.set_va("bottom")
 
-    def try_share_x_axis(self, below: Panel) -> bool:
+    def shares_x_with(self, below: Panel) -> bool:
+        return self.shared_x_below is below
+
+    def can_share_x_axis(self, below: Panel) -> bool:
         my_axs = [ax for (ax, id) in self.scales_per_axis if id == "x"]
         below_axs = [ax for (ax, id) in below.scales_per_axis if id == "x"]
 
@@ -283,10 +280,17 @@ class Panel:
 
         my_labeler = self.x_labelers_per_axes[my_ax]
         below_labeler = below.x_labelers_per_axes[below_ax]
-        if not below_labeler.are_compatible(my_labeler.sources):
-            return False
+        return below_labeler.are_compatible(my_labeler.sources)
+
+    def share_x_axis(self, below: Panel):
+        """Share this panel's x axis with the panel below it, which `can_share_x_axis` must allow."""
+        [my_ax] = [ax for (ax, id) in self.scales_per_axis if id == "x"]
+        [below_ax] = [ax for (ax, id) in below.scales_per_axis if id == "x"]
+        my_labeler = self.x_labelers_per_axes[my_ax]
+        below_labeler = below.x_labelers_per_axes[below_ax]
 
         my_ax.sharex(below_ax)
+        self.shared_x_below = below
         # Only strip the edge facing `below`. `label_outer` would go by the grid instead, and strip the bottom of
         # every axes above the last row, even one whose neighbour below it didn't share.
         my_ax.xaxis.set_tick_params(which="both", labelbottom=False, bottom=False)
@@ -300,5 +304,3 @@ class Panel:
 
         self.x_labelers_per_axes.pop(my_ax)
         self.scales_per_axis.pop((my_ax, "x"))
-
-        return True

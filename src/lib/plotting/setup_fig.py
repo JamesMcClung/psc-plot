@@ -16,8 +16,8 @@ from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfo
 
 def setup_colorbar(ax: Axes, target: ScalarMappable, info: PlotInfoColor | PlotInfoMaybeColor) -> Colorbar:
     assert info.color_dim
-    # Shrunk so that the colorbars of axes sitting flush against each other stay visibly apart.
-    cbar = ax.figure.colorbar(target, shrink=0.8)
+    fig = ax.get_figure(root=True)
+    cbar = fig.colorbar(target, cax=fig.add_axes((0.0, 0.0, 1.0, 1.0)))  # the layout engine places it
     # TODO work into everything
     data_lower, data_upper = info.dim_bounds[info.color_dim]
     plt_util.update_cbar(target, data_min_override=data_lower, data_max_override=data_upper)
@@ -32,8 +32,6 @@ def setup_data_setter(panel: Panel, ax: Axes, info: PlotInfo):
     if info.has_colorbar():
         cbar = setup_colorbar(ax, setter.artist, info)
         panel.wire_cbar_label(cbar, info)
-    if isinstance(info, PlotInfo2D):
-        ax.set_aspect(info.get_aspect())
     return setter
 
 
@@ -49,6 +47,7 @@ def wire_axis(panel: Panel, ax: Axes, id: AxIdXY, info: PlotInfo2D) -> bool:
 def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
     panel = Panel()
     panel.wire_title(ax.title)
+    panel.axes.append(ax)
 
     infos_with_legends_last = sorted(infos, key=lambda info: info.has_legend())
 
@@ -70,6 +69,7 @@ def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
 
         if not right_ax:
             right_ax = left_ax.twinx()
+            panel.axes.append(right_ax)
 
         if wire_axis(panel, right_ax, "y", info):
             setup_data_setter(panel, right_ax, info)
@@ -85,6 +85,7 @@ def setup_panel_polar(ax: PolarAxes, infos: list[PolarMeshInfo]) -> Panel:
 
     panel = Panel()
     panel.wire_title(ax.title)
+    panel.axes.append(ax)
 
     if len(polar_mesh_infos) > 1:
         raise NotImplementedError("don't yet support overplotting polar meshes")
@@ -112,10 +113,9 @@ def setup_panel(ax: Axes, infos: list[PlotInfo]) -> Panel:
 
 
 def setup_fig(plot_infos: list[PlotInfo], options: LayoutOptions) -> tuple[Figure, Grid]:
-    # auto sides keep matplotlib's default until the layout engine sizes them
-    default_width, default_height = plt.rcParams["figure.figsize"]
-    figsize = (options.figsize.width or default_width, options.figsize.height or default_height)
-    figure = plt.figure(layout="constrained", figsize=figsize, dpi=options.dpi)
+    """Build the figure's parts. They aren't placed until `run_layout`, which must come after anything else that
+    adds to them (e.g. hooks)."""
+    figure = plt.figure(dpi=options.dpi)
 
     grid = Grid(figure, plot_infos)
     for loc, infos in grid.infos.items():
@@ -123,12 +123,8 @@ def setup_fig(plot_infos: list[PlotInfo], options: LayoutOptions) -> tuple[Figur
         panel = setup_panel(ax, infos)
         grid.set_panel(loc, panel)
 
-    grid.share_x_axes_vertically()
+    grid.share_x_axes_vertically(options.dpi)
     grid.update_labels()
     grid.update_bounds()
-    grid.update_interior_x_ticks()
-
-    figure.draw_without_rendering()  # gives the first adjustment something to measure
-    grid.adjust_to_last_draw()
 
     return figure, grid
