@@ -7,8 +7,9 @@ runs again after the figure is built, so plot areas never move between frames.
 """
 
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
+from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
@@ -42,25 +43,42 @@ class Layout:
     """Inches from the figure's bottom to the suptitle's top."""
     shortfall: float = 0.0
     """Inches by which a fixed side of `--figsize` left a plot area short of its minimum size, the most for any."""
+    title_offsets: dict[Axes, float] = field(default_factory=dict)
+    """Points to raise each title of a panel with a horizontal colorbar above it: over the bar and its texts."""
 
 
 def _panel_right_margin(decorations: PanelDecorations, axes_right: float) -> float:
     right = axes_right
     for cbar in decorations.colorbars:
-        right += COLORBAR_PAD + COLORBAR_THICKNESS + cbar.margins.right
+        if not cbar.horizontal:
+            right += COLORBAR_PAD + COLORBAR_THICKNESS + cbar.margins.right
     return right
 
 
-def _colorbar_gaps(decorations: ColorbarDecorations, plot_height: float) -> tuple[float, float]:
-    """How much shorter than its panel a colorbar is at the top and bottom: room for its texts, and at least
-    `COLORBAR_MIN_GAP_FRACTION` of the panel."""
-    min_gap = COLORBAR_MIN_GAP_FRACTION * plot_height
-    return (max(min_gap, decorations.margins.top), max(min_gap, decorations.margins.bottom))
+def _horizontal_colorbar_height(decorations: ColorbarDecorations) -> float:
+    """Inches a horizontal colorbar takes above its plot area: a pad, its tick labels, the bar and its label."""
+    return COLORBAR_PAD + decorations.margins.bottom + COLORBAR_THICKNESS + decorations.margins.top
 
 
-def _min_height_for_colorbar(decorations: ColorbarDecorations) -> float:
-    """The least plot height whose colorbar, less its gaps (see `_colorbar_gaps`), is `min_length` long."""
-    need, top, bottom = decorations.min_length, decorations.margins.top, decorations.margins.bottom
+def _end_texts(decorations: ColorbarDecorations) -> tuple[float, float]:
+    """How far a colorbar's texts reach past its ends: (top, bottom) for a vertical bar, (left, right) for a
+    horizontal one."""
+    m = decorations.margins
+    return (m.left, m.right) if decorations.horizontal else (m.top, m.bottom)
+
+
+def _colorbar_gaps(decorations: ColorbarDecorations, span: float) -> tuple[float, float]:
+    """How much shorter than the span it keys a colorbar is at each end (top and bottom, or left and right): room
+    for its texts, and at least `COLORBAR_MIN_GAP_FRACTION` of the span."""
+    min_gap = COLORBAR_MIN_GAP_FRACTION * span
+    first, second = _end_texts(decorations)
+    return (max(min_gap, first), max(min_gap, second))
+
+
+def _min_span_for_colorbar(decorations: ColorbarDecorations) -> float:
+    """The least span whose colorbar, less its gaps (see `_colorbar_gaps`), is `min_length` long."""
+    need = decorations.min_length
+    top, bottom = _end_texts(decorations)
     if need <= 0:
         return 0.0
     f = COLORBAR_MIN_GAP_FRACTION
@@ -71,7 +89,14 @@ def _min_height_for_colorbar(decorations: ColorbarDecorations) -> float:
 def _min_plot_sizes(decorations: dict[AxesIdx, PanelDecorations]) -> dict[AxesIdx, tuple[float, float]]:
     """Each panel's least plot-area size: `MIN_PLOT_SIDE`, and room for two tick labels on each axis and colorbar.
     Taken per column (widths) and per row (heights), so panels sharing an edge keep sharing it."""
-    own = {loc: (max(MIN_PLOT_SIDE, deco.min_plot_size[0]), max(MIN_PLOT_SIDE, deco.min_plot_size[1], *(_min_height_for_colorbar(cbar) for cbar in deco.colorbars))) for loc, deco in decorations.items()}
+    # An extended colorbar spans several panels, but is held to fitting beside its first one alone.
+    own = {
+        loc: (
+            max(MIN_PLOT_SIDE, deco.min_plot_size[0], *(_min_span_for_colorbar(cbar) for cbar in deco.colorbars if cbar.horizontal)),
+            max(MIN_PLOT_SIDE, deco.min_plot_size[1], *(_min_span_for_colorbar(cbar) for cbar in deco.colorbars if not cbar.horizontal)),
+        )
+        for loc, deco in decorations.items()
+    }
     col_width = {col: max(w for (c, _), (w, _) in own.items() if c == col) for col, _ in own}
     row_height = {row: max(h for (_, r), (_, h) in own.items() if r == row) for _, row in own}
     return {(col, row): (col_width[col], row_height[row]) for col, row in own}
@@ -81,8 +106,10 @@ def _panel_margins(decorations: PanelDecorations, plot_height: float, axes_right
     """Everything outside the plot area, colorbars included. Colorbars start past `axes_right`, the widest axes
     decorations in the panel's column."""
     axes = decorations.axes_margins
-    # A colorbar's texts fit in its gaps, so colorbars never reach past their panel's top or bottom.
-    top, bottom = axes.top, axes.bottom
+    # A vertical colorbar's texts fit in its gaps, so it never reaches past its panel's top or bottom. A horizontal
+    # one sits above the plot area, under the title (which the layout raises over it).
+    top = max([axes.top, *(_horizontal_colorbar_height(cbar) for cbar in decorations.colorbars if cbar.horizontal)])
+    bottom = axes.bottom
     return Margins(left=axes.left, right=_panel_right_margin(decorations, axes_right), bottom=bottom, top=top)
 
 
@@ -221,17 +248,27 @@ def compute_layout(grid: Grid, options: LayoutOptions, decorations: dict[AxesIdx
         x_slack, y_slack = col_width[col] - w, row_height[row] - h
         x0 = col_x0[col] + (x_slack if col_flush_right(col) else 0.0 if col_flush_right(col - 1) else x_slack / 2)
         y1 = row_y1[row] - (y_slack if row_flush_below(row) else 0.0 if row_flush_below(row - 1) else y_slack / 2)
-        box = Box(x0, y1 - h, w, h)
-        plot_boxes[loc] = box
+        plot_boxes[loc] = Box(x0, y1 - h, w, h)
 
-        deco = decorations[loc]
+    title_offsets = {}
+    for loc, panel in grid.panels.items():
+        col = loc[0]
         cbar_x = col_x0[col] + col_width[col] + col_axes_right[col] + COLORBAR_PAD
-        for cbar, cbar_deco in zip(grid.panels[loc].colorbars, deco.colorbars):
-            gap_top, gap_bottom = _colorbar_gaps(cbar_deco, h)
-            colorbar_boxes[cbar.ax] = Box(cbar_x, box.y0 + gap_bottom, COLORBAR_THICKNESS, h - gap_top - gap_bottom)
+        for cbar, assignment, cbar_deco in zip(panel.colorbars, panel.colorbar_assignments, decorations[loc].colorbars):
+            if assignment.orientation == "horizontal":
+                box = plot_boxes[loc]
+                gap_left, gap_right = _colorbar_gaps(cbar_deco, box.width)
+                colorbar_boxes[cbar.ax] = Box(box.x0 + gap_left, box.y0 + box.height + COLORBAR_PAD + cbar_deco.margins.bottom, box.width - gap_left - gap_right, COLORBAR_THICKNESS)
+                title_offsets[panel.axes[0]] = plt.rcParams["axes.titlepad"] + _horizontal_colorbar_height(cbar_deco) * 72
+                continue
+            # Beside every run it keys, spanning them all.
+            boxes = [plot_boxes[anchor] for anchor in assignment.anchors]
+            y0, y1 = min(box.y0 for box in boxes), max(box.y0 + box.height for box in boxes)
+            gap_top, gap_bottom = _colorbar_gaps(cbar_deco, y1 - y0)
+            colorbar_boxes[cbar.ax] = Box(cbar_x, y0 + gap_bottom, COLORBAR_THICKNESS, y1 - y0 - gap_top - gap_bottom)
             cbar_x += COLORBAR_THICKNESS + cbar_deco.margins.right + COLORBAR_PAD
 
-    return Layout(fig_width, fig_height, plot_boxes, colorbar_boxes, suptitle_top, shortfall)
+    return Layout(fig_width, fig_height, plot_boxes, colorbar_boxes, suptitle_top, shortfall, title_offsets)
 
 
 def apply_layout(fig: Figure, grid: Grid, layout: Layout):
@@ -240,19 +277,24 @@ def apply_layout(fig: Figure, grid: Grid, layout: Layout):
         grid.panels[loc].axes[0].set_position(box.to_figure_fraction(layout.fig_width, layout.fig_height))
     for cax, box in layout.colorbar_boxes.items():
         cax.set_position(box.to_figure_fraction(layout.fig_width, layout.fig_height))
+    for ax, offset in layout.title_offsets.items():
+        ax._set_title_offset_trans(offset)
+        ax.title.set_va("bottom")  # by default its baseline sits at the offset, and anything below it would dip into the bar's texts
     grid.suptitle.set_y(layout.suptitle_top / layout.fig_height)
     grid.suptitle.set_va("top")
 
 
 def _layouts_match(a: Layout, b: Layout, dpi: float) -> bool:
     boxes = [(a.plot_boxes, b.plot_boxes), (a.colorbar_boxes, b.colorbar_boxes)]
+    if a.title_offsets.keys() != b.title_offsets.keys() or not all(sizes_close(offset / 72, b.title_offsets[ax] / 72, dpi) for ax, offset in a.title_offsets.items()):
+        return False
     return sizes_close(a.fig_width, b.fig_width, dpi) and sizes_close(a.fig_height, b.fig_height, dpi) and all(sizes_close(getattr(box, attr), getattr(other[key], attr), dpi) for mine, other in boxes for key, box in mine.items() for attr in ("x0", "y0", "width", "height"))
 
 
 def run_layout(fig: Figure, grid: Grid, options: LayoutOptions):
     """Lay out the figure, once: measure -> place until nothing moves."""
     dpi = options.dpi
-    no_decorations = {loc: PanelDecorations(Margins(), [ColorbarDecorations(Margins()) for _ in panel.colorbars]) for loc, panel in grid.panels.items()}
+    no_decorations = {loc: PanelDecorations(Margins(), [ColorbarDecorations(Margins(), horizontal=cbar.orientation == "horizontal") for cbar in panel.colorbars]) for loc, panel in grid.panels.items()}
     layout = compute_layout(grid, options, no_decorations, 0.0)
 
     # Lay out with every text at its widest on any frame, so no frame's text needs more room than it has.

@@ -18,6 +18,7 @@ class ColorbarDecorations:
     margins: Margins
     min_length: float = 0.0
     """Inches of bar its tick labels need: room for two of them."""
+    horizontal: bool = False
 
 
 @dataclass(frozen=True)
@@ -49,7 +50,7 @@ def _tight_bbox(artist, renderer: RendererBase) -> Bbox | None:
 def measure_colorbar(cbar: Colorbar, renderer: RendererBase, dpi: float) -> ColorbarDecorations:
     box = cbar.ax.get_window_extent(renderer)
     tight = _tight_bbox(cbar.ax, renderer) or box
-    return ColorbarDecorations(_overhang(tight, box, dpi), two_label_length(cbar.ax.yaxis, renderer) / dpi)
+    return ColorbarDecorations(_overhang(tight, box, dpi), two_label_length(cbar.long_axis, renderer) / dpi, cbar.orientation == "horizontal")
 
 
 def measure_panel(panel: Panel, renderer: RendererBase, dpi: float) -> PanelDecorations:
