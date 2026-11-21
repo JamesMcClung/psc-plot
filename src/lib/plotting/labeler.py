@@ -136,6 +136,8 @@ class UnitLabeler(Labeler):
     """Include the display in the label. If false, show unit only. Independent of `require_display_match`."""
     require_display_match: bool = field(kw_only=True, default=True)
     """If false, sources only have to agree on the unit. Otherwise, all sources must agree on display and unit."""
+    line_break_before_unit: bool = field(kw_only=True, default=False)
+    """Put the unit on a line of its own, below the display (for colorbars, whose text is horizontal and narrow)."""
 
     def update(self):
         self.set_text(self._get_label())
@@ -189,7 +191,7 @@ class UnitLabeler(Labeler):
         unit = units.pop().maybe_with_dollars() if len(units) == 1 else ""
 
         if display and unit:
-            return f"{display} [{unit}]"
+            return f"{display}{'\n' if self.line_break_before_unit else ' '}[{unit}]"
         return display or unit and f"[{unit}]"
 
 
@@ -237,15 +239,15 @@ class YAxisLabeler(SubjectLabeler):
 
 @dataclass(init=False)
 class ColorbarLabeler(SubjectLabeler):
-    """Labels a colorbar whose color dim is its source's subject, `subject (sublabels) [unit]`. It keeps the subject
-    rather than offering it up, since the colorbar is where the subject belongs."""
+    """Labels a colorbar whose color dim is its source's subject: `subject (sublabels)`, then `[unit]` on the line
+    below. It keeps the subject rather than offering it up, since the colorbar is where the subject belongs."""
 
     def __init__(self, set_text: Callable[[str], None], source: PlotInfoColor):
         super().__init__(set_text, source)
         self.unit_labeler = UnitLabeler(set_text, "color", [source], include_display=False)
 
     def _get_label(self) -> str:
-        return " ".join(label for label in [super()._get_label(), self.unit_labeler._get_label()] if label)
+        return "\n".join(label for label in [super()._get_label(), self.unit_labeler._get_label()] if label)
 
     def _get_liftable_subject(self) -> str | None:
         return None
