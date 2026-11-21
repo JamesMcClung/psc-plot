@@ -92,6 +92,7 @@ class Panel:
     axes: list[Axes] = field(init=False, default_factory=list)
     """The panel's axes, main first, then any twin."""
     shared_x_below: Panel | None = field(init=False, default=None)
+    shared_y_right: Panel | None = field(init=False, default=None)
     inward_ticks: list[InwardTicks] = field(init=False, default_factory=list)
 
     def update_data(self):
@@ -289,6 +290,45 @@ class Panel:
         colors = np.concatenate(colors)
         alpha = colors[:, 3:]
         return np.concatenate([alpha * colors[:, :3] + (1 - alpha) * background[:3], np.ones_like(alpha)], axis=1)
+
+    def shares_y_with(self, right: Panel) -> bool:
+        return self.shared_y_right is right
+
+    def can_share_y_axis(self, right: Panel) -> bool:
+        """Whether this panel's y axis can also serve the panel to its right: one y axis each (no twins), the same
+        scale, and a label that reads the same for both. The plot heights must match too; the grid checks those.
+        A colorbar would sit between them, so this panel mustn't have one."""
+        if self.colorbars or len(self.axes) != 1 or len(right.axes) != 1:
+            return False
+        my_ax, right_ax = self.axes[0], right.axes[0]
+        if (my_ax, "y") not in self.scales_per_axis or (right_ax, "y") not in right.scales_per_axis:
+            return False
+        if self.scales_per_axis[(my_ax, "y")] != right.scales_per_axis[(right_ax, "y")]:
+            return False
+
+        my_labeler = self.y_labelers_per_axes[my_ax].unit_labeler
+        right_labeler = right.y_labelers_per_axes[right_ax].unit_labeler
+        if not my_labeler.are_compatible(right_labeler.sources):
+            return False
+        # The shared label must read as each panel's own did, e.g. both B_x, or both just [c].
+        merged = UnitLabeler(my_labeler.set_text, "y", my_labeler.sources + right_labeler.sources, require_display_match=False)
+        return my_labeler._get_label() == right_labeler._get_label() == merged._get_label()
+
+    def share_y_axis(self, right: Panel):
+        """Share this panel's y axis with the panel to its right, which `can_share_y_axis` must allow."""
+        my_ax, right_ax = self.axes[0], right.axes[0]
+        my_labeler = self.y_labelers_per_axes[my_ax]
+        right_labeler = right.y_labelers_per_axes[right_ax]
+
+        right_ax.sharey(my_ax)
+        self.shared_y_right = right
+        right_ax.yaxis.set_tick_params(which="both", labelleft=False)
+        right_ax.yaxis.offsetText.set_visible(False)
+        for info in right_labeler.unit_labeler.sources:
+            my_labeler.add_source(info)
+        # The right labeler stays in its tree, still absorbing its legend entries' subjects, but says nothing.
+        right_labeler.set_text = right_labeler.unit_labeler.set_text = lambda _: None
+        right_ax.set_ylabel("")
 
     def shares_x_with(self, below: Panel) -> bool:
         return self.shared_x_below is below
