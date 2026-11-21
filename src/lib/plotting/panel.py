@@ -324,9 +324,6 @@ class Panel:
         alpha = colors[:, 3:]
         return np.concatenate([alpha * colors[:, :3] + (1 - alpha) * background[:3], np.ones_like(alpha)], axis=1)
 
-    def shares_y_with(self, right: Panel) -> bool:
-        return self.shared_y_right is right
-
     def can_share_y_axis(self, right: Panel) -> bool:
         """Whether this panel's y axis can also serve the panel to its right: one y axis each (no twins), the same
         scale, and a label that reads the same for both. The plot heights must match too; the grid checks those.
@@ -364,9 +361,6 @@ class Panel:
         # The right labeler stays in its tree, still absorbing its legend entries' subjects, but says nothing.
         right_labeler.set_text = right_labeler.unit_labeler.set_text = lambda _: None
         right_ax.set_ylabel("")
-
-    def shares_x_with(self, below: Panel) -> bool:
-        return self.shared_x_below is below
 
     def can_share_x_axis(self, below: Panel) -> bool:
         my_axs = [ax for (ax, id) in self.scales_per_axis if id == "x"]
