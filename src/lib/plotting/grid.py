@@ -3,8 +3,9 @@ from matplotlib.backend_bases import RendererBase
 from matplotlib.figure import Figure
 
 from lib.plotting import plt_util, tick_labels
-from lib.plotting.labeler import SubjectLabeler
+from lib.plotting.labeler import SharedColorbarLabel, SubjectLabeler, UnitLabeler
 from lib.plotting.layout.auto_size import auto_plot_sizes
+from lib.plotting.layout.colorbars import CellModel, ColorbarAssignment, GridModel, assign_colorbars
 from lib.plotting.layout.geometry import sizes_close
 from lib.plotting.panel import Panel
 from lib.plotting.plot_info import PlotInfo
@@ -64,20 +65,66 @@ class Grid:
                     above.share_x_axis(below)
                 self.flush_row_boundaries.add(row)
 
-    def share_y_axes_horizontally(self, dpi: float):
-        """Put panels side by side along each row where they can share a y axis. Plot edges line up across the
-        whole grid, so a column boundary is flush only if every row with panels on both sides of it can share
-        there. Sizes come first: plot heights must already match."""
-        sizes = auto_plot_sizes(self.infos, dpi)
+    def _col_pairs(self, col: int) -> list[tuple[AxesIdx, AxesIdx]]:
+        return [((col, row), (col + 1, row)) for row in range(1, self.nrows + 1) if (col, row) in self.panels and (col + 1, row) in self.panels]
 
+    def _shareable_col_boundaries(self, dpi: float) -> set[int]:
+        """Columns whose panels could sit flush against the next column's, sharing y axes, colorbars aside. Plot
+        edges line up across the whole grid, so every row with panels on both sides must be able to share, and
+        plot heights must already match."""
+        sizes = auto_plot_sizes(self.infos, dpi)
+        shareable = set()
         for col in range(1, self.ncols):
-            pairs = [(self.panels[(col, row)], self.panels[(col + 1, row)], (col, row)) for row in range(1, self.nrows + 1) if (col, row) in self.panels and (col + 1, row) in self.panels]
-            if not pairs:
-                continue
-            if all(left.can_share_y_axis(right) and sizes_close(sizes[loc][1], sizes[(loc[0] + 1, loc[1])][1], dpi) for left, right, loc in pairs):
-                for left, right, _ in pairs:
-                    left.share_y_axis(right)
-                self.flush_col_boundaries.add(col)
+            pairs = self._col_pairs(col)
+            if pairs and all(self.panels[left].can_share_y_axis(self.panels[right]) and sizes_close(sizes[left][1], sizes[right][1], dpi) for left, right in pairs):
+                shareable.add(col)
+        return shareable
+
+    def _x_stacks(self) -> list[list[AxesIdx]]:
+        """`stacks`, by location."""
+        stacks = []
+        for loc in sorted(self.panels, key=lambda loc: (loc[0], loc[1])):
+            above = self.panels.get((loc[0], loc[1] - 1))
+            if above is not None and above.shared_x_below is self.panels[loc]:
+                stacks[-1].append(loc)
+            else:
+                stacks.append([loc])
+        return stacks
+
+    def arrange_colorbars(self, dpi: float):
+        """Decide which colorbars the images get, and which column boundaries sit flush sharing y axes (they
+        constrain each other: see `layout.colorbars`); then share those y axes and make those colorbars. Call
+        after `share_x_axes_vertically`."""
+        model = GridModel({loc: CellModel(loc, panel.color_key()) for loc, panel in self.panels.items()}, self._x_stacks(), self._shareable_col_boundaries(dpi))
+        plan = assign_colorbars(model)
+
+        for col in sorted(plan.flush_col_boundaries):
+            for left, right in self._col_pairs(col):
+                self.panels[left].share_y_axis(self.panels[right])
+            self.flush_col_boundaries.add(col)
+
+        for assignment in plan.colorbars:
+            self._add_colorbar(assignment)
+
+    def _add_colorbar(self, assignment: ColorbarAssignment):
+        keyed = [(self.panels[loc], artist, info) for loc, panel in ((loc, self.panels[loc]) for loc in assignment.keyed) for artist, info in panel.color_artists]
+        _, first_artist, first_info = keyed[0]
+        cbar = self.fig.colorbar(first_artist, cax=self.fig.add_axes((0.0, 0.0, 1.0, 1.0)), orientation=assignment.orientation)  # the layout engine places it
+        if minor_locator := first_info.dim_scales[first_info.color_dim].minor_locator():
+            cbar.minorlocator = minor_locator
+        plt_util.update_shared_cbar([artist for _, artist, _ in keyed], [info.dim_bounds[info.color_dim] for _, _, info in keyed])
+
+        owner = self.panels[assignment.anchors[0]]
+        texts = owner.add_colorbar(cbar, assignment, first_info)
+        one_line = assignment.orientation == "horizontal"
+        infos = [info for _, _, info in keyed]
+        if all(info.subject_dim == info.color_dim for info in infos):
+            fallback = UnitLabeler(lambda _: None, "color", infos, line_break_before_unit=not one_line)._get_label()
+            shared = SharedColorbarLabel(texts.top.set_text, fallback)
+            for i, (panel, _, info) in enumerate(keyed):
+                panel.wire_colorbar_labeler(info, shared.setter(i), one_line=one_line, fallback_parent=self.suptitle_labeler)
+        else:  # e.g. particles colored by a quantity: no subject to name
+            owner.cbar_labelers.append(UnitLabeler(texts.top.set_text, "color", infos, line_break_before_unit=not one_line))
 
     def separate_junction_labels(self, renderer: RendererBase):
         """Where panels sit flush, hide the label of the panel below (or right) nearest the edge if it crowds its

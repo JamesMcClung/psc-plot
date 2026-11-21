@@ -67,7 +67,7 @@ def move_cbar_multiplier_to_label(cbar: Colorbar) -> int:
     formatter = ScalarFormatter(useOffset=False)
     formatter.set_powerlimits((exponent, exponent))
     cbar.formatter = formatter
-    cbar.ax.yaxis.get_offset_text().set_visible(False)
+    cbar.long_axis.get_offset_text().set_visible(False)
 
     return exponent
 

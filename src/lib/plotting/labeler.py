@@ -273,12 +273,33 @@ class ColorbarLabeler(SubjectLabeler):
     """Labels a colorbar whose color dim is its source's subject: `subject (sublabels)`, then `[unit]` on the line
     below. It keeps the subject rather than offering it up, since the colorbar is where the subject belongs."""
 
-    def __init__(self, set_text: Callable[[str], None], source: PlotInfoColor):
+    def __init__(self, set_text: Callable[[str], None], source: PlotInfoColor, *, one_line: bool = False):
         super().__init__(set_text, source)
         self.unit_labeler = UnitLabeler(set_text, "color", [source], include_display=False)
+        self.one_line = one_line
+        """For a horizontal colorbar: the unit beside the subject rather than below it."""
 
     def _get_label(self) -> str:
-        return "\n".join(label for label in [super()._get_label(), self.unit_labeler._get_label()] if label)
+        return (" " if self.one_line else "\n").join(label for label in [super()._get_label(), self.unit_labeler._get_label()] if label)
 
     def _get_liftable_subject(self) -> str | None:
         return None
+
+
+@dataclass
+class SharedColorbarLabel:
+    """The label of a colorbar keying several images. Each image's `ColorbarLabeler` stays in its own panel's tree
+    (so sublabels that differ between them go to each panel's title) and reports here; the bar shows their label if
+    they agree, else just the subject and unit, which they share by construction."""
+
+    set_text: Callable[[str], None]
+    fallback: str
+    _labels: dict[int, str] = field(default_factory=dict, init=False)
+
+    def setter(self, i: int) -> Callable[[str], None]:
+        return lambda text: self._set(i, text)
+
+    def _set(self, i: int, text: str):
+        self._labels[i] = text
+        labels = set(self._labels.values())
+        self.set_text(labels.pop() if len(labels) == 1 else self.fallback)

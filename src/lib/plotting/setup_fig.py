@@ -15,26 +15,13 @@ from lib.plotting.panel import Panel
 from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PlotInfoMaybeColor, PolarMeshInfo
 
 
-def setup_colorbar(ax: Axes, target: ScalarMappable, info: PlotInfoColor | PlotInfoMaybeColor) -> Colorbar:
-    assert info.color_dim
-    fig = ax.get_figure(root=True)
-    cbar = fig.colorbar(target, cax=fig.add_axes((0.0, 0.0, 1.0, 1.0)))  # the layout engine places it
-    if minor_locator := info.dim_scales[info.color_dim].minor_locator():
-        cbar.minorlocator = minor_locator
-    # TODO work into everything
-    data_lower, data_upper = info.dim_bounds[info.color_dim]
-    plt_util.update_cbar(target, data_min_override=data_lower, data_max_override=data_upper)
-    return cbar
-
-
 def setup_data_setter(panel: Panel, ax: Axes, info: PlotInfo):
     setter = DataSetter.dispatch_init(ax, info)
     panel.wire_data_setter(setter)
     if info.has_legend():
         panel.wire_legend_label(setter.artist, info)
     if info.has_colorbar():
-        cbar = setup_colorbar(ax, setter.artist, info)
-        panel.wire_cbar_label(cbar, info)
+        panel.color_artists.append((setter.artist, info))  # the grid gives it a colorbar, once it knows the layout
     return setter
 
 
@@ -142,7 +129,7 @@ def setup_fig(plot_infos: list[PlotInfo], options: LayoutOptions) -> tuple[Figur
         grid.set_panel(loc, panel)
 
     grid.share_x_axes_vertically(options.dpi)
-    grid.share_y_axes_horizontally(options.dpi)
+    grid.arrange_colorbars(options.dpi)
     for panel in grid.panels.values():
         panel.add_inward_ticks()
     grid.update_labels()

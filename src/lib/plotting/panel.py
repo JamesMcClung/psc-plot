@@ -9,6 +9,7 @@ from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.axis import Axis
 from matplotlib.backend_bases import RendererBase
+from matplotlib.cm import ScalarMappable
 from matplotlib.colorbar import Colorbar
 from matplotlib.colors import to_rgba
 from matplotlib.font_manager import FontProperties
@@ -22,6 +23,7 @@ from lib.plotting.axis_id import AxId, AxIdPolar, AxIdXY
 from lib.plotting.bounds_setter import BoundsSetter
 from lib.plotting.data_setter import DataSetter
 from lib.plotting.labeler import ColorbarLabeler, Labeler, SubjectLabeler, UnitLabeler, YAxisLabeler
+from lib.plotting.layout.colorbars import ColorbarAssignment, ColorKey
 from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PolarMeshInfo
 from lib.plotting.style import LEGEND_TEXT_SCALE, scaled_font_size
 from lib.plotting.ticks import InwardTicks
@@ -33,6 +35,11 @@ type AxAndId = tuple[Axes, AxIdXY] | tuple[PolarAxes, AxIdPolar]
 
 COLORBAR_TEXT_PAD = 4.0
 """Points between a colorbar's end and its text."""
+
+
+def color_key(info: PlotInfoColor) -> ColorKey:
+    """What images must agree on to share a colorbar: their color dim's display, unit and scale."""
+    return (info.dim_displays[info.color_dim], info.dim_units[info.color_dim], info.dim_scales[info.color_dim])
 
 
 @dataclass
@@ -47,19 +54,24 @@ class ColorbarText:
 
     @staticmethod
     def create(cbar: Colorbar) -> ColorbarText:
+        """On a vertical bar, the label goes above it and the multiplier below; on a horizontal one, the label above
+        and the multiplier at its right end."""
         ax = cbar.ax
         fig = ax.get_figure(root=True)
         size = scaled_font_size("axes.labelsize")
         pad = COLORBAR_TEXT_PAD / 72
         top = ax.text(0.0, 1.0, "", transform=ax.transAxes + ScaledTranslation(0.0, pad, fig.dpi_scale_trans), ha="left", va="bottom", multialignment="left", fontsize=size)
         tick_size = FontProperties(size=plt.rcParams["ytick.labelsize"]).get_size_in_points()  # it qualifies the tick labels
-        bottom = ax.text(0.0, 0.0, "", transform=ax.transAxes + ScaledTranslation(0.0, -pad, fig.dpi_scale_trans), ha="left", va="top", fontsize=tick_size)
+        if cbar.orientation == "horizontal":
+            bottom = ax.text(1.0, 0.5, "", transform=ax.transAxes + ScaledTranslation(pad, 0.0, fig.dpi_scale_trans), ha="left", va="center", fontsize=tick_size)
+        else:
+            bottom = ax.text(0.0, 0.0, "", transform=ax.transAxes + ScaledTranslation(0.0, -pad, fig.dpi_scale_trans), ha="left", va="top", fontsize=tick_size)
         return ColorbarText(cbar, top, bottom)
 
     def update_bottom(self):
         # matplotlib's offset text folds in the multiplier too, so build the offset from the formatter instead.
-        self.cbar.ax.yaxis.get_offset_text().set_visible(False)
-        offset = getattr(self.cbar.ax.yaxis.get_major_formatter(), "offset", 0.0)
+        self.cbar.long_axis.get_offset_text().set_visible(False)
+        offset = getattr(self.cbar.long_axis.get_major_formatter(), "offset", 0.0)
 
         multiplier = f"$\\times 10^{{{self.multiplier_exponent}}}$" if self.multiplier_exponent else ""
         shift = f"${'+' if offset > 0 else ''}{float_to_latex_str(offset, '.4g')}$" if offset else ""
@@ -67,11 +79,11 @@ class ColorbarText:
 
 
 def _get_colorbar_colors_beneath(cbar: Colorbar) -> Callable[[Bbox], np.ndarray]:
-    """What's beneath a point of a vertical colorbar: its colormap at the value there."""
+    """What's beneath a point of a colorbar: its colormap at the value there."""
 
     def colors_beneath(bbox: Bbox) -> np.ndarray:
-        _, value = cbar.ax.transData.inverted().transform(((bbox.x0 + bbox.x1) / 2, (bbox.y0 + bbox.y1) / 2))
-        return np.array(cbar.mappable.to_rgba(value))[None, :]
+        x, y = cbar.ax.transData.inverted().transform(((bbox.x0 + bbox.x1) / 2, (bbox.y0 + bbox.y1) / 2))
+        return np.array(cbar.mappable.to_rgba(x if cbar.orientation == "horizontal" else y))[None, :]
 
     return colors_beneath
 
@@ -80,8 +92,13 @@ def _get_colorbar_colors_beneath(cbar: Colorbar) -> Callable[[Bbox], np.ndarray]
 class Panel:
     title_labeler: SubjectLabeler | None = field(init=False, default=None)
     legend_labelers_per_axes: dict[Axes, list[SubjectLabeler]] = field(init=False, default_factory=dict)
-    cbar_labeler: Labeler | None = field(init=False, default=None)
+    cbar_labelers: list[Labeler] = field(init=False, default_factory=list)
+    color_artists: list[tuple[ScalarMappable, PlotInfoColor]] = field(init=False, default_factory=list)
+    """What needs a colorbar (images, colored scatter), with its info. The grid decides which colorbars it gets."""
     colorbars: list[Colorbar] = field(init=False, default_factory=list)
+    """The colorbars this panel owns: it's the first they attach to. They may key other panels' images too."""
+    colorbar_assignments: list[ColorbarAssignment] = field(init=False, default_factory=list)
+    """Parallel to `colorbars`."""
     colorbar_texts: list[ColorbarText] = field(init=False, default_factory=list)
     data_setters: list[DataSetter] = field(init=False, default_factory=list)
     x_labelers_per_axes: dict[Axes, UnitLabeler] = field(init=False, default_factory=dict)
@@ -119,7 +136,7 @@ class Panel:
     def get_labelers(self) -> list[Labeler]:
         maybe_labelers = [
             self.title_labeler,
-            self.cbar_labeler,
+            *self.cbar_labelers,
             *(legend_labeler for labelers in self.legend_labelers_per_axes.values() for legend_labeler in labelers),
             *self.x_labelers_per_axes.values(),
             *self.y_labelers_per_axes.values(),
@@ -158,21 +175,41 @@ class Panel:
         elif self.title_labeler:
             self.title_labeler.add_child(legend_labeler)
 
-    def wire_cbar_label(self, cbar: Colorbar, info: PlotInfoColor):
+    def color_key(self) -> ColorKey | None:
+        """What a colorbar keying this panel's images must show: the display, unit and scale of their color dim.
+        `None` if nothing here needs a colorbar; a key of its own if its images can't share one bar."""
+        keys = {color_key(info) for _, info in self.color_artists}
+        if not keys:
+            return None
+        if len(keys) > 1:
+            return ("unshareable", id(self))
+        [key] = keys
+        if self.title_labeler is None:
+            # Without a title (e.g. stacked), only a colorbar's label can say which coord values each image shows,
+            # so it can only be shared with images showing the same ones on every frame.
+            frames = {tuple(tuple(sorted((dim, float(value)) for dim, value in values.items())) for values in info.frames_scalar_coord_values) for _, info in self.color_artists}
+            key = (key, tuple(sorted(frames)))
+        return key
+
+    def add_colorbar(self, cbar: Colorbar, assignment: ColorbarAssignment, info: PlotInfoColor) -> ColorbarText:
+        """Own `cbar`, which keys `info` (and maybe others like it)."""
         self.colorbars.append(cbar)
+        self.colorbar_assignments.append(assignment)
         texts = ColorbarText.create(cbar)
         self.colorbar_texts.append(texts)
 
         # Log and symlog scales label their ticks with the exponent already.
         is_linear = isinstance(info.dim_scales[info.color_dim], LinearScale)
         texts.multiplier_exponent = plt_util.move_cbar_multiplier_to_label(cbar) if is_linear else 0
+        return texts
 
-        if info.subject_dim == info.color_dim:
-            self.cbar_labeler = ColorbarLabeler(texts.top.set_text, info)
-            if self.title_labeler:
-                self.title_labeler.add_child(self.cbar_labeler)
-        else:
-            self.cbar_labeler = UnitLabeler(texts.top.set_text, "color", [info], line_break_before_unit=True)
+    def wire_colorbar_labeler(self, info: PlotInfoColor, set_text: Callable[[str], None], *, one_line: bool, fallback_parent: SubjectLabeler | None):
+        """Label `info`'s colorbar (which another panel may own) from this panel's tree, so its sublabels can go to
+        this panel's title; without one (e.g. stacked), from `fallback_parent`."""
+        labeler = ColorbarLabeler(set_text, info, one_line=one_line)
+        if parent := self.title_labeler or fallback_parent:
+            parent.add_child(labeler)
+        self.cbar_labelers.append(labeler)
 
     def update_cbar_bottom_texts(self):
         """Move each colorbar's offset (e.g. `+1e3`) below the bar, beside its multiplier. The offset is only known
@@ -243,7 +280,7 @@ class Panel:
     def _tick_label_axes(self) -> list[Axis]:
         """Every axis with tick labels to keep tidy: the plot area's (not polar) and the colorbars'."""
         axes = [axis for ax in self.axes if ax.name != "polar" for axis in (ax.xaxis, ax.yaxis)]
-        return axes + [cbar.ax.yaxis for cbar in self.colorbars]
+        return axes + [cbar.long_axis for cbar in self.colorbars]
 
     def thin_crowded_ticks(self, renderer: RendererBase):
         for axis in self._tick_label_axes():
@@ -262,7 +299,8 @@ class Panel:
             self.inward_ticks.append(InwardTicks.for_axes(main, self._get_colors_beneath, twin=twin))
 
         for cbar in self.colorbars:
-            self.inward_ticks.append(InwardTicks.for_axes(cbar.ax, _get_colorbar_colors_beneath(cbar), sides=("left", "right")))
+            sides = ("bottom", "top") if cbar.orientation == "horizontal" else ("left", "right")
+            self.inward_ticks.append(InwardTicks.for_axes(cbar.ax, _get_colorbar_colors_beneath(cbar), sides=sides))
 
     def update_ticks(self):
         for ticks in self.inward_ticks:
@@ -287,8 +325,8 @@ class Panel:
     def can_share_y_axis(self, right: Panel) -> bool:
         """Whether this panel's y axis can also serve the panel to its right: one y axis each (no twins), the same
         scale, and a label that reads the same for both. The plot heights must match too; the grid checks those.
-        A colorbar would sit between them, so this panel mustn't have one."""
-        if self.colorbars or len(self.axes) != 1 or len(right.axes) != 1:
+        Colorbars are the grid's to arrange around it."""
+        if len(self.axes) != 1 or len(right.axes) != 1:
             return False
         my_ax, right_ax = self.axes[0], right.axes[0]
         if (my_ax, "y") not in self.scales_per_axis or (right_ax, "y") not in right.scales_per_axis:
