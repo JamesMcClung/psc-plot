@@ -154,8 +154,8 @@ def _plot_sizes(grid: Grid, options: LayoutOptions, cols: list[int], rows: list[
             shortfall = max(shortfall, *blamed)
         if locked[loc]:
             aw, ah = auto[loc]  # its shape, even if the scaling above shrank it to nothing
-            s = max(min_w / aw, min_h / ah) if (w < min_w - 1e-9 or h < min_h - 1e-9) else 1.0
-            sizes[loc] = (max(w, aw * s), max(h, ah * s)) if s == 1.0 else (aw * s, ah * s)
+            s = max(min_w / aw, min_h / ah)
+            sizes[loc] = (aw * s, ah * s)
         else:
             sizes[loc] = (max(w, min_w), max(h, min_h))
 
