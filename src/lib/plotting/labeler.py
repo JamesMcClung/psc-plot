@@ -23,7 +23,10 @@ class SubjectLabeler(Labeler):
     optional subject (variable name) and any number of sublabels (e.g. scalar coordinates). When multiple datasets are
     plotted within the same figure, common label components can be "factored out" to a higher label location, e.g.
     from a legend to an axis title. Label locations are well-described by a tree structure, where common label
-    components propagate from the leaves to the root."""
+    components propagate from the leaves to the root.
+
+    Sublabels are factored out by dim, and only if they agree on every frame, so that none moves between frames. The
+    tree decides once, on its first update (or its first since it changed); each frame then just rebuilds the text."""
 
     source: PlotInfo | None = None
 
@@ -31,14 +34,22 @@ class SubjectLabeler(Labeler):
     parent: SubjectLabeler | None = field(default=None, init=False)
 
     _subject: str | None = field(default=None, init=False)
-    _sublabels: list[str] = field(default_factory=list, init=False)
+    _sublabels: Sublabels = field(default_factory=dict, init=False)
+    _decided: bool = field(default=False, init=False)
+    """On the root: whether the tree has decided where everything goes."""
+
+    def _root(self) -> SubjectLabeler:
+        return self.parent._root() if self.parent else self
 
     def add_child(self, child: SubjectLabeler):
         assert child.parent is None
+        self._root()._decided = False
         child.parent = self
         self.children.append(child)
 
     def remove_from_tree(self):
+        self._root()._decided = False
+        self._decided = False
         for child in self.children:
             child.parent = self.parent
         if self.parent is not None:
@@ -51,9 +62,10 @@ class SubjectLabeler(Labeler):
         """Propagate updates up to the root labeler, which makes sure that everyone rebuilds and then everyone updates text."""
         if self.parent:
             return self.parent.update()
-        else:
+        if not self._decided:
             self._rebuild()
-            self._update_text()
+            self._decided = True
+        self._update_text()
 
     def _rebuild(self):
         """Recompute this node's subject and sublabels. A leaf reads them from its source; any other node factors
@@ -64,7 +76,7 @@ class SubjectLabeler(Labeler):
         if self.source:
             assert not self.children, "a labeler with a source is a leaf"
             self._subject = self.source.subject
-            self._sublabels = self.source.get_sublabels()
+            self._sublabels = {dim: (texts, self.source) for dim, texts in self.source.get_frames_sublabels().items()}
             return
 
         children = self._get_children_labeling_data()
@@ -76,7 +88,7 @@ class SubjectLabeler(Labeler):
 
         self._sublabels = _get_common_sublabels(children)
         for child in children:
-            child._lift_sublabels(self._sublabels)
+            child._lift_sublabels(set(self._sublabels))
 
     def _get_children_labeling_data(self) -> list[SubjectLabeler]:
         return [child for child in self.children if child._labels_any_data()]
@@ -94,11 +106,11 @@ class SubjectLabeler(Labeler):
     def _lift_subject(self):
         self._subject = None
 
-    def _get_liftable_sublabels(self) -> list[str]:
+    def _get_liftable_sublabels(self) -> Sublabels:
         return self._sublabels
 
-    def _lift_sublabels(self, sublabels: list[str]):
-        self._sublabels = [sublabel for sublabel in self._sublabels if sublabel not in sublabels]
+    def _lift_sublabels(self, dims: set[VarKey]):
+        self._sublabels = {dim: sublabel for dim, sublabel in self._sublabels.items() if dim not in dims}
 
     def _update_text(self):
         # set_text intelligently checks if the text actually changes or not
@@ -107,7 +119,8 @@ class SubjectLabeler(Labeler):
             child._update_text()
 
     def _get_label(self) -> str:
-        sublabels = ", ".join(self._sublabels)
+        # The current frame's text, from a source of each dim (all its sources agree, or it wouldn't be here).
+        sublabels = ", ".join(source.get_coord_label(dim).maybe_with_dollars() for dim, (_, source) in self._sublabels.items() if dim in source.scalar_coord_values)
 
         if self._subject and sublabels:
             return f"{self._subject} ({sublabels})"
@@ -120,11 +133,29 @@ def _get_common_subject(labelers: list[SubjectLabeler]) -> str | None:
     return subjects.pop() if len(subjects) == 1 else None
 
 
-def _get_common_sublabels(labelers: list[SubjectLabeler]) -> list[str]:
-    """The sublabels every labeler offers, in order of first appearance."""
+type Sublabels = dict[VarKey, tuple[tuple[str, ...], PlotInfo]]
+"""Sublabels by dim: the text on every frame, and a source whose current frame gives the text now."""
+
+
+def _on_every_frame(texts: tuple[str, ...], n_frames: int) -> tuple[str, ...]:
+    """`texts` over `n_frames` frames; a shorter sequence (e.g. a static plot's one frame) holds its last."""
+    return tuple(texts[min(frame, len(texts) - 1)] for frame in range(n_frames))
+
+
+def _get_common_sublabels(labelers: list[SubjectLabeler]) -> Sublabels:
+    """The sublabels every labeler offers with the same text on every frame, in order of first appearance."""
     sublabelss = [labeler._get_liftable_sublabels() for labeler in labelers]
-    all_sublabels = {sublabel: None for sublabels in sublabelss for sublabel in sublabels}  # use dict to preserve insertion order
-    return [sublabel for sublabel in all_sublabels if all(sublabel in sublabels for sublabels in sublabelss)]
+    dims = {dim: None for sublabels in sublabelss for dim in sublabels}  # use dict to preserve insertion order
+    common = {}
+    for dim in dims:
+        if not all(dim in sublabels for sublabels in sublabelss):
+            continue
+        n_frames = max(len(sublabels[dim][0]) for sublabels in sublabelss)
+        textss = {_on_every_frame(sublabels[dim][0], n_frames) for sublabels in sublabelss}
+        if len(textss) == 1:
+            [texts] = textss
+            common[dim] = (texts, sublabelss[0][dim][1])
+    return common
 
 
 @dataclass
@@ -229,12 +260,12 @@ class YAxisLabeler(SubjectLabeler):
         for child in self._get_children_labeling_data():
             child._lift_subject()
 
-    def _get_liftable_sublabels(self) -> list[str]:
+    def _get_liftable_sublabels(self) -> Sublabels:
         return _get_common_sublabels(self._get_children_labeling_data())
 
-    def _lift_sublabels(self, sublabels: list[str]):
+    def _lift_sublabels(self, dims: set[VarKey]):
         for child in self._get_children_labeling_data():
-            child._lift_sublabels(sublabels)
+            child._lift_sublabels(dims)
 
 
 @dataclass(init=False)

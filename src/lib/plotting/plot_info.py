@@ -44,15 +44,19 @@ class PlotInfo(ABC):
             return self.dim_displays[self.subject_dim].maybe_with_dollars()
         return None
 
-    def get_coord_label(self, dim: VarKey) -> Latex:
+    def get_coord_label(self, dim: VarKey, values: dict[VarKey, float] | None = None) -> Latex:
+        """`dim`'s value, as in `values` (by default, the current frame's `scalar_coord_values`)."""
         display = self.dim_displays.get(dim, f"\\text{{{dim}}}")
-        coord_val = _format_coord_value(float(self.scalar_coord_values[dim]))
+        coord_val = _format_coord_value(float((self.scalar_coord_values if values is None else values)[dim]))
         unit = self.dim_units.get(dim, "")
         maybe_space = "\\ " if unit else ""
         return Latex(f"{display} = {coord_val}{maybe_space}{unit}")
 
-    def get_sublabels(self) -> list[str]:
-        return [self.get_coord_label(dim).maybe_with_dollars() for dim in self.scalar_coord_values]
+    def get_frames_sublabels(self) -> dict[VarKey, tuple[str, ...]]:
+        """Each scalar coord's sublabel on every frame ("" on frames it's missing from), in order of appearance."""
+        framess = self.frames_scalar_coord_values or [self.scalar_coord_values]
+        dims = {dim: None for values in framess for dim in values}  # a dict keeps the order
+        return {dim: tuple(self.get_coord_label(dim, values).maybe_with_dollars() if dim in values else "" for values in framess) for dim in dims}
 
     @abstractmethod
     def has_legend(self) -> bool: ...
