@@ -241,10 +241,6 @@ class Panel:
         if axis_id != "r" and (minor_locator := new_scale.minor_locator()):
             (ax.xaxis if axis_id == "x" else ax.yaxis).set_minor_locator(minor_locator)
 
-    def _get_x_axs(self) -> list[Axes]:
-        # Sharing an axis takes it out of `scales_per_axis`, but not out of `bounds_setters_per_axis`.
-        return [ax for ax, axis_id in self.bounds_setters_per_axis if axis_id == "x"]
-
     def prune_y_ticks(self, end: YEnd):
         for ax, axis_id in self.scales_per_axis:
             if axis_id == "y":
@@ -322,6 +318,8 @@ class Panel:
 
         right_ax.sharey(my_ax)
         self.shared_y_right = right
+        # One axis, so one bounds setter, over both panels' data: two would each set it, the last one winning.
+        self.bounds_setters_per_axis[(my_ax, "y")].infos.extend(right.bounds_setters_per_axis.pop((right_ax, "y")).infos)
         right_ax.yaxis.set_tick_params(which="both", labelleft=False)
         right_ax.yaxis.offsetText.set_visible(False)
         for info in right_labeler.unit_labeler.sources:
@@ -359,6 +357,8 @@ class Panel:
 
         my_ax.sharex(below_ax)
         self.shared_x_below = below
+        # One axis, so one bounds setter, over both panels' data: two would each set it, the last one winning.
+        below.bounds_setters_per_axis[(below_ax, "x")].infos.extend(self.bounds_setters_per_axis.pop((my_ax, "x")).infos)
         # Only strip the edge facing `below`. `label_outer` would go by the grid instead, and strip the bottom of
         # every axes above the last row, even one whose neighbour below it didn't share.
         my_ax.xaxis.set_tick_params(which="both", labelbottom=False, bottom=False)

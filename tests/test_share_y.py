@@ -74,3 +74,25 @@ def test_x_labels_dont_collide_at_the_junction():
     for a in visible_tick_labels(left.xaxis):
         for b in visible_tick_labels(right.xaxis):
             assert not a.get_window_extent(renderer).overlaps(b.get_window_extent(renderer)), (a.get_text(), b.get_text())
+
+
+def test_shared_y_covers_both_panels_data():
+    """The right panel's B_x spans less than the left's; the shared axis must still show all of the left's."""
+    fig = make_plot("pfd hx_fc --copy -i t=0 -v y --copy hx_fc -i t=-1 -v y loc=2,1".split())
+    left, right = _main_axes(fig)
+    assert right.get_shared_y_axes().joined(left, right)
+    lower, upper = left.get_ylim()
+    for ax in (left, right):
+        for line in ax.lines:
+            assert lower <= line.get_ydata().min() and line.get_ydata().max() <= upper
+
+
+def test_shared_x_covers_both_panels_data():
+    """Stacked, the lower panel's y range is half the upper's; the shared x axis must still show all of the upper's."""
+    fig = make_plot("pfd hx_fc -i t=-1 --copy -v y --copy hx_fc -i y=0:8 -v y loc=1,2".split())
+    upper, lower = sorted([ax for ax in fig.axes if ax.lines], key=lambda ax: -ax.get_position().y1)
+    assert upper.get_shared_x_axes().joined(upper, lower)
+    left, right = upper.get_xlim()
+    for ax in (upper, lower):
+        for line in ax.lines:
+            assert left <= line.get_xdata().min() and line.get_xdata().max() <= right
