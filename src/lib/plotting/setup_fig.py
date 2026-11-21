@@ -2,6 +2,7 @@ from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.cm import ScalarMappable
 from matplotlib.colorbar import Colorbar
+from matplotlib.colors import to_hex
 from matplotlib.figure import Figure
 from matplotlib.projections import PolarAxes
 
@@ -71,6 +72,7 @@ def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
 
         if not right_ax:
             right_ax = left_ax.twinx()
+            right_ax._get_lines = left_ax._get_lines  # one color cycle, so lines on either side differ
             panel.add_axes(right_ax)
 
         if wire_axis(panel, right_ax, "y", info):
@@ -79,7 +81,21 @@ def setup_panel_xy(ax: Axes, infos: list[PlotInfo2D]) -> Panel:
 
         raise Exception(f"the y-axis of {info} and least two other plots are mutually incompatible")
 
+    if right_ax:
+        for side_ax in (left_ax, right_ax):
+            color_y_axis_by_its_lines(side_ax)
+
     return panel
+
+
+def color_y_axis_by_its_lines(ax: Axes):
+    """Color a twinned y axis' label and tick labels like its lines, to say which lines it describes. Only when
+    they're all one color; otherwise the color would say nothing."""
+    colors = {to_hex(line.get_color()) for line in ax.lines}
+    if len(colors) == 1:
+        [color] = colors
+        ax.yaxis.label.set_color(color)
+        ax.tick_params(axis="y", labelcolor=color)
 
 
 def setup_panel_polar(ax: PolarAxes, infos: list[PolarMeshInfo]) -> Panel:
