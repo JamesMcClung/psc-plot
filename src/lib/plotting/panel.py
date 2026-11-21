@@ -11,6 +11,7 @@ from matplotlib.axis import Axis
 from matplotlib.backend_bases import RendererBase
 from matplotlib.colorbar import Colorbar
 from matplotlib.colors import to_rgba
+from matplotlib.font_manager import FontProperties
 from matplotlib.projections import PolarAxes
 from matplotlib.text import Text
 from matplotlib.transforms import Bbox, ScaledTranslation
@@ -52,7 +53,8 @@ class ColorbarText:
         size = scaled_font_size("axes.labelsize")
         pad = COLORBAR_TEXT_PAD / 72
         top = ax.text(0.0, 1.0, "", transform=ax.transAxes + ScaledTranslation(0.0, pad, fig.dpi_scale_trans), ha="left", va="bottom", multialignment="left", fontsize=size)
-        bottom = ax.text(0.0, 0.0, "", transform=ax.transAxes + ScaledTranslation(0.0, -pad, fig.dpi_scale_trans), ha="left", va="top", fontsize=size)
+        tick_size = FontProperties(size=plt.rcParams["ytick.labelsize"]).get_size_in_points()  # it qualifies the tick labels
+        bottom = ax.text(0.0, 0.0, "", transform=ax.transAxes + ScaledTranslation(0.0, -pad, fig.dpi_scale_trans), ha="left", va="top", fontsize=tick_size)
         return ColorbarText(cbar, top, bottom)
 
     def update_bottom(self):

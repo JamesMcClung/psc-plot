@@ -19,7 +19,9 @@ def test_image_text_scaled():
     assert ax.title.get_fontsize() == TITLE
     assert ax.xaxis.label.get_fontsize() == LABEL
     assert ax.yaxis.label.get_fontsize() == LABEL
-    assert all(text.get_fontsize() == LABEL for text in cax.texts)
+    top, bottom = sorted(cax.texts, key=lambda text: -text.get_position()[1])  # the label above, the multiplier below
+    assert top.get_fontsize() == LABEL
+    assert bottom.get_fontsize() == TICK
     assert all(label.get_fontsize() == TICK for label in _tick_labels(fig))
 
 
