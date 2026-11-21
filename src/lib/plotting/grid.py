@@ -1,7 +1,7 @@
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from lib.plotting import plt_util
+from lib.plotting import plt_util, tick_labels
 from lib.plotting.labeler import SubjectLabeler
 from lib.plotting.layout.auto_size import auto_plot_size
 from lib.plotting.layout.geometry import sizes_close
@@ -28,6 +28,8 @@ class Grid:
 
         self.flush_row_boundaries: set[int] = set()
         """Rows `r` whose panels sit flush against those of row `r + 1`, sharing their x axes."""
+        self.flush_col_boundaries: set[int] = set()
+        """Columns `c` whose panels sit flush against those of column `c + 1`, sharing their y axes."""
 
     def setup_ax(self, loc: AxesIdx) -> Axes:
         infos = self.infos[loc]
@@ -66,6 +68,23 @@ class Grid:
             for above, below in zip(col[:-1], col[1:]):
                 if above.shares_x_with(below):
                     below.prune_y_ticks("upper")
+
+    def share_y_axes_horizontally(self, dpi: float):
+        """Put panels side by side along each row where they can share a y axis. Plot edges line up across the
+        whole grid, so a column boundary is flush only if every row with panels on both sides of it can share
+        there. Sizes come first: plot heights must already match."""
+        sizes = {loc: auto_plot_size(infos, dpi) for loc, infos in self.infos.items()}
+
+        for col in range(1, self.ncols):
+            pairs = [(self.panels[(col, row)], self.panels[(col + 1, row)], (col, row)) for row in range(1, self.nrows + 1) if (col, row) in self.panels and (col + 1, row) in self.panels]
+            if not pairs:
+                continue
+            if all(left.can_share_y_axis(right) and sizes_close(sizes[loc][1], sizes[(loc[0] + 1, loc[1])][1], dpi) for left, right, loc in pairs):
+                for left, right, _ in pairs:
+                    left.share_y_axis(right)
+                    # The right panel drops its leftmost x tick, so its label can't crowd the left panel's last one.
+                    tick_labels.prune_ticks(right.axes[0].xaxis, "lower")
+                self.flush_col_boundaries.add(col)
 
     def stacks(self) -> list[list[Panel]]:
         """Each column's runs of panels that share an x axis all the way down, top to bottom."""

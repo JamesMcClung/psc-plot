@@ -142,6 +142,7 @@ def setup_fig(plot_infos: list[PlotInfo], options: LayoutOptions) -> tuple[Figur
         grid.set_panel(loc, panel)
 
     grid.share_x_axes_vertically(options.dpi)
+    grid.share_y_axes_horizontally(options.dpi)
     for panel in grid.panels.values():
         panel.add_inward_ticks()
     grid.update_labels()

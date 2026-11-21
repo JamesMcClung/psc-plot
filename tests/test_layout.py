@@ -270,3 +270,13 @@ def test_title_room_for_widest_frame():
         assert fig.bbox.x0 - 1 <= title.x0 and title.x1 <= fig.bbox.x1 + 1 and title.y1 <= fig.bbox.y1 + 1, (frame, title, fig.bbox)
         assert title.y0 >= ax.get_window_extent(renderer_).y1 - 1, frame
         assert [tuple(a.get_position().bounds) for a in fig.axes] == positions
+
+
+def test_stack_stays_flush_beside_a_taller_panel():
+    """Row 1 is taller than its line panel (a tall image beside it), yet the line stays flush with the one below."""
+    fig = make_plot("pfd ex_ec --copy -i t=0 -v y --copy ex_ec -i t=-1 -v y loc=1,2 -w pfd::hx_fc -i t=-1 -v z y loc=2,1".split())
+    lines = sorted([ax for ax in fig.axes if ax.lines], key=lambda ax: -ax.get_position().y1)
+    [image] = [ax for ax in fig.axes if ax.images]
+    upper, lower = [_box_in(ax) for ax in lines]
+    assert _box_in(image).height > upper.height + 0.1  # the premise
+    assert sizes_close(upper.y0, lower.y1, DPI)

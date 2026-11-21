@@ -143,6 +143,9 @@ def compute_layout(grid: Grid, options: LayoutOptions, decorations: dict[AxesIdx
     def row_flush_below(row: int) -> bool:
         return row in grid.flush_row_boundaries
 
+    def col_flush_right(col: int) -> bool:
+        return col in grid.flush_col_boundaries
+
     # Margins, first with the auto heights; colorbar gaps depend on the plot heights only weakly, so recompute after.
     def margins_for(sizes: dict[AxesIdx, tuple[float, float]]) -> dict[AxesIdx, Margins]:
         margins = {}
@@ -155,6 +158,11 @@ def compute_layout(grid: Grid, options: LayoutOptions, decorations: dict[AxesIdx
                 m = Margins(m.left, m.right, 0.0, m.top)
             if row_flush_below(row - 1):
                 m = Margins(m.left, m.right, m.bottom, 0.0)
+            # Likewise panels sharing a y axis.
+            if col_flush_right(col):
+                m = Margins(m.left, 0.0, m.bottom, m.top)
+            if col_flush_right(col - 1):
+                m = Margins(0.0, m.right, m.bottom, m.top)
             margins[loc] = m
         return margins
 
@@ -163,7 +171,8 @@ def compute_layout(grid: Grid, options: LayoutOptions, decorations: dict[AxesIdx
         col_right = {col: max(m.right for loc, m in margins.items() if loc[0] == col) for col in cols}
         row_top = {row: max(m.top for loc, m in margins.items() if loc[1] == row) for row in rows}
         row_bottom = {row: max(m.bottom for loc, m in margins.items() if loc[1] == row) for row in rows}
-        col_fixed = 2 * FIGURE_PAD + sum(col_left.values()) + sum(col_right.values()) + PANEL_GAP * (len(cols) - 1)
+        col_gaps = sum(0.0 if col_flush_right(col) else PANEL_GAP for col in cols[:-1])
+        col_fixed = 2 * FIGURE_PAD + sum(col_left.values()) + sum(col_right.values()) + col_gaps
         row_gaps = sum(0.0 if row_flush_below(row) else PANEL_GAP for row in rows[:-1])
         suptitle_room = suptitle_height + FIGURE_PAD if suptitle_height else 0.0
         row_fixed = 2 * FIGURE_PAD + suptitle_room + sum(row_top.values()) + sum(row_bottom.values()) + row_gaps
@@ -196,7 +205,7 @@ def compute_layout(grid: Grid, options: LayoutOptions, decorations: dict[AxesIdx
     x = x_offset + FIGURE_PAD
     for col in cols:
         col_x0[col] = x + col_left[col]
-        x += col_left[col] + col_width[col] + col_right[col] + PANEL_GAP
+        x += col_left[col] + col_width[col] + col_right[col] + (0.0 if col_flush_right(col) else PANEL_GAP)
 
     row_y1 = {}
     y = fig_height - y_offset - FIGURE_PAD - (suptitle_height + FIGURE_PAD if suptitle_height else 0.0)
@@ -208,8 +217,10 @@ def compute_layout(grid: Grid, options: LayoutOptions, decorations: dict[AxesIdx
     colorbar_boxes = {}
     for loc, (w, h) in sizes.items():
         col, row = loc
-        x0 = col_x0[col] + (col_width[col] - w) / 2
-        y1 = row_y1[row] - (row_height[row] - h) / 2
+        # Centered in its column and row, unless it sits flush against a neighbor: then it hugs that edge.
+        x_slack, y_slack = col_width[col] - w, row_height[row] - h
+        x0 = col_x0[col] + (x_slack if col_flush_right(col) else 0.0 if col_flush_right(col - 1) else x_slack / 2)
+        y1 = row_y1[row] - (y_slack if row_flush_below(row) else 0.0 if row_flush_below(row - 1) else y_slack / 2)
         box = Box(x0, y1 - h, w, h)
         plot_boxes[loc] = box
 
