@@ -36,9 +36,6 @@ class Margins:
     bottom: float = 0.0
     top: float = 0.0
 
-    def max(self, other: Margins) -> Margins:
-        return Margins(max(self.left, other.left), max(self.right, other.right), max(self.bottom, other.bottom), max(self.top, other.top))
-
 
 def sizes_close(a: float, b: float, dpi: float) -> bool:
     """Whether two sizes, in inches, are the same as far as the output can tell. Never compare sizes with `==`."""
