@@ -291,3 +291,15 @@ def test_equal_scale_panels_share_one_scale():
     assert sizes_close(left_box.height, right_box.height, DPI)
     assert right_box.width == pytest.approx(left_box.width / 2, abs=2 / DPI)
     assert left_box.width * left_box.height == pytest.approx(DEFAULT_PLOT_SIZE[0] * DEFAULT_PLOT_SIZE[1], rel=0.01)  # the largest gets the default area
+
+
+@pytest.mark.parametrize("figsize", ["auto,5", "auto,14", "12,auto"])
+def test_fixed_side_keeps_shared_axes_aligned(figsize: str):
+    """An equal-scale image above a line plot: a fixed side scales them differently, so they mustn't share x unless
+    their widths still match."""
+    fig = make_plot(f"pfd hx_fc -i t=-1 z=0:6 y=0:8 -v y z loc=1,1 -w pfd::hy_fc -i t=-1 y=0:8 z=0 -v y loc=1,2 --figsize {figsize}".split())
+    plots = [ax for ax in fig.axes if ax.images or ax.lines]
+    for a in plots:
+        for b in plots:
+            if a is not b and a.get_shared_x_axes().joined(a, b):
+                assert sizes_close(_box_in(a).width, _box_in(b).width, DPI)

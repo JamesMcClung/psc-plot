@@ -4,9 +4,10 @@ from matplotlib.figure import Figure
 
 from lib.plotting import plt_util, tick_labels
 from lib.plotting.labeler import SharedColorbarLabel, SubjectLabeler, UnitLabeler
-from lib.plotting.layout.auto_size import auto_plot_sizes
+from lib.plotting.layout.auto_size import auto_plot_sizes, is_aspect_locked
 from lib.plotting.layout.colorbars import CellModel, ColorbarAssignment, GridModel, assign_colorbars
 from lib.plotting.layout.geometry import sizes_close
+from lib.plotting.layout.options import LayoutOptions
 from lib.plotting.panel import Panel, color_key
 from lib.plotting.plot_info import PlotInfo
 from lib.plotting.style import scaled_font_size
@@ -51,16 +52,23 @@ class Grid:
 
         self.panels[loc] = panel
 
-    def share_x_axes_vertically(self, dpi: float):
+    def _sizes_stay_matched(self, a: AxesIdx, b: AxesIdx, options: LayoutOptions) -> bool:
+        """Whether a fixed `--figsize` side scales `a` and `b` alike: it scales an aspect-locked plot area in both
+        directions and any other in one, so with a fixed side they must both be locked or both not."""
+        fixed = options.figsize.width is not None or options.figsize.height is not None
+        return not fixed or is_aspect_locked(self.infos[a]) == is_aspect_locked(self.infos[b])
+
+    def share_x_axes_vertically(self, options: LayoutOptions):
         """Stack panels down each column where they can share an x axis. Plot edges line up across the whole
         grid, so a row boundary is flush only if every column with panels on both sides of it can share there."""
+        dpi = options.dpi
         sizes = auto_plot_sizes(self.infos, dpi)
 
         for row in range(1, self.nrows):
             pairs = [(self.panels[(col, row)], self.panels[(col, row + 1)], (col, row)) for col in range(1, self.ncols + 1) if (col, row) in self.panels and (col, row + 1) in self.panels]
             if not pairs:
                 continue
-            if all(above.can_share_x_axis(below) and sizes_close(sizes[loc][0], sizes[(loc[0], loc[1] + 1)][0], dpi) for above, below, loc in pairs):
+            if all(above.can_share_x_axis(below) and sizes_close(sizes[loc][0], sizes[(loc[0], loc[1] + 1)][0], dpi) and self._sizes_stay_matched(loc, (loc[0], loc[1] + 1), options) for above, below, loc in pairs):
                 for above, below, _ in pairs:
                     above.share_x_axis(below)
                 self.flush_row_boundaries.add(row)
@@ -68,16 +76,17 @@ class Grid:
     def _col_pairs(self, col: int) -> list[tuple[AxesIdx, AxesIdx]]:
         return [((col, row), (col + 1, row)) for row in range(1, self.nrows + 1) if (col, row) in self.panels and (col + 1, row) in self.panels]
 
-    def _shareable_col_boundaries(self, dpi: float) -> set[int]:
+    def _shareable_col_boundaries(self, options: LayoutOptions) -> set[int]:
         """Columns whose panels could sit flush against the next column's, sharing y axes, colorbars aside. Plot
         edges line up across the whole grid, so every row with panels on both sides must be able to share, and
-        plot heights must already match."""
+        plot heights must already match, and stay matched under a fixed `--figsize` side."""
+        dpi = options.dpi
         sizes = auto_plot_sizes(self.infos, dpi)
         shareable = set()
         for col in range(1, self.ncols):
             pairs = self._col_pairs(col)
             # A panel with several color quantities needs a vertical bar for each, so it sits apart from its neighbors.
-            if pairs and all(not self.panels[left].has_mixed_colors() and not self.panels[right].has_mixed_colors() and self.panels[left].can_share_y_axis(self.panels[right]) and sizes_close(sizes[left][1], sizes[right][1], dpi) for left, right in pairs):
+            if pairs and all(not self.panels[left].has_mixed_colors() and not self.panels[right].has_mixed_colors() and self.panels[left].can_share_y_axis(self.panels[right]) and sizes_close(sizes[left][1], sizes[right][1], dpi) and self._sizes_stay_matched(left, right, options) for left, right in pairs):
                 shareable.add(col)
         return shareable
 
@@ -92,11 +101,11 @@ class Grid:
                 stacks.append([loc])
         return stacks
 
-    def arrange_colorbars(self, dpi: float):
+    def arrange_colorbars(self, options: LayoutOptions):
         """Decide which colorbars the images get, and which column boundaries sit flush sharing y axes (they
         constrain each other: see `layout.colorbars`); then share those y axes and make those colorbars. Call
         after `share_x_axes_vertically`."""
-        model = GridModel({loc: CellModel(loc, panel.color_key()) for loc, panel in self.panels.items()}, self._x_stacks(), self._shareable_col_boundaries(dpi))
+        model = GridModel({loc: CellModel(loc, panel.color_key()) for loc, panel in self.panels.items()}, self._x_stacks(), self._shareable_col_boundaries(options))
         plan = assign_colorbars(model)
 
         for col in sorted(plan.flush_col_boundaries):

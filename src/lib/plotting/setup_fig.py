@@ -128,8 +128,8 @@ def setup_fig(plot_infos: list[PlotInfo], options: LayoutOptions) -> tuple[Figur
         panel = setup_panel(ax, infos)
         grid.set_panel(loc, panel)
 
-    grid.share_x_axes_vertically(options.dpi)
-    grid.arrange_colorbars(options.dpi)
+    grid.share_x_axes_vertically(options)
+    grid.arrange_colorbars(options)
     for panel in grid.panels.values():
         panel.add_inward_ticks()
     grid.update_labels()
