@@ -33,6 +33,13 @@ def validate(model: GridModel, plan: ColorbarPlan):
             tops = {stack[0] for stack in model.x_stacks}
             assert all(anchor in tops for anchor in bar.anchors), bar
     assert plan.flush_col_boundaries <= model.shareable_col_boundaries
+    flush_rows = {stack[i][1] for stack in model.x_stacks for i in range(len(stack) - 1)}
+    for bar in plan.colorbars:
+        for anchor in bar.anchors:
+            if bar.orientation == "vertical":
+                assert anchor[0] not in plan.flush_col_boundaries, bar
+            else:
+                assert anchor[1] - 1 not in flush_rows, bar
 
 
 def test_row_shares_one_vertical_bar():
@@ -101,6 +108,25 @@ def test_horizontal_bar_keys_its_stack():
     validate(model, plan)
     assert plan.flush_col_boundaries == {1}
     assert _bars(plan, "horizontal") == {(a, c), (b,)}
+
+
+def test_vertical_bar_never_in_a_flush_junction():
+    """C's row has nothing right of it, but row 1 sits flush across that boundary: a bar beside C would overlap
+    column 2."""
+    a, b, c = (1, 1), (2, 1), (1, 2)
+    model = _model({a: E, b: E, c: N}, [], {1})
+    plan = assign_colorbars(model)
+    validate(model, plan)
+    assert plan.flush_col_boundaries == set()
+
+
+def test_horizontal_bar_never_in_a_flush_junction():
+    """Row 2 needs horizontal bars, but row 1 sits flush on it (column 2's stack): a bar above C would overlap row 1."""
+    a, c, d, b = (1, 1), (1, 2), (2, 2), (2, 1)
+    model = _model({b: None, c: E, d: N}, [[b, d]], {1})
+    plan = assign_colorbars(model)
+    validate(model, plan)
+    assert plan.flush_col_boundaries == set()
 
 
 def test_lines_need_no_bars():

@@ -3,7 +3,8 @@ be tested on their own.
 
 A colorbar keys the images flush with it: a vertical bar, the run of flush panels to its left (extended over runs
 flush below with the same key); a horizontal bar, the stack below it. A colorbar must never be ambiguous: every image
-is keyed by exactly one bar, of its own key. Sharing y axes is tried first; if the colorbars that needs would be
+is keyed by exactly one bar, of its own key, and no bar sits where flush panels close up the space it would take
+(even in another row or column). Sharing y axes is tried first; if the colorbars that needs would be
 ambiguous, no column boundary is flush, and every image gets a vertical bar of its own (extended over same-key images
 flush above and below it).
 """
@@ -68,6 +69,7 @@ def _plan(model: GridModel, flush: set[int]) -> ColorbarPlan | None:
     """The colorbars with these column boundaries flush, or `None` if they'd be ambiguous."""
     key = {loc: cell.color_key for loc, cell in model.cells.items()}
     stack_of = {loc: (stack, i) for stack in model.x_stacks for i, loc in enumerate(stack)}
+    flush_rows = {stack[i][1] for stack in model.x_stacks for i in range(len(stack) - 1)}
 
     def flush_below(above: AxesIdx, below: AxesIdx) -> bool:
         stack, i = stack_of[above]
@@ -88,6 +90,8 @@ def _plan(model: GridModel, flush: set[int]) -> ColorbarPlan | None:
         if len({key[loc] for loc in images}) == 1:
             if already:
                 return None  # a bar at the run's end would key these a second time
+            if run[-1][0] in flush:
+                return None  # the bar would sit in a junction other rows close up
             # Extend the bar of the same key over the run flush above, if it spans the same columns.
             for runs, group_key in vertical_groups:
                 above = runs[-1]
@@ -103,8 +107,8 @@ def _plan(model: GridModel, flush: set[int]) -> ColorbarPlan | None:
             if loc in already:
                 continue
             stack, i = stack_of[loc]
-            if i != 0:
-                return None  # a horizontal bar never sits inside a stack
+            if i != 0 or loc[1] - 1 in flush_rows:
+                return None  # a horizontal bar never sits inside a stack, nor in a junction other columns close up
             stack_images = tuple(below for below in stack if key[below] is not None)
             colorbars.append(ColorbarAssignment("horizontal", stack_images, (loc,)))
             keyed_from_above.update(stack_images)
