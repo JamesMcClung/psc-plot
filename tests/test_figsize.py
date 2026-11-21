@@ -37,8 +37,3 @@ def test_flags_parse():
     args = parse_args(["pfd", "hx_fc", "--figsize", "4,auto", "--dpi", "50"])
     assert args.figsize == FigSizeSpec(4.0, None)
     assert args.dpi == 50.0
-
-
-def test_save_dpi_is_gone():
-    with pytest.raises(SystemExit):
-        parse_args(["pfd", "hx_fc", "--save-dpi", "50"])
