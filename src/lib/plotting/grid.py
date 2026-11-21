@@ -118,6 +118,14 @@ class Grid:
         if self.suptitle_labeler:
             self.suptitle_labeler.update()
 
+    def update_label_texts(self):
+        """`update_labels`, but leaving the legends be: cheap enough to run for every frame up front."""
+        for panel in self.panels.values():
+            panel.update_label_texts()
+
+        if self.suptitle_labeler:
+            self.suptitle_labeler.update()
+
     def update_data(self):
         for panel in self.panels.values():
             panel.update_data()

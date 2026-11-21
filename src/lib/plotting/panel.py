@@ -103,15 +103,18 @@ class Panel:
             bounds_setter.update()
 
     def update_labels(self):
-        for labeler in self.get_labelers():
-            labeler.update()
-
+        self.update_label_texts()
         for axes, labelers in self.legend_labelers_per_axes.items():
             if not any(labeler._get_label() for labeler in labelers):
                 if legend := axes.get_legend():
                     legend.remove()
             else:
                 axes.legend(fontsize=scaled_font_size("legend.fontsize", LEGEND_TEXT_SCALE))  # required for label redraw
+
+    def update_label_texts(self):
+        """Set every label's text for the current frame, but leave the legends be."""
+        for labeler in self.get_labelers():
+            labeler.update()
 
     def get_labelers(self) -> list[Labeler]:
         maybe_labelers = [
