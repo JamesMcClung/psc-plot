@@ -36,6 +36,15 @@ def update_cbar(mappable: _ScalarMappable, *, data_min_override: float | None = 
     mappable.set_cmap(plt.get_cmap(cmap))
 
 
+def update_shared_cbar(mappables: list[_ScalarMappable], boundss: list[tuple[float, float]]):
+    """Give every mappable the same color limits and colormap, spanning all their bounds, so one colorbar keys
+    them all."""
+    lower = min(lower for lower, _ in boundss)
+    upper = max(upper for _, upper in boundss)
+    for mappable in mappables:
+        update_cbar(mappable, data_min_override=lower, data_max_override=upper)
+
+
 def _get_multiplier_exponent(lower: float, upper: float) -> int:
     """The power of ten that matplotlib would factor out of tick labels spanning `lower` to `upper`. 0 means none."""
     largest = max(abs(lower), abs(upper))
