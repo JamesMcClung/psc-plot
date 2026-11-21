@@ -73,8 +73,6 @@ class Grid:
         for stack in self.stacks():
             if len(stack) > 1:
                 stack[-1].flush_y_ends.add("lower")
-                for panel in stack:
-                    panel.add_interior_x_ticks()
 
     def stacks(self) -> list[list[Panel]]:
         """Each column's runs of panels that share an x axis all the way down, top to bottom."""
@@ -94,9 +92,9 @@ class Grid:
         for panel in self.panels.values():
             panel.tuck_y_tick_labels(renderer)
 
-    def update_interior_x_ticks(self):
+    def update_ticks(self):
         for panel in self.panels.values():
-            panel.update_interior_x_ticks()
+            panel.update_ticks()
 
     def adjust_to_draw(self):
         """Steps that measure where things were drawn. The layout engine runs them after each of its passes."""
@@ -140,5 +138,5 @@ class Grid:
     def update(self):
         self.update_data()
         self.update_bounds()
-        self.update_interior_x_ticks()
+        self.update_ticks()
         self.update_labels()

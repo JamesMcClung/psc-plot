@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Callable, Literal
 
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import RendererBase
-from matplotlib.collections import PathCollection
 from matplotlib.colorbar import Colorbar
 from matplotlib.colors import to_rgba
-from matplotlib.markers import TICKDOWN, TICKUP
 from matplotlib.projections import PolarAxes
 from matplotlib.text import Text
 from matplotlib.ticker import MaxNLocator
@@ -25,6 +23,7 @@ from lib.plotting.data_setter import DataSetter
 from lib.plotting.labeler import ColorbarLabeler, Labeler, SubjectLabeler, UnitLabeler, YAxisLabeler
 from lib.plotting.plot_info import PlotInfo, PlotInfo2D, PlotInfoColor, PolarMeshInfo
 from lib.plotting.style import scaled_font_size
+from lib.plotting.ticks import InwardTicks
 from lib.scale import LinearScale, Scale
 
 type AxAndIdXY = tuple[Axes, AxIdXY]
@@ -66,6 +65,16 @@ class ColorbarText:
         self.bottom.set_text(" ".join(part for part in [multiplier, shift] if part))
 
 
+def _get_colorbar_colors_beneath(cbar: Colorbar) -> Callable[[Bbox], np.ndarray]:
+    """What's beneath a point of a vertical colorbar: its colormap at the value there."""
+
+    def colors_beneath(bbox: Bbox) -> np.ndarray:
+        _, value = cbar.ax.transData.inverted().transform(((bbox.x0 + bbox.x1) / 2, (bbox.y0 + bbox.y1) / 2))
+        return np.array(cbar.mappable.to_rgba(value))[None, :]
+
+    return colors_beneath
+
+
 @dataclass
 class Panel:
     title_labeler: SubjectLabeler | None = field(init=False, default=None)
@@ -83,8 +92,7 @@ class Panel:
     axes: list[Axes] = field(init=False, default_factory=list)
     """The panel's axes, main first, then any twin."""
     shared_x_below: Panel | None = field(init=False, default=None)
-    interior_x_ticks: dict[tuple[Axes, YEnd], PathCollection] = field(init=False, default_factory=dict)
-    """Ticks drawn just inside the axes at an end, over the data, in addition to any axis ticks there."""
+    inward_ticks: list[InwardTicks] = field(init=False, default_factory=list)
 
     def update_data(self):
         for data_setter in self.data_setters:
@@ -240,43 +248,26 @@ class Panel:
             if isinstance(locator, MaxNLocator):
                 locator.set_params(prune=end)
 
-    def add_interior_x_ticks(self):
-        """Draw x ticks just inside the top and bottom of the axes, over the data. They're artists of their own
-        because an axis' ticks at one end all point one way and share one color."""
-        size = plt.rcParams["xtick.major.size"]
-        width = plt.rcParams["xtick.major.width"]
+    def add_inward_ticks(self):
+        """Inward ticks on every side of the plot area (polar axes keep their own) and on both long sides of each
+        colorbar. Call `update_ticks` once the axes are laid out, and each frame."""
+        main = self.axes[0]
+        if main.name != "polar":
+            twin = self.axes[1] if len(self.axes) > 1 else None
+            self.inward_ticks.append(InwardTicks.for_axes(main, self._get_colors_beneath, twin=twin))
 
-        for ax in self._get_x_axs():
-            for end, marker in [("lower", TICKUP), ("upper", TICKDOWN)]:
-                ticks = ax.scatter([], [], s=size**2, marker=marker, facecolors="none", linewidths=width, transform=ax.get_xaxis_transform(), clip_on=False, zorder=2.5)
-                ticks.set_in_layout(False)
-                self.interior_x_ticks[(ax, end)] = ticks
+        for cbar in self.colorbars:
+            self.inward_ticks.append(InwardTicks.for_axes(cbar.ax, _get_colorbar_colors_beneath(cbar), sides=("left", "right")))
 
-    def update_interior_x_ticks(self):
-        """Put an interior tick at each major tick location, colored to stand out against what's beneath it."""
-        for (ax, end), ticks in self.interior_x_ticks.items():
-            lower, upper = sorted(ax.get_xlim())
-            xs = [x for x in ax.xaxis.get_majorticklocs() if lower <= x <= upper]
-            y, inward = {"lower": (0.0, 1.0), "upper": (1.0, -1.0)}[end]
-            ticks.set_offsets(np.array([(x, y) for x in xs]).reshape(-1, 2))
+    def update_ticks(self):
+        for ticks in self.inward_ticks:
+            ticks.update()
 
-            # What's beneath a tick is the strip of display it covers, running inward from the edge.
-            length = plt.rcParams["xtick.major.size"] * ax.get_figure(root=True).dpi / 72
-            colors = []
-            for x in xs:
-                tick_x, edge_y = ax.get_xaxis_transform().transform((x, y))
-                y0, y1 = sorted([edge_y, edge_y + inward * length])
-                bbox = Bbox.from_extents(tick_x - 0.5, y0, tick_x + 0.5, y1)
-                colors.append(plt_util.get_opposite_color(self._get_colors_beneath(ax, bbox)))
-
-            ticks.set_edgecolor(colors)
-
-    def _get_colors_beneath(self, ax: Axes, bbox: Bbox) -> np.ndarray:
-        """The colors drawn within `bbox` (in display coordinates) on `ax`, as an array of shape `(n, 4)`: those
-        of the data where it's known, composited over the axes' own background, or else just the background."""
-        background = np.array(to_rgba(ax.get_facecolor()))
-        data_setters = [data_setter for data_setter in self.data_setters if data_setter.artist.axes is ax]
-        colors = [colors.reshape(-1, 4) for data_setter in data_setters if (colors := data_setter.get_colors_within(bbox)) is not None]
+    def _get_colors_beneath(self, bbox: Bbox) -> np.ndarray:
+        """The colors drawn within `bbox` (in display coordinates) on the plot area, as an array of shape `(n, 4)`:
+        those of the data where it's known, composited over the background, or else just the background."""
+        background = np.array(to_rgba(self.axes[0].get_facecolor()))
+        colors = [colors.reshape(-1, 4) for data_setter in self.data_setters if (colors := data_setter.get_colors_within(bbox)) is not None]
         if not colors:
             return background[None, :]
 
