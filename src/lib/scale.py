@@ -1,8 +1,10 @@
 from dataclasses import dataclass, field
 from typing import Literal, Self
 
+import numpy as np
 from matplotlib.colors import Normalize, SymLogNorm
 from matplotlib.scale import ScaleBase, SymmetricalLogScale
+from matplotlib.ticker import Locator, LogLocator, SymmetricalLogLocator
 
 from lib.parsing import parse_util
 
@@ -34,6 +36,10 @@ class Scale:
     def to_name_fragment_part(self) -> str:
         return str(self.scale_key)
 
+    def minor_locator(self) -> Locator | None:
+        """Where minor ticks go on an axis (or colorbar) of this scale, or `None` for matplotlib's default."""
+        return None
+
     @classmethod
     def to_argparse_format(cls) -> str:
         return cls.scale_key
@@ -57,6 +63,9 @@ class LinearScale(Scale):
 class LogScale(Scale):
     scale_key: ScaleKey = field(init=False, default="log")
 
+    def minor_locator(self) -> Locator | None:
+        return LogLocator(base=10, subs="auto")
+
 
 LINEAR_THRESHOLD_ARG_FORMAT = "linear_threshold"
 
@@ -73,6 +82,9 @@ class SymLogScale(Scale):
     def to_color_norm(self) -> ColorNormArg:
         linthresh = self.linear_threshold  # or self._choose_linear_threshold(data)
         return SymLogNorm(linthresh)
+
+    def minor_locator(self) -> Locator | None:
+        return SymmetricalLogLocator(base=10, linthresh=self.linear_threshold, subs=np.arange(2, 10))
 
     def to_name_fragment_part(self) -> str:
         if self.linear_threshold is None:
