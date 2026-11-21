@@ -86,9 +86,19 @@ def _srgb_to_oklab(rgb: np.ndarray) -> np.ndarray:
     return np.cbrt(linear @ _LINEAR_SRGB_TO_LMS.T) @ _LMS_ROOT_TO_OKLAB.T
 
 
+_CANDIDATE_LEVELS = np.linspace(0.0, 1.0, 5)
+_CANDIDATES = np.stack(np.meshgrid(_CANDIDATE_LEVELS, _CANDIDATE_LEVELS, _CANDIDATE_LEVELS, indexing="ij"), axis=-1).reshape(-1, 3)
+"""sRGB colors to choose among: a grid through the whole gamut, its corners (black, white, primaries,
+secondaries) included."""
+_CANDIDATES_OKLAB = _srgb_to_oklab(_CANDIDATES)
+
+
 def get_contrasting_color(rgba: np.ndarray) -> tuple[float, float, float]:
-    """Black or white, whichever stands out more against the average of the given colors (of shape `(..., 4)`):
-    black when their OKLab lightness is past the middle, else white. OKLab being perceptually uniform, the average
-    is one a person would agree with."""
-    lightness = _srgb_to_oklab(rgba.reshape(-1, 4)[:, :3])[:, 0].mean()
-    return (0.0, 0.0, 0.0) if lightness > 0.5 else (1.0, 1.0, 1.0)
+    """The color that stands out most against all the given colors (of shape `(..., 4)`): of `_CANDIDATES`, the one
+    whose least distance to any of them, in OKLab, is greatest. OKLab being perceptually uniform, distance there is
+    difference as a person sees it. Over a white background that's black, and over black, white; over mid-tones,
+    where neither stands out much, it's a saturated color."""
+    beneath = np.unique(_srgb_to_oklab(rgba.reshape(-1, 4)[:, :3]).round(4), axis=0)
+    distances = np.linalg.norm(_CANDIDATES_OKLAB[:, None, :] - beneath[None, :, :], axis=-1).min(axis=1)
+    r, g, b = _CANDIDATES[np.argmax(distances)]
+    return (float(r), float(g), float(b))
