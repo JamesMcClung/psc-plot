@@ -31,6 +31,8 @@ class PlotInfo(ABC):
     dim_units: dict[VarKey, Latex] = field(default_factory=dict)
     time_dim: VarKey | None = None
     scalar_coord_values: dict[VarKey, float] = field(default_factory=dict)
+    frames_scalar_coord_values: list[dict[VarKey, float]] = field(default_factory=list)
+    """`scalar_coord_values` on every frame, known up front, so labels can be placed once for all of them."""
 
     axes_index: tuple[int, int] = (1, 1)
     projection: Projection = field(default="rectilinear", init=False)
