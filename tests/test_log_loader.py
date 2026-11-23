@@ -1,6 +1,7 @@
 from lib.config import PscPlotConfig
 from lib.data.data_with_attrs import FullList
 from lib.data.loader import load
+from lib.data.loaders.log import LogLoader
 
 _LOG = """\
 some preamble
@@ -23,4 +24,16 @@ def test_log_loader_parses_step_lines(tmp_path):
     assert data.data["step"].tolist() == [1, 2, 3]
     assert data.data["code_time"].tolist() == [0.00795495, 0.0159099, 0.0238649]
     assert data.data["wall_time"].tolist() == [0.148515, 0.156549, 0.164579]
+    assert data.metadata.var_infos["wall_time"].unit.latex == r"\text{s}"
+
+
+def test_log_loader_discovers_every_log_txt(tmp_path):
+    for name in ["log.txt", "log2.txt", "log-restart.txt"]:
+        (tmp_path / name).write_text(_LOG)
+    (tmp_path / "params.txt").write_text("")
+
+    assert LogLoader.discover_prefixes(tmp_path) == ["log", "log-restart", "log2"]
+
+    data = load(PscPlotConfig.create_minimal(data_root=tmp_path), "log2")
+    assert data.data["step"].tolist() == [1, 2, 3]
     assert data.metadata.var_infos["wall_time"].unit.latex == r"\text{s}"
