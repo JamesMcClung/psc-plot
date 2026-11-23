@@ -24,11 +24,11 @@ def parse_log(path: pathlib.Path) -> pd.DataFrame:
 
 @loader
 class LogLoader(Loader):
-    """PSC's stdout log (`log.txt`), as one row per step."""
+    """A PSC stdout log (any `log*.txt`, e.g. `log.txt` or `log2.txt`), as one row per step."""
 
     @classmethod
     def discover_prefixes(cls, data_dir: pathlib.Path) -> list[str]:
-        return ["log"] if (data_dir / f"log.{cls.suffix()}").is_file() else []
+        return sorted(path.name.removesuffix(f".{cls.suffix()}") for path in data_dir.glob(f"log*.{cls.suffix()}") if path.is_file())
 
     @classmethod
     def suffix(cls):
