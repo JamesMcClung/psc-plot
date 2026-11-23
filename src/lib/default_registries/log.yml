@@ -1,0 +1,3 @@
+step: {display: '\text{step}'}
+code_time: {display: 't', unit: '\omega_\text{pe}^{-1}'}
+wall_time: {display: 't_\text{wall}', unit: '\text{s}'}
