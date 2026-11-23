@@ -37,6 +37,9 @@ def _normalize_prefix(prefix: str | None) -> str | None:
     # ADIOS2 particle files are prefixed per species (prt.e, prt.i) but share one registry file
     if prefix is not None and prefix.startswith("prt."):
         return "prt"
+    # every log*.txt (log, log2, log-restart, ...) is a PSC log and shares one registry file
+    if prefix is not None and prefix.startswith("log"):
+        return "log"
     return prefix
 
 
