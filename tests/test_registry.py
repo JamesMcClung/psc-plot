@@ -163,3 +163,9 @@ def test_config_custom_registry_replaces_defaults(tmp_path):
     assert config.registry.entry("pfd", "hx_fc") is None
     # the loaders read config.registry (test-2d's prt.e files carry px/py/pz)
     assert load(config, "prt.e").metadata.var_infos["py"].display.latex == "U_Y"
+
+
+def test_log_variant_prefix_normalizes_to_log(tmp_path):
+    config = write_registry(tmp_path, {"log": "wall_time: {display: 'W'}"})
+    assert config.registry.lookup("log2", "wall_time").display.latex == "W"
+    assert config.registry.lookup("log-restart", "wall_time").display.latex == "W"
