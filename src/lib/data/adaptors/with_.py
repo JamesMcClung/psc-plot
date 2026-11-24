@@ -5,7 +5,7 @@ from lib.config import _DATA_DIR_KEY
 from lib.data.adaptor import WorldAdaptor
 from lib.data.data_world import DataWorld
 from lib.data.ensure_derived import ensure_derived, get_derivable_keys
-from lib.data.loader import load
+from lib.data.loader import get_or_load
 from lib.data.types import SubdataKey
 from lib.file_util import Prepath
 from lib.parsing import parse_util
@@ -21,12 +21,7 @@ class With(WorldAdaptor):
 
     def apply_world(self, world):
         prepath, key = self.get_prepath_and_key(world)
-        if not prepath:
-            data = world.require_active_data()
-        elif prepath in world.datas:
-            data = world.datas[prepath]
-        else:
-            data = load(world.config, prepath)
+        data = get_or_load(world, prepath) if prepath else world.require_active_data()
 
         if key:
             data = ensure_derived(data, key, world.config)
