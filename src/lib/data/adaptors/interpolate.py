@@ -165,6 +165,9 @@ class Interpolate(WorldAdaptor):
         partition_dim = data.metadata.partition_dim
         partition_ranges = data.metadata.partition_ranges
         if partition_ranges is None or partition_dim not in field.dims:
+            # OPT: this computes the whole field, even along dims where the list has a single position (e.g. `t` after
+            # `--idx t=<int>`, which clears the partition ranges). Slicing the field to `_bracket` of each scalar
+            # position first would load at most two slices per such dim; the eager path above could do the same.
             return df.map_partitions(_with_column, self.new_key, field.compute(), scalar_positions, meta=meta, required_columns=required_columns)
 
         # Each partition gets only the field's slices around its own step, so a selected step culls to its own
