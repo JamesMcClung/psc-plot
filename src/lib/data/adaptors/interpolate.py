@@ -1,8 +1,18 @@
-import dask
+import functools
+
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 import xarray as xr
+
+# PRIVATE DASK API. These are dask internals with no stability guarantee, used only by `_FieldWindows` below to keep it
+# small enough to re-check by hand after a dask upgrade. Don't import them anywhere else in psc-plot; if another adaptor
+# needs per-partition inputs, move `_FieldWindows` to a shared module instead of copying it.
+from dask._task_spec import Task, TaskRef
+from dask.base import tokenize
+from dask.dataframe.dask_expr._collection import new_collection
+from dask.dataframe.dask_expr._expr import Expr, PartitionsFiltered
+from dask.optimization import cull
 from scipy.interpolate import RegularGridInterpolator
 
 from lib.data.adaptor import WorldAdaptor
@@ -55,13 +65,63 @@ def _bracket(coords: np.ndarray, pos: float) -> list[int]:
     return [i - 1, i]
 
 
-def _window(field: xr.DataArray, dim: DimKey, pos: float) -> xr.DataArray:
-    """The (at most two) slices of `field` along `dim` that bracket `pos`."""
-    return field.isel({dim: _bracket(field.coords[dim].to_numpy(), pos)})
-
-
 def _with_column(df: pd.DataFrame, key: SubdataKey, field: xr.DataArray, scalar_positions: dict[DimKey, float]) -> pd.DataFrame:
     return df.assign(**{key: _interpolate(df, field, scalar_positions)})
+
+
+def _with_window_column(df: pd.DataFrame, windows: pd.DataFrame, key: SubdataKey, scalar_positions: dict[DimKey, float]) -> pd.DataFrame:
+    return _with_column(df, key, windows["window"].iloc[0], scalar_positions)
+
+
+def _window_frame(dims: tuple[DimKey, ...], coords: dict[DimKey, np.ndarray], dim: DimKey, indices: tuple[int, ...], *blocks: np.ndarray) -> pd.DataFrame:
+    """A one-row frame holding the field window that the `blocks` (one per index along `dim`) make up."""
+    data = np.concatenate(blocks, axis=dims.index(dim))
+    window = xr.DataArray(data, dims=dims, coords=coords | {dim: coords[dim][list(indices)]})
+    return pd.DataFrame({"window": pd.Series([window], dtype=object)})
+
+
+class _FieldWindows(PartitionsFiltered, Expr):
+    """A dask-expr frame whose partition `i` is a one-row frame holding the `field` window that list partition `i` needs:
+    its slices at `partition_indices[i]` along `dim`.
+
+    `field` must have one chunk per index along `dim` and a single chunk along every other dim, so that an index is a
+    block and a window references the field's own blocks. Being `PartitionsFiltered`, it's culled by the same
+    `.partitions[...]` selection as the list it's mapped alongside, so a selected step loads only its own window.
+
+    Built on PRIVATE DASK API (see the imports): keep it the only such code in psc-plot."""
+
+    _parameters = ["field", "dim", "partition_indices", "_partitions"]
+    _defaults = {"_partitions": None}
+
+    @functools.cached_property
+    def _name(self):
+        return f"field-windows-{tokenize(self.field.data.name, self.dim, self.partition_indices, list(self._partitions))}"
+
+    def __dask_tokenize__(self):
+        # Expr's default tokenizes the operands, which a dask-backed DataArray can't be deterministically.
+        return self._name
+
+    @functools.cached_property
+    def _meta(self):
+        return pd.DataFrame({"window": pd.Series(dtype=object)})
+
+    def _divisions(self):
+        return (None,) * (len(self.partition_indices) + 1)
+
+    def _block_key(self, index: int) -> tuple:
+        axis = self.field.get_axis_num(self.dim)
+        return (self.field.data.name, *(index if a == axis else 0 for a in range(self.field.ndim)))
+
+    def _layer(self) -> dict:
+        indicess = [self.partition_indices[p] for p in self._partitions]
+        wanted = list({self._block_key(i) for indices in indicess for i in indices})
+        layer, _ = cull(dict(self.field.data.__dask_graph__()), wanted)
+
+        coords = {dim: self.field.coords[dim].to_numpy() for dim in self.field.dims}
+        for out_i, indices in enumerate(indicess):
+            key = (self._name, out_i)
+            layer[key] = Task(key, _window_frame, self.field.dims, coords, self.dim, indices, *(TaskRef(self._block_key(i)) for i in indices))
+        return layer
 
 
 class Interpolate(WorldAdaptor):
@@ -97,19 +157,25 @@ class Interpolate(WorldAdaptor):
             return _with_column(df, self.new_key, field.compute(), scalar_positions)
 
         meta = df._meta.assign(**{self.new_key: np.float64(0)})
+        # `required_columns` lets downstream column projection pass through to the list's loader.
+        required_columns = [dim for dim in field.dims if field.sizes[dim] > 1 and dim in df.columns]
         partition_dim = data.metadata.partition_dim
         partition_ranges = data.metadata.partition_ranges
-        if partition_ranges is not None and partition_dim in field.dims:
-            # Each partition only needs the field's slices around its own step, so frames still cull to their step's
-            # partitions, and no task holds more of the field than two steps of it.
-            df_parts = df.to_delayed()
-            parts = []
-            for step, (start, end) in enumerate(partition_ranges):
-                window = _window(field, partition_dim, data.coordss()[partition_dim][step])
-                parts.extend(dask.delayed(_with_column)(df_parts[p], self.new_key, window, scalar_positions) for p in range(start, end))
-            return dd.from_delayed(parts, meta=meta, verify_meta=False)
+        if partition_ranges is None or partition_dim not in field.dims:
+            return df.map_partitions(_with_column, self.new_key, field.compute(), scalar_positions, meta=meta, required_columns=required_columns)
 
-        return df.map_partitions(_with_column, self.new_key, field.compute(), scalar_positions, meta=meta)
+        # Each partition gets only the field's slices around its own step, so a selected step culls to its own
+        # partitions and field slices, and no task holds more than two slices.
+        field_coords = field.coords[partition_dim].to_numpy()
+        step_indices = [tuple(_bracket(field_coords, pos)) for pos in data.coordss()[partition_dim]]
+        partition_indices = tuple(indices for indices, (start, end) in zip(step_indices, partition_ranges) for _ in range(start, end))
+        if all(len(indices) == 1 for indices in step_indices):
+            # No window spans two slices, so the partition dim is squeezed away before it's ever read.
+            required_columns = [dim for dim in required_columns if dim != partition_dim]
+
+        field = field.chunk({dim: 1 if dim == partition_dim else -1 for dim in field.dims})
+        windows = new_collection(_FieldWindows(field, partition_dim, partition_indices))
+        return df.map_partitions(_with_window_column, windows, self.new_key, scalar_positions, meta=meta, align_dataframes=False, required_columns=required_columns)
 
     def get_name_fragments(self) -> list[str]:
         return [f"interpolate_{self.new_key}={self.prepath}{SCOPE_OP}{self.key}"]
