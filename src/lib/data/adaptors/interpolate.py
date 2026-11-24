@@ -37,11 +37,27 @@ def _interpolate(df: pd.DataFrame, field: xr.DataArray, scalar_positions: dict[D
     return interpolator(np.stack(positions, axis=-1))
 
 
+_SNAP_RTOL = 1e-9
+"""A position this close to a coord takes that coord's slice alone. Lists and fields are usually written at the same
+steps, so their partition-dim coords match, but they needn't be bitwise equal; the lerp weight this drops is negligible."""
+
+
+def _bracket(coords: np.ndarray, pos: float) -> list[int]:
+    """The indices of the (ascending) `coords` to lerp `pos` between: one when `pos` is on a coord or beyond either end."""
+    i = int(np.searchsorted(coords, pos))
+    for j in (i - 1, i):
+        if 0 <= j < len(coords) and np.isclose(coords[j], pos, rtol=_SNAP_RTOL, atol=0):
+            return [j]
+    if i == 0:
+        return [0]
+    if i == len(coords):
+        return [len(coords) - 1]
+    return [i - 1, i]
+
+
 def _window(field: xr.DataArray, dim: DimKey, pos: float) -> xr.DataArray:
     """The (at most two) slices of `field` along `dim` that bracket `pos`."""
-    coords = field.coords[dim].to_numpy()
-    i = int(np.searchsorted(coords, pos))
-    return field.isel({dim: slice(max(i - 1, 0), i + 1)})
+    return field.isel({dim: _bracket(field.coords[dim].to_numpy(), pos)})
 
 
 def _with_column(df: pd.DataFrame, key: SubdataKey, field: xr.DataArray, scalar_positions: dict[DimKey, float]) -> pd.DataFrame:
