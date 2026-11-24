@@ -76,17 +76,10 @@ WITH_FORMAT = f"prepath{SCOPE_OP}var_key | var_key | prepath"
     nargs="just one",
 )
 def parse_with(arg: str) -> With:
-    split_arg = arg.split(SCOPE_OP)
-
-    if len(split_arg) == 2:
-        [prepath, key_arg] = split_arg
-        key = parse_util.parse_optional_identifier(key_arg, "key")
-        return With2(prepath, key)
-    elif len(split_arg) == 1:
-        [prepath_or_key] = split_arg
-        return With1(prepath_or_key)
-    else:
-        parse_util.fail_format(arg, WITH_FORMAT)
+    prepath, rest = parse_util.parse_scoped(arg, WITH_FORMAT)
+    if prepath is None:
+        return With1(rest)
+    return With2(prepath, parse_util.parse_optional_identifier(rest, "key"))
 
 
 def parse_initial_with(arg: str) -> With:
