@@ -77,12 +77,13 @@ class Interpolate(WorldAdaptor):
 
     def _interpolated_df(self, data: List, field: xr.DataArray, scalar_positions: dict[DimKey, float]) -> pd.DataFrame | dd.DataFrame:
         df = data.data
+        if not isinstance(data, LazyList):
+            return _with_column(df, self.new_key, field.compute(), scalar_positions)
+
+        meta = df._meta.assign(**{self.new_key: np.float64(0)})
         partition_dim = data.metadata.partition_dim
         partition_ranges = data.metadata.partition_ranges
-        if isinstance(data, LazyList):
-            meta = df._meta.assign(**{self.new_key: np.float64(0)})
-
-        if isinstance(data, LazyList) and partition_ranges is not None and partition_dim in field.dims:
+        if partition_ranges is not None and partition_dim in field.dims:
             # Each partition only needs the field's slices around its own step, so frames still cull to their step's
             # partitions, and no task holds more of the field than two steps of it.
             df_parts = df.to_delayed()
@@ -92,10 +93,7 @@ class Interpolate(WorldAdaptor):
                 parts.extend(dask.delayed(_with_column)(df_parts[p], self.new_key, window, scalar_positions) for p in range(start, end))
             return dd.from_delayed(parts, meta=meta, verify_meta=False)
 
-        field = field.compute()
-        if isinstance(data, LazyList):
-            return df.map_partitions(_with_column, self.new_key, field, scalar_positions, meta=meta)
-        return _with_column(df, self.new_key, field, scalar_positions)
+        return df.map_partitions(_with_column, self.new_key, field.compute(), scalar_positions, meta=meta)
 
     def get_name_fragments(self) -> list[str]:
         return [f"interpolate_{self.new_key}={self.prepath}{SCOPE_OP}{self.key}"]
