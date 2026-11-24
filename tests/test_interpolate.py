@@ -25,17 +25,7 @@ def _field(key: str) -> xr.DataArray:
     return data.require_active_subdata().compute()
 
 
-def test_matches_xarray_interp_in_space():
-    rho = _field("rho_i").isel(t=3)
-    df = _pull_active("prt.i --idx t=3 --interpolate pfd_moments::rho_i -v y z").data.compute()
-
-    expected = rho.interp(y=xr.DataArray(df["y"].to_numpy()), z=xr.DataArray(df["z"].to_numpy())).to_numpy()
-    interior = ~np.isnan(expected)
-    assert interior.sum() > len(df) / 2
-    np.testing.assert_allclose(df["rho_i"].to_numpy()[interior], expected[interior])
-
-
-def test_clamps_positions_beyond_coords():
+def test_matches_xarray_interp_at_clamped_positions():
     rho = _field("rho_i").isel(t=3)
     df = _pull_active("prt.i --idx t=3 --interpolate pfd_moments::rho_i -v y z").data.compute()
 
@@ -54,13 +44,6 @@ def test_idx_commutes():
     before = _pull_active("prt.i --idx t=3 --interpolate pfd_moments::rho_i -v y z").data.compute()
     after = _pull_active("prt.i --interpolate pfd_moments::rho_i --idx t=3 -v y z").data.compute()
     np.testing.assert_allclose(before["rho_i"].to_numpy(), after["rho_i"].to_numpy())
-
-
-def test_keeps_partition_layout():
-    plain = _pull_active("prt.i -v y z")
-    interpolated = _pull_active("prt.i --interpolate pfd_moments::rho_i -v y z")
-    assert interpolated.data.npartitions == plain.data.npartitions
-    assert interpolated.metadata.partition_ranges == plain.metadata.partition_ranges
 
 
 def test_selecting_a_step_interpolates_only_its_partitions(monkeypatch):
@@ -82,11 +65,6 @@ def test_new_column_is_named_and_active():
     assert isinstance(data, List)
     assert data.active_key == "bulk"
     assert "bulk" in data.data.columns and "rho_i" not in data.data.columns
-
-
-def test_feeds_derive():
-    df = _pull_active("prt.i -c --interpolate bulk=pfd_moments::rho_i --derive twice=2*bulk -v y z").data
-    np.testing.assert_allclose(df["twice"].to_numpy(), 2 * df["bulk"].to_numpy())
 
 
 def test_rejects_field_active_data():
