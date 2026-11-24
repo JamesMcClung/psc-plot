@@ -10,7 +10,7 @@ from lib.data.adaptors.with_ import SCOPE_OP
 from lib.data.data_with_attrs import Field, LazyList, List
 from lib.data.data_world import DataWorld
 from lib.data.ensure_derived import ensure_derived
-from lib.data.loader import load
+from lib.data.loader import get_or_load
 from lib.data.types import DimKey, SubdataKey
 from lib.file_util import Prepath
 from lib.parsing import parse_util
@@ -59,7 +59,7 @@ class Interpolate(WorldAdaptor):
         if not isinstance(data, List):
             raise ValueError("--interpolate adds a column to list data; the active data is a field")
 
-        field_data = world.datas[self.prepath] if self.prepath in world.datas else load(world.config, self.prepath)
+        field_data = get_or_load(world, self.prepath)
         if not isinstance(field_data, Field):
             raise ValueError(f"--interpolate reads from a field; {self.prepath} is not one")
         field_data = ensure_derived(field_data, self.key, world.config)
