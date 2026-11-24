@@ -6,7 +6,6 @@ import xarray as xr
 from scipy.interpolate import RegularGridInterpolator
 
 from lib.data.adaptor import WorldAdaptor
-from lib.data.adaptors.with_ import SCOPE_OP
 from lib.data.data_with_attrs import Field, LazyList, List
 from lib.data.data_world import DataWorld
 from lib.data.ensure_derived import ensure_derived
@@ -15,6 +14,7 @@ from lib.data.types import DimKey, SubdataKey
 from lib.file_util import Prepath
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
+from lib.parsing.parse_util import SCOPE_OP
 
 
 def _interpolate(df: pd.DataFrame, field: xr.DataArray, scalar_positions: dict[DimKey, float]) -> np.ndarray:
@@ -114,11 +114,7 @@ def parse_interpolate(arg: str) -> Interpolate:
     if source is None:
         new_key_arg, source = None, new_key_arg
 
-    split_source = source.split(SCOPE_OP)
-    if len(split_source) != 2:
-        parse_util.fail_format(arg, INTERPOLATE_FORMAT)
-    [prepath, key] = split_source
-
+    prepath, key = parse_util.parse_scoped(source, INTERPOLATE_FORMAT)
     if not prepath:
         parse_util.fail_format(arg, INTERPOLATE_FORMAT)
     parse_util.parse_identifier(key, "var_key")
