@@ -76,3 +76,19 @@ def test_rejects_field_active_data():
 def test_parse_rejects(arg):
     with pytest.raises(argparse.ArgumentTypeError):
         interpolate.parse_interpolate(arg)
+
+
+@pytest.mark.parametrize(
+    "pos, expected",
+    [
+        (1.0, [1]),
+        (1.0 + 1e-12, [1]),
+        (1.5, [1, 2]),
+        (0.0, [0]),
+        (-1.0, [0]),
+        (3.0, [3]),
+        (4.0, [3]),
+    ],
+)
+def test_bracket(pos, expected):
+    assert interpolate._bracket(np.array([0.0, 1.0, 2.0, 3.0]), pos) == expected
