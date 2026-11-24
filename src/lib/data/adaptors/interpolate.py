@@ -5,9 +5,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-# PRIVATE DASK API. These are dask internals with no stability guarantee, used only by `_FieldWindows` below to keep it
-# small enough to re-check by hand after a dask upgrade. Don't import them anywhere else in psc-plot; if another adaptor
-# needs per-partition inputs, move `_FieldWindows` to a shared module instead of copying it.
+# PRIVATE DASK API, for `_FieldWindows` only: see "Private dask API" in src/lib/data/CLAUDE.md.
 from dask._task_spec import Task, TaskRef
 from dask.base import tokenize
 from dask.dataframe.dask_expr._collection import new_collection
@@ -86,9 +84,7 @@ class _FieldWindows(PartitionsFiltered, Expr):
 
     `field` must have one chunk per index along `dim` and a single chunk along every other dim, so that an index is a
     block and a window references the field's own blocks. Being `PartitionsFiltered`, it's culled by the same
-    `.partitions[...]` selection as the list it's mapped alongside, so a selected step loads only its own window.
-
-    Built on PRIVATE DASK API (see the imports): keep it the only such code in psc-plot."""
+    `.partitions[...]` selection as the list it's mapped alongside, so a selected step loads only its own window."""
 
     _parameters = ["field", "dim", "partition_indices", "_partitions"]
     _defaults = {"_partitions": None}
