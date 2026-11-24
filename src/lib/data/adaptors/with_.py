@@ -10,6 +10,7 @@ from lib.data.types import SubdataKey
 from lib.file_util import Prepath
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
+from lib.parsing.parse_util import SCOPE_OP
 
 
 @dataclass
@@ -64,7 +65,6 @@ class With1(With):
         return self.prepath_or_key
 
 
-SCOPE_OP = "::"
 WITH_FORMAT = f"prepath{SCOPE_OP}var_key | var_key | prepath"
 
 
