@@ -5,7 +5,9 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-# PRIVATE DASK API, for `_FieldWindows` only: see "Private dask API" in src/lib/data/CLAUDE.md.
+# PRIVATE DASK API: dask internals with no stability guarantee. `_FieldWindows` is the only code in psc-plot allowed to
+# use them, so a dask upgrade has one place to break; if another adaptor needs per-partition inputs, move `_FieldWindows`
+# into a shared module rather than writing a second one.
 from dask._task_spec import Task, TaskRef
 from dask.base import tokenize
 from dask.dataframe.dask_expr._collection import new_collection
@@ -84,7 +86,12 @@ class _FieldWindows(PartitionsFiltered, Expr):
 
     `field` must have one chunk per index along `dim` and a single chunk along every other dim, so that an index is a
     block and a window references the field's own blocks. Being `PartitionsFiltered`, it's culled by the same
-    `.partitions[...]` selection as the list it's mapped alongside, so a selected step loads only its own window."""
+    `.partitions[...]` selection as the list it's mapped alongside, so a selected step loads only its own window.
+    `tests/test_interpolate.py`'s structural tests pin that culling, and the column projection passing through.
+
+    The public-API routes that look simpler were measured not to work: a dask `Array` argument to `map_partitions` gives
+    every partition the whole array, and a `from_delayed` frame or an `assign` of a second-rooted series stops
+    `.partitions[...]` from culling (the `assign` also misaligns rows)."""
 
     _parameters = ["field", "dim", "partition_indices", "_partitions"]
     _defaults = {"_partitions": None}
