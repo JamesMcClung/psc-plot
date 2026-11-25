@@ -91,12 +91,12 @@ class _FieldWindows(PartitionsFiltered, _DelayedExpr):
 
     The public-API routes that look simpler were measured not to work: a dask `Array` argument to `map_partitions` gives
     every partition the whole array, and a `from_delayed` frame or an `assign` of a second-rooted series stops
-    `.partitions[...]` from culling (the `assign` also misaligned rows, before `_DelayedExpr` below).
+    `.partitions[...]` from culling.
 
     It's a `_DelayedExpr` only so that dask's `are_co_aligned` skips it like a delayed input rather than count it as a
     second root: otherwise assigning the mapped column to the list, and any later `assign` to the result, aligns on the
     index, which fails on the list's duplicate labels. `ndim` undoes `_DelayedExpr`'s scalar one, which `are_co_aligned` checks
-    first and `map_partitions` would broadcast."""
+    first and `map_partitions` would broadcast; `__str__` replaces one that reads an `obj` operand this doesn't have."""
 
     _parameters = ["field", "dim", "partition_indices", "_partitions"]
     _defaults = {"_partitions": None}
