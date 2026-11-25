@@ -11,7 +11,7 @@ import xarray as xr
 from dask._task_spec import Task, TaskRef
 from dask.base import tokenize
 from dask.dataframe.dask_expr._collection import new_collection
-from dask.dataframe.dask_expr._expr import Expr, PartitionsFiltered
+from dask.dataframe.dask_expr._expr import PartitionsFiltered, _DelayedExpr
 from dask.optimization import cull
 from scipy.interpolate import RegularGridInterpolator
 
@@ -80,7 +80,7 @@ def _window_frame(dims: tuple[DimKey, ...], coords: dict[DimKey, np.ndarray], di
     return pd.DataFrame({"window": pd.Series([window], dtype=object)})
 
 
-class _FieldWindows(PartitionsFiltered, Expr):
+class _FieldWindows(PartitionsFiltered, _DelayedExpr):
     """A dask-expr frame whose partition `i` is a one-row frame holding the `field` window that list partition `i` needs:
     its slices at `partition_indices[i]` along `dim`.
 
@@ -91,7 +91,12 @@ class _FieldWindows(PartitionsFiltered, Expr):
 
     The public-API routes that look simpler were measured not to work: a dask `Array` argument to `map_partitions` gives
     every partition the whole array, and a `from_delayed` frame or an `assign` of a second-rooted series stops
-    `.partitions[...]` from culling (the `assign` also misaligns rows)."""
+    `.partitions[...]` from culling (the `assign` also misaligns rows).
+
+    It's a `_DelayedExpr` only so that dask's `are_co_aligned` skips it like a delayed input rather than count it as a
+    second root: otherwise a later `assign` to the mapped list, even of the list's own columns, aligns on the index,
+    which fails on the list's duplicate labels. `ndim` undoes `_DelayedExpr`'s scalar one, which `are_co_aligned` checks
+    first and `map_partitions` would broadcast."""
 
     _parameters = ["field", "dim", "partition_indices", "_partitions"]
     _defaults = {"_partitions": None}
@@ -103,6 +108,13 @@ class _FieldWindows(PartitionsFiltered, Expr):
     def __dask_tokenize__(self):
         # Expr's default tokenizes the operands, which a dask-backed DataArray can't be deterministically.
         return self._name
+
+    def __str__(self):
+        return f"{type(self).__name__}({self.field.name}, {self.dim})"
+
+    @property
+    def ndim(self):
+        return 2
 
     @functools.cached_property
     def _meta(self):
