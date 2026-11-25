@@ -65,12 +65,12 @@ def _bracket(coords: np.ndarray, pos: float) -> list[int]:
     return [i - 1, i]
 
 
-def _with_column(df: pd.DataFrame, key: SubdataKey, field: xr.DataArray, scalar_positions: dict[DimKey, float]) -> pd.DataFrame:
-    return df.assign(**{key: _interpolate(df, field, scalar_positions)})
+def _column(df: pd.DataFrame, field: xr.DataArray, scalar_positions: dict[DimKey, float]) -> pd.Series:
+    return pd.Series(_interpolate(df, field, scalar_positions), index=df.index)
 
 
-def _with_window_column(df: pd.DataFrame, windows: pd.DataFrame, key: SubdataKey, scalar_positions: dict[DimKey, float]) -> pd.DataFrame:
-    return _with_column(df, key, windows["window"].iloc[0], scalar_positions)
+def _window_column(df: pd.DataFrame, windows: pd.DataFrame, scalar_positions: dict[DimKey, float]) -> pd.Series:
+    return _column(df, windows["window"].iloc[0], scalar_positions)
 
 
 def _window_frame(dims: tuple[DimKey, ...], coords: dict[DimKey, np.ndarray], dim: DimKey, indices: tuple[int, ...], *blocks: np.ndarray) -> pd.DataFrame:
@@ -91,11 +91,11 @@ class _FieldWindows(PartitionsFiltered, _DelayedExpr):
 
     The public-API routes that look simpler were measured not to work: a dask `Array` argument to `map_partitions` gives
     every partition the whole array, and a `from_delayed` frame or an `assign` of a second-rooted series stops
-    `.partitions[...]` from culling (the `assign` also misaligns rows).
+    `.partitions[...]` from culling (the `assign` also misaligned rows, before `_DelayedExpr` below).
 
     It's a `_DelayedExpr` only so that dask's `are_co_aligned` skips it like a delayed input rather than count it as a
-    second root: otherwise a later `assign` to the mapped list, even of the list's own columns, aligns on the index,
-    which fails on the list's duplicate labels. `ndim` undoes `_DelayedExpr`'s scalar one, which `are_co_aligned` checks
+    second root: otherwise assigning the mapped column to the list, and any later `assign` to the result, aligns on the
+    index, which fails on the list's duplicate labels. `ndim` undoes `_DelayedExpr`'s scalar one, which `are_co_aligned` checks
     first and `map_partitions` would broadcast."""
 
     _parameters = ["field", "dim", "partition_indices", "_partitions"]
@@ -162,25 +162,27 @@ class Interpolate(WorldAdaptor):
         if missing:
             raise ValueError(f"--interpolate needs a position for each of {self.prepath}{SCOPE_OP}{self.key}'s dims, but the list has none for {missing}")
 
-        data = data.assign(self._interpolated_df(data, field, scalar_positions))
-        data = data.with_active(key=self.new_key, info=field_data.metadata.var_infos[self.key])
+        data = data.with_active(data=self._column(data, field, scalar_positions), key=self.new_key, info=field_data.metadata.var_infos[self.key])
         return world.with_active(data=data)
 
-    def _interpolated_df(self, data: List, field: xr.DataArray, scalar_positions: dict[DimKey, float]) -> pd.DataFrame | dd.DataFrame:
+    def _column(self, data: List, field: xr.DataArray, scalar_positions: dict[DimKey, float]) -> pd.Series | dd.Series:
         df = data.data
         if not isinstance(data, LazyList):
-            return _with_column(df, self.new_key, field.compute(), scalar_positions)
+            return _column(df, field.compute(), scalar_positions)
 
-        meta = df._meta.assign(**{self.new_key: np.float64(0)})
-        # `required_columns` lets downstream column projection pass through to the list's loader.
-        required_columns = [dim for dim in field.dims if field.sizes[dim] > 1 and dim in df.columns]
+        # The column is mapped over just the positions it needs and then assigned, rather than mapped over the whole
+        # frame with `required_columns`: dask (as of 2026.11) mis-stacks two projections pushed through such a
+        # `map_partitions` (e.g. `--idx t=<int>`'s drop of `t`, then a single column), asking for columns it pruned.
+        # `assign` passes projection through to the list's loader without that bug.
+        positions = [dim for dim in field.dims if field.sizes[dim] > 1 and dim in df.columns]
+        meta = pd.Series(dtype=np.float64, name=self.new_key)
         partition_dim = data.metadata.partition_dim
         partition_ranges = data.metadata.partition_ranges
         if partition_ranges is None or partition_dim not in field.dims:
             # OPT: this computes the whole field, even along dims where the list has a single position (e.g. `t` after
             # `--idx t=<int>`, which clears the partition ranges). Slicing the field to `_bracket` of each scalar
             # position first would load at most two slices per such dim; the eager path above could do the same.
-            return df.map_partitions(_with_column, self.new_key, field.compute(), scalar_positions, meta=meta, required_columns=required_columns)
+            return df[positions].map_partitions(_column, field.compute(), scalar_positions, meta=meta)
 
         # Each partition gets only the field's slices around its own step, so a selected step culls to its own
         # partitions and field slices, and no task holds more than two slices.
@@ -189,11 +191,11 @@ class Interpolate(WorldAdaptor):
         partition_indices = tuple(indices for indices, (start, end) in zip(step_indices, partition_ranges) for _ in range(start, end))
         if all(len(indices) == 1 for indices in step_indices):
             # No window spans two slices, so the partition dim is squeezed away before it's ever read.
-            required_columns = [dim for dim in required_columns if dim != partition_dim]
+            positions = [dim for dim in positions if dim != partition_dim]
 
         field = field.chunk({dim: 1 if dim == partition_dim else -1 for dim in field.dims})
         windows = new_collection(_FieldWindows(field, partition_dim, partition_indices))
-        return df.map_partitions(_with_window_column, windows, self.new_key, scalar_positions, meta=meta, align_dataframes=False, required_columns=required_columns)
+        return df[positions].map_partitions(_window_column, windows, scalar_positions, meta=meta, align_dataframes=False)
 
     def get_name_fragments(self) -> list[str]:
         return [f"interpolate_{self.new_key}={self.prepath}{SCOPE_OP}{self.key}"]
