@@ -106,6 +106,21 @@ def test_bins_lazily_like_computed():
     np.testing.assert_allclose(lazy.require_active_subdata().to_numpy(), computed.require_active_subdata().to_numpy())
 
 
+def test_derives_from_the_new_column_lazily_like_computed():
+    """A later `assign` must see the interpolated frame as aligned with its own columns, not index-align them."""
+    lazy = _pull_active("prt.i --interpolate bulk=pfd_moments::rho_i --derive d=py-bulk -v y z").data.compute()
+    computed = _pull_active("prt.i -c --interpolate bulk=pfd_moments::rho_i --derive d=py-bulk -v y z").data
+    np.testing.assert_allclose(lazy["d"].to_numpy(), computed["d"].to_numpy())
+
+
+def test_projects_one_column_after_a_drop():
+    """`--idx t=<int>` drops `t`, a projection that dask once mis-stacked with a later one through the interpolation."""
+    lazy = _pull_active("prt.i --interpolate bulk=pfd_moments::rho_i --derive d=py-bulk --idx t=5 -v y z").data
+    computed = _pull_active("prt.i -c --interpolate bulk=pfd_moments::rho_i --derive d=py-bulk --idx t=5 -v y z").data
+    np.testing.assert_allclose(lazy["y"].compute().to_numpy(), computed["y"].to_numpy())
+    np.testing.assert_allclose(lazy["d"].compute().to_numpy(), computed["d"].to_numpy())
+
+
 def test_new_column_is_named_and_active():
     data = _pull_active("prt.i --interpolate bulk=pfd_moments::rho_i -v y z")
     assert isinstance(data, List)
