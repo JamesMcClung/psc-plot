@@ -5,6 +5,7 @@ from pathlib import Path
 from lib.config import PscPlotConfig
 from lib.data.adaptor import WorldAdaptor
 from lib.data.data_with_attrs import DataWithAttrs
+from lib.data.data_world import DataWorld
 from lib.file_util import Prepath, split_prepath
 
 
@@ -69,3 +70,10 @@ def get_loader(data_root: Path, prepath: Prepath) -> Loader:
 def load(config: PscPlotConfig, prepath: Prepath) -> DataWithAttrs:
     loader = get_loader(config.data_root, prepath)
     return loader.get_data(config)
+
+
+def get_or_load(world: DataWorld, prepath: Prepath) -> DataWithAttrs:
+    """The world's data at `prepath`, loading it if the world doesn't hold it yet. Doesn't add it to the world."""
+    if prepath in world.datas:
+        return world.datas[prepath]
+    return load(world.config, prepath)

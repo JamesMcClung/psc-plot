@@ -5,7 +5,7 @@ from lib.data.data_with_attrs import DataWithAttrs, Field
 from lib.data.data_world import DataWorld
 from lib.data.ensure_derived import ensure_derived
 from lib.data.expression import EXPRESSION_PARSER, ExpressionEvaluator, evaluate
-from lib.data.loader import load
+from lib.data.loader import get_or_load
 from lib.file_util import split_prepath
 from lib.parsing.args_registry import arg_parser
 
@@ -34,12 +34,7 @@ class AssignNewVariable(ExpressionEvaluator):
 
     def scoped_variable(self, toks: list):
         [prepath, key] = [str(tok) for tok in toks]
-        if prepath not in self.world.datas:
-            data = load(self.world.config, prepath)
-        else:
-            data = self.world.datas[prepath]
-
-        data, value = self._resolve(data, key)
+        data, value = self._resolve(get_or_load(self.world, prepath), key)
         self.world = self.world.with_data(prepath, data)
         return value
 

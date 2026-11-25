@@ -104,6 +104,20 @@ def parse_optional_assignment(arg: str, arg_format: str, *, delim: str = "=") ->
     return parse_assignment(arg, arg_format, delim=delim)
 
 
+SCOPE_OP = "::"
+
+
+def parse_scoped(arg: str, arg_format: str) -> tuple[str | None, str]:
+    """Split `prepath::rest` into `(prepath, rest)`; an unscoped `arg` gives `(None, arg)`. The prepath may be empty."""
+    split_arg = arg.split(SCOPE_OP)
+    if len(split_arg) > 2:
+        fail_format(arg, arg_format)
+    if len(split_arg) == 1:
+        return None, arg
+    [prepath, rest] = split_arg
+    return prepath, rest
+
+
 def parse_comma_separated_list(arg: str) -> list[str]:
     args = arg.split(",")
     args = [arg.strip() for arg in args]

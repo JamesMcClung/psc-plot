@@ -5,11 +5,12 @@ from lib.config import _DATA_DIR_KEY
 from lib.data.adaptor import WorldAdaptor
 from lib.data.data_world import DataWorld
 from lib.data.ensure_derived import ensure_derived, get_derivable_keys
-from lib.data.loader import load
+from lib.data.loader import get_or_load
 from lib.data.types import SubdataKey
 from lib.file_util import Prepath
 from lib.parsing import parse_util
 from lib.parsing.args_registry import arg_parser
+from lib.parsing.parse_util import SCOPE_OP
 
 
 @dataclass
@@ -21,12 +22,7 @@ class With(WorldAdaptor):
 
     def apply_world(self, world):
         prepath, key = self.get_prepath_and_key(world)
-        if not prepath:
-            data = world.require_active_data()
-        elif prepath in world.datas:
-            data = world.datas[prepath]
-        else:
-            data = load(world.config, prepath)
+        data = get_or_load(world, prepath) if prepath else world.require_active_data()
 
         if key:
             data = ensure_derived(data, key, world.config)
@@ -69,7 +65,6 @@ class With1(With):
         return self.prepath_or_key
 
 
-SCOPE_OP = "::"
 WITH_FORMAT = f"prepath{SCOPE_OP}var_key | var_key | prepath"
 
 
@@ -81,17 +76,10 @@ WITH_FORMAT = f"prepath{SCOPE_OP}var_key | var_key | prepath"
     nargs="just one",
 )
 def parse_with(arg: str) -> With:
-    split_arg = arg.split(SCOPE_OP)
-
-    if len(split_arg) == 2:
-        [prepath, key_arg] = split_arg
-        key = parse_util.parse_optional_identifier(key_arg, "key")
-        return With2(prepath, key)
-    elif len(split_arg) == 1:
-        [prepath_or_key] = split_arg
-        return With1(prepath_or_key)
-    else:
-        parse_util.fail_format(arg, WITH_FORMAT)
+    prepath, rest = parse_util.parse_scoped(arg, WITH_FORMAT)
+    if prepath is None:
+        return With1(rest)
+    return With2(prepath, parse_util.parse_optional_identifier(rest, "key"))
 
 
 def parse_initial_with(arg: str) -> With:

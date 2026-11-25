@@ -6,7 +6,7 @@ from lib.config import PscPlotConfig
 from lib.data.adaptor import WorldAdaptor
 from lib.data.data_with_attrs import FullList, LazyList, List
 from lib.data.ensure_derived import ensure_derived
-from lib.data.loader import load
+from lib.data.loader import get_or_load
 from lib.file_util import Prepath
 from lib.latex import Latex
 from lib.parsing.args_registry import arg_parser
@@ -95,7 +95,7 @@ class Concat(WorldAdaptor):
 
     def apply_world(self, world):
         first = world.require_active_data()
-        second = world.datas[self.prepath] if self.prepath in world.datas else load(world.config, self.prepath)
+        second = get_or_load(world, self.prepath)
         if not isinstance(first, List) or not isinstance(second, List):
             raise ValueError("--concat only accepts list data (e.g. particles); try --concat before --bin")
         return world.with_active(data=concat_lists(first, second, world.config))
